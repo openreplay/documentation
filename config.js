@@ -23,7 +23,7 @@ const config = {
 			"indexName": "docs",
 			"algoliaAppId": process.env.ALGOLIA_APP_ID,
 			"algoliaSearchKey": process.env.ALGOLIA_SEARCH_KEY,
-			"algoliaAdminKey": process.env.ALGOLIA_ADMIN_KEY"
+			"algoliaAdminKey": process.env.ALGOLIA_ADMIN_KEY
 		}
 	},
 	"sidebar": {
