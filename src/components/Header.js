@@ -9,7 +9,7 @@ import Loadable from 'react-loadable';
 import LoadingProvider from './mdxComponents/loading';
 
 const help = require('./images/help.svg');
-const isSearchEnabled = config.header.search && config.header.search.enabled ? true : true;
+const isSearchEnabled = config.header.search && config.header.search.enabled ? true : false;
 
 let searchIndices = [];
 if(isSearchEnabled && config.header.search.indexName) {
@@ -21,7 +21,7 @@ if(isSearchEnabled && config.header.search.indexName) {
 import Sidebar from "./sidebar";
 
 const LoadableComponent = Loadable({
-  loader: () => import('./orSearch/index'),
+  loader: () => import('./search/index'),
   loading: LoadingProvider,
 });
 
