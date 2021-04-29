@@ -22,7 +22,7 @@ npm i @openreplay/tracker --save
 
 Then, initialize the package from your codebase entry point and start the tracker. You must set the `projectKey` option in the constructor. Its value can can be found in your OpenReplay dashboard under 'Preferences > Projects'.
 
-If your website is a **Single Page Application (SPA)** use the below code:
+### If your website is a Single Page Application (SPA)
 
 ```js
 import OpenReplay from '@openreplay/tracker';
@@ -33,7 +33,9 @@ const tracker = new OpenReplay({
 tracker.start();
 ```
 
-Otherwise, if your web app is **Server-Side-Rendered (SSR)** (i.e. NextJS, NuxtJS) use the below snippet. Ensure `tracker.start()` is called once the app is started (in `useEffect` or `componentDidMount`).
+### If your web app is Server-Side-Rendered (SSR)
+
+Follow the below snippet if your web app is Server-Side-Rendered (SSR) (i.e. NextJS, NuxtJS). Ensure `tracker.start()` is called once the app is started (in `useEffect` or `componentDidMount`).
 
 ```js
 import OpenReplay from '@openreplay/tracker/cjs';

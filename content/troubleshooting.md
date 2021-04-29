@@ -7,7 +7,7 @@ metaDescription: "How to quickly troubleshoot common issues in OpenReplay"
 Learn more about how to troubleshoot common issues in OpenReplay.
 
 ## Troubleshooting
-- [Session recording issues](/troubleshooting/session-recording-issues)
+- [Session recording issues](/troubleshooting/session-recordings)
 - [Source maps issues](/troubleshooting/sourcemaps)
 - [Content Security Policy (CSP)](/troubleshooting/csp)
 - [Testing in localhost](/troubleshooting/localhost)

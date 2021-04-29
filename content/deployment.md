@@ -13,4 +13,4 @@ OpenReplay can be deployed anywhere. Here are step-by-step tutorials for deploym
 - [Digital Ocean](/deployment/deploy-digitalocean)
 - [Kubernetes](/deployment/deploy-kubernetes)
 
-You can also [deploy from source](/deployment/deploy-source). Even though this method takes more effort, it gives a lot of flexibility as you can use the latest code and customize it if needed.
+You can also deploy from source. Even though this method takes more effort, it gives a lot of flexibility as you can use the latest code and customize it if needed.

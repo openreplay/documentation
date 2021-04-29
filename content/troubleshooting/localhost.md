@@ -1,6 +1,6 @@
 ---
-title: "Localhost"
-metaTitle: "Localhost"
+title: "Localhost Testing"
+metaTitle: "Localhost Testing"
 metaDescription: "Testing OpenReplay on localhost/VPN using ngrok."
 ---
 

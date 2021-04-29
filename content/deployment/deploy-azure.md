@@ -20,7 +20,7 @@ OpenReplay stack can be installed on a single machine and Microsoft Azure is an 
 
 1. Make sure your VM is `Running` then connect to it:
 
-```bash
+```shell
 # From your terminal
 SSH_KEY=~/Downloads/openreplay-key.pem # only if you've previously created an SSH key
 chmod 400 $SSH_KEY
