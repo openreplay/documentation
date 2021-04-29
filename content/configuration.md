@@ -1,6 +1,6 @@
 ---
-title: "Configuring OpenReplay"
-metaTitle: "Configuring OpenReplay"
+title: "Configuration"
+metaTitle: "Configuration"
 metaDescription: "How to configure and personalize your OpenReplay instance."
 ---
 

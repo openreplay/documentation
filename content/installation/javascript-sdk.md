@@ -67,7 +67,7 @@ There are a set of options you can pass to the constructor. Only `projectKey` is
 
 Note that excluded data is obscured or suppressed before sending the data to OpenReplay servers. Changes applied to the above options cannot be retroactive and will only apply to newly collected data.
 
-See [Sanitize Data](/installing-or/sanitize-data) for more details.
+See [Sanitize Data](/installation/sanitize-data) for more details.
 
 ### Misc
 

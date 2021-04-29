@@ -30,7 +30,7 @@ const config = {
 		"forcedNavOrder": [
 			"/index",
 			"/deployment",
-			"/installing-or",
+			"/installation",
 			"/configuration", // add trailing slash if enabled above
     	"/plugins",
 			"/integrations",
@@ -38,7 +38,7 @@ const config = {
 		],
     "collapsedNav": [
 			"/deployment",
-			"/installing-or",
+			"/installation",
 			"/configuration",
 			"/plugins",
 			"/integrations",
