@@ -1,2 +1,0 @@
-# documentation
-OpenReplay Documentation
