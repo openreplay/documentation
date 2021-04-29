@@ -1,0 +1,29 @@
+on:
+  push:
+    branches: [master]
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_CONTENT_ACCESS_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_CONTENT_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: eu-west-1
+  algoliaAppId: ${{ secrets.ALGOLIA_APP_ID }}
+  algoliaAdminKey: ${{ secrets.ALGOLIA_ADMIN_KEY }}
+  algoliaSearchKey: ${{ secrets.ALGOLIA_SEARCH_KEY }}
+  gaTrackingId: ${{ secrets.GA_TRACKING_ID }}
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [14.x] 
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: npm install 
+    - run: npm run deploy
