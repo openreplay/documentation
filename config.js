@@ -14,7 +14,7 @@ const config = {
 		"tweetText": "",
 		"links": [{ link:  "", text: "" }],
 		"social": {
-			"github": "https://github.com/openreplay",
+			"github": "https://github.com/openreplay/openreplay",
 			"twitter": "https://twitter.com/OpenReplayHQ",
 			"linkedin": "https://www.linkedin.com/company/18257552",
 		},
