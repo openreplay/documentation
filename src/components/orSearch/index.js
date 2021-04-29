@@ -15,8 +15,8 @@ import {
 import algoliasearch from "algoliasearch/lite"
 
 const searchClient = algoliasearch(
-  config.header.search.algoliaAppId,
-  config.header.search.algoliaSearchKey
+  process.env.ALGOLIA_APP_ID,
+  process.env.ALGOLIA_SEARCH_KEY
 );
 
 
