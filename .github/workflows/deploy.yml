@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [14.x] 
+        node-version: [14.x]
 
     steps:
     - uses: actions/checkout@v2
@@ -26,9 +26,29 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
 
-    - run: echo "gaTrackingId=${{ secrets.GA_TRACKING_ID }}" >> $GITHUB_ENV
-    - run: echo "algoliaAppId=${{ secrets.ALGOLIA_APP_ID }}" >> $GITHUB_ENV
-    - run: echo "algoliaSearchKey=${{ secrets.ALGOLIA_SEARCH_KEY }}" >> $GITHUB_ENV
-    - run: echo "algoliaAdminKey=${{ secrets.ALGOLIA_ADMIN_KEY }}" >> $GITHUB_ENV
-    - run: npm install 
+    - uses: TickX/var-to-dotenv@v1.1.1
+      with:
+        key: 'gaTrackingId'
+        value: ${{secrets.GA_TRACKING_ID}}
+
+    - uses: TickX/var-to-dotenv@v1.1.1
+      with:
+        key: 'algoliaAppId'
+        value: ${{secrets.ALGOLIA_APP_ID}}
+
+    - uses: TickX/var-to-dotenv@v1.1.1
+      with:
+        key: 'algoliaSearchKey'
+        value: ${{secrets.ALGOLIA_SEARCH_KEY}}
+
+    - uses: TickX/var-to-dotenv@v1.1.1
+      with:
+        key: 'algoliaAdminKey'
+        value: ${{secrets.ALGOLIA_ADMIN_KEY}}
+
+    #- run: echo "gaTrackingId=${{ secrets.GA_TRACKING_ID }}" >> $GITHUB_ENV
+    #- run: echo "algoliaAppId=${{ secrets.ALGOLIA_APP_ID }}" >> $GITHUB_ENV
+    #- run: echo "algoliaSearchKey=${{ secrets.ALGOLIA_SEARCH_KEY }}" >> $GITHUB_ENV
+    #- run: echo "algoliaAdminKey=${{ secrets.ALGOLIA_ADMIN_KEY }}" >> $GITHUB_ENV
+    - run: npm install
     - run: npm run deploy
