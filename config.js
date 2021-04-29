@@ -10,7 +10,7 @@ const config = {
 		"logoLink": "https://openreplay.com",
 		"title": "OpenReplay Docs",
 		"githubUrl": "https://github.com/openreplay/documentation",
-		"helpUrl": "",
+		"helpUrl": "https://github.com/openreplay/documentation",
 		"tweetText": "",
 		"links": [{ link:  "", text: "" }],
 		"social": {
@@ -52,7 +52,7 @@ const config = {
 		"description": "The one stop location for tutorials, guides, and information about OpenReplay.",
 		"ogImage": "https://docs.openreplay.com/static/og_image.png",
 		"ogSiteName": "OpenReplay",
-		"docsLocation": "",
+		"docsLocation": "https://github.com/openreplay/documentation",
 		"favicon": "https://docs.openreplay.com/static/favicon.png"
 	},
 	"pwa": {
