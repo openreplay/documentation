@@ -9,7 +9,7 @@ import Loadable from 'react-loadable';
 import LoadingProvider from './mdxComponents/loading';
 
 const help = require('./images/help.svg');
-const isSearchEnabled = config.header.search && config.header.search.enabled ? true : false;
+const isSearchEnabled = config.header.search && config.header.search.enabled ? true : true;
 
 let searchIndices = [];
 if(isSearchEnabled && config.header.search.indexName) {
