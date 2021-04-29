@@ -31,7 +31,7 @@ const config = {
 			"/index",
 			"/deployment",
 			"/installing-or",
-			"/configurations", // add trailing slash if enabled above
+			"/configuration", // add trailing slash if enabled above
     	"/plugins",
 			"/integrations",
 			"/troubleshooting"
