@@ -10,7 +10,7 @@ If you're running OpenReplay behind a proxy, adapt your config so it looks like 
 
 Make sure your proxy is sending the `X-Forwarded-For` and `X-Forwarded-Proto` headers. SSL must also be enabled for OpenReplay to work. The rest of the config should look like this:
 
-```yaml
+```nginx
 location / {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
@@ -24,7 +24,7 @@ location / {
 
 Ensure `proxy`, `proxy_http` and `proxy_html` modules are enabled. SSL too should be configured, the rest of the settings should be similar to this:
 
-```xml
+```apacheconf
 <VirtualHost *:443>
     ProxyPass / http://1.2.3.4 <!-- replace with instance IP -->
     RequestHeader set X-Forwarded-Proto expr=%{REQUEST_SCHEME}
