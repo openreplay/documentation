@@ -10,7 +10,7 @@ import LoadingProvider from './mdxComponents/loading';
 
 const help = require('./images/help.svg');
 const isSearchEnabled = config.header.search && config.header.search.enabled ? true : false;
-
+console.log(isSearchEnabled,config.header.search.algoliaAppId)
 let searchIndices = [];
 if(isSearchEnabled && config.header.search.indexName) {
   searchIndices.push(
