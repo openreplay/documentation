@@ -11,7 +11,7 @@ OpenReplay supports un-minifying JavaScript via source maps. By uploading them t
 Install the sourcemaps NPM module:
 
 ```bash
-npm i @openreplay/sourcemaps-uploader
+npm i @openreplay/sourcemap-uploader
 ```
 
 ## Upload Source Maps to OpenReplay
@@ -19,16 +19,16 @@ npm i @openreplay/sourcemaps-uploader
 Then, you need to set up your build process to create the various source files. Source maps can be uploaded for a **single file**:
 
 ```bash
-sourcemaps-uploader -k API_KEY -i PROJECT_KEY file -m ./dist/app.js.map -u https://mywebsite.com/app.min.js
+sourcemap-uploader -k API_KEY -p PROJECT_KEY file -m ./dist/app.js.map -u https://mywebsite.com/app.min.js
 ```
 
 Or a **directory** including many files:
 
 ```bash
-sourcemaps-uploader -k API_KEY -i PROJECT_KEY dir -m ./dist -u https://mywebsite.com/
+sourcemaps-uploader -k API_KEY -p PROJECT_KEY dir -m ./dist -u https://mywebsite.com/
 ```
 
 - `-k`: API Key ([Preferences > Account](https://app.openreplay.com/client/account)).
-- `-i`: Project Key 'Preferences > Projects'.
+- `-p`: Project Key 'Preferences > Projects'.
 - `-m`: Path to source maps file(s) (can also be a directory).
 - `-u`: URL to the JavaScript asset (if single file) or base URL (in case of a directory).

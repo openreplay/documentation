@@ -17,7 +17,7 @@ Metadata must be explicitly specified from the dashboard from 'Preferences > Met
 Once the key(s) added, in this example `plan`, you can then use the `metadata` method in your code to inject custom user data in the form of a key/value pair (`string`).
 
 ```js
-tracker.metadata('plan', 'free');
+tracker.setMetadata('plan', 'free');
 ```
 
 ## 3. Search for Sessions Recordings using Metadata
