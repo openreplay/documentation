@@ -21,7 +21,7 @@ if(isSearchEnabled && config.header.search.indexName) {
 import Sidebar from "./sidebar";
 
 const LoadableComponent = Loadable({
-  loader: () => import('./orSearch/index'),
+  loader: () => import('./algoliaSearch/index'),
   loading: LoadingProvider,
 });
 
@@ -75,6 +75,7 @@ const Header = ({location}) => (
         }
       } = data;
       const finalLogoLink = logo.link !== '' ? logo.link : '/';
+console.log("Header. Search enabled:", isSearchEnabled)
       return (
         <div className={'navBarWrapper'}>
           <nav className={'navBarDefault'}>

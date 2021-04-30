@@ -66,6 +66,7 @@ const plugins = [
 ];
 // check and add algolia
 if (config.header.search && config.header.search.enabled && config.header.search.algoliaAppId && config.header.search.algoliaAdminKey) {
+  console.log('plugin is active', typeof config.header.search.algoliaAppId, typeof config.header.search.algoliaAdminKey, typeof config.header.search.algoliaSearchKey)
   plugins.push({
     resolve: `gatsby-plugin-algolia`,
     options: {
