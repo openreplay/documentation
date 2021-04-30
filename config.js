@@ -50,10 +50,10 @@ const config = {
 	"siteMetadata": {
 		"title": "OpenReplay Documentation",
 		"description": "The one stop location for tutorials, guides, and information about OpenReplay.",
-		"ogImage": "https://docs.openreplay.com/static/og_image.png",
+		"ogImage": "static/media/og_image.png",
 		"ogSiteName": "OpenReplay",
 		"docsLocation": "https://github.com/openreplay/documentation",
-		"favicon": "https://docs.openreplay.com/static/favicon.png"
+		"favicon": "static/media/favicon.png"
 	},
 	"pwa": {
 		"enabled": false, // disabling this will also remove the existing service worker.
@@ -67,7 +67,7 @@ const config = {
 			"crossOrigin": "use-credentials",
 			icons: [
 				{
-					src: "static/favicon.png",
+					src: "static/media/favicon.png",
 					sizes: `512x512`,
 					type: `image/png`,
 				},
