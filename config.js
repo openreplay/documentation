@@ -2,7 +2,7 @@ const config = {
 	"gatsby": {
 		"pathPrefix": "",
 		"siteUrl": "https://docs.openreplay.com",
-		"gaTrackingId": process.env.GA_TRACKING_ID,
+		"gaTrackingId": "UA-173932112-2",
 		"trailingSlash": false
 	},
 	"header": {
@@ -21,8 +21,8 @@ const config = {
 		"search": {
 			"enabled": true,
 			"indexName": "docs",
-			"algoliaAppId": process.env.ALGOLIA_APP_ID,
-			"algoliaSearchKey": process.env.ALGOLIA_SEARCH_KEY,
+			"algoliaAppId": "U4QCXPQXGS",
+			"algoliaSearchKey": "2a3ef939829cab2c44515086f080f879",
 			"algoliaAdminKey": process.env.ALGOLIA_ADMIN_KEY
 		}
 	},
