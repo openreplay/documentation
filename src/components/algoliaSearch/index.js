@@ -35,7 +35,7 @@ const useClickOutside = (ref, handler, events) => {
 }
 
 
-const Search = ({ className }) => console.log("search component loaded") || (
+const Search = ({ className }) => (
   <InstantSearch searchClient={searchClient} indexName="docs">
   	<Configure
 		  hitsPerPage={5}
@@ -57,7 +57,7 @@ const Autocomplete = ({ hits, currentRefinement, refine, className }) => {
 	      // type="search"
 	      onFocus={()=> setFocus(true)}
 	      value={currentRefinement}
-	      onChange={event => refine(event.currentTarget.value)}
+	      onChange={event => { refine(event.currentTarget.value); setFocus(false); }}
 	    />
 	    <Results className="Search_Results" show={focus && currentRefinement.trim() !== ''} >
 	    	{ hits.length === 0 &&
