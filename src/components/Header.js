@@ -75,7 +75,6 @@ const Header = ({location}) => (
         }
       } = data;
       const finalLogoLink = logo.link !== '' ? logo.link : '/';
-console.log("Header. Search enabled:", isSearchEnabled)
       return (
         <div className={'navBarWrapper'}>
           <nav className={'navBarDefault'}>

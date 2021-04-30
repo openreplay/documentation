@@ -14,8 +14,6 @@ import {
 
 import algoliasearch from "algoliasearch/lite"
 
-console.log('search init', typeof config.header.search.algoliaAppId, typeof config.header.search.algoliaAdminKey, typeof config.header.search.algoliaSearchKey)
-
 const searchClient = algoliasearch(
   config.header.search.algoliaAppId,
   config.header.search.algoliaSearchKey
