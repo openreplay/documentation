@@ -31,7 +31,6 @@ ssh -i $SSH_KEY ubuntu@$INSTANCE_IP
 2. Install OpenReplay:
 
 ```bash
-#! On the VM terminal
 git clone https://github.com/openreplay/openreplay.git
 cd openreplay/scripts/helm && bash install.sh
 ```

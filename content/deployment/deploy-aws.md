@@ -24,7 +24,7 @@ OpenReplay stack can be installed on a single machine and AWS EC2 is an ideal ca
 1. Make sure your instance is `Running` then connect to it:
 
 ```bash
-#! From your terminal
+## From your terminal
 SSH_KEY=~/Downloads/openreplay-key.pem #! wherever you've saved the SSH key
 INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
 chmod 400 $SSH_KEY
