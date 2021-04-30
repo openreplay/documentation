@@ -27,9 +27,10 @@ import trackerNgRx from '@openreplay/tracker-ngrx';
 const tracker = new OpenReplay({
   projectKey: PROJECT_KEY
 });
-tracker.start();
-//...
 const metaReducers = [tracker.use(trackerNgRx(<options>))]; // check list of available options below
+
+tracker.start();
+
 //...
 @NgModule({
   imports: [StoreModule.forRoot(reducers, { metaReducers })]
@@ -50,12 +51,6 @@ import trackerNgRx from '@openreplay/tracker-ngrx/cjs';
 const tracker = new OpenReplay({
   projectKey: PROJECT_KEY
 });
-//...
-function SomeFunctionalComponent() {
-  useEffect(() => { // or componentDidMount in case of Class approach
-    tracker.start();
-  }, [])
-//...
 const metaReducers = [tracker.use(trackerNgRx(<options>))]; // check list of available options below
 //...
   @NgModule({
@@ -63,6 +58,7 @@ const metaReducers = [tracker.use(trackerNgRx(<options>))]; // check list of ava
   })
   export class AppModule {}
 }
+
 ```
 
 ## Options

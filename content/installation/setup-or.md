@@ -17,7 +17,7 @@ If your website supports Google Tag Manager, then you may follow the [GTM step-b
 First install the npm package.
 
 ```bash
-npm i @openreplay/tracker --save
+npm i @openreplay/tracker
 ```
 
 Then, initialize the package from your codebase entry point and start the tracker. You must set the `projectKey` option in the constructor. Its value can can be found in your OpenReplay dashboard under 'Preferences > Projects'.
@@ -42,12 +42,14 @@ import OpenReplay from '@openreplay/tracker/cjs';
 //...
 const tracker = new OpenReplay({
       projectKey: PROJECT_KEY,
-      onStart: () => { tracker.userID('MY_USER_ID'); } // optional
+      onStart: () => { tracker.setUserID('MY_USER_ID'); } // optional
 });
 //...
-  useEffect(() => { // or componentDidMount
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
     tracker.start();
-  }, [])
+  }, []);
+}
 ```
 
 If you would like to go further in configuring the tracker, check [JavaScript SDK](/installation/javascript-sdk#options) for the list of available options.

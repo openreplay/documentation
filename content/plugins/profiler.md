@@ -9,7 +9,7 @@ The profiler plugin allows you to measure your JS functions' performance and cap
 ## Installation
 
 ```bash
-npm i @openreplay/tracker-profiler --save
+npm i @openreplay/tracker-profiler
 ```
 
 ## Usage
@@ -21,16 +21,17 @@ Initialize the tracker and load the plugin into it. Then decorate any function i
 ```js
 import OpenReplay from '@openreplay/tracker';
 import trackerProfiler from '@openreplay/tracker-profiler';
-//...
+
 const tracker = new OpenReplay({
   projectKey: PROJECT_KEY
 });
+const profiler = tracker.use(trackerProfiler());
+
 tracker.start();
-//...
-export const profiler = tracker.use(trackerProfiler());
-//...
-const fn = profiler('call_name')(() => {
-//...
+
+// ...
+const fn = profiler('MyFunction')(() => {
+  // Inspecting function body
 }, thisArg); // thisArg is optional
 ```
 
@@ -45,16 +46,17 @@ import trackerProfiler from '@openreplay/tracker-profiler/cjs';
 const tracker = new OpenReplay({
   projectKey: PROJECT_KEY
 });
+const profiler = tracker.use(trackerProfiler());
+
 //...
-function SomeFunctionalComponent() {
-  useEffect(() => { // or componentDidMount in case of Class approach
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
     tracker.start();
   }, [])
-//...
-export const profiler = tracker.use(trackerProfiler());
-//...
-const fn = profiler('call_name')(() => {
-  //...
-  }, thisArg); // thisArg is optional
 }
+//...
+const fn = profiler('MyFunction')(() => {
+  // Inspecting function body
+}, thisArg); // thisArg is optional
+
 ```

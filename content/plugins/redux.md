@@ -22,15 +22,17 @@ Initialize the tracker then put the generated middleware into your Redux chain.
 import { applyMiddleware, createStore } from 'redux';
 import OpenReplay from '@openreplay/tracker';
 import trackerRedux from '@openreplay/tracker-redux';
-//...
+
 const tracker = new OpenReplay({
   projectKey: PROJECT_KEY
 });
 tracker.start();
+const openReplayMiddleware = tracker.use(trackerRedux(<options>)); // check list of available options below
+
 //...
 const store = createStore(
   reducer,
-  applyMiddleware(tracker.use(trackerRedux(<options>))) // check list of available options below
+  applyMiddleware(openReplayMiddleware) 
 );
 ```
 
@@ -42,21 +44,26 @@ Follow the below example if your app is SSR. Ensure `tracker.start()` is called 
 import { applyMiddleware, createStore } from 'redux';
 import OpenReplay from '@openreplay/tracker/cjs';
 import trackerRedux from '@openreplay/tracker-redux/cjs';
-//...
+
 const tracker = new OpenReplay({
   projectKey: PROJECT_KEY
 });
+const openReplayMiddleware = tracker.use(trackerRedux(<options>)); // check list of available options below
+
+
+const store = createStore( // You can define/use it anywhere in response handlers
+  reducer,
+  applyMiddleware(openReplayMiddleware)
+);
+
 //...
-function SomeFunctionalComponent() {
-  useEffect(() => { // or componentDidMount in case of Class approach
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
     tracker.start();
-  }, [])
-//...
-const store = createStore(
-    reducer,
-    applyMiddleware(tracker.use(trackerRedux(<options>))) // check list of available options below
-  );
+  }, []);
+  //... Use store here
 }
+
 ```
 
 ## Options

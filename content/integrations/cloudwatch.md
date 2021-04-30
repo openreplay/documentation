@@ -37,7 +37,7 @@ const headers = {
   Accept: 'application/json',
   'Content-Type': 'application/json',
 };
-if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+if (tracker.getSessionToken()) { // use window.OpenReplay instead of tracker if you're using the snippet
   headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
 }
 fetch('www.your-backend.com', {

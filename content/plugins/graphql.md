@@ -11,7 +11,7 @@ This plugin allows you to capture `GraphQL` requests and inspect them later on w
 ## Installation
 
 ```bash
-npm i @openreplay/tracker-graphql --save
+npm i @openreplay/tracker-graphql
 ```
 
 ## Usage
@@ -27,30 +27,35 @@ import trackerGraphQL from '@openreplay/tracker-graphql';
 const tracker = new OpenReplay({
   projectKey: PROJECT_KEY,
 });
-tracker.start();
-//...
+
 export const recordGraphQL = tracker.use(trackerGraphQL());
+
+tracker.start();
 ```
 
 ### If your web app is Server-Side-Rendered (SSR)
 
-Follow the below example if your app is SSR. Ensure `tracker.start()` is called once the app is started (in `useEffect` or `componentDidMount`).
+Follow the below example if your app is SSR. Ensure `tracker.start()` is called once the app is started on the client side (in `useEffect` or `componentDidMount`).
 
 ```js
+// openreplay.js
 import OpenReplay from '@openreplay/tracker/cjs';
 import trackerGraphQL from '@openreplay/tracker-graphql/cjs';
-//...
-const tracker = new OpenReplay({
+
+export const tracker = new OpenReplay({
   projectKey: PROJECT_KEY
 });
-//...
-function SomeFunctionalComponent() {
-  useEffect(() => { // or componentDidMount in case of Class approach
+export const recordGraphQL = tracker.use(trackerGraphQL());
+
+// MyApp.js
+import { tracker } from './openreplay';
+
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
     tracker.start();
   }, [])
 }
 //...
-export const recordGraphQL = tracker.use(trackerGraphQL());
 ```
 
 ### Relay
@@ -58,8 +63,9 @@ export const recordGraphQL = tracker.use(trackerGraphQL());
 For [Relay](https://relay.dev/) you should manually put `recordGraphQL` call to the `NetworkLayer` implementation. If you have standard `Network.create` way to implement it, then you should follow the below example.
 
 ```js
-import { recordGraphQL } from 'tracker'; // see above for recordGraphQL definition
 import { Environment } from 'relay-runtime';
+import { recordGraphQL } from './openreplay'; // see above for recordGraphQL definition
+
 //...
 function fetchQuery(operation, variables, cacheConfig, uploadables) {
   return fetch('ENDPOINT', {
@@ -81,9 +87,9 @@ See [Relay Network Layer](https://relay.dev/docs/en/network-layer) for details.
 For [Apollo](https://www.apollographql.com/) you should create a new `ApolloLink` with `recordGraphQL` call and put it to your chain. Here is an example on how to do it.
 
 ```js
-import { recordGraphQL } from 'tracker'; // see above for recordGraphQL definition
 import { ApolloLink } from 'apollo-link';
-//...
+import { recordGraphQL } from './openreplay'; // see above for recordGraphQL definition
+
 const trackerApolloLink = new ApolloLink((operation, forward) => {
   return forward(operation).map(result =>
     recordGraphQL(

@@ -8,7 +8,7 @@ This plugin allows you to capture `VueX` mutations/state and inspect them later 
 
 ## Installation
 ```bash
-npm i @openreplay/tracker-vuex --save
+npm i @openreplay/tracker-vuex
 ```
 
 ## Usage
@@ -24,11 +24,13 @@ import trackerVuex from '@openreplay/tracker-vuex';
 const tracker = new OpenReplay({
   projectKey: PROJECT_KEY
 });
+const vuexPlugin = tracker.use(trackerVuex(<options>));  // check list of available options below
+
 tracker.start();
-//...
+
 const store = new Vuex.Store({
   //...
-  plugins: [tracker.use(trackerVuex(<options>))] // check list of available options below
+  plugins: [vuexPlugin],
 });
 ```
 ### If your web app is Server-Side-Rendered (SSR)
@@ -43,18 +45,15 @@ import trackerVuex from '@openreplay/tracker-vuex/cjs';
 const tracker = new OpenReplay({
   projectKey: PROJECT_KEY
 });
-//...
-function SomeFunctionalComponent() {
-  useEffect(() => { // or componentDidMount in case of Class approach
-    tracker.start();
-  }, [])
-//...
-const store = new Vuex.Store({
+const vuexPlugin = tracker.use(trackerVuex(<options>));  // check list of available options below
+
+cosnt store = new Vuex.Store({
     //...
-    plugins: [tracker.use(trackerVuex(<options>))] // check list of available options below
+    plugins: [vuexPlugin],
   });
 }
 ```
+
 
 ## Options
 

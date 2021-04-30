@@ -9,7 +9,7 @@ This plugin allows you to capture `MobX` events and inspect them later on while 
 ## Installation
 
 ```bash
-npm i @openreplay/tracker-mobx --save
+npm i @openreplay/tracker-mobx
 ```
 
 ## Usage
@@ -42,8 +42,8 @@ const tracker = new OpenReplay({
 });
 tracker.use(trackerMobX(<options>)); // check list of available options below
 //...
-function SomeFunctionalComponent() {
-  useEffect(() => { // or componentDidMount in case of Class approach
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
     tracker.start();
   }, [])
 }

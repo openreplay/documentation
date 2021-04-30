@@ -9,7 +9,7 @@ Getting started with OpenReplay JavaScript SDK.
 ## Installation
 
 ```bash
-npm i @openreplay/tracker --save
+npm i @openreplay/tracker
 ```
 
 ## Usage
@@ -34,12 +34,14 @@ import OpenReplay from '@openreplay/tracker/cjs';
 //...
 const tracker = new OpenReplay({
       projectKey: PROJECT_KEY,
-      onStart: () => { tracker.userID('MY_USER_ID'); } // optional
+      onStart: () => { tracker.setUserID('MY_USER_ID'); } // optional
 });
 //...
-  useEffect(() => { // or componentDidMount
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
     tracker.start();
   }, [])
+}
 ```
 
 ## Options
@@ -50,7 +52,6 @@ There are a set of options you can pass to the constructor. Only `projectKey` is
 
 - `projectKey: string` The ID of the project you're tracking.
 - `sessionToken?: string` The token of the initial session. This is useful when sessions traverse different subdomains on your web app but you want to stitch them into a single recording. In case it's not possible to continue the session (doesn't exist or is finished), the tracker will automatically start a new one. Session token is also useful for many [integrations](/integrations).
-- - `isActive: boolean` To check if tracker is active.
 - `revID?: string` The revision ID of your web app. Useful when searching for issues happening on a specific release version.
 - `consoleMethods: Array<'log' | 'info' | 'warn' | 'error'> | null` The list of console methods to capture. Default: `['log', 'info', 'warn', 'error']`
 - `consoleThrottling?: number` Max number of console entries per second. Default: `30`.

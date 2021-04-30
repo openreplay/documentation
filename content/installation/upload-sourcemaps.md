@@ -29,6 +29,6 @@ sourcemaps-uploader -k API_KEY -p PROJECT_KEY dir -m ./dist -u https://mywebsite
 ```
 
 - `-k`: API Key ([Preferences > Account](https://app.openreplay.com/client/account)).
-- `-p`: Project Key 'Preferences > Projects'.
+- `-p`: Project Key ([Preferences > Projects](https://app.openreplay.com/client/projects)).
 - `-m`: Path to source maps file(s) (can also be a directory).
 - `-u`: URL to the JavaScript asset (if single file) or base URL (in case of a directory).
