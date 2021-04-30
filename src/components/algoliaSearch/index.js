@@ -57,7 +57,7 @@ const Autocomplete = ({ hits, currentRefinement, refine, className }) => {
 	      // type="search"
 	      onFocus={()=> setFocus(true)}
 	      value={currentRefinement}
-	      onChange={event => { refine(event.currentTarget.value); setFocus(false); }}
+	      onChange={event => refine(event.currentTarget.value)}
 	    />
 	    <Results className="Search_Results" show={focus && currentRefinement.trim() !== ''} >
 	    	{ hits.length === 0 &&
@@ -65,7 +65,7 @@ const Autocomplete = ({ hits, currentRefinement, refine, className }) => {
 	    	}
 	    	<ScrollWrapper>
 			    { hits.map(hit => (
-		      	<ItemLink key={hit.objectID} to={hit.slug}>
+		      	<ItemLink key={hit.objectID} to={hit.slug} onCLick={ () => setFocus(false) }>
 			      	<h4>
 			      		<Highlight hit={hit} attribute="title" />
 			      	</h4>
