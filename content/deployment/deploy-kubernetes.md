@@ -21,8 +21,7 @@ The deployment has been tested on the below platforms:
 
 Connect to your cluster then install OpenReplay:
 
-```bash
-# On the instance terminal
+```shellsession
 git clone https://github.com/openreplay/openreplay.git
 cd openreplay/scripts/helm && bash kube-setup.sh
 ```
@@ -56,7 +55,7 @@ Open the `vars.yaml` file with the command `nano openreplay/scripts/helm/vars.ya
 
 Restart OpenReplay NGINX:
 
-```bash
+```shellsession
 cd openreplay/scripts/helm && ./install.sh --app nginx
 ```
 

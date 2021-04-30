@@ -55,7 +55,7 @@ SITE_URL: https://openreplay.mycompany.com
 
 7. Restart the web server:
 
-```bash
+```shellsession
 cd openreplay/scripts/helm && ./openreplay-cli --restart chalice
 ```
 

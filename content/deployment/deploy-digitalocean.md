@@ -19,8 +19,8 @@ OpenReplay stack can be installed on a single machine (droplet) and Digital Ocea
 1. Make sure your droplet is `active` then connect to it:
 
 ```bash
-# From your terminal
-SSH_KEY=~/Downloads/openreplay-key.pem # wherever you've saved the SSH key
+#! From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem #! wherever you've saved the SSH key
 INSTANCE_IP=REPLACE_WITH_DROPLET_PUBLIC_IP
 chmod 400 $SSH_KEY
 ssh -i $SSH_KEY ubuntu@$INSTANCE_IP
@@ -28,8 +28,7 @@ ssh -i $SSH_KEY ubuntu@$INSTANCE_IP
 
 2. Install OpenReplay:
 
-```bash
-# On the droplet terminal
+```shellsession
 git clone https://github.com/openreplay/openreplay.git
 cd openreplay/scripts/helm && bash install.sh
 ```

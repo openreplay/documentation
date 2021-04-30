@@ -13,7 +13,7 @@ Open the `vars.yaml` file with the command `nano openreplay/scripts/helm/vars.ya
 
 Restart nginx:
 
-```bash
+```shellsession
 cd openreplay/scripts/helm && ./install.sh --app nginx
 ```
 
@@ -29,7 +29,7 @@ Then, edit `env.js` in `openreplay/frontend/` and substitute the `CAPTCHA_SITE_K
 
 Finally, restart the web server and rebuild the frontend:
 
-```bash
+```shellsession
 cd openreplay/scripts/helm && ./openreplay-cli --restart chalice
 cd openreplay/frontend && ./build.sh
 ```

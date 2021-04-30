@@ -24,8 +24,8 @@ OpenReplay stack can be installed on a single machine and AWS EC2 is an ideal ca
 1. Make sure your instance is `Running` then connect to it:
 
 ```bash
-# From your terminal
-SSH_KEY=~/Downloads/openreplay-key.pem # wherever you've saved the SSH key
+#! From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem #! wherever you've saved the SSH key
 INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
 chmod 400 $SSH_KEY
 ssh -i $SSH_KEY ubuntu@$INSTANCE_IP
@@ -33,8 +33,7 @@ ssh -i $SSH_KEY ubuntu@$INSTANCE_IP
 
 2. Install OpenReplay:
 
-```bash
-# On the instance terminal
+```shellsession
 git clone https://github.com/openreplay/openreplay.git
 cd openreplay/scripts/helm && bash install.sh
 ```
