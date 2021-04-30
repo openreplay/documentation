@@ -70,7 +70,7 @@ if (config.header.search && config.header.search.enabled && process.env.ALGOLIA_
     resolve: `gatsby-plugin-algolia`,
     options: {
       appId: process.env.ALGOLIA_APP_ID, // algolia application id
-      apiKey: process.env.ALGOLIA_SEARCH_KEY, // algolia admin key to index
+      apiKey: process.env.ALGOLIA_ADMIN_KEY, // algolia admin key to index
       queries,
       chunkSize: 10000, // default: 1000
     }}
