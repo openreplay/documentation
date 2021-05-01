@@ -50,10 +50,10 @@ const config = {
 	"siteMetadata": {
 		"title": "OpenReplay Documentation",
 		"description": "The one stop location for tutorials, guides, and information about OpenReplay.",
-		"ogImage": "static/media/og_image.png",
+		"ogImage": "https://docs.openreplay.com/static/og_image.png",
 		"ogSiteName": "OpenReplay",
 		"docsLocation": "https://github.com/openreplay/documentation",
-		"favicon": "static/media/favicon.png"
+		"favicon": "https://docs.openreplay.com/static/favicon.png"
 	},
 	"pwa": {
 		"enabled": false, // disabling this will also remove the existing service worker.
