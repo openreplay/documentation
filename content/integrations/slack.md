@@ -27,3 +27,7 @@ You can now also use the share button in any recording and communicate your insi
 ## With OpenReplay Cloud
 
 Go to 'Preferences > Integration' and click on Slack. You will be redirected to Slack for authentication and configuration. That's all you have to do. You can then use the share button in any recording and communicate your insights to the rest of the team.
+
+## Troubleshooting
+
+If you encounter any issues, connect to our [Slack](https://slack.openreplay.com) and get help from our community.

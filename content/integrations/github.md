@@ -25,3 +25,7 @@ A 'Create Issue' button would then appear in all recordings so you can quickly c
 ## With OpenReplay Cloud
 
 Go to 'Preferences > Integration' and click on GitHub. You will be redirected to GitHub for authentication. That's all you have to do. A 'Create Issue' button would then appear in all recordings so you can quickly create and assign issues in GitHub.
+
+## Troubleshooting
+
+If you encounter any issues, connect to our [Slack](https://slack.openreplay.com) and get help from our community.

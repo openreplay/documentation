@@ -58,4 +58,4 @@ The name of the tag should be exactly `openReplaySessionToken`.
 
 ## Troubleshooting
 
-If you encounter any issues, connect to our Slack and get help from our community.
+If you encounter any issues, connect to our [Slack](https://slack.openreplay.com) and get help from our community.

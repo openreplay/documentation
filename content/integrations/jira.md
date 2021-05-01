@@ -17,6 +17,9 @@ How to integrate Jira Cloud with OpenReplay.
 
 1. Put your `Username` and `API token` in OpenReplay dashboard under 'Preferences > Integration'
 2. Type in the URL of your Jira Cloud instance
-3. Then select the Project you wish to work on
 
-![Jira Integration in OpenReplay](../static/jira-1.png#center)
+A 'Create Issue' button would then appear in all recordings so you can quickly create and assign issues in Jira.
+
+## Troubleshooting
+
+If you encounter any issues, connect to our [Slack](https://slack.openreplay.com) and get help from our community.
