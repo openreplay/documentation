@@ -46,7 +46,7 @@ Finally, go to your DNS service and create an `A Record` that points to the clus
 
 ### Or bring/generate your SSL certificate
 
-If you don't have a certificate, generate one for your domain (i.e. openreplay.mycompany.com) using Let's Encrypt. Connect to your cluster, run `helm uninstall -n nginx-ingress` then execute `bash openreplay/scripts/certbot.sh` and follow the steps.
+If you don't have a certificate, generate one for your domain (i.e. openreplay.mycompany.com) using Let's Encrypt. Connect to your cluster, run `helm uninstall -n nginx-ingress nginx-ingress` then execute `bash openreplay/scripts/certbot.sh` and follow the steps.
 
 Open the `vars.yaml` file with the command `nano openreplay/scripts/helm/vars.yaml` then substitute:
 - `domain_name`: this is where OpenReplay will be accessible (i.e. openreplay.mycompany.com)
