@@ -42,7 +42,9 @@ On the main benefits of running OpenReplay behind a cloud load balancer is to ha
 
 Then ensure your cluster provisions a [service type](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer) `LoadBalancer` so the traffic from the cloud load balancer  can be directed at OpenReplay backend.
 
-Finally, go to your DNS service and create an `A Record` that points to the cluster using its public IP. You're all set now, OpenReplay should be accessible on your subdomain.
+Finally, go to your DNS service and create an `A Record` that points to the cluster using its public IP.
+
+You're all set now, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 
 ### Or bring/generate your SSL certificate
 
@@ -59,7 +61,7 @@ Restart OpenReplay NGINX:
 cd openreplay/scripts/helm && ./install.sh --app nginx
 ```
 
-Finally, go to your DNS service and create an `A Record` that points to the cluster using its public IP. You're all set now, OpenReplay should be accessible on your subdomain.
+Finally, go to your DNS service and create an `A Record` that points to the cluster using its public IP. You're all set now, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 
 ## Troubleshooting
 

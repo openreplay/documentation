@@ -35,8 +35,9 @@ cd openreplay/scripts/helm
 Then, edit `env.js` in `openreplay/frontend/` and substitute the `CAPTCHA_SITE_KEY` variable with your reCaptcha site key. Finally, rebuild the frontend:
 
 ```shellsession
-cd openreplay/frontend && bash build.sh
-cp -arl public frontend
-minio_pod=$(kubectl get po -n db -l app.kubernetes.io/name=minio -n db --output custom-columns=name:.metadata.name | tail -n+2)
-kubectl -n db cp frontend $minio_pod:/data/
+cd openreplay/frontend
+sudo bash build.sh
+sudo cp -arl public frontend
+minio_pod=$(sudo kubectl get po -n db -l app.kubernetes.io/name=minio -n db --output custom-columns=name:.metadata.name | tail -n+2)
+sudo kubectl -n db cp frontend $minio_pod:/data/
 ```

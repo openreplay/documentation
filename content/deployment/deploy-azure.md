@@ -59,7 +59,7 @@ To enable HTTPS on a custom domain, follow these steps:
 
 Once created, go to Azure DNS (or other external domain registrar) and create an `CNAME Record` that points to the Front Door's hostname.
 
-You're all set now, OpenReplay should be securely accessible on the subdomain you just set up.
+You're all set now, OpenReplay should be securely accessible on the subdomain you just set up. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 
 ### Or bring/generate your SSL certificate
 
@@ -78,7 +78,7 @@ cd openreplay/scripts/helm && ./install.sh --app nginx
 
 Finally, go to Azure DNS (or other external DNS service) and create an `A Record` that points to the instance using its public IP.
 
-You're all set now, OpenReplay should be accessible on your subdomain.
+You're all set now, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 
 ## Troubleshooting
 
