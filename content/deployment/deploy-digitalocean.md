@@ -55,12 +55,12 @@ You're all set now, OpenReplay should be securely accessible on the subdomain yo
 
 ### Or bring/generate your SSL certificate
 
-If you don't have a certificate, generate one for your domain (i.e. openreplay.mycompany.com) using Let's Encrypt. Connect to OpenReplay droplet, run `helm uninstall -n nginx-ingress` then execute `bash openreplay/scripts/certbot.sh` and follow the steps.
+If you don't have a certificate, generate one for your domain (i.e. openreplay.mycompany.com) using Let's Encrypt. Connect to OpenReplay droplet, run `helm uninstall -n nginx-ingress nginx-ingress` then execute `bash openreplay/scripts/certbot.sh` and follow the steps.
 
 Open the `vars.yaml` file with the command `nano openreplay/scripts/helm/vars.yaml` then substitute:
 - `domain_name`: this is where OpenReplay will be accessible (i.e. openreplay.mycompany.com)
-- `nginx_ssl_cert_file_path`: the path to you .cert file (i.e. /home/openreplay/my-cert.crt)
-- `nginx_ssl_key_file_path`: the path to your .pem file (i.e. /home/openreplay/my-key.pem)
+- `nginx_ssl_cert_file_path`: the path to you .cert file (i.e. /root/openreplay/my-cert.crt)
+- `nginx_ssl_key_file_path`: the path to your .pem file (i.e. /root/openreplay/my-key.pem)
 
 Restart OpenReplay NGINX:
 

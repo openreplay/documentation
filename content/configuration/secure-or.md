@@ -25,11 +25,18 @@ OpenReplay supports reCaptcha (v2) for additional security. To enable this prote
 - `CAPTCHA_SERVER`: The URL to your reCaptcha service (e.g. https://www.google.com/recaptcha/api/siteverify)
 - `CAPTCHA_KEY`: You reCaptcha secret key
 
-Then, edit `env.js` in `openreplay/frontend/` and substitute the `CAPTCHA_SITE_KEY` variable with your reCaptcha site key.
-
-Finally, restart the web server and rebuild the frontend:
+Now restart the web server:
 
 ```shellsession
-cd openreplay/scripts/helm && ./openreplay-cli --restart chalice
-cd openreplay/frontend && ./build.sh
+cd openreplay/scripts/helm
+./openreplay-cli --restart chalice
+```
+
+Then, edit `env.js` in `openreplay/frontend/` and substitute the `CAPTCHA_SITE_KEY` variable with your reCaptcha site key. Finally, rebuild the frontend:
+
+```shellsession
+cd openreplay/frontend && bash build.sh
+cp -arl public frontend
+minio_pod=$(kubectl get po -n db -l app.kubernetes.io/name=minio -n db --output custom-columns=name:.metadata.name | tail -n+2)
+kubectl -n db cp frontend $minio_pod:/data/
 ```
