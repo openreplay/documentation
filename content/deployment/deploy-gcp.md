@@ -39,7 +39,7 @@ cd openreplay/scripts/helm && bash install.sh
 
 OpenReplay deals with sensitive user data and therefore requires HTTPS to run. This is mandatory, otherwise the tracker simply wouldn't start recording. Same thing for the dashboard, without HTTPS you won't be able to replay user sessions.
 
-The easiest way to handle SSL in AWS is to setup a load balancer (Google Load Balancing) and run OpenReplay behind it. Another option is to generate or use your own SSL certificate and point your subdomain (i.e. openreplay.mycompany.com) to the OpenReplay instance. More on both options below.
+The easiest way to handle SSL in Google Cloud is to setup a load balancer (Google Load Balancing) and run OpenReplay behind it. Another option is to generate or use your own SSL certificate and point your subdomain (i.e. openreplay.mycompany.com) to the OpenReplay instance. More on both options below.
 
 ### Setup Google load balancer
 

@@ -50,7 +50,7 @@ The easiest way to handle SSL in AWS is to setup a load balancer (ELB) and run O
 2. 'Create Load Balancer' and pick *Application Load Balancer*
 3. Add a listener to HTTPS (keep this one only)
 4. Choose an existing certificate (i.e. *.mycompany.com) or generate a new one from AWS Certificate Manager (ACM). You can also import yours.
-5. Configure Security Groups: Select the security group previously created for the OpenReplay instance
+5. Configure Security Groups: Select the security group previously created for the OpenReplay instance (you can find it 'EC2 Dashboard' under the 'Security' tab)
 6. Configure Routing: Define a name and select `IP` in *Target Type*. Keep the other default parameters
 7. Register Targets: Add the instance's private IP (port 80) click 'Add to list' (the private IP can be found in EC2 dashboard)
 8. Review then 'Create'
@@ -74,7 +74,7 @@ Restart OpenReplay NGINX:
 cd openreplay/scripts/helm && ./install.sh --app nginx
 ```
 
-Finally, go to Route 53 (or other external DNS service) and create an `A Record` that points to the load balancer using its public IP (can be found in EC2 dashboard)
+Finally, go to Route 53 (or other external DNS service) and create an `A Record` that points to instance using its public IP (can be found in EC2 dashboard)
 
 You're all set now, OpenReplay should be accessible on your subdomain.
 
