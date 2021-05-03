@@ -1,3 +1,9 @@
+<p align="center">
+  <a href="https://openreplay.com">
+    <img src="static/media/logo.svg" height="70">
+  </a>
+</p>
+
 OpenReplay is an open-source session replay stack that let's you see what users do on your web app, helping you troubleshoot issues faster.
 
 ## Getting Started
