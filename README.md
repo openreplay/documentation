@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://docs.openreplay.com">
-    <img src="static/media/logo.png" height="50">
+    <img src="static/media/logo.png" height="70">
   </a>
 </p>
 
