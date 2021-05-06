@@ -15,7 +15,7 @@ OpenReplay stack can be installed on a single machine and AWS EC2 is an ideal ca
 5. Configure Instance Details: Tune the Network/Subnet parameters if needed or simply keep the defaults
 6. Add Storage: Set the size to 50 GB (General Purpose SSD (gp2))
 7. Add Tags: Tune the parameters or keep the defaults
-8. Security Groups: Keep the existing SSH rule and add a new one for HTTPS (443) (source: 0.0.0.0/0)
+8. Security Groups: Keep the existing SSH rule and add 2 more for HTTP (80) and HTTPS (443) (source: 0.0.0.0/0)
 9. Click 'Review and Launch'
 10. Create/download the SSH key then hit 'Launch instances'
 
