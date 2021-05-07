@@ -12,16 +12,16 @@ To enable SMTP, edit `chalice.yaml` in `openreplay/scripts/helm/app/` and update
 
 | Variable | Default | Description |
 |----------|-------------|-------------|
-| `EMAIL_HOST` |  | SMTP hostname (i.e. smtp.mailgun.org) |
-| `EMAIL_PORT` | 587 | SMTP port |
-| `EMAIL_USER` |  | SMTP username|
-| `EMAIL_PASSWORD` |  | SMTP password |
-| `EMAIL_USE_TLS` | true | For using TLS when connecting to the SMTP host |
-| `EMAIL_USE_SSL` | false | For using SSL when connecting to the SMTP host |
-| `EMAIL_SSL_KEY` |  | Path to your SSL key (if applicable) |
-| `EMAIL_SSL_CERT` |  | Path to your SSL certificate (if applicable) |
-| `EMAIL_FROM` | do-not-reply@openreplay.com | The sender email |
-| `SITE_URL` | https://app.openreplay.com | The URL of your OpenReplay instance |
+| EMAIL_HOST |  | SMTP hostname (i.e. smtp.mailgun.org) |
+| EMAIL_PORT | 587 | SMTP port |
+| EMAIL_USER |  | SMTP username|
+| EMAIL_PASSWORD |  | SMTP password |
+| EMAIL_USE_TLS | true | For using TLS when connecting to the SMTP host |
+| EMAIL_USE_SSL | false | For using SSL when connecting to the SMTP host |
+| EMAIL_SSL_KEY |  | Path to your SSL key (if applicable) |
+| EMAIL_SSL_CERT |  | Path to your SSL certificate (if applicable) |
+| EMAIL_FROM | do-not-reply@openreplay.com | The sender email |
+| SITE_URL | https://app.openreplay.com | The URL of your OpenReplay instance |
 
 Then, restart the web server:
 
