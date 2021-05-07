@@ -34,7 +34,8 @@ const config = {
 			"/configuration", // add trailing slash if enabled above
     	"/plugins",
 			"/integrations",
-			"/troubleshooting"
+			"/troubleshooting",
+			"/structure"
 		],
     "collapsedNav": [
 			"/deployment",
@@ -42,7 +43,8 @@ const config = {
 			"/configuration",
 			"/plugins",
 			"/integrations",
-			"/troubleshooting"
+			"/troubleshooting",
+			"structure"
     ],
 		"frontLine": false,
 		"ignoreIndex": false,
