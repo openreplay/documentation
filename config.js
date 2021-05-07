@@ -44,7 +44,7 @@ const config = {
 			"/plugins",
 			"/integrations",
 			"/troubleshooting",
-			"structure"
+			"/structure"
     ],
 		"frontLine": false,
 		"ignoreIndex": false,
