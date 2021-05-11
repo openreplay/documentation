@@ -34,18 +34,20 @@ The easiest way to handle SSL in Google Cloud is to setup a load balancer (Googl
 ### Setup Google load balancer (option 1)
 
 First step is to add an instance group which is required later for the load balancer:
+
 1. Go to 'Compute Engine' > 'Instance Groups'
 2. 'Create Instance Group' and select *New unmanaged instance group*
 3. Pick your preferred 'Location' then select the 'Network' and choose the OpenReplay VM instance
 4. Click 'Create'
 
 Now it's time to create the load balancer:
+
 1. Go to 'Network Services' > 'Load Balancing'
 2. 'Create Load Balancer' and pick *HTTP(S) Load Balancing*
 3. Choose 'From Internet to my VMs' then click 'Continue'
 4. Start with 'Backend configuration' and click on 'Backend services' > 'Create a backend service'
-5. Select *Instance group* for 'Backend type'. In 'New backend' choose the instance group you previously created then hit 'Done'.
-6. 'Create another health check' in 'Health Check'. Choose HTTP for the 'Protocol' and 'Port' 80 while keeping the other default values, 'Save and continue'.
+5. Select *Instance group* for 'Backend type'. In 'Backends' > 'New backend', choose the instance group you previously created, set the port to `80` then hit 'Done'.
+6. Scroll down to 'Health Check' and 'Create a health check'. Choose HTTP for the 'Protocol' and 'Port' 80 while keeping the other default values. Hit 'Save'.
 7. Click 'Create'
 8. In 'Frontend configuration', choose HTTPS for 'Protocol' then in 'Certificate' create a new certificate (managed by Google) or bring yours. Hit 'Done'.
 9. Review then click 'Create'
