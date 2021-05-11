@@ -35,10 +35,10 @@ If your Kubernetes cluster is in the cloud (like EKS, AKS or GKE) then the easie
 ### Setup a cloud load balancer (option 1)
 
 On the main benefits of running OpenReplay behind a cloud load balancer is to have the certificate managed by the cloud provider. Below are step-by-step guides on how to create:
-- [AWS - Elastic Load Balancing](/deployment/deploy-aws/#setupawsloadbalancer)
-- [Google - Cloud Load Balancing](/deployment/deploy-gcp/#setupgoogleloadbalancer)
-- [Azure - Front Door](/deployment/deploy-azure/#setupazurefrontdoor)
-- [Digital Ocean - Load Balancer](/deployment/deploy-digitalocean/#setupdigitaloceanloadbalancer)
+- [AWS - Elastic Load Balancing](/deployment/deploy-aws#setupawsloadbalancer(option1))
+- [Google - Cloud Load Balancing](/deployment/deploy-gcp#setupgoogleloadbalancer(option1))
+- [Azure - Front Door](/deployment/deploy-azure#setupazurefrontdoor(option1))
+- [Digital Ocean - Configure TLS/SSL](/deployment/deploy-digitalocean##configuretls/ssl)
 
 Then ensure your cluster provisions a [service type](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer) `LoadBalancer` so the traffic from the cloud load balancer  can be directed at OpenReplay backend.
 
