@@ -32,7 +32,7 @@ OpenReplay deals with sensitive user data and therefore requires HTTPS to run. T
 
 If your Kubernetes cluster is in the cloud (like EKS, AKS or GKE) then the easiest way to handle SSL is to setup a cloud load balancer and run your cluster behind it. Another option is to generate or use your own SSL certificate and point your subdomain (i.e. openreplay.mycompany.com) to your cluster. More on both options below.
 
-### Setup a cloud load balancer
+### Setup a cloud load balancer (option 1)
 
 On the main benefits of running OpenReplay behind a cloud load balancer is to have the certificate managed by the cloud provider. Below are step-by-step guides on how to create:
 - [AWS - Elastic Load Balancing](/deployment/deploy-aws/#setupawsloadbalancer)
@@ -46,9 +46,11 @@ Finally, go to your DNS service and create an `A Record` that points to the clus
 
 You're all set now, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 
-### Or bring/generate your SSL certificate
+### Bring/generate your SSL certificate (option 2)
 
-If you don't have a certificate, generate one for your domain (i.e. openreplay.mycompany.com) using Let's Encrypt. Connect to your cluster, run `helm uninstall -n nginx-ingress nginx-ingress` then execute `bash openreplay/scripts/certbot.sh` and follow the steps.
+Alternatively to creating a load balancer, you can bring (or generate) your own SSL certificate.
+
+If you don't have a certificate, generate one for your domain (i.e. openreplay.mycompany.com) using Let's Encrypt. Connect to your OpenReplay cluster, run `helm uninstall -n nginx-ingress nginx-ingress` then execute `bash openreplay/scripts/certbot.sh` and follow the steps (but first make sure your subdomain points to the cluster using its public IP).
 
 Open the `vars.yaml` file with the command `vi openreplay/scripts/helm/vars.yaml` then substitute:
 - `domain_name`: this is where OpenReplay will be accessible (i.e. openreplay.mycompany.com)

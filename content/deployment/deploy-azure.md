@@ -41,7 +41,7 @@ OpenReplay deals with sensitive user data and therefore requires HTTPS to run. T
 
 One way to handle SSL in Azure is to setup Front Door and run OpenReplay behind it. Another option is to generate or use your own SSL certificate and point your subdomain (i.e. openreplay.mycompany.com) to the OpenReplay instance. More on both options below.
 
-### Setup Azure Front Door
+### Setup Azure Front Door (option 1)
 
 1. Select 'Create a resource' > 'Select Networking' > 'See All' > Front Door
 2. Select 'Subscription' and create new 'Resource group' in 'Basics' tab
@@ -61,9 +61,11 @@ Once created, go to Azure DNS (or other external domain registrar) and create an
 
 You're all set now, OpenReplay should be securely accessible on the subdomain you just set up. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 
-### Or bring/generate your SSL certificate
+### Bring/generate your SSL certificate (option 2)
 
-If you don't have a certificate, generate one for your domain (i.e. openreplay.mycompany.com) using Let's Encrypt. Connect to OpenReplay VM, run `helm uninstall -n nginx-ingress nginx-ingress` then execute `bash openreplay/scripts/certbot.sh` and follow the steps.
+Alternatively to creating a load balancer, you can bring (or generate) your own SSL certificate.
+
+If you don't have a certificate, generate one for your domain (i.e. openreplay.mycompany.com) using Let's Encrypt. Connect to OpenReplay VM, run `helm uninstall -n nginx-ingress nginx-ingress` then execute `bash openreplay/scripts/certbot.sh` and follow the steps (but first make sure your subdomain points to the VM using its public IP).
 
 Open the `vars.yaml` file with the command `vi openreplay/scripts/helm/vars.yaml` then substitute:
 - `domain_name`: this is where OpenReplay will be accessible (i.e. openreplay.mycompany.com)
@@ -76,7 +78,7 @@ Restart OpenReplay NGINX:
 cd openreplay/scripts/helm && ./install.sh --app nginx
 ```
 
-Finally, go to Azure DNS (or other external DNS service) and create an `A Record` that points to the instance using its public IP.
+Finally, go to Azure DNS (or other external DNS service) and create an `A Record` that points to the VM using its public IP.
 
 You're all set now, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 

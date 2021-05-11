@@ -18,17 +18,7 @@ OpenReplay stack can be installed on a single machine and Google Cloud is an ide
 
 ## Deploy OpenReplay
 
-1. Make sure your instance is `Running` then connect to it:
-
-```bash
-#! From your terminal
-SSH_KEY=~/Downloads/openreplay-key.pem #! wherever you've saved the SSH key
-INSTANCE_IP=REPLACE_WITH_VM_PUBLIC_IP
-chmod 400 $SSH_KEY
-ssh -i $SSH_KEY ubuntu@$INSTANCE_IP
-```
-
-2. Install OpenReplay:
+Once your instance is `Running`, connect to it by hitting the `SSH` button then install OpenReplay:
 
 ```bash
 git clone https://github.com/openreplay/openreplay.git
@@ -41,7 +31,7 @@ OpenReplay deals with sensitive user data and therefore requires HTTPS to run. T
 
 The easiest way to handle SSL in Google Cloud is to setup a load balancer (Google Load Balancing) and run OpenReplay behind it. Another option is to generate or use your own SSL certificate and point your subdomain (i.e. openreplay.mycompany.com) to the OpenReplay instance. More on both options below.
 
-### Setup Google load balancer
+### Setup Google load balancer (option 1)
 
 First step is to add an instance group which is required later for the load balancer:
 1. Go to 'Compute Engine' > 'Instance Groups'
@@ -64,9 +54,11 @@ Once created, go to Cloud DNS (or other external DNS service) and create an `A R
 
 You're all set now, OpenReplay should be securely accessible on the subdomain you just set up. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 
-### Or bring/generate your SSL certificate
+### Bring/generate your SSL certificate (option 2)
 
-If you don't have a certificate, generate one for your domain (i.e. openreplay.mycompany.com) using Let's Encrypt. Connect to OpenReplay VM, run `helm uninstall -n nginx-ingress nginx-ingress` then execute `bash openreplay/scripts/certbot.sh` and follow the steps.
+Alternatively to creating a load balancer, you can bring (or generate) your own SSL certificate.
+
+If you don't have a certificate, generate one for your domain (i.e. openreplay.mycompany.com) using Let's Encrypt. Connect to OpenReplay VM, run `helm uninstall -n nginx-ingress nginx-ingress` then execute `bash openreplay/scripts/certbot.sh` and follow the steps (but first make sure your subdomain points to the VM using its public IP).
 
 Open the `vars.yaml` file with the command `vi openreplay/scripts/helm/vars.yaml` then substitute:
 - `domain_name`: this is where OpenReplay will be accessible (i.e. openreplay.mycompany.com)

@@ -44,7 +44,7 @@ OpenReplay deals with sensitive user data and therefore requires HTTPS to run. T
 
 The easiest way to handle SSL in AWS is to setup a load balancer (ELB) and run OpenReplay behind it. Another option is to generate or use your own SSL certificate and point your subdomain (i.e. openreplay.mycompany.com) to the OpenReplay instance. More on both options below.
 
-### Setup AWS load balancer
+### Setup AWS load balancer (option 1)
 
 1. Go to 'EC2' > 'Load Balancers'
 2. 'Create Load Balancer' and pick *Application Load Balancer*
@@ -59,9 +59,11 @@ Once created, go to Route 53 (or other external DNS service) and create an `A Re
 
 You're all set now, OpenReplay should be securely accessible on the subdomain you just set up. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 
-### Or bring/generate your SSL certificate
+### Bring/generate your SSL certificate (option 2)
 
-If you don't have a certificate, generate one for your domain (i.e. openreplay.mycompany.com) using Let's Encrypt. Connect to OpenReplay EC2 instance, run `helm uninstall -n nginx-ingress nginx-ingress` then execute `bash openreplay/scripts/certbot.sh` and follow the steps.
+Alternatively to creating a load balancer, you can bring (or generate) your own SSL certificate.
+
+If you don't have a certificate, generate one for your domain (i.e. openreplay.mycompany.com) using Let's Encrypt. Connect to OpenReplay EC2 instance, run `helm uninstall -n nginx-ingress nginx-ingress` then execute `bash openreplay/scripts/certbot.sh` and follow the steps (but first make sure your subdomain points to the instance using its public IP).
 
 Open the `vars.yaml` file with the command `vi openreplay/scripts/helm/vars.yaml` then substitute:
 - `domain_name`: this is where OpenReplay will be accessible (i.e. openreplay.mycompany.com)
