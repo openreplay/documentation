@@ -52,7 +52,7 @@ Restart OpenReplay NGINX:
 cd openreplay/scripts/helm && ./install.sh --app nginx
 ```
 
-Finally, go to 'Manage' > 'Networking' > 'Domains' (or other external DNS service) and create an `A Record` that points to the droplet using its public IP (can be found in Droplets tab).
+If you haven't yet done that, go to 'Manage' > 'Networking' > 'Domains' (or other external DNS service) and create an `A Record` that points to the droplet using its public IP (can be found in Droplets tab).
 
 You're all set now, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 

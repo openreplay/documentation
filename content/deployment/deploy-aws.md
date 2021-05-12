@@ -76,7 +76,7 @@ Restart OpenReplay NGINX:
 cd openreplay/scripts/helm && ./install.sh --app nginx
 ```
 
-Finally, go to Route 53 (or other external DNS service) and create an `A Record` that points to instance using its public IP (can be found in EC2 dashboard)
+If you haven't yet done that, go to Route 53 (or other external DNS service) and create an `A Record` that points to instance using its public IP (can be found in EC2 dashboard)
 
 You're all set now, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 

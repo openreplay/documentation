@@ -80,7 +80,7 @@ cd openreplay/scripts/helm && ./install.sh --app nginx
 
 Finally, go to Azure DNS (or other external DNS service) and create an `A Record` that points to the VM using its public IP.
 
-You're all set now, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
+If you haven't yet done that, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 
 ## Troubleshooting
 
