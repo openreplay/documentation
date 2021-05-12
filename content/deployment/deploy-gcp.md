@@ -12,7 +12,7 @@ OpenReplay stack can be installed on a single machine and Google Cloud is an ide
 2. 'Create Instance'
 3. Select your preferred 'region' and 'zone'
 4. Choose your machine type. The minimum specs are `2 vCPUs, 8 GB of RAM, 50 GB of storage`. So, we recommend the `e2-standard-2` (or an equivalent) for a low/moderate volume. If you're expecting high traffic, you should scale from here.
-4. Change your book disk to *Ubuntu Server 20.04 LTS*, then pick *SSD persistent disk* for the boot disk type and set the size to 50 GB.
+4. Change your book disk to *Ubuntu 20.04 LTS*, then pick *SSD persistent disk* for the boot disk type and set the size to 50 GB.
 5. Check both 'Allow HTTP traffic' and 'Allow HTTPS traffic' in Firewall
 9. Click 'Create'
 
