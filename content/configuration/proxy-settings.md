@@ -16,7 +16,7 @@ location / {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header Host $http_host;
         proxy_redirect off;
-        proxy_pass http://1.2.3.4; # replace with instance IP
+        proxy_pass http://1.2.3.4; # replace with OpenReplay instance IP
     }
 ```
 

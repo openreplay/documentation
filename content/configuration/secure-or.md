@@ -11,13 +11,14 @@ Open the `vars.yaml` file with `nano openreplay/scripts/helm/vars.yaml` then sub
 - `nginx_ssl_cert_file_path`: the path to you .cert file (i.e. /home/openreplay/my-cert.crt)
 - `nginx_ssl_key_file_path`: the path to your .pem file (i.e. /home/openreplay/my-key.pem)
 
-Restart nginx:
+Restart NGINX (and choose whether to disable the default HTTP to HTTPS redirection using the `NGINX_REDIRECT_HTTPS` variable):
 
-```shellsession
-cd openreplay/scripts/helm && ./install.sh --app nginx
+```bash
+cd openreplay/scripts/helm
+NGINX_REDIRECT_HTTPS=0 ./install.sh --app nginx
 ```
 
-If you don't have a certificate, generate one for your domain (i.e. openreplay.mycompany.com) using Let's Encrypt. Connect to OpenReplay instance, run `helm uninstall -n nginx-ingress` then execute `bash openreplay/scripts/certbot.sh` and follow the steps.
+If you don't have a certificate, generate one for your domain (i.e. openreplay.mycompany.com) using Let's Encrypt. Connect to OpenReplay instance, run `helm uninstall -n nginx-ingress nginx-ingress` then execute `bash openreplay/scripts/certbot.sh` and follow the steps.
 
 ## Set reCaptcha
 
@@ -27,14 +28,14 @@ OpenReplay supports reCaptcha (v2) for additional security. To enable this prote
 
 Now restart the web server:
 
-```shellsession
+```bash
 cd openreplay/scripts/helm
 ./openreplay-cli --restart chalice
 ```
 
 Then, edit `env.js` in `openreplay/frontend/` and substitute the `CAPTCHA_SITE_KEY` variable with your reCaptcha site key. Finally, rebuild the frontend:
 
-```shellsession
+```bash
 cd openreplay/frontend
 sudo bash build.sh
 sudo cp -arl public frontend
