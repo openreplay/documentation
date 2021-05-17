@@ -26,6 +26,8 @@ git clone https://github.com/openreplay/openreplay.git
 cd openreplay/scripts/helm && bash kube-setup.sh
 ```
 
+> **Note:** You'll be prompted to provide the domain on which OpenReplay will be running (e.g. openreplay.mycompany.com). This is required to continue the installation.
+
 ## Configure TLS/SSL
 
 OpenReplay deals with sensitive user data and therefore requires HTTPS to run. This is mandatory, otherwise the tracker simply wouldn't start recording. Same thing for the dashboard, without HTTPS you won't be able to replay user sessions.
@@ -42,7 +44,7 @@ On the main benefits of running OpenReplay behind a cloud load balancer is to ha
 
 Then ensure your cluster provisions a [service type](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer) `LoadBalancer` so the traffic from the cloud load balancer  can be directed at OpenReplay backend.
 
-Finally, go to your DNS service and create an `A Record` that points to the cluster using its public IP.
+Finally, go to your DNS service provider and create an `A Record` that points to the cluster using its public IP.
 
 You're all set now, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 
@@ -64,7 +66,7 @@ cd openreplay/scripts/helm
 NGINX_REDIRECT_HTTPS=1 ./install.sh --app nginx
 ```
 
-If you haven't yet done that, go to your DNS service and create an `A Record` that points to the cluster using its public IP.
+If you haven't yet done that, go to your DNS service provider and create an `A Record` that points to the cluster using its public IP.
 
 You're all set now, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 

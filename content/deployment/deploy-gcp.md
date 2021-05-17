@@ -12,7 +12,7 @@ OpenReplay stack can be installed on a single machine and Google Cloud is an ide
 2. Click 'Create Instance'
 3. Select your preferred 'region' and 'zone'
 4. Choose your machine type. The minimum specs are `2 vCPUs, 8 GB of RAM, 50 GB of storage`. So, we recommend the `e2-standard-2` (or an equivalent) for a low/moderate volume. If you're expecting high traffic, you should scale from here.
-4. Change your book disk to *Ubuntu 20.04 LTS*, then pick *SSD persistent disk* for the boot disk type and set the size to 50 GB.
+4. Change your boot disk to *Ubuntu 20.04 LTS*, then pick *SSD persistent disk* for the boot disk type and set the size to 50 GB.
 5. Check both 'Allow HTTP traffic' and 'Allow HTTPS traffic' in Firewall
 9. Click 'Create'
 
@@ -24,6 +24,8 @@ Once your instance is `Running`, connect to it by hitting the `SSH` button then 
 git clone https://github.com/openreplay/openreplay.git
 cd openreplay/scripts/helm && bash install.sh
 ```
+
+> **Note:** You'll be prompted to provide the domain on which OpenReplay will be running (e.g. openreplay.mycompany.com). This is required to continue the installation.
 
 ## Configure TLS/SSL
 
@@ -52,7 +54,7 @@ Now it's time to create the load balancer:
 8. In 'Frontend configuration', choose HTTPS for 'Protocol' then in 'Certificate' create a new certificate (managed by Google) or bring yours. Hit 'Done'.
 9. Review then click 'Create'
 
-Once created, go to Cloud DNS (or other external DNS service) and create an `A Record` that points to the load balancer using its IP (can be found in Load Balancing dashboard).
+Once created, go to Cloud DNS (or your DNS service provider) and create an `A Record` that points to the load balancer using its IP (can be found in Load Balancing dashboard).
 
 You're all set now, OpenReplay should be securely accessible on the subdomain you just set up. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 
@@ -76,7 +78,7 @@ NGINX_REDIRECT_HTTPS=1 ./install.sh --app nginx
 
 You can enable the HTTP to HTTPS redirection using `NGINX_REDIRECT_HTTPS`
 
-If you haven't yet done that, go to Cloud DNS (or other external DNS service) and create an `A Record` that points to the VM using its public IP (can be found in Compute Engine dashboard).
+If you haven't yet done that, go to Cloud DNS (or your DNS service provider) and create an `A Record` that points to the VM using its public IP (can be found in Compute Engine dashboard).
 
 You're all set now, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 

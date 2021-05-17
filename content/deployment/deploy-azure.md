@@ -35,6 +35,8 @@ git clone https://github.com/openreplay/openreplay.git
 cd openreplay/scripts/helm && bash install.sh
 ```
 
+> **Note:** You'll be prompted to provide the domain on which OpenReplay will be running (e.g. openreplay.mycompany.com). This is required to continue the installation.
+
 ## Configure TLS/SSL
 
 OpenReplay deals with sensitive user data and therefore requires HTTPS to run. This is mandatory, otherwise the tracker simply wouldn't start recording. Same thing for the dashboard, without HTTPS you won't be able to replay user sessions.
@@ -57,7 +59,7 @@ To enable HTTPS on a custom domain, follow these steps:
 3. Under 'Custom domain HTTPS' section, select 'Enabled', then 'Front Door managed' as the certificate source
 4. 'Save' then continue to Validate the domain.
 
-Once created, go to Azure DNS (or other external domain registrar) and create an `CNAME Record` that points to the Front Door's hostname.
+Once created, go to Azure DNS (or your DNS service provider) and create an `CNAME Record` that points to the Front Door's hostname.
 
 You're all set now, OpenReplay should be securely accessible on the subdomain you just set up. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 
@@ -79,7 +81,7 @@ cd openreplay/scripts/helm
 NGINX_REDIRECT_HTTPS=1 ./install.sh --app nginx
 ```
 
-Finally, go to Azure DNS (or other external DNS service) and create an `A Record` that points to the VM using its public IP.
+Finally, go to Azure DNS (or your DNS service provider) and create an `A Record` that points to the VM using its public IP.
 
 If you haven't yet done that, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 

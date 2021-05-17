@@ -37,6 +37,7 @@ ssh -i $SSH_KEY ubuntu@$INSTANCE_IP
 git clone https://github.com/openreplay/openreplay.git
 cd openreplay/scripts/helm && bash install.sh
 ```
+> **Note:** You'll be prompted to provide the domain on which OpenReplay will be running (e.g. openreplay.mycompany.com). This is required to continue the installation.
 
 ## Configure TLS/SSL
 
@@ -55,7 +56,7 @@ The easiest way to handle SSL in AWS is to setup a load balancer (ELB) and run O
 7. Register Targets: Add the instance's private IP (port 80) click 'Add to list' (the private IP can be found in EC2 dashboard)
 8. Review then 'Create'
 
-Once created, go to Route 53 (or other external DNS service) and create an `A Record` that points to the load balancer using its DNS name (can be found in ELB dashboard).
+Once created, go to Route 53 (or your DNS service provider) and create an `A Record` that points to the load balancer using its DNS name (can be found in ELB dashboard).
 
 You're all set now, OpenReplay should be securely accessible on the subdomain you just set up. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 
@@ -77,7 +78,7 @@ cd openreplay/scripts/helm
 NGINX_REDIRECT_HTTPS=1 ./install.sh --app nginx
 ```
 
-If you haven't yet done that, go to Route 53 (or other external DNS service) and create an `A Record` that points to instance using its public IP (can be found in EC2 dashboard)
+If you haven't yet done that, go to Route 53 (or your DNS service provider) and create an `A Record` that points to instance using its public IP (can be found in EC2 dashboard)
 
 You're all set now, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 
