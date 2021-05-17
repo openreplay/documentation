@@ -46,11 +46,11 @@ Open the `vars.yaml` file with the command `vi openreplay/scripts/helm/vars.yaml
 - `nginx_ssl_cert_file_path`: the path to you .cert file (i.e. /root/openreplay/my-cert.crt)
 - `nginx_ssl_key_file_path`: the path to your .pem file (i.e. /root/openreplay/my-key.pem)
 
-Restart OpenReplay NGINX (and choose whether to disable the default HTTP to HTTPS redirection using the `NGINX_REDIRECT_HTTPS` variable):
+Restart OpenReplay NGINX (and choose whether to enable the default HTTP to HTTPS redirection using the `NGINX_REDIRECT_HTTPS` variable):
 
 ```bash
 cd openreplay/scripts/helm
-NGINX_REDIRECT_HTTPS=0 ./install.sh --app nginx
+NGINX_REDIRECT_HTTPS=1 ./install.sh --app nginx
 ```
 
 If you haven't yet done that, go to 'Manage' > 'Networking' > 'Domains' (or other external DNS service) and create an `A Record` that points to the droplet using its public IP (can be found in Droplets tab).

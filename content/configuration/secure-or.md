@@ -11,11 +11,11 @@ Open the `vars.yaml` file with `nano openreplay/scripts/helm/vars.yaml` then sub
 - `nginx_ssl_cert_file_path`: the path to you .cert file (i.e. /home/openreplay/my-cert.crt)
 - `nginx_ssl_key_file_path`: the path to your .pem file (i.e. /home/openreplay/my-key.pem)
 
-Restart NGINX (and choose whether to disable the default HTTP to HTTPS redirection using the `NGINX_REDIRECT_HTTPS` variable):
+Restart NGINX (and choose whether to enable the default HTTP to HTTPS redirection using the `NGINX_REDIRECT_HTTPS` variable):
 
 ```bash
 cd openreplay/scripts/helm
-NGINX_REDIRECT_HTTPS=0 ./install.sh --app nginx
+NGINX_REDIRECT_HTTPS=1 ./install.sh --app nginx
 ```
 
 If you don't have a certificate, generate one for your domain (i.e. openreplay.mycompany.com) using Let's Encrypt. Connect to OpenReplay instance, run `helm uninstall -n nginx-ingress nginx-ingress` then execute `bash openreplay/scripts/certbot.sh` and follow the steps.
