@@ -21,7 +21,7 @@ To enable SMTP, edit `chalice.yaml` in `openreplay/scripts/helm/app/` and update
 | EMAIL_SSL_KEY |  | Path to your SSL key (if applicable) |
 | EMAIL_SSL_CERT |  | Path to your SSL certificate (if applicable) |
 | EMAIL_FROM | do-not-reply@openreplay.com | The sender email |
-| SITE_URL | https://app.openreplay.com | The URL of your OpenReplay instance |
+| SITE_URL | https:// openreplay.mycompany.com | The URL of your OpenReplay instance |
 
 Then, restart the web server:
 
@@ -43,7 +43,7 @@ You can test the setup by inviting yourself (using another email) as a new team 
 ```yaml
 EMAIL_HOST: smtp.eu.mailgun.org # from SMTP settings section
 EMAIL_PORT: 587
-EMAIL_USER: openreplay@m.mycompany.com # from SMTP credentials section
+EMAIL_USER: openreplay@mycompany.com # from SMTP credentials section
 EMAIL_PASSWORD: password # the one copied when you created SMTP credentials
 EMAIL_USE_TLS: true
 EMAIL_USE_SSL: false
