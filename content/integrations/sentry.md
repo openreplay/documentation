@@ -24,14 +24,35 @@ Then paste them in OpenReplay dashboard under 'Preferences > Integration' alongs
 
 ## 3. Propagate openReplaySessionToken
 
-In order for OpenReplay to associate a Sentry event with the recorded user session, a unique token has to be propagated from your frontend to your backend on each request you want to track. If you're relying on Sentry on your frontend, you can follow the below example.
+
+In order for OpenReplay to associate a Sentry event with the recorded user session, Sentry event should be tagged with unique token.  
+
+### Frontend
+If you're relying on Sentry on your frontend, you can follow the below example.
 
 ```javascript
-if (tracker.getSessionToken()) // or window.OpenReplay instead of tracker if you're using the snippet
-{ Raven.setTagsContext({openReplaySessionToken: tracker.getSessionToken()}); }
+import OpenReplay from "@openreplay/tracker";
+import * as Sentry from "@sentry/browser";
+
+
+const tracker = new OpenReplay({
+	projectKey: MY_PROJECT_KEY,
+	onStart: ({ sessionToken }) => {
+	  Sentry.setTag("openReplaySessionToken", sessionToken);
+	},
+})
+```
+Or in case of snippet: 
+```javascript
+if (window.OpenReplay.getSessionToken()) {
+	Sentry.setTag("openReplaySessionToken", window.OpenReplay.getSessionToken());
+}
 ```
 
-Otherwise, this can be done using a custom HTTP header. In the below example, we use the `fetch` function to send that header.
+### Backend
+
+Otherwise, if you use Sentry sdk for backend, session token has to be propagated from your frontend on each request you want to track.
+This can be done using a custom HTTP header. In the below example, we use the `fetch` API to send that header.
 
 ```javascript
 const headers = {
@@ -46,6 +67,8 @@ fetch('www.your-backend.com', {
   headers,
 });
 ```
+You can also use OpenReplay [Fetch Plugin](/plugins/fetch) to set the header automatically for each tracking request.
+
 
 Then you can extract the `openReplaySessionToken` from the header and add it to your Sentry scope (ideally using a middleware or decorator).
 
