@@ -34,7 +34,7 @@ Usage: openreplay-cli [ -h | --help ]
                 [ -r | --restart SERVICE|all ]
 ```
 
-## Services
+## Backend Services
 
 OpenReplay backend relies on the below components/services:
 
