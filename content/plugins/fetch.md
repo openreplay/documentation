@@ -57,13 +57,14 @@ function MyApp() {
 
 ```
 
-## options
-
-You can choose to only capture failed requests (4xx-5xx) using the `failuresOnly` option.
+## Options
 
 ```js
 trackerFetch({
-  failuresOnly: true, // only capture requests having 4xx-5xx HTTP status code (defaults to false)
-	sessionTokenHeader: 'X-OpenReplay-SessionToken', // You can use this option in case you have backend [integrations](/integrations) to send the sessionToken value automatically on each request
+  failuresOnly: boolean;
+	sessionTokenHeader: string;
 })
 ```
+
+- `failuresOnly`: Captures requests having 4xx-5xx HTTP status code. Default: `false`.
+- `sessionTokenHeader`: In case you have enabled some of our backend [integrations](/integrations) (i.e. Sentry), you can use this option to specify the header name (i.e. 'X-OpenReplay-SessionToken'). This latter gets appended automatically to each fetch request to contain the OpenReplay sessionToken's value. Default: `undefined`.

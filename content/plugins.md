@@ -13,7 +13,8 @@ Learn about the different plugins to better debug your application's store, moni
 - [NgRx](/plugins/ngrx)
 
 ## Queries
-- [Fetch](/plugins/fetch): For capturing HTTP requests and responses.
+- [Fetch](/plugins/fetch): For capturing fetch requests and responses.
+- [Axios](/plugins/axios): For capturing axios (XHR) requests and responses.
 - [GraphQL](/plugins/graphql): For debugging GraphQL queries (Apollo and Relay)
 
 ## Performance
