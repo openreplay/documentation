@@ -86,11 +86,6 @@ const Header = ({location}) => (
                 DOCS
               </IndexLink>
 
-              <div className={'star-github'}>
-                <GitHubButton href="https://github.com/openreplay/openreplay" data-icon="octicon-star" data-show-count="true" aria-label="Star openreplay/openreplay on GitHub">
-                  Star
-                </GitHubButton>
-              </div>
 
               <span onClick={myFunction} className={'navBarToggle'}>
                 <span className={'iconBar'}></span>
@@ -113,8 +108,9 @@ const Header = ({location}) => (
                 <Sidebar location={location} bottomDivider />
               </div>
               <ul className={'navBarUL navBarNav navBarULRight'}>
-                { config.header.social.github &&
-                  <li><a href={config.header.social.github}><img src={github} alt={'Github'}/></a></li>
+                { <GitHubButton href="https://github.com/openreplay/openreplay" data-icon="octicon-star" data-show-count="true" aria-label="Star openreplay/openreplay on GitHub">
+                    Star
+                  </GitHubButton>
                 }
                 { config.header.social.twitter &&
                   <li><a href={config.header.social.twitter}><img src={twitter} alt={'Twitter'}/></a></li>
