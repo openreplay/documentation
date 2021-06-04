@@ -86,9 +86,11 @@ const Header = ({location}) => (
                 DOCS
               </IndexLink>
 
-              <GitHubButton href="https://github.com/openreplay/openreplay" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star openreplay/openreplay on GitHub">
-                Star
-              </GitHubButton>
+              <div className={'star-github'}>
+                <GitHubButton href="https://github.com/openreplay/openreplay" data-icon="octicon-star" data-show-count="true" aria-label="Star openreplay/openreplay on GitHub">
+                  Star
+                </GitHubButton>
+              </div>
 
               <span onClick={myFunction} className={'navBarToggle'}>
                 <span className={'iconBar'}></span>
