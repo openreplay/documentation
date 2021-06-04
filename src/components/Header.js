@@ -108,8 +108,8 @@ const Header = ({location}) => (
               </div>
               <ul className={'navBarUL navBarNav navBarULRight'}>
                 {
-                  <div className={'star-github'}>
-                    <GitHubButton href="https://github.com/openreplay/openreplay" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star openreplay/openreplay on GitHub">
+                  <div style={{marginRight: "5px"}}>
+                    <GitHubButton href="https://github.com/openreplay/openreplay" data-size="large" data-show-count="true" aria-label="Star openreplay/openreplay on GitHub">
                       Star
                     </GitHubButton>
                   </div>

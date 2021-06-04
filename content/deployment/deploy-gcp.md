@@ -62,12 +62,14 @@ You're all set now, OpenReplay should be securely accessible on the subdomain yo
 
 Alternatively to creating a load balancer, you can bring (or generate) your own SSL certificate.
 
-If you don't have a certificate, generate one for your domain (i.e. openreplay.mycompany.com) using Let's Encrypt. Connect to OpenReplay VM, run `helm uninstall -n nginx-ingress nginx-ingress` then execute `bash openreplay/scripts/certbot.sh` and follow the steps (but first make sure your subdomain points to the VM using its public IP).
+First, go to Cloud DNS (or your other DNS service provider) and create an `A Record`. Use the domain you previously provided during the installation step and point it to the VM using its public IP (can be found in Compute Engine dashboard).
 
 Open the `vars.yaml` file with the command `vi openreplay/scripts/helm/vars.yaml` then substitute:
 - `domain_name`: this is where OpenReplay will be accessible (i.e. openreplay.mycompany.com)
 - `nginx_ssl_cert_file_path`: the path to you .cert file (i.e. /home/openreplay/my-cert.crt)
 - `nginx_ssl_key_file_path`: the path to your .pem file (i.e. /home/openreplay/my-key.pem)
+
+> **Note:** If you don't have a certificate, generate one for your domain (the one provided during installation) using Let's Encrypt. Connect to OpenReplay VM, run `helm uninstall -n nginx-ingress nginx-ingress` then execute `bash openreplay/scripts/certbot.sh` and follow the steps.
 
 Restart OpenReplay NGINX (and choose whether to enable the default HTTP to HTTPS redirection using the `NGINX_REDIRECT_HTTPS` variable):
 
@@ -75,10 +77,6 @@ Restart OpenReplay NGINX (and choose whether to enable the default HTTP to HTTPS
 cd openreplay/scripts/helm
 NGINX_REDIRECT_HTTPS=1 ./install.sh --app nginx
 ```
-
-You can enable the HTTP to HTTPS redirection using `NGINX_REDIRECT_HTTPS`
-
-If you haven't yet done that, go to Cloud DNS (or your DNS service provider) and create an `A Record` that points to the VM using its public IP (can be found in Compute Engine dashboard).
 
 You're all set now, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 
