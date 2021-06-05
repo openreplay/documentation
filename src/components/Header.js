@@ -107,12 +107,8 @@ const Header = ({location}) => (
                 <Sidebar location={location} bottomDivider />
               </div>
               <ul className={'navBarUL navBarNav navBarULRight'}>
-                {
-                  <div style={{ marginRight: "15px", marginLeft: "15px" }}>
-                    <GitHubButton href="https://github.com/openreplay/openreplay" data-size="large" data-show-count="true" aria-label="Star openreplay/openreplay on GitHub">
-                      Star
-                    </GitHubButton>
-                  </div>
+                { config.header.social.github &&
+                  <li><a href={config.header.social.github}><img src={github} alt={'Github'}/></a></li>
                 }
                 { config.header.social.twitter &&
                   <li><a href={config.header.social.twitter}><img src={twitter} alt={'Twitter'}/></a></li>
