@@ -6,7 +6,7 @@ metaDescription: "Step-by-step guide for deploying OpenReplay on Scaleway Elemen
 
 OpenReplay stack can be installed on a single instance and Scaleway Elements is an ideal candidate. Here's how to do it.
 
-## Launch an EC2 instance
+## Launch an instance
 
 1. Go to Scaleway Dashboard
 2. Navigate to 'Compute > Instances' then click 'Create an instance'
