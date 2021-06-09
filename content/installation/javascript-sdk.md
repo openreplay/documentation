@@ -52,24 +52,46 @@ There are a set of options you can pass to the constructor. Only `projectKey` is
 
 - `projectKey: string` The ID of the project you're tracking.
 - `sessionToken?: string` The token of the initial session. This is useful when sessions traverse different subdomains on your web app but you want to stitch them into a single recording. In case it's not possible to continue the session (doesn't exist or is finished), the tracker will automatically start a new one. Session token is also useful for many [integrations](/integrations).
+- `ingestPoint?: string` You OpenReplay instance or domain, to which the tracker will be sending events. Default: `ingest.openreplay.com` (OpenReplay SaaS endpoint).
 - `revID?: string` The revision ID of your web app. Useful when searching for issues happening on a specific release version.
-- `consoleMethods: Array<'log' | 'info' | 'warn' | 'error'> | null` The list of console methods to capture. Default: `['log', 'info', 'warn', 'error']`
-- `consoleThrottling?: number` Max number of console entries per second. Default: `30`.
-- `captureExceptions?: boolean` Capture JavaScript exceptions and stacktraces. Default: `true`.
-- `captureResourceTimings?: boolean` Log resource timings. Default: `true`.
-- `capturePageRenderTimings?: boolean` Compute page rendering metrics such as Speed Index, Visually Complete or Time To Interactive. Requires `captureResourceTimings = true`. Default: `true`.
+- `onStart?: (info: { sessionID: string, sessionToken: string, userUUID: string }) => void` This event is fired when tracker is started. Useful for logging/debugging purposes.
 
 ### Privacy
 
 - `respectDoNotTrack?: boolean` Do not start tracker if the do-not-track flag is enabled in the user's browser. Default: `false`.
-- `obscureTextEmails?: boolean` Obscure emails in text elements. Emails will be converted to a random chain of asterisks. Default: `true`.
-- `obscureTextNumbers?: boolean` Obscure numbers in text elements. Numbers will be converted to a random chain of asterisks. Default: `false`.
-- `obscureInputEmails?: boolean` Obscure emails in input fields. Email values will be converted to a random chain of asterisks. Default: `true`.
+- `obscureTextEmails?: boolean` Obscures emails in text elements. Emails will be converted to a random chain of asterisks. Default: `true`.
+- `obscureTextNumbers?: boolean` Obscures numbers in text elements. Numbers will be converted to a random chain of asterisks. Default: `false`.
+- `obscureInputNumbers?: boolean` Obscures numbers in input fields. Numbers will be converted to a random chain of asterisks. Default: `true`.
+- `obscureInputEmails?: boolean` Obscures emails in input fields. Email values will be converted to a random chain of asterisks. Default: `true`.
 - `defaultInputMode?: 0 | 1 | 2` Default capture mode for input values. Respectively: plain, obscured or ignored. Default: `0` (plain).
 
 Note that excluded data is obscured or suppressed before sending the data to OpenReplay servers. Changes applied to the above options cannot be retroactive and will only apply to newly collected data.
 
 See [Sanitize Data](/installation/sanitize-data) for more details.
+
+### Console
+
+- `consoleMethods?: Array<'log' | 'info' | 'warn' | 'error'> | null` Specifies the list of console methods to capture. Default: `['log', 'info', 'warn', 'error']`
+- `consoleThrottling?: number` Max number of captured console entries per second. Default: `30`.
+
+### Exceptions
+
+- `captureExceptions?: boolean` Captures JavaScript exceptions and stacktraces. Default: `true`.
+
+### Timings
+
+- `captureResourceTimings?: boolean` Logs resource timings. Default: `true`.
+- `capturePageLoadTimings?: boolean` Logs page load timings. Default: `true`.
+- `capturePageRenderTimings?: boolean` Computes page rendering metrics such as Speed Index, Visually Complete or Time To Interactive. Requires `captureResourceTimings = true`. Default: `true`.
+
+### Network
+
+- `connAttemptCount?: number` Max number of retries when tracker's HTTP requests fail to reach the backend. Default: `10`.
+- `connAttemptGap?: number` Duration between each retry attempt (expressed in ms). Default: `8000`.
+
+### Security
+
+- `__DISABLE_SECURE_MODE?: boolean` For disabling secure connection (SSL) between tracker and backend. This should be used for **development purposes only**. Default: `false`.
 
 ### Misc
 
