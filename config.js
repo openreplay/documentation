@@ -2,7 +2,7 @@ const config = {
 	"gatsby": {
 		"pathPrefix": "",
 		"siteUrl": "https://docs.openreplay.com",
-		"gaTrackingId": "G-4YSH6CK1WR",
+		"gaTrackingId": "UA-173932112-2",
 		"trailingSlash": false
 	},
 	"header": {
