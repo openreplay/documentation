@@ -54,6 +54,7 @@ One way to handle SSL in Azure is to setup Front Door and run OpenReplay behind 
 7. 'Review + create'
 
 To enable HTTPS on a custom domain, follow these steps:
+
 1. Go to your Front Door profile
 2. In the list of frontend hosts, select the custom domain you want to enable HTTPS for
 3. Under 'Custom domain HTTPS' section, select 'Enabled', then 'Front Door managed' as the certificate source
