@@ -19,14 +19,21 @@ The deployment has been tested on the below platforms:
 
 ## Deploy OpenReplay
 
-Connect to your cluster then install OpenReplay:
+Connect to your cluster and clone the OpenReplay repository:
 
 ```shellsession
 git clone https://github.com/openreplay/openreplay.git
-cd openreplay/scripts/helm && bash kube-setup.sh
 ```
 
-> **Note:** You'll be prompted to provide the domain on which OpenReplay will be running (e.g. openreplay.mycompany.com). This is required to continue the installation.
+Then, open the `vars.yaml` file with the command `vi openreplay/scripts/helm/vars.yaml` then substitute:
+- `domain_name`: this is where OpenReplay will be accessible (i.e. openreplay.mycompany.com)
+- `kubeconfig_path`: the absolute path to your cluster's kubeconfig file (use the `readlink -f <file>` command to get the full path)
+
+Now, install OpenReplay:
+
+```shellsession
+cd openreplay/scripts/helm && bash kube-setup.sh
+```
 
 ## Configure TLS/SSL
 
