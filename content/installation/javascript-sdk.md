@@ -54,14 +54,13 @@ There are a set of options you can pass to the constructor. Only `projectKey` is
 - `sessionToken?: string` The token of the initial session. This is useful when sessions traverse different subdomains on your web app but you want to stitch them into a single recording. In case it's not possible to continue the session (doesn't exist or is finished), the tracker will automatically start a new one. Session token is also useful for many [integrations](/integrations).
 - `ingestPoint?: string` You OpenReplay instance or domain, to which the tracker will be sending events. Default: `ingest.openreplay.com` (OpenReplay SaaS endpoint).
 - `revID?: string` The revision ID of your web app. Useful when searching for issues happening on a specific release version.
-- `onStart?: (info: { sessionID: string, sessionToken: string, userUUID: string }) => void` This event is fired when tracker is started. Useful for logging/debugging purposes.
+- `onStart?: (info: { sessionToken: string, userUUID: string }) => void` This event is fired when tracker is started. Useful for logging/debugging purposes.
 
 ### Privacy
 
 - `respectDoNotTrack?: boolean` Do not start tracker if the do-not-track flag is enabled in the user's browser. Default: `false`.
 - `obscureTextEmails?: boolean` Obscures emails in text elements. Emails will be converted to a random chain of asterisks. Default: `true`.
 - `obscureTextNumbers?: boolean` Obscures numbers in text elements. Numbers will be converted to a random chain of asterisks. Default: `false`.
-- `obscureInputNumbers?: boolean` Obscures numbers in input fields. Numbers will be converted to a random chain of asterisks. Default: `true`.
 - `obscureInputEmails?: boolean` Obscures emails in input fields. Email values will be converted to a random chain of asterisks. Default: `true`.
 - `defaultInputMode?: 0 | 1 | 2` Default capture mode for input values. Respectively: plain, obscured or ignored. Default: `0` (plain).
 
@@ -71,7 +70,7 @@ See [Sanitize Data](/installation/sanitize-data) for more details.
 
 ### Console
 
-- `consoleMethods?: Array<'log' | 'info' | 'warn' | 'error'> | null` Specifies the list of console methods to capture. Default: `['log', 'info', 'warn', 'error']`
+- `consoleMethods?: Array<'log' | 'info' | 'warn' | 'error'  'debug' | 'assert'> | null` Specifies the list of console methods to capture. Default: `['log', 'info', 'warn', 'error', 'debug', 'assert']`
 - `consoleThrottling?: number` Max number of captured console entries per second. Default: `30`.
 
 ### Exceptions
@@ -92,7 +91,3 @@ See [Sanitize Data](/installation/sanitize-data) for more details.
 ### Security
 
 - `__DISABLE_SECURE_MODE?: boolean` For disabling secure connection (SSL) between tracker and backend. This should be used for **development purposes only**. Default: `false`.
-
-### Misc
-
-See `d.ts` files inside the package for the list of available options and functions.
