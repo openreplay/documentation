@@ -47,7 +47,7 @@ On the main benefits of running OpenReplay behind a cloud load balancer is to ha
 - [AWS - Elastic Load Balancing](/deployment/deploy-aws#setupawsloadbalancer(option1))
 - [Google - Cloud Load Balancing](/deployment/deploy-gcp#setupgoogleloadbalancer(option1))
 - [Azure - Front Door](/deployment/deploy-azure#setupazurefrontdoor(option1))
-- [Digital Ocean - Configure TLS/SSL](/deployment/deploy-digitalocean##configuretls/ssl)
+- [Digital Ocean - Configure TLS/SSL](/deployment/deploy-digitalocean#configuretls/ssl)
 
 Then ensure your cluster provisions a [service type](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer) `LoadBalancer` so the traffic from the cloud load balancer  can be directed at OpenReplay backend.
 
