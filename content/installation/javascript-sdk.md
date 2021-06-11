@@ -52,7 +52,7 @@ There are a set of options you can pass to the constructor. Only `projectKey` is
 
 - `projectKey: string` The ID of the project you're tracking.
 - `sessionToken?: string` The token of the initial session. This is useful when sessions traverse different subdomains on your web app but you want to stitch them into a single recording. In case it's not possible to continue the session (doesn't exist or is finished), the tracker will automatically start a new one. Session token is also useful for many [integrations](/integrations).
-- `ingestPoint?: string` You OpenReplay instance or domain, to which the tracker will be sending events. Default: `ingest.openreplay.com` (OpenReplay SaaS endpoint).
+- `ingestPoint?: string` Your OpenReplay domain (i.e. https://openreplay.mydomain.com/ingest), to which the tracker will be sending events. Default: `https://ingest.openreplay.com` (which points to OpenReplay SaaS).
 - `revID?: string` The revision ID of your web app. Useful when searching for issues happening on a specific release version.
 - `onStart?: (info: { sessionToken: string, userUUID: string }) => void` This event is fired when tracker is started. Useful for logging/debugging purposes.
 
