@@ -26,11 +26,11 @@ OpenReplay supports reCaptcha (v2) for additional security. To enable this prote
 - `CAPTCHA_SERVER`: The URL to your reCaptcha service (e.g. https://www.google.com/recaptcha/api/siteverify)
 - `CAPTCHA_KEY`: You reCaptcha secret key
 
-Now restart the web server:
+Now reinstall the web server for the changes to take effect:
 
 ```bash
 cd openreplay/scripts/helm
-./openreplay-cli --restart chalice
+./openreplay-cli -i chalice
 ```
 
 Then, edit `env.js` in `openreplay/frontend/` and substitute the `CAPTCHA_SITE_KEY` variable with your reCaptcha site key. Finally, rebuild the frontend:

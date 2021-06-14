@@ -23,10 +23,10 @@ To enable SMTP, edit `chalice.yaml` in `openreplay/scripts/helm/app/` and update
 | EMAIL_FROM | do-not-reply@openreplay.com | The sender email |
 | SITE_URL | https:// openreplay.mycompany.com | The URL of your OpenReplay instance |
 
-Then, restart the web server:
+Then, reinstall the web server for the changes to take effect:
 
 ```bash
-cd openreplay/scripts/helm && ./openreplay-cli --restart chalice
+cd openreplay/scripts/helm && ./openreplay-cli -i chalice
 ```
 
 You can test the setup by inviting yourself (using another email) as a new team member (in 'Preferences' > 'Users').
@@ -53,10 +53,10 @@ EMAIL_FROM: openreplay@mycompany.com # sender email, use your domain
 SITE_URL: https://openreplay.mycompany.com
 ```
 
-7. Restart the web server:
+7. Reinstall the web server for the changes to take effect:
 
 ```bash
-cd openreplay/scripts/helm && ./openreplay-cli --restart chalice
+cd openreplay/scripts/helm && ./openreplay-cli -i chalice
 ```
 
 8. You can test the setup by inviting yourself (using another email) as a new team member (in 'Preferences' > 'Users').
