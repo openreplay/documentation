@@ -18,6 +18,8 @@ OpenReplay stack can be installed on a single instance and Scaleway Elements is 
 8. SSH Keys: Make sure you already have a key associated with your project so you can connect to your instance
 9. Click 'Create a new instance'
 
+> **Note:** The SMTP ports (25, 465, 587) are blocked by default by Scaleway. Your OpenReplay instance won't be able to send emails unless you enable SMTP from your security group configuration. To do so, check this [quick tutorial](https://www.scaleway.com/en/faq/why-can-i-not-send-any-email/).
+
 ## Deploy OpenReplay
 
 1. Make sure your instance is `Started` then connect to it:
