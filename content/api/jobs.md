@@ -8,19 +8,19 @@ metaDescription: "How to manage user data deletion jobs."
 
 Retrieve all jobs, including those that are completed or canceled.
 
-#### Method: `GET`
+##### Method: `GET`
 
-#### URL: `/api/app/:projectKey/jobs`
+##### URL: `/api/app/:projectKey/jobs`
 
-#### Request Headers
+##### Request Headers
 
 `Authorization: {YOUR_ORGANIZATION_API_KEY}`: The key can be found in 'Preferences' > 'Account' > 'Organization API Key'.
 
-#### Status Codes
+##### Status Codes
 
 `200`: Response sent as JSON in body
 
-#### Example Request
+##### Example Request
 
 ```curl
 curl -X GET \
@@ -29,7 +29,7 @@ curl -X GET \
   -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
 ```
 
-#### Example Response
+##### Example Response
 
 ```json
 {
@@ -41,25 +41,25 @@ curl -X GET \
 
 Return the job's `status` and other details such as `createdAt`, `createdBy` and `errors`.
 
-#### Method: `GET`
+##### Method: `GET`
 
-#### URL: `/api/app/:projectKey/jobs/:jobId`
+##### URL: `/api/app/:projectKey/jobs/:jobId`
 
-#### Parameters
+##### Parameters
 
 | Name | Type | Description |
 |----------|-------------|-------------|
 | jobId | string | The ID returned by the user deletion call (required) |
 
-#### Request Headers
+##### Request Headers
 
 `Authorization: {YOUR_ORGANIZATION_API_KEY}`: The key can be found in 'Preferences' > 'Account' > 'Organization API Key'.
 
-#### Status Codes
+##### Status Codes
 
 `200`: Response sent as JSON in body
 
-#### Example Request
+##### Example Request
 
 ```curl
 curl -X GET \
@@ -68,7 +68,7 @@ curl -X GET \
   -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
 ```
 
-#### Example Response
+##### Example Response
 
 ```json
 {
@@ -85,25 +85,25 @@ curl -X GET \
 
 Cancel a job if it hasn't yet started or still in progress.
 
-#### Method: `DELETE`
+##### Method: `DELETE`
 
-#### URL: `/api/app/:projectKey/jobs/:jobId`
+##### URL: `/api/app/:projectKey/jobs/:jobId`
 
-#### Parameters
+##### Parameters
 
 | Name | Type | Description |
 |----------|-------------|-------------|
 | jobId | string | The ID returned by the user deletion call (required) |
 
-#### Request Headers
+##### Request Headers
 
 `Authorization: {YOUR_ORGANIZATION_API_KEY}`: The key can be found in 'Preferences' > 'Account' > 'Organization API Key'.
 
-#### Status Codes
+##### Status Codes
 
 `200`: Response sent as JSON in body
 
-#### Example Request
+##### Example Request
 
 ```curl
 curl -X DELETE \
@@ -112,7 +112,7 @@ curl -X DELETE \
   -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
 ```
 
-#### Example Response
+##### Example Response
 
 ```json
 {
