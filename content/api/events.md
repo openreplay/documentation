@@ -12,22 +12,22 @@ Returns the list of events such as clicks, page visits or inputs contained in a 
 
 **URL:** `/api/app/:projectKey/sessions/:sessionId/events`
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 |----------|-------------|-------------|
 | projectKey | string | The ID of the project you're tracking (required) |
 | sessionId | string | The ID of the session from which you're pulling the events (required) |
 
-#### Request Headers
+### Request Headers
 
 `Authorization: {YOUR_ORGANIZATION_API_KEY}`: The key can be found in 'Preferences' > 'Account' > 'Organization API Key'.
 
-#### Status Codes
+### Status Codes
 
 `200`: Response sent as JSON in body
 
-#### Example Request
+### Example Request
 
 ```curl
 curl -X GET \
@@ -36,7 +36,7 @@ curl -X GET \
   -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
 ```
 
-#### Example Response
+### Example Response
 
 ```json
 {

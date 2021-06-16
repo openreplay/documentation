@@ -12,22 +12,22 @@ Get some high-level statistics and details about a particular user, who has been
 
 **URL:** `/api/app/:projectKey/users/:userId`
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 |----------|-------------|-------------|
 | projectKey | string | The ID of the project you're tracking (required) |
 | userId | string | The ID of your user, set via `tracker.setUserID` (required) |
 
-#### Request Headers
+### Request Headers
 
 `Authorization: {YOUR_ORGANIZATION_API_KEY}`: The key can be found in 'Preferences' > 'Account' > 'Organization API Key'.
 
-#### Status Codes
+### Status Codes
 
 `200`: Response sent as JSON in body
 
-#### Example Request
+### Example Request
 
 ```curl
 curl -X GET \
@@ -36,7 +36,7 @@ curl -X GET \
   -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
 ```
 
-#### Example Response
+### Example Response
 
 ```json
 {
@@ -54,22 +54,22 @@ This comes in handy for handling GDPR requests you may receive from your end use
 
 **URL:** `/api/app/:projectKey/users/:userId`
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 |----------|-------------|-------------|
 | projectKey | string | The ID of the project you're tracking (required) |
 | userId | string | The ID of your user, set via `tracker.setUserID` (required) |
 
-#### Request Headers
+### Request Headers
 
 `Authorization: {YOUR_ORGANIZATION_API_KEY}`: The key can be found in 'Preferences' > 'Account' > 'Organization API Key'.
 
-#### Status Codes
+### Status Codes
 
 `200`: Response sent as JSON in body
 
-#### Example Request
+### Example Request
 
 ```curl
 curl -X DELETE \
@@ -78,7 +78,7 @@ curl -X DELETE \
   -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
 ```
 
-#### Example Response
+### Example Response
 
 ```json
 {

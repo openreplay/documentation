@@ -12,7 +12,7 @@ Returns the list of sessions for a particular user, who has been identified via 
 
 **URL:** `/api/app/:projectKey/users/:userId/sessions`
 
-#### Parameters
+### Parameters
 
 | Name | Type | Description |
 |----------|-------------|-------------|
@@ -21,15 +21,15 @@ Returns the list of sessions for a particular user, who has been identified via 
 | start_date | epoch (ms) | Start date from which to filter sessions |
 | end_date | epoch (ms) | End date until which to filter sessions |
 
-#### Request Headers
+### Request Headers
 
 `Authorization: {YOUR_ORGANIZATION_API_KEY}`: The key can be found in 'Preferences' > 'Account' > 'Organization API Key'.
 
-#### Status Codes
+### Status Codes
 
 `200`: Response sent as JSON in body
 
-#### Example Request
+### Example Request
 
 ```curl
 curl -X GET \
@@ -38,7 +38,7 @@ curl -X GET \
   -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
 ```
 
-#### Example Response
+### Example Response
 
 ```json
 {}
