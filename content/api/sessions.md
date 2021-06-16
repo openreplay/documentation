@@ -8,9 +8,9 @@ metaDescription: "How to retrieve all sessions for a particular user."
 
 Returns the list of sessions for a particular user, who has been identified via the `tracker.setUserID` JavaScript function.
 
-### Method: `GET`
+**Method:** `GET`
 
-### URL: `/api/app/:projectKey/users/:userId/sessions`
+**URL:** `/api/app/:projectKey/users/:userId/sessions`
 
 ### Parameters
 

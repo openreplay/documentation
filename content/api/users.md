@@ -8,9 +8,9 @@ metaDescription: "How to manage and control user data."
 
 Get some high-level statistics and details about a particular user, who has been identified via the `tracker.setUserID` JavaScript function. This endpoint returns things like `firstSeen`, `lastSeen` and `numberSessions`.
 
-#### Method: `GET`
+### Method: `GET`
 
-#### URL: `/api/app/:projectKey/users/:userId`
+### URL: `/api/app/:projectKey/users/:userId`
 
 ### Parameters
 

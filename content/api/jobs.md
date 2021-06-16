@@ -8,9 +8,9 @@ metaDescription: "How to manage user data deletion jobs."
 
 Retrieve all jobs, including those that are completed or canceled.
 
-### Method: `GET`
+**Method:** `GET`
 
-### URL: `/api/app/:projectKey/jobs`
+**URL:** `/api/app/:projectKey/jobs`
 
 ### Request Headers
 
@@ -41,9 +41,9 @@ curl -X GET \
 
 Return the job's `status` and other details such as `createdAt`, `createdBy` and `errors`.
 
-### Method: `GET`
+**Method:** `GET`
 
-### URL: `/api/app/:projectKey/jobs/:jobId`
+**URL:** `/api/app/:projectKey/jobs/:jobId`
 
 ### Parameters
 
@@ -85,9 +85,9 @@ curl -X GET \
 
 Cancel a job if it hasn't yet started or still in progress.
 
-### Method: `DELETE`
+**Method:** `DELETE`
 
-### URL: `/api/app/:projectKey/jobs/:jobId`
+**URL:** `/api/app/:projectKey/jobs/:jobId`
 
 ### Parameters
 
