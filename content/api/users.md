@@ -8,26 +8,26 @@ metaDescription: "How to manage and control user data."
 
 Get some high-level statistics and details about a particular user, who has been identified via the `tracker.setUserID` JavaScript function. This endpoint returns things like `firstSeen`, `lastSeen` and `numberSessions`.
 
-###### Method: `GET`
+#### Method: `GET`
 
-###### URL: `/api/app/:projectKey/users/:userId`
+#### URL: `/api/app/:projectKey/users/:userId`
 
-##### Parameters
+### Parameters
 
 | Name | Type | Description |
 |----------|-------------|-------------|
 | projectKey | string | The ID of the project you're tracking (required) |
 | userId | string | The ID of your user, set via `tracker.setUserID` (required) |
 
-##### Request Headers
+### Request Headers
 
 `Authorization: {YOUR_ORGANIZATION_API_KEY}`: The key can be found in 'Preferences' > 'Account' > 'Organization API Key'.
 
-##### Status Codes
+### Status Codes
 
 `200`: Response sent as JSON in body
 
-##### Example Request
+### Example Request
 
 ```curl
 curl -X GET \
@@ -36,7 +36,7 @@ curl -X GET \
   -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
 ```
 
-##### Example Response
+### Example Response
 
 ```json
 {
@@ -50,26 +50,26 @@ Delete a user (identified via the `tracker.setUserID` JavaScript function) and a
 
 This comes in handy for handling GDPR requests you may receive from your end users.
 
-##### Method: `DELETE`
+### Method: `DELETE`
 
-##### URL: `/api/app/:projectKey/users/:userId`
+### URL: `/api/app/:projectKey/users/:userId`
 
-##### Parameters
+### Parameters
 
 | Name | Type | Description |
 |----------|-------------|-------------|
 | projectKey | string | The ID of the project you're tracking (required) |
 | userId | string | The ID of your user, set via `tracker.setUserID` (required) |
 
-##### Request Headers
+### Request Headers
 
 `Authorization: {YOUR_ORGANIZATION_API_KEY}`: The key can be found in 'Preferences' > 'Account' > 'Organization API Key'.
 
-##### Status Codes
+### Status Codes
 
 `200`: Response sent as JSON in body
 
-##### Example Request
+### Example Request
 
 ```curl
 curl -X DELETE \
@@ -78,7 +78,7 @@ curl -X DELETE \
   -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
 ```
 
-##### Example Response
+### Example Response
 
 ```json
 {
