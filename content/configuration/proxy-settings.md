@@ -39,4 +39,5 @@ In case you're protecting your OpenReplay instance with a proxy, ensure the belo
 | Endpoint | Description |
 |----------|-------------|
 | /ingest | For capturing events and recordings |
+| /api | For pulling and managing user data |
 | /static/openreplay.js | JavaScript code that loads OpenReplay |
