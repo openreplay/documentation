@@ -12,7 +12,7 @@ Returns the list of events such as clicks, page visits or inputs contained in a 
 `GET`
 
 ### URL
-`/api/app/:projectKey/sessions/:sessionId/events`
+`/api/v1/:projectKey/sessions/:sessionId/events`
 
 ### Parameters
 
@@ -33,7 +33,7 @@ Returns the list of events such as clicks, page visits or inputs contained in a 
 
 ```curl
 curl -X GET \
-  https://openreplay.example.com/api/app/3sWXSsqHgSKnE87YkNJK/sessions/4829313653526914/events \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/sessions/4813023023591169/events \
   -H 'content-type: application/json' \
   -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
 ```

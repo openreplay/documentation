@@ -12,7 +12,7 @@ Get some high-level statistics and details about a particular user, who has been
 `GET`
 
 ### URL
-`/api/app/:projectKey/users/:userId`
+`/api/v1/:projectKey/users/:userId`
 
 ### Parameters
 
@@ -33,7 +33,7 @@ Get some high-level statistics and details about a particular user, who has been
 
 ```curl
 curl -X GET \
-  https://openreplay.example.com/api/app/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com \
   -H 'content-type: application/json' \
   -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
 ```
@@ -42,7 +42,12 @@ curl -X GET \
 
 ```json
 {
-
+  "data": {
+    "userId": "mickael@openreplay.com",
+    "sessionCount": 3,
+    "lastSeen": 1623689478617,
+    "firstSeen": 1623440822825
+  }
 }
 ```
 
@@ -56,7 +61,7 @@ This comes in handy for handling GDPR requests you may receive from your end use
 `DELETE`
 
 ### URL
-`/api/app/:projectKey/users/:userId`
+`/api/v1/:projectKey/users/:userId`
 
 ### Parameters
 
@@ -77,7 +82,7 @@ This comes in handy for handling GDPR requests you may receive from your end use
 
 ```curl
 curl -X DELETE \
-  https://openreplay.example.com/api/app/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/users/mickael@example.com \
   -H 'content-type: application/json' \
   -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
 ```
@@ -86,6 +91,17 @@ curl -X DELETE \
 
 ```json
 {
-  "jobId": "143500982356"
+  "data": {
+    "jobId": 22345,
+    "description": "Delete user sessions of userId = mickael@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@openreplay.com",
+    "createdAt": 1623912962910,
+    "updatedAt": 1623912962910,
+    "startAt": 1623954600000,
+    "errors": null
+  }
 }
 ```

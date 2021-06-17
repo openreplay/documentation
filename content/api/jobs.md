@@ -12,7 +12,7 @@ Retrieve all jobs, including those that are completed or canceled.
 `GET`
 
 ### URL
-`/api/app/:projectKey/jobs`
+`/api/v1/:projectKey/jobs`
 
 ### Request Headers
 
@@ -26,7 +26,7 @@ Retrieve all jobs, including those that are completed or canceled.
 
 ```curl
 curl -X GET \
-  https://openreplay.example.com/api/app/3sWXSsqHgSKnE87YkNJK/jobs \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/jobs \
   -H 'content-type: application/json' \
   -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
 ```
@@ -35,19 +35,44 @@ curl -X GET \
 
 ```json
 {
-
+  "data": [
+    {
+      "jobId": 3451,
+      "description": "Delete user sessions of userId = shekar@example.com",
+      "status": "scheduled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "mehdi@openreplay.com",
+      "createdAt": 1623912955277,
+      "updatedAt": 1623912955277,
+      "startAt": 1623954600000,
+      "errors": null
+    },
+    {
+      "jobId": 3452,
+      "description": "Delete user sessions of userId = shekar@example.com",
+      "status": "cancelled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "mehdi@openreplay.com",
+      "createdAt": 1623912962910,
+      "updatedAt": 1623913015276,
+      "startAt": 1623954600000,
+      "errors": null
+    }
+  ]
 }
 ```
 
 ## Get job details
 
-Return the job's `status` and other details such as `createdAt`, `createdBy` and `errors`.
+Return the job's `status` and other details such as `createdAt`, `referenceId` and `errors`.
 
 ### Method
 `GET`
 
 ### URL
-`/api/app/:projectKey/jobs/:jobId`
+`/api/v1/:projectKey/jobs/:jobId`
 
 ### Parameters
 
@@ -67,7 +92,7 @@ Return the job's `status` and other details such as `createdAt`, `createdBy` and
 
 ```curl
 curl -X GET \
-  https://openreplay.example.com/api/app/3sWXSsqHgSKnE87YkNJK/jobs/143500982356\
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/jobs/3451\
   -H 'content-type: application/json' \
   -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
 ```
@@ -76,12 +101,18 @@ curl -X GET \
 
 ```json
 {
-  "jobId": "143500982356",
-  "status": "running",
-  "errors": null,
-  "createdAt": 1623440919928,
-  "finishedAt": null,
-  "createdBy": "mehdi@openreplay.com"
+  "data": {
+    "jobId": 3451,
+    "description": "Delete user sessions of userId = shekar@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@openreplay.com",
+    "createdAt": 1623912955277,
+    "updatedAt": 1623912955277,
+    "startAt": 1623954600000,
+    "errors": null
+  }
 }
 ```
 
@@ -93,7 +124,7 @@ Cancel a job if it hasn't yet started or still in progress.
 `DELETE`
 
 ### URL
-`/api/app/:projectKey/jobs/:jobId`
+`/api/v1/:projectKey/jobs/:jobId`
 
 ### Parameters
 
@@ -108,12 +139,13 @@ Cancel a job if it hasn't yet started or still in progress.
 ### Status Codes
 
 `200`: Response sent as JSON in body
+`501`: Returned if the job cannot be cancelled
 
 ### Example Request
 
 ```curl
 curl -X DELETE \
-  https://openreplay.example.com/api/app/3sWXSsqHgSKnE87YkNJK/jobs/143500982356 \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/jobs/3452 \
   -H 'content-type: application/json' \
   -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
 ```
@@ -122,7 +154,17 @@ curl -X DELETE \
 
 ```json
 {
-  "jobId": "143500982356",
-  "status": "canceled"
+  "data": {
+    "jobId": 3452,
+    "description": "Delete user sessions of userId = shekar@example.com",
+    "status": "cancelled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@openreplay.com",
+    "createdAt": 1623912962910,
+    "updatedAt": 1623913015276,
+    "startAt": 1623954600000,
+    "errors": null
+  }
 }
 ```
