@@ -32,7 +32,7 @@ Then, open the `vars.yaml` file with the command `vi openreplay/scripts/helm/var
 Now, install OpenReplay:
 
 ```shellsession
-cd openreplay/scripts/helm && bash kube-setup.sh
+cd openreplay/scripts/helm && bash kube-install.sh
 ```
 
 ## Configure TLS/SSL
