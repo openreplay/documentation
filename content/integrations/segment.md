@@ -4,7 +4,7 @@ metaTitle: "Segment Integration"
 metaDescription: "How to you setup OpenReplay in Segment."
 ---
 
-> **Note:** This integration is only available to OpenReplay Cloud customers.
+> **Note:** This integration is only available to OpenReplay Cloud users.
 
 Segment allows you to collect your user data from every source into a single exportable API. You can then send that information to all your favorite tools instantly.
 

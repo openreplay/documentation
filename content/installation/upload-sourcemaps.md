@@ -8,7 +8,7 @@ OpenReplay supports un-minifying JavaScript via source maps. By uploading them t
 
 ## Setup
 
-Install the sourcemaps NPM module:
+Install the sourcemap-uploader NPM module:
 
 ```bash
 npm i @openreplay/sourcemap-uploader
@@ -19,16 +19,20 @@ npm i @openreplay/sourcemap-uploader
 Then, you need to set up your build process to create the various source files. Source maps can be uploaded for a **single file**:
 
 ```bash
-sourcemap-uploader -k API_KEY -p PROJECT_KEY file -m ./dist/app.js.map -u https://mywebsite.com/app.min.js
+sourcemap-uploader -s https://opnereplay.mycompany.com/api -k API_KEY -p PROJECT_KEY file -m ./dist/index.js.map -u https://myapp.com/index.js
 ```
 
-Or a **directory** including many files:
+Or a **directory** including many files. In that case, the URL must correspond to the root where you upload JS files from the directory. In other words, if you have your `app-42.js` along with  the `app-42.js.map` in the `./build` folder and then want to upload it to your OpenReplay instance so it can be reachable through the link `https://myapp.com/static/app-42.js`, then the command should be like:
 
 ```bash
-sourcemaps-uploader -k API_KEY -p PROJECT_KEY dir -m ./dist -u https://mywebsite.com/
+sourcemap-uploader -s https://opnereplay.mycompany.com/api -k API_KEY -p PROJECT_KEY dir -m ./build -u https://myapp.com/static
 ```
 
-- `-k`: API Key ([Preferences > Account](https://app.openreplay.com/client/account)).
-- `-p`: Project Key ([Preferences > Projects](https://app.openreplay.com/client/projects)).
+## Parameters
+
+- `-s`: The URL of your OpenReplay instance. Make sure to append it with /api. This parameter is optional for OpenReplay Cloud users.
+- `-k`: API Key (found in 'Preferences' > 'Account' > 'Organization API Key').
+- `-p`: Project Key (found in 'Preferences' > 'Projects').
 - `-m`: Path to source maps file(s) (can also be a directory).
 - `-u`: URL to the JavaScript asset (if single file) or base URL (in case of a directory).
+- `-v`: For displaying upload logs.
