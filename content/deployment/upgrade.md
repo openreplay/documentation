@@ -12,10 +12,10 @@ metaDescription: "How to upgrade your instance to the latest OpenReplay version.
   mv openreplay openreplay-v1.1.0
   ```
 
-2. Clone the new OpenReplay version. In this example we're upgrading from v1.1.0 to v1.2.0:
+2. Clone the new OpenReplay version. In this example we're upgrading to the latest available version:
    
   ```bash 
-  git clone https://github.com/openreplay/openreplay -b v1.2.0
+  git clone https://github.com/openreplay/openreplay
   ```
 
 3. Upgrade OpenReplay:
