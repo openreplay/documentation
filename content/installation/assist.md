@@ -1,7 +1,7 @@
 ---
-title: "OpenReplay Assist"
-metaTitle: "OpenReplay Assist"
-metaDescription: "How to setup Assist and support your end users through live screen and WebRTC."
+title: "Assist"
+metaTitle: "Assist"
+metaDescription: "How to setup OpenReplay Assist and support your end users through live screen and WebRTC."
 ---
 
 OpenReplay Assist allows you to support your users by seeing their live screen and instantly hopping on call (WebRTC) with them without requiring any 3rd-party screen sharing software.
