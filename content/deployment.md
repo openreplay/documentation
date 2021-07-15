@@ -17,6 +17,7 @@ OpenReplay can be deployed anywhere. Here are step-by-step tutorials for deploym
 
 You can also deploy from source. Even though this method takes more effort, it gives a lot of flexibility as you can use the latest code and customize it if needed.
 
-## CLI
+## Admin
 
-OpenReplay CLI makes it easy to manage your instance by directly accessing logs, and restarting or reinstalling services. More details on the CLI [here](/deployment/openreplay-cli).
+- [OpenReplay CLI](/deployment/openreplay-cli): Makes it easy to manage your instance by directly accessing logs, and restarting or reinstalling services.
+- [Upgrade Deployment](/deployment/upgrade): Keep your OpenReplay instance updated by uprading it to the latest version.
