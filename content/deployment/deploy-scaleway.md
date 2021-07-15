@@ -44,7 +44,7 @@ cd openreplay/scripts/helm && bash install.sh
 
 OpenReplay deals with sensitive user data and therefore requires HTTPS to run. This is mandatory, otherwise the tracker simply wouldn't start recording. Same thing for the dashboard, without HTTPS you won't be able to replay user sessions.
 
-You must therefore bring and configure your own SSL certificate.
+You must therefore bring (or generate) your own SSL certificate.
 
 First, go to 'Network' > 'DNS' (or your other DNS service provider) and create an `A Record`. Use the domain you previously provided during the installation step and point it to the instance using its public IP (can be found in 'Compute' > 'Instances').
 

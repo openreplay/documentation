@@ -41,32 +41,7 @@ cd openreplay/scripts/helm && bash install.sh
 
 OpenReplay deals with sensitive user data and therefore requires HTTPS to run. This is mandatory, otherwise the tracker simply wouldn't start recording. Same thing for the dashboard, without HTTPS you won't be able to replay user sessions.
 
-One way to handle SSL in Azure is to setup Front Door and run OpenReplay behind it. Another option is to generate or use your own SSL certificate and point your subdomain (i.e. openreplay.mycompany.com) to the OpenReplay instance. More on both options below.
-
-### Setup Azure Front Door (option 1)
-
-1. Select 'Create a resource' > 'Select Networking' > 'See All' > Front Door
-2. Select 'Subscription' and create new 'Resource group' in 'Basics' tab
-3. Open 'Add a frontend host' in 'Frontend/domains', then specify a hostname and click 'Add'
-4. Click 'Add a backend' in 'Backend pools' and point it to OpenReplay VM (using Backend host type and host name)
-5. Click 'Add' then switch 'Protocol' to HTTP
-6. In 'Routing rules', select '+' to configure a routing rule. Enter 'Name' and keep all default values then hit the 'Add' button.
-7. 'Review + create'
-
-To enable HTTPS on a custom domain, follow these steps:
-
-1. Go to your Front Door profile
-2. In the list of frontend hosts, select the custom domain you want to enable HTTPS for
-3. Under 'Custom domain HTTPS' section, select 'Enabled', then 'Front Door managed' as the certificate source
-4. 'Save' then continue to Validate the domain.
-
-Once created, go to Azure DNS (or your DNS service provider) and create an `CNAME Record` that points to the Front Door's hostname.
-
-You're all set now, OpenReplay should be securely accessible on the subdomain you just set up. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
-
-### Bring/generate your SSL certificate (option 2)
-
-Alternatively to creating a load balancer, you can bring (or generate) your own SSL certificate.
+You must therefore generate (or bring) your own SSL certificate.
 
 First, go to Azure DNS (or your other DNS service provider) and create an `A Record`. Use the domain you previously provided during the installation step and point it to the VM using its public IP.
 
@@ -85,6 +60,8 @@ NGINX_REDIRECT_HTTPS=1 ./install.sh --app nginx
 ```
 
 If you haven't yet done that, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
+
+> **Note:** For additional security, you can also run OpenReplay instance behind an Azure Load Balancer. Check the [Azure LB docs](https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-overview) for more details.
 
 ## Troubleshooting
 
