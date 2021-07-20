@@ -27,7 +27,7 @@ const tracker = new Tracker({
 });
 tracker.start();
 
-tracker.use(trackerAssist(options)); // check list of available options below
+tracker.use(trackerAssist(options)); // check the list of available options below
 ```
 
 ### If your web app is Server-Side-Rendered (SSR)
@@ -41,7 +41,7 @@ import trackerFetch from '@openreplay/tracker-assist/cjs';
 const tracker = new OpenReplay({
   projectKey: PROJECT_KEY
 });
-const trackerAssist = tracker.use(trackerAssist(options)); // check list of available options below
+const trackerAssist = tracker.use(trackerAssist(options)); // check the list of available options below
 
 //...
 function MyApp() {

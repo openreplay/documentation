@@ -11,3 +11,4 @@ Your OpenReplay instance can be easily configured. Here are step-by-step tutoria
 - [Secure OpenReplay](/configuration/secure-or)
 - [Proxy Settings](/configuration/proxy-settings)
 - [Delete Recordings](/configuration/delete-recordings)
+- [Single-Sign-On (SAML)](/configuration/sso)
