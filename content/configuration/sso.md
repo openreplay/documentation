@@ -23,8 +23,6 @@ Then, reinstall the web server for the changes to take effect:
 cd openreplay/scripts/helm && ./openreplay-cli -i chalice
 ```
 
-You can test the setup by inviting yourself (using another email) as a new team member (in 'Preferences' > 'Users').
-
 ## Identity Provider (IDP) configuration
 
 Make sure your Identity Provider's response includes the OpenReplay `tenantKey`. Its value can be found in the Dashboard, under 'Preferences' > 'Account'.
