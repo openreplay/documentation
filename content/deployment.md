@@ -19,5 +19,5 @@ You can also deploy from source. Even though this method takes more effort, it g
 
 ## Admin
 
-- [OpenReplay CLI](/deployment/openreplay-cli): Makes it easy to manage your instance by directly accessing logs, and restarting or reinstalling services.
+- [Administer OpenReplay](/deployment/openreplay-admin): For easy management of your instance by directly accessing logs, reinstalling services, increasing capacity and more.
 - [Upgrade Deployment](/deployment/upgrade): Keep your OpenReplay instance updated by uprading it to the latest version.

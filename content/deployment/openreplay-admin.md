@@ -1,10 +1,10 @@
 ---
-title: "OpenReplay CLI"
-metaTitle: "OpenReplay CLI"
-metaDescription: "How to use the CLI to easily manage your OpenReplay instance."
+title: "OpenReplay Administration"
+metaTitle: "OpenReplay Administration"
+metaDescription: "How to easily administer and manage your OpenReplay instance."
 ---
 
-## Options
+## CLI
 
 The CLI is helpful for managing basic aspects of your OpenReplay instance, things such as restarting or reinstalling a service, accessing a component's logs or simply checking the status of your backend services.
 
@@ -34,8 +34,6 @@ Usage: openreplay-cli [ -h | --help ]
                 [ -r | --restart SERVICE|all ]
 ```
 
-## Backend Services
-
 OpenReplay backend relies on the below components/services:
 
 | Service | Description |
@@ -49,3 +47,43 @@ OpenReplay backend relies on the below components/services:
 | chalice | API for serving the frontend |
 | alerts | Sends notifications (email, slack, in-app, webhook) when a user set threshold is reached on any of the performance metrics |
 | integrations |  Pushes and pulls data from the supported third-party APIs (Sentry, Elastic, GitHub, Jira, etc.) |
+
+## Increase service capacity
+
+It's possible to increase the capacity of some services such as Postgres and Redis by overriding the default cpu/memory allocation values. These latter are determined during the setup process based on your instance capacity and should fit the needs of most installations.
+
+ If you have a high volume and a big fat machine, simply open the `vars.yaml` file with the command `vi openreplay/scripts/helm/vars.yaml` and uncomment then substitute the below lines:
+
+```yaml
+db_resource_override:
+  postgresql: {}
+    # resources:
+    #   limits:
+    #     cpu: 1000m
+    #     memory: 1024Mi
+    #   requests:
+    #     cpu: 250m
+    #     memory: 256Mi
+  redis: {}
+```
+
+Then, reinstall the service (postgres|redis) for the new limits to take effect (your data won't be lost):
+
+```bash
+cd openreplay/scripts/helm
+openreplay-cli -i postgresql # or redis
+```
+
+## Uninstall OpenReplay
+
+Run the below commands to uninstall OpenReplay:
+
+```bash
+sudo systemctl stop k3s
+sudo systemctl disable k3s
+
+#sudo reboot # For restarting the machine
+
+sudo k3s-uninstall.sh
+sudo rm -rf /var/lib/rancher
+```
