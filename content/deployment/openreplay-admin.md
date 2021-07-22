@@ -56,14 +56,14 @@ It's possible to increase the capacity of some services such as Postgres and Red
 
 ```yaml
 db_resource_override:
-  postgresql: {}
-    # resources:
-    #   limits:
-    #     cpu: 1000m
-    #     memory: 1024Mi
-    #   requests:
-    #     cpu: 250m
-    #     memory: 256Mi
+  postgresql:
+    resources:
+      limits:
+        cpu: 4096m
+        memory: 8192Mi
+      requests:
+        cpu: 1024m
+        memory: 2056Mi
   redis: {}
 ```
 
