@@ -1,7 +1,7 @@
 ---
 title: "Delete Recordings"
 metaTitle: "Delete Recordings"
-metaDescription: "Delete recordings in bulk from database."
+metaDescription: "Delete recordings in bulk from database and cleanup your storage."
 ---
 
 ## Database cleanup
@@ -32,7 +32,7 @@ Login to your OpenReplay instance, then:
 
 ## Storage cleanup
 
-Each recording takes the form of a file. In fact, OpenReplay dumps what's necessary to replay a session (DOM mutations, mouse coordinates, network activity and much more) into a single file. These files are by default stored on your instance, so they make up most of its storage. These objects are nevertheless cleaned automatically 180 days (lifecycle) after they get created.
+Each recording takes the form of a file. In fact, OpenReplay dumps what's necessary to replay a session (DOM mutations, mouse coordinates, console logs, network activity and much more) into a single file. These files are by default stored on your instance, so they make up most of its storage. These objects are nevertheless cleaned automatically 180 days (lifecycle) after they get created.
 
 If you ever need to free up some space, then login to your OpenReplay instance and follow the below steps:
 
