@@ -15,7 +15,7 @@ Use the below SQL query if you wish to cleanup data from your database (PostgreS
 DELETE FROM public.sessions WHERE start_ts < 1609459200000;
 ```
 
-## Connect to PostgreSQL
+### How to connect to PostgreSQL
 
 Login to your OpenReplay instance, then:
 
@@ -28,3 +28,18 @@ Login to your OpenReplay instance, then:
 7. Type `exit` to exit the postgresql-client
 8. Use `exit` to exit the Postgres container
 9. Run `:quit` to exit the Kubernetes CLI
+
+
+## Storage cleanup
+
+Each recording takes the form of a file. In fact, OpenReplay dumps what's necessary to replay a session (DOM mutations, mouse coordinates, network activity and much more) into a single file. These files are by default stored on your instance, so they make up most of its storage. These objects are nevertheless cleaned automatically 180 days (lifecycle) after they get created.
+
+If you ever need to free up some space, then login to your OpenReplay instance and follow the below steps:
+
+1. Run `k9s -n app`
+2. Press `0`
+3. Use the keyboard arrows to navigate the list and get to the `minio-*` container
+4. Press `s` to have shell access the the Minio (object storage) container
+5. Run `mc ilm set --id mobs --expiry-days 14 minio/mobs` (i.e. clean files that are older than 14 days)
+6. Use `exit` to exit the Minio container
+7. Run `:quit` to exit the Kubernetes CLI
