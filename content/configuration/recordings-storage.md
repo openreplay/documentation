@@ -36,7 +36,7 @@ Login to your OpenReplay instance and go to `openreplay/scripts/helm/app/` then 
 
 | Variable | Description |
 |----------|-------------|
-| AWS_ENDPOINT | The URL of your object storage service (i.e. if you're using AWS S3, this would be `https://s3.amazonaws.com`) |
+| AWS_ENDPOINT | The URL of your object storage service (i.e. (i.e. on AWS S3, this would be `https://s3.amazonaws.com`, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
 | AWS_ACCESS_KEY_ID | Your object storage key |
 | AWS_SECRET_ACCESS_KEY | Your object storage secret |
 | AWS_REGION_WEB | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
@@ -46,7 +46,7 @@ Login to your OpenReplay instance and go to `openreplay/scripts/helm/app/` then 
 
 | Variable | Description |
 |----------|-------------|
-| AWS_ENDPOINT | The URL of your object storage service (i.e. if you're using AWS S3, this would be https://s3.amazonaws.com) |
+| AWS_ENDPOINT | The URL of your object storage service (i.e. on AWS S3, this would be `https://s3.amazonaws.com`, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
 | AWS_ACCESS_KEY_ID | Your object storage key |
 | AWS_SECRET_ACCESS_KEY | Your object storage secret |
 | AWS_REGION | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
@@ -58,7 +58,7 @@ Login to your OpenReplay instance and go to `openreplay/scripts/helm/app/` then 
 | Variable | Description |
 |----------|-------------|
 | AWS_DEFAULT_REGION | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
-| S3_HOST | The URL of your object storage service (i.e. if you're using AWS S3, this would be https://s3.amazonaws.com) |
+| S3_HOST | The URL of your object storage service (i.e. (i.e. on AWS S3, this would be `https://s3.amazonaws.com`, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
 | S3_KEY | Your object storage key |
 | S3_SECRET | Your object storage secret  |
 
@@ -71,7 +71,7 @@ Login to your OpenReplay instance and go to `openreplay/scripts/helm/app/` then 
 | sessions_region | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
 | sourcemaps_bucket | The sourcemaps' bucket name (i.e. `openreplay-sourcemaps`) |
 | js_cache_bucket | The assets' bucket name (i.e. `openreplay-assets`)  |
-| S3_HOST | The URL of your object storage service (i.e. if you're using AWS S3, this would be https://s3.amazonaws.com) |
+| S3_HOST | The URL of your object storage service (i.e. (i.e. on AWS S3, this would be `https://s3.amazonaws.com`, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
 | S3_KEY | Your object storage key |
 | S3_SECRET | Your object storage secret  |
 
