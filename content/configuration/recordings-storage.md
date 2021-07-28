@@ -14,14 +14,14 @@ Recordings can be persisted in any object storage destination as long as it's S3
 
 You must create the below buckets in your object storage service. Their names can be different, but we'll use the below references in the remainder of this section:
 - `openreplay-recordings`: where recordings will be persisted
-- `openreplay-assets`: where assets (css, fonts) will be copied
+- `openreplay-assets`: where assets (such as css and fonts) will be copied
 - `openreplay-sourcemaps`: for storing source maps (see [how to upload them](/installation/upload-sourcemaps))
 
 Now make sure to generate the appropriate access keys so OpenReplay backend can programmatically access these buckets.
 
 ### Update backend services
 
-Login to your OpenReplay instance and go to `openreplay/scripts/helm/app/` then update the variables in the `env` section for each of the below files:
+Login to your OpenReplay instance and go to `openreplay/scripts/helm/app/` then update the variables in the `env` section of each of the below files:
 
 1. `http.yaml`:
 
@@ -32,7 +32,7 @@ Login to your OpenReplay instance and go to `openreplay/scripts/helm/app/` then 
 | AWS_SECRET_ACCESS_KEY | Your object storage secret |
 | AWS_REGION | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
 
-1. `storage.yaml`:
+2. `storage.yaml`:
 
 | Variable | Description |
 |----------|-------------|
@@ -42,7 +42,7 @@ Login to your OpenReplay instance and go to `openreplay/scripts/helm/app/` then 
 | AWS_REGION_WEB | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
 | S3_BUCKET_WEB | The recordings' bucket name (i.e. `openreplay-recordings`) |
 
-1. `assets.yaml`:
+3. `assets.yaml`:
 
 | Variable | Description |
 |----------|-------------|
@@ -53,7 +53,7 @@ Login to your OpenReplay instance and go to `openreplay/scripts/helm/app/` then 
 | S3_BUCKET_ASSETS | The assets' bucket name (i.e. `openreplay-assets`) |
 | ASSETS_ORIGIN | The relative path to you assets' bucket (i.e. `/openreplay-assets`) |
 
-1. `utilities.yaml`:
+4. `utilities.yaml`:
 
 | Variable | Description |
 |----------|-------------|
@@ -62,7 +62,7 @@ Login to your OpenReplay instance and go to `openreplay/scripts/helm/app/` then 
 | S3_KEY | Your object storage key |
 | S3_SECRET | Your object storage secret  |
 
-1. `chalice.yaml`:
+5. `chalice.yaml`:
 
 | Variable | Description |
 |----------|-------------|

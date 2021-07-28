@@ -19,15 +19,14 @@ DELETE FROM public.sessions WHERE start_ts < 1609459200000;
 
 Login to your OpenReplay instance, then:
 
-1. Run `k9s -n app`
-2. Press `0`
-3. Use the keyboard arrows to navigate the list and get to the `postgresql-*` container
-4. Press `s` to have shell access the the Postgres container
-5. Run `PGPASSWORD=asayerPostgres psql -U postgres`
-6. Execute your delete (or any other) query
-7. Type `exit` to exit the postgresql-client
-8. Use `exit` to exit the Postgres container
-9. Run `:quit` to exit the Kubernetes CLI
+1. Run `k9s -n db`
+2. Use the keyboard arrows to navigate the list and get to the `postgresql-*` container
+3. Press `s` to have shell access the the Postgres container
+4. Run `PGPASSWORD=asayerPostgres psql -U postgres`
+5. Execute your delete (or any other) query
+6. Type `exit` to exit the postgresql-client
+7. Use `exit` to exit the Postgres container
+8. Run `:quit` to exit the Kubernetes CLI
 
 
 ## Storage cleanup
@@ -36,10 +35,9 @@ Each recording takes the form of a file. In fact, OpenReplay dumps what's necess
 
 If you ever need to free up some space, then login to your OpenReplay instance and follow the below steps:
 
-1. Run `k9s -n app`
-2. Press `0`
-3. Use the keyboard arrows to navigate the list and get to the `minio-*` container
-4. Press `s` to have shell access the the Minio (object storage) container
-5. Run `mc ilm set --id mobs --expiry-days 14 minio/mobs` (i.e. clean files that are older than 14 days)
-6. Use `exit` to exit the Minio container
-7. Run `:quit` to exit the Kubernetes CLI
+1. Run `k9s -n db`
+2. Use the keyboard arrows to navigate the list and get to the `minio-*` container
+3. Press `s` to have shell access the the Minio (object storage) container
+4. Run `mc ilm set --id mobs --expiry-days 14 minio/mobs` (i.e. clean files that are older than 14 days)
+5. Use `exit` to exit the Minio container
+6. Run `:quit` to exit the Kubernetes CLI
