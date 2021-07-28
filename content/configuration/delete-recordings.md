@@ -31,13 +31,26 @@ Login to your OpenReplay instance, then:
 
 ## Storage cleanup
 
-Each recording takes the form of a file. In fact, OpenReplay dumps what's necessary to replay a session (DOM mutations, mouse coordinates, console logs, network activity and much more) into a single file. These files are by default stored on your instance, so they make up most of its storage. These objects are nevertheless cleaned automatically 180 days (lifecycle) after they get created.
+Each recording takes the form of a file. In fact, OpenReplay dumps what's necessary to replay a session (DOM mutations, mouse coordinates, console logs, network activity and much more) into a single file. These files are by default stored on your instance, so they make up most of its storage. 
+
+### Remove recordings
 
 If you ever need to free up some space, then login to your OpenReplay instance and follow the below steps:
 
 1. Run `k9s -n db`
 2. Use the keyboard arrows to navigate the list and get to the `minio-*` container
 3. Press `s` to have shell access the the Minio (object storage) container
-4. Run `mc ilm set --id mobs --expiry-days 14 minio/mobs` (i.e. clean files that are older than 14 days)
+4. Run `mc rm --recursive --dangerous --force --older-than 7d minio/mobs` (i.e. delete files that are older than 7 days)
+5. Use `exit` to exit the Minio container
+6. Run `:quit` to exit the Kubernetes CLI
+   
+### Change default lifecycle policy
+
+Recordings are automatically cleaned 180 days after they get created. You can change the default lifecycle policy this way:
+
+1. Run `k9s -n db`
+2. Use the keyboard arrows to navigate the list and get to the `minio-*` container
+3. Press `s` to have shell access the the Minio (object storage) container
+4. Run `mc ilm set --id mobs --expiry-days 14 minio/mobs` (i.e. automatically clean recordings 14 days after creation)
 5. Use `exit` to exit the Minio container
 6. Run `:quit` to exit the Kubernetes CLI
