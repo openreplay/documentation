@@ -20,7 +20,6 @@ Add the generated meta-reducer into your `imports`. See [NgRx documentation](htt
 
 ```js
 import { StoreModule } from '@ngrx/store';
-import { reducers } from './reducers';
 import OpenReplay from '@openreplay/tracker';
 import trackerNgRx from '@openreplay/tracker-ngrx';
 //...
@@ -33,7 +32,7 @@ tracker.start();
 
 //...
 @NgModule({
-  imports: [StoreModule.forRoot(reducers, { metaReducers })]
+  imports: [StoreModule.forRoot({}, { metaReducers })]
 })
 export class AppModule {}
 ```
@@ -44,7 +43,6 @@ Follow the below example if your app is SSR. Ensure `tracker.start()` is called 
 
 ```js
 import { StoreModule } from '@ngrx/store';
-import { reducers } from './reducers';
 import OpenReplay from '@openreplay/tracker/cjs';
 import trackerNgRx from '@openreplay/tracker-ngrx/cjs';
 //...
@@ -54,7 +52,7 @@ const tracker = new OpenReplay({
 const metaReducers = [tracker.use(trackerNgRx(<options>))]; // check list of available options below
 //...
   @NgModule({
-    imports: [StoreModule.forRoot(reducers, { metaReducers })]
+    imports: [StoreModule.forRoot({}, { metaReducers })]
   })
   export class AppModule {}
 }
