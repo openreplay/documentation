@@ -40,9 +40,10 @@ If you ever need to free up some space, then login to your OpenReplay instance a
 1. Run `k9s -n db`
 2. Use the keyboard arrows to navigate the list and get to the `minio-*` container
 3. Press `s` to have shell access the the Minio (object storage) container
-4. Run `mc rm --recursive --dangerous --force --older-than 7d minio/mobs` (i.e. delete files that are older than 7 days)
-5. Use `exit` to exit the Minio container
-6. Run `:quit` to exit the Kubernetes CLI
+4. Run `mc alias set minio http://localhost:9000 "{{ minio_access_key }}" "{{ minio_secret_key }}"`
+5. Run `mc rm --recursive --dangerous --force --older-than 7d minio/mobs` (i.e. delete files that are older than 7 days)
+6. Use `exit` to exit the Minio container
+7. Run `:quit` to exit the Kubernetes CLI
    
 ### Change default lifecycle policy
 
