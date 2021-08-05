@@ -17,52 +17,70 @@ You must create the below buckets in your object storage service. Their names ca
 - `openreplay-assets`: where assets (such as css and fonts) will be copied
 - `openreplay-sourcemaps`: for storing source maps (see [how to upload them](/installation/upload-sourcemaps))
 
-Now make sure to generate the appropriate access keys so OpenReplay backend can programmatically access these buckets.
+Once created, enable CORS for each of the above buckets. If you're on AWS, that would be under 'Permissions > Cross-origin resource sharing (CORS)' using the following configuration:
+
+```json
+[
+    {
+        "AllowedHeaders": [
+            "*"
+        ],
+        "AllowedMethods": [
+            "GET"
+        ],
+        "AllowedOrigins": [
+            "*"
+        ],
+        "ExposeHeaders": []
+    }
+]
+```
+
+Finally, make sure to generate the appropriate access keys so OpenReplay backend can programmatically access these buckets. 
 
 ### Update backend services
 
 Login to your OpenReplay instance and go to `openreplay/scripts/helm/app/` then update the variables in the `env` section of each of the below files:
 
-1. `http.yaml`:
+1. `vars.yaml`:
+
+| Variable | Description |
+|----------|-------------|
+| minio_access_key | Your object storage key |
+| minio_secret_key | Your object storage secret |
+
+2. `http.yaml`:
 
 | Variable | Description |
 |----------|-------------|
 | ASSETS_ORIGIN | The relative path to you assets' bucket (i.e. `/openreplay-assets`) |
-| AWS_ACCESS_KEY_ID | Your object storage key |
-| AWS_SECRET_ACCESS_KEY | Your object storage secret |
 | AWS_REGION | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
 
-2. `storage.yaml`:
+3. `storage.yaml`:
 
 | Variable | Description |
 |----------|-------------|
-| AWS_ENDPOINT | The URL of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
-| AWS_ACCESS_KEY_ID | Your object storage key |
-| AWS_SECRET_ACCESS_KEY | Your object storage secret |
+| AWS_ENDPOINT | The URL (starting with https) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
 | AWS_REGION_WEB | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
 | S3_BUCKET_WEB | The recordings' bucket name (i.e. `openreplay-recordings`) |
 
-1. `assets.yaml`:
+4. `assets.yaml`:
 
 | Variable | Description |
 |----------|-------------|
-| AWS_ENDPOINT | The URL of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
-| AWS_ACCESS_KEY_ID | Your object storage key |
-| AWS_SECRET_ACCESS_KEY | Your object storage secret |
+| AWS_ENDPOINT | The URL (starting with https) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
 | AWS_REGION | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
 | S3_BUCKET_ASSETS | The assets' bucket name (i.e. `openreplay-assets`) |
 | ASSETS_ORIGIN | The relative path to you assets' bucket (i.e. `/openreplay-assets`) |
 
-4. `utilities.yaml`:
+5. `utilities.yaml`:
 
 | Variable | Description |
 |----------|-------------|
 | AWS_DEFAULT_REGION | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
-| S3_HOST | The URL of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
-| S3_KEY | Your object storage key |
-| S3_SECRET | Your object storage secret  |
+| S3_HOST | The URL (starting with https) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
 
-5. `chalice.yaml`:
+6. `chalice.yaml`:
 
 | Variable | Description |
 |----------|-------------|
@@ -71,11 +89,17 @@ Login to your OpenReplay instance and go to `openreplay/scripts/helm/app/` then 
 | sessions_region | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
 | sourcemaps_bucket | The sourcemaps' bucket name (i.e. `openreplay-sourcemaps`) |
 | js_cache_bucket | The assets' bucket name (i.e. `openreplay-assets`)  |
-| S3_HOST | The URL of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
-| S3_KEY | Your object storage key |
-| S3_SECRET | Your object storage secret  |
+| S3_HOST | The URL (starting with https) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
 
-6. Reinstall the above backend services for the changes to take effect:
+1. Go to `scripts/helm/roles/openreplay/templates/chalice.yaml` and comment the below line:
+
+```yaml
+...
+#S3_HOST: "https://{{ domain_name }}"
+...
+ ```
+
+8. Reinstall the above backend services for the changes to take effect:
 
 ```bash
 cd openreplay/scripts/helm
