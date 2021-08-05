@@ -60,7 +60,7 @@ Login to your OpenReplay instance and go to `openreplay/scripts/helm/app/` then 
 
 | Variable | Description |
 |----------|-------------|
-| AWS_ENDPOINT | The URL (starting with https) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
+| AWS_ENDPOINT | The URL (starting with `https`) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
 | AWS_REGION_WEB | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
 | S3_BUCKET_WEB | The recordings' bucket name (i.e. `openreplay-recordings`) |
 
@@ -68,7 +68,7 @@ Login to your OpenReplay instance and go to `openreplay/scripts/helm/app/` then 
 
 | Variable | Description |
 |----------|-------------|
-| AWS_ENDPOINT | The URL (starting with https) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
+| AWS_ENDPOINT | The URL (starting with `https`) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
 | AWS_REGION | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
 | S3_BUCKET_ASSETS | The assets' bucket name (i.e. `openreplay-assets`) |
 | ASSETS_ORIGIN | The relative path to you assets' bucket (i.e. `/openreplay-assets`) |
@@ -78,7 +78,7 @@ Login to your OpenReplay instance and go to `openreplay/scripts/helm/app/` then 
 | Variable | Description |
 |----------|-------------|
 | AWS_DEFAULT_REGION | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
-| S3_HOST | The URL (starting with https) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
+| S3_HOST | The URL (starting with `https`) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
 
 6. `chalice.yaml`:
 
@@ -89,9 +89,9 @@ Login to your OpenReplay instance and go to `openreplay/scripts/helm/app/` then 
 | sessions_region | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
 | sourcemaps_bucket | The sourcemaps' bucket name (i.e. `openreplay-sourcemaps`) |
 | js_cache_bucket | The assets' bucket name (i.e. `openreplay-assets`)  |
-| S3_HOST | The URL (starting with https) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
+| S3_HOST | The URL (starting with `https`) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
 
-1. Go to `scripts/helm/roles/openreplay/templates/chalice.yaml` and comment the below line:
+7. Go to `scripts/helm/roles/openreplay/templates/chalice.yaml` and comment the below line:
 
 ```yaml
 ...
