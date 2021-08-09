@@ -16,7 +16,7 @@ npm i @openreplay/sourcemap-uploader
 
 ## Prerequisites
 
-Make sure your build produces separate source map files (`.map`). For example, if you're on webpack, your configuration should include the below `devtool` option:
+Make sure your build produces separate source map files (.map). For example, if you're on webpack, your configuration should include the below `devtool` option:
 
 ```js
 { devtool: ‘source-map’ }
