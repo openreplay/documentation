@@ -40,7 +40,7 @@ Finally, make sure to generate the appropriate access keys so OpenReplay backend
 
 ### Update backend services
 
-Login to your OpenReplay instance and go to `openreplay/scripts/helm/app/` then update the variables in the `env` section of each of the below files:
+Login to your OpenReplay instance and go to `openreplay/scripts/helm/` then update the variables in the `env` section of each of the below files:
 
 1. `vars.yaml`:
 
