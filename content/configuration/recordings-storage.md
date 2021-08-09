@@ -40,14 +40,14 @@ Finally, make sure to generate the appropriate access keys so OpenReplay backend
 
 ### Update backend services
 
-Login to your OpenReplay instance and go to `openreplay/scripts/helm/` then update the variables in the `env` section of each of the below files:
-
-1. `vars.yaml`:
+1. Login to your OpenReplay instance and go to `openreplay/scripts/helm/` then update the below variables in the `env` section of `vars.yaml` file:
 
 | Variable | Description |
 |----------|-------------|
 | minio_access_key | Your object storage key |
 | minio_secret_key | Your object storage secret |
+
+Then go to `openreplay/scripts/helm/app` then update the variables in the `env` section of each of the below files:
 
 2. `http.yaml`:
 
@@ -73,14 +73,7 @@ Login to your OpenReplay instance and go to `openreplay/scripts/helm/` then upda
 | S3_BUCKET_ASSETS | The assets' bucket name (i.e. `openreplay-assets`) |
 | ASSETS_ORIGIN | The relative path to you assets' bucket (i.e. `/openreplay-assets`) |
 
-5. `utilities.yaml`:
-
-| Variable | Description |
-|----------|-------------|
-| AWS_DEFAULT_REGION | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
-| S3_HOST | The URL (starting with `https`) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
-
-6. `chalice.yaml`:
+5. `chalice.yaml`:
 
 | Variable | Description |
 |----------|-------------|
@@ -91,7 +84,7 @@ Login to your OpenReplay instance and go to `openreplay/scripts/helm/` then upda
 | js_cache_bucket | The assets' bucket name (i.e. `openreplay-assets`)  |
 | S3_HOST | The URL (starting with `https`) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
 
-7. Go to `scripts/helm/roles/openreplay/templates/chalice.yaml` and comment the below line:
+6. Now go to `scripts/helm/roles/openreplay/templates/chalice.yaml` and comment the below line:
 
 ```yaml
 ...
@@ -99,14 +92,13 @@ Login to your OpenReplay instance and go to `openreplay/scripts/helm/` then upda
 ...
  ```
 
-8. Reinstall the above backend services for the changes to take effect:
+7. Reinstall the above backend services for the changes to take effect:
 
 ```bash
 cd openreplay/scripts/helm
 ./openreplay-cli -i http
 ./openreplay-cli -i storage
 ./openreplay-cli -i assets
-./openreplay-cli -i utilities
 ./openreplay-cli -i chalice
 ```
 
