@@ -8,7 +8,7 @@ This section contains everything you need to get started with OpenReplay, from b
 
 ## Getting Started
 - [Installation](/installation/setup-or): Setup OpenReplay in minutes and start recording user sessions.
-- [Identify a User](/installation/identify-a-user): Associate your internal user ID with the session being recorded.
+- [Identify a User](/installation/identify-user): Associate your internal user ID with the session being recorded.
 - [Metadata](/installation/metadata): Also referred to as traits or user variables, metadata provides additional information about users while recording sessions.
 - [Custom Events](/installation/custom-events): Add more intelligence by recording domain-specific events alongside session replays.
 - [Upload Source-Maps](/installation/upload-sourcemaps): Make debugging easier by seeing the source code context obtained from stack traces in their original form.

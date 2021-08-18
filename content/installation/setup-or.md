@@ -59,7 +59,7 @@ If you would like to go further in configuring the tracker, check [JavaScript SD
 Now that you have installed the tracker and deployed your web app, session recordings should appear within few minutes. Well done!
 
 In the meantime, you can further in the setup process to get the most out of OpenReplay. The more you capture the better for quickly reproducing and fixing issues:
-- [Identify a User](/installation/identify-a-user): Associate your internal user ID with the session being recorded.
+- [Identify a User](/installation/identify-user): Associate your internal user ID with the session being recorded.
 - [Metadata](/installation/metadata): Also referred to as traits or user variables, metadata provides additional information about users while recording sessions.
 - [Custom Events](/installation/custom-events): Add more intelligence by recording domain-specific events alongside session replays.
 - [Upload Source-Maps](/installation/upload-sourcemaps): See the source code context obtained from stack traces in their original form.
