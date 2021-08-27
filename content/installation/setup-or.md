@@ -62,6 +62,7 @@ In the meantime, you can further in the setup process to get the most out of Ope
 - [Identify a User](/installation/identify-user): Associate your internal user ID with the session being recorded.
 - [Metadata](/installation/metadata): Also referred to as traits or user variables, metadata provides additional information about users while recording sessions.
 - [Custom Events](/installation/custom-events): Add more intelligence by recording domain-specific events alongside session replays.
+- [Error Reprting](/installation/error-reporting): Report errors and exceptions and see them under the ERRORS tab.
 - [Upload Source-Maps](/installation/upload-sourcemaps): See the source code context obtained from stack traces in their original form.
 - [Plugins](/plugins): Understand what's happening under the hood by capturing your application's store and monitoring your HTTP and GraphQL queries.
 - [Integrations](/integrations): Plug OpenReplay with your logging tools and sync backend errors with session replays.
