@@ -4,9 +4,7 @@ metaTitle: "Error Reporting"
 metaDescription: "How error reporting works, what gets sent to the 'Errors' tab and how to report errors and exceptions manually"
 ---
 
-Error reporting is very important for monitoring your app's stability, spotting regressions ahead of time, and knowing which issues occur the most to your users.
-
-By default, any uncaught exception is logged under the 'Errors' tab:
+Error reporting is very important for monitoring your app's stability, spotting regressions ahead of time and knowing which issues occur the most to your users. By default, any uncaught exception is logged under the 'Errors' tab:
 
 ![Errors Tab](../static/errors-tab.jpg#center)
 
