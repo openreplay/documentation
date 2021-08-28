@@ -39,6 +39,6 @@ Ensure your tracker is compatible with the new backend version by checking the b
 
 | Backend Version | Tracker Version |
 |----------|-------------|
-| v1.3.0 | 3.2.0 (or higher) |
+| v1.3.0 | 3.2.1 (or higher) |
 | v1.2.0 | 3.1.0 (or higher) |
 | v1.1.0 | 3.0.3 (or higher) |
