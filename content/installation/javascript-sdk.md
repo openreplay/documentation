@@ -83,6 +83,10 @@ See [Sanitize Data](/installation/sanitize-data) for more details.
 - `capturePageLoadTimings?: boolean` Logs page load timings. Default: `true`.
 - `capturePageRenderTimings?: boolean` Computes page rendering metrics such as Speed Index, Visually Complete or Time To Interactive. Requires `captureResourceTimings = true`. Default: `true`.
 
+### Performance
+
+- `capturePerformance?: boolean` For capturing performance metrics such as framerate, CPU and memory consumption. Default: `true`.
+
 ### Network
 
 - `connAttemptCount?: number` Max number of retries when tracker's HTTP requests fail to reach the backend. Default: `10`.

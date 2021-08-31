@@ -11,7 +11,7 @@ OpenReplay stack can be installed on a single machine and AWS EC2 is an ideal ca
 1. Go to AWS EC2 Dashboard
 2. 'Launch a new instance'
 3. Select your AMI. For this guide, we'll be using *Ubuntu Server 20.04 LTS*
-4. Choose your instance type. The minimum specs are `2 vCPUs, 8 GB of RAM, 50 GB of storage`. So, we recommend the `t3.large` (or an equivalent) for a low/moderate volume. If you're expecting high traffic, you should scale from here.
+4. Choose your instance type. The minimum specs are `2 vCPUs, 8 GB of RAM, 50 GB of storage`, otherwise OpenReplay backend services won't simply start. So, we recommend **at least** the `t3.large` (or an equivalent), which is enough for a low/moderate volume. If you're expecting high traffic, you should scale from here.
 5. Configure Instance Details: Tune the Network/Subnet parameters if needed or simply keep the defaults
 6. Add Storage: Set the size to 50 GB (General Purpose SSD (gp2))
 7. Add Tags: Tune the parameters or keep the defaults

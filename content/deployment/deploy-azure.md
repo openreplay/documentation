@@ -12,7 +12,7 @@ OpenReplay stack can be installed on a single machine and Microsoft Azure is an 
 2. Click 'Virtual Machine' if it is available on the main screen. Otherwise, click 'Create a Resource' > 'Compute' > 'Virtual Machine'
 3. On the 'Virtual Machine' page, click 'Add' in case you're not automatically redirected to the creation page
 4. Pick *Ubuntu Server 20.04 LTS* for the 'Image'
-4. Pick your VM specifications. The minimum resources are `2 vCPUs, 8 GB of RAM, 50 GB of storage` for a low/moderate volume. If you're expecting high traffic, you should scale from here.
+4. Pick your VM specifications. The **minimum** resources are `2 vCPUs, 8 GB of RAM, 50 GB of storage`, otherwise OpenReplay backend services won't simply start. The minimum specs are enough for a low/moderate volume. If you're expecting high traffic, you should scale from here.
 5. Enable HTTP (80), HTTPS (443) and SSH (22) ports and take note of the `username`
 6. Click 'Review + create'
 
