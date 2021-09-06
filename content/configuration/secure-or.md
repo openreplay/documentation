@@ -42,3 +42,30 @@ sudo cp -arl public frontend
 minio_pod=$(sudo kubectl get po -n db -l app.kubernetes.io/name=minio -n db --output custom-columns=name:.metadata.name | tail -n+2)
 sudo kubectl -n db cp frontend $minio_pod:/data/
 ```
+
+## Content Security Policy (CSP)
+
+Here is an example of a policy (CSP) for allowing OpenReplay to record sessions. This has to be adapted depending on your domain and security requirements:
+
+```HTML
+worker-src ‘self’ blob: https://openreplay.mycompany.com https://*.openreplay.com; script-src ‘self’ https://openreplay.mycompany.com https://*.openreplay.com;
+```
+
+To apply your CSP to NGINX, connect to your OpenReplay instance and follow the below steps:
+
+1. Uninstall NGINX by running `helm uninstall -n nginx-ingress nginx-ingress`
+2. Open `openreplay/scripts/helm/nginx-ingress/nginx-ingress/templates/configmap.yaml` and add your CSP in the `location / {` block:
+
+```yaml
+location / {
+add_header Content-Security-Policy "worker-src ‘self’ blob: https://openreplay.mycompany.com https://*.openreplay.com; script-src ‘self’ https://openreplay.mycompany.com https://*.openreplay.com;";
+...
+}
+```
+
+3. Reinstall NGINX to apply your newly added CSP (and choose whether to enable the default HTTP to HTTPS redirection using the `NGINX_REDIRECT_HTTPS` variable):
+
+```bash
+cd openreplay/scripts/helm
+NGINX_REDIRECT_HTTPS=1 ./install.sh --app nginx
+```
