@@ -34,7 +34,7 @@ If your OpenReplay tracker is set up using the JS snippet, then simply replace t
   r.issue=function(k,p){r.push([6,k,p])};
   r.isActive=function(){return false};
   r.getSessionToken=function(){};
-})(0, "YaJGhAfWnuz56BJSpmc", "//static.openreplay.com/3.3.1/openreplay-assist.js",1,28);
+})(0, "PROJECT_KEY", "//static.openreplay.com/3.3.1/openreplay-assist.js",1,28);
 </script>
 ```
 
