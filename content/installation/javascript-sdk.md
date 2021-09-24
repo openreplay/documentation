@@ -55,6 +55,8 @@ There are a set of options you can pass to the constructor. Only `projectKey` is
 - `ingestPoint?: string` Your OpenReplay domain (i.e. https://openreplay.mydomain.com/ingest), to which the tracker will be sending events. This is optional for OpenReplay Cloud users. Default: `https://api.openreplay.com/ingest` (which points to OpenReplay Cloud).
 - `revID?: string` The revision ID of your web app. Useful when searching for issues happening on a specific release version.
 - `onStart?: (info: { sessionToken: string, userUUID: string }) => void` This event is fired when the tracker is started. Useful for logging/debugging purposes.
+- `resourceBaseHref?: string` Refers to the publicly accessible domain where assets (styles, fonts and icons) could be fetched by OpenReplay. Since they're required for proper session replay, this option is useful to get around the limitation of having your site (and therefore assets) hosted in a private domain. Example: `https://mypublicsite.com/assets/`.
+- `captureIFrames?: boolean` For capturing all of the same-domain iFrames in your web app. If you wish to track a specific iFrame, then instead simply add the `data-openreplay-capture` HTML attribute to the `<iframe>` tag. Default: `false`.
 
 ### Privacy
 
@@ -64,9 +66,7 @@ There are a set of options you can pass to the constructor. Only `projectKey` is
 - `obscureInputEmails?: boolean` Obscures emails in input fields. Email values will be converted to a random chain of asterisks. Default: `true`.
 - `defaultInputMode?: 0 | 1 | 2` Default capture mode for input values. Respectively: plain, obscured or ignored. Default: `0` (plain).
 
-Note that excluded data is obscured or suppressed before sending the data to OpenReplay servers. Changes applied to the above options cannot be retroactive and will only apply to newly collected data.
-
-See [Sanitize Data](/installation/sanitize-data) for more details.
+Note that excluded data is obscured or suppressed before sending the data to OpenReplay servers. Changes applied to the above options cannot be retroactive and will only apply to newly collected data. See [Sanitize Data](/installation/sanitize-data) for more details.
 
 ### Console
 
