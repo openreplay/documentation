@@ -13,7 +13,7 @@ Upgrading your OpenReplay deployment to the latest version requires updating bot
 1. Copy/backup the current openreplay folder to `_version-number`:
    
   ```bash 
-  mv openreplay openreplay-v1.1.0
+  mv openreplay openreplay-v1.3.0
   ```
 
 2. Clone the new OpenReplay version. In this example we're upgrading to the latest available version:
@@ -27,7 +27,7 @@ Upgrading your OpenReplay deployment to the latest version requires updating bot
   ```bash
   cd openreplay/scripts/helm
   # bash upgrade.sh <old openreplay path>
-  bash upgrade.sh ~/openreplay-v1.1.0
+  bash upgrade.sh ~/openreplay-v1.3.0
   ```
 
 > **Note:** 
@@ -39,6 +39,7 @@ Ensure your tracker is compatible with the new backend version by checking the b
 
 | Backend Version | Tracker Version |
 |----------|-------------|
+| v1.3.5 | 3.4.0 (or higher) |
 | v1.3.0 | 3.2.1 (or higher) |
 | v1.2.0 | 3.1.0 (or higher) |
 | v1.1.0 | 3.0.3 (or higher) |
