@@ -31,7 +31,7 @@ Upgrading your OpenReplay deployment to the latest version requires updating bot
   ```
 
 > **Note:** 
-Manual overrides made to any app's configuration file (i.e. `openreplay/scripts/helm/app/<app>.yaml`) will be reset. So if you have any custom overrides, make sure to apply them to the new version prior to running the upgrade script.
+Manual overrides made to any app's configuration file (i.e. `openreplay/scripts/helm/app/<app>.yaml`) will be reset. So if you have any custom overrides, like using an [external object storage service](/configuration/recordings-storage) for your recordings, make sure to apply them to the new version prior to running the upgrade script.
 
 ### Upgrade Tracker
 
