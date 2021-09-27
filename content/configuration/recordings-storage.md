@@ -38,7 +38,7 @@ Once the bucket created:
 ]
 ```
 
-2. Enable public access to the `openreplay-assets` bucket **only**. This latter contains CSS files and fonts that are required for proper session replay. If you're on AWS, that would be under 'Permissions > Bucket policy' using the following configuration:
+2. Enable public access to the `openreplay-assets` bucket **only**. This latter contains only stylesheets, icons and fonts that are required for proper session replay. If you're on AWS, that would be under 'Permissions > Bucket policy' using the following configuration:
 
 ```json
 {
