@@ -17,7 +17,9 @@ You must create the below buckets in your object storage service. Their names ca
 - `openreplay-assets`: where assets (such as css and fonts) will be copied
 - `openreplay-sourcemaps`: for storing source maps (see [how to upload them](/installation/upload-sourcemaps))
 
-Once created, enable CORS for each of the above buckets. If you're on AWS, that would be under 'Permissions > Cross-origin resource sharing (CORS)' using the following configuration:
+Once the bucket created: 
+
+1. Enable CORS for each of the above buckets. If you're on AWS, that would be under 'Permissions > Cross-origin resource sharing (CORS)' using the following configuration:
 
 ```json
 [
@@ -36,7 +38,25 @@ Once created, enable CORS for each of the above buckets. If you're on AWS, that 
 ]
 ```
 
-Finally, make sure to generate the appropriate access keys so OpenReplay backend can programmatically access these buckets. 
+2. Enable public access to the `openreplay-assets` bucket **only**. This latter contains CSS files and fonts that are required for proper session replay. If you're on AWS, that would be under 'Permissions > Bucket policy' using the following configuration:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AddPerm",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::openreplay-assets/*"
+        }
+    ]
+}
+
+```
+
+3. Finally, make sure to generate the appropriate access keys so OpenReplay backend can programmatically access these buckets. 
 
 ### Update backend services
 
@@ -53,7 +73,7 @@ Then go to `openreplay/scripts/helm/app` then update the variables in the `env` 
 
 | Variable | Description |
 |----------|-------------|
-| ASSETS_ORIGIN | The relative path to you assets' bucket (i.e. `/openreplay-assets`) |
+| ASSETS_ORIGIN | The absolute path to your assets' bucket (i.e. `https://openreplay-assets.s3.eu-central-1.amazonaws.com/`) |
 | AWS_REGION | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
 
 3. `storage.yaml`:
@@ -71,7 +91,7 @@ Then go to `openreplay/scripts/helm/app` then update the variables in the `env` 
 | AWS_ENDPOINT | The URL (starting with `https`) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
 | AWS_REGION | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
 | S3_BUCKET_ASSETS | The assets' bucket name (i.e. `openreplay-assets`) |
-| ASSETS_ORIGIN | The relative path to you assets' bucket (i.e. `/openreplay-assets`) |
+| ASSETS_ORIGIN | The absolute path to your assets' bucket (i.e. `https://openreplay-assets.s3.eu-central-1.amazonaws.com/` |
 
 5. `chalice.yaml`:
 
