@@ -57,7 +57,7 @@ There are a set of options you can pass to the constructor. Only `projectKey` is
 - `onStart?: (info: { sessionToken: string, userUUID: string }) => void` This event is fired when the tracker is started. Useful for logging/debugging purposes.
 - `resourceBaseHref?: string` Refers to the publicly accessible domain where assets (styles, fonts and icons) could be fetched by OpenReplay. Since they're required for proper session replay, this option is useful to get around the limitation of having your site (and therefore assets) hosted in a private domain. Example: `https://mypublicsite.com/assets/`.
 - `captureIFrames?: boolean` For capturing all of the same-domain iFrames in your web app. If you wish to track a specific iFrame, then instead simply add the `data-openreplay-capture` HTML attribute to the `<iframe>` tag. Default: `false`.
-- `heatmaps?: boolean` For disabling click maps. Default: `true`.
+- `selectorFinder?: boolean` For disabling click maps. Default: `true`.
 
 ### Privacy
 
