@@ -59,6 +59,7 @@ trackerAxios({
   failuresOnly: boolean;
   captureWhen: (AxiosRequestConfig) => boolean;
   sessionTokenHeader: string;
+  ignoreHeaders: Array<string> | boolean;
 })
 ```
 
@@ -66,3 +67,4 @@ trackerAxios({
 - `failuresOnly`: Set it to `false` if you want to record every single request regardless of the status code. By default only failed requests are captured (when the axios promise is rejected). You can also [change](https://github.com/axios/axios#request-config) this behavior with the `validateStatus` option. Default: `false`.
 - `captureWhen`: Allows you to set a filter on what should be captured. The function will be called with the axios config object and expected to return `true|false`. Default: `() => true`.
 - `sessionTokenHeader`: In case you have enabled some of our backend [integrations](/integrations) (i.e. Sentry), you can use this option to specify the header name (i.e. 'X-OpenReplay-SessionToken'). This latter gets appended automatically to each axios request to contain the OpenReplay sessionToken's value. Default: `undefined`.
+- `ignoreHeaders`: Helps define a list of headers you don't wish to capture. Set its value to `false` to capture all of them (`true` if none). Default: `[ 'Cookie', 'Set-Cookie', 'Authorization' ]` so sensitive headers won't be captured.

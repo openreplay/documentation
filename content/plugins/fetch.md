@@ -63,8 +63,10 @@ function MyApp() {
 trackerFetch({
   failuresOnly: boolean;
 	sessionTokenHeader: string;
+  ignoreHeaders: Array<string> | boolean;
 })
 ```
 
 - `failuresOnly`: Captures requests having 4xx-5xx HTTP status code. Default: `false`.
 - `sessionTokenHeader`: In case you have enabled some of our backend [integrations](/integrations) (i.e. Sentry), you can use this option to specify the header name (i.e. 'X-OpenReplay-SessionToken'). This latter gets appended automatically to each fetch request to contain the OpenReplay sessionToken's value. Default: `undefined`.
+- `ignoreHeaders`: Helps define a list of headers you don't wish to capture. Set its value to `false` to capture all of them (`true` if none). Default: `[ 'Cookie', 'Set-Cookie', 'Authorization' ]` so sensitive headers won't be captured.
