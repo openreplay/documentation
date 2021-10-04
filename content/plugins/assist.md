@@ -88,3 +88,18 @@ trackerAssist({
 ```
 
 - `confirmText`: Customize the text that gets displayed in the calling popup.
+
+## Troubleshooting
+
+### Critical dependency: the request of a dependency is an expression
+
+Please apply this [workaround](https://github.com/peers/peerjs/issues/630#issuecomment-910028230) if you face the below error when compiling:
+
+```log
+Failed to compile.
+
+./node_modules/peerjs/dist/peerjs.min.js
+Critical dependency: the request of a dependency is an expression
+```
+
+If you encounter any other issue, please connect to our [Slack](https://slack.openreplay.com) and get help from our community.

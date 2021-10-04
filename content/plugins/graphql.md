@@ -110,3 +110,7 @@ const link = ApolloLink.from([
 See [Apollo Link](https://www.apollographql.com/docs/link/) and
 [Apollo Networking](https://www.apollographql.com/docs/react/networking/network-layer/)
 for details.
+
+## Troubleshooting
+
+Having trouble setting up this plugin? please connect to our [Slack](https://slack.openreplay.com) and get help from our community.

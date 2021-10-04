@@ -4,7 +4,7 @@ metaTitle: "MobX"
 metaDescription: "MobX plugin for OpenReplay."
 ---
 
-This plugin allows you to capture `MobX` events and inspect them later on while replaying session recordings. This is very useful for understanding and fixing issues.
+This plugin allows you to capture `MobX` events and inspect them later on while replaying session recordings. This is very useful for understanding and fixing issues. At this moment, we support `MobX` up to v4.
 
 ## Installation
 
@@ -110,3 +110,7 @@ class MyStore {
 ```
 
 **Note:** At this point `trackerMobXConfig` is only available for actions (`@action`) and computed properties (`@computed`).
+
+## Troubleshooting
+
+Having trouble setting up this plugin? please connect to our [Slack](https://slack.openreplay.com) and get help from our community.
