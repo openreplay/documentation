@@ -30,7 +30,7 @@ Then, you need to set up your build process to create the various source files. 
 sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY file -m ./dist/index.js.map -u https://myapp.com/index.js
 ```
 
-Or a **directory** including many files. In that case, the URL must correspond to the root where you upload JS files from the directory. In other words, if you have your `app-42.js` along with  the `app-42.js.map` in the `./build` folder and then want to upload it to your OpenReplay instance so it can be reachable through the link `https://myapp.com/static/app-42.js`, then the command should be like:
+Or a **directory** including many files. In that case, the URL must correspond (exact path) to the root where you upload JS files from the directory. In other words, if you have your `app-42.js` along with  the `app-42.js.map` in the `./build` folder and then want to upload it to your OpenReplay instance so it can be reachable through the link `https://myapp.com/static/app-42.js`, then the command should be like:
 
 ```bash
 sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY dir -m ./build -u https://myapp.com/static
@@ -38,7 +38,7 @@ sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT
 
 ## Parameters
 
-- `-s`: The URL of your OpenReplay instance. Make sure to append it with /api. This parameter is optional for OpenReplay Cloud users.
+- `-s`: The URL of your OpenReplay instance. Make sure to append it with /api. Do not specify this parameter if you're on OpenReplay Cloud.
 - `-k`: API Key (found in 'Preferences' > 'Account' > 'Organization API Key').
 - `-p`: Project Key (found in 'Preferences' > 'Projects').
 - `-m`: Path to source maps file(s) (can also be a directory).
