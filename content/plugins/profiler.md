@@ -4,7 +4,7 @@ metaTitle: "Profiler"
 metaDescription: "Profiler plugin for OpenReplay."
 ---
 
-The profiler plugin allows you to measure your JS functions' performance and capture both arguments and result for each function call.
+The profiler plugin allows you to measure your JS functions performance and capture both arguments and result for each call.
 
 ## Installation
 
