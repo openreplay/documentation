@@ -14,7 +14,7 @@ npm i @openreplay/tracker-axios
 
 ## Usage
 
-Initialize the `@openreplay/tracker` package as usual then load the `axios` plugin.
+Initialize the `@openreplay/tracker` package as usual then load the `axios` plugin. Note that OpenReplay `axios` plugin requires `axios@^0.21.2` as a peer dependency.
 
 ### If your website is a Single Page Application (SPA)
 
