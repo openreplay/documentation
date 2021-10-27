@@ -73,7 +73,7 @@ Then go to `openreplay/scripts/helm/app` then update the variables in the `env` 
 
 | Variable | Description |
 |----------|-------------|
-| ASSETS_ORIGIN | The absolute path to your assets' bucket (i.e. `https://openreplay-assets.s3.eu-central-1.amazonaws.com/`) |
+| ASSETS_ORIGIN | The absolute path to your assets' bucket (i.e. `https://openreplay-assets.s3.eu-central-1.amazonaws.com`) |
 | AWS_REGION | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
 
 3. `storage.yaml`:
@@ -91,7 +91,7 @@ Then go to `openreplay/scripts/helm/app` then update the variables in the `env` 
 | AWS_ENDPOINT | The URL (starting with `https`) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
 | AWS_REGION | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
 | S3_BUCKET_ASSETS | The assets' bucket name (i.e. `openreplay-assets`) |
-| ASSETS_ORIGIN | The absolute path to your assets' bucket (i.e. `https://openreplay-assets.s3.eu-central-1.amazonaws.com/` |
+| ASSETS_ORIGIN | The absolute path to your assets' bucket (i.e. `https://openreplay-assets.s3.eu-central-1.amazonaws.com` |
 
 5. `chalice.yaml`:
 
