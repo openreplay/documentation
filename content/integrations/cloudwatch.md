@@ -8,7 +8,7 @@ How to integrate CloudWatch with OpenReplay and see backend errors alongside ses
 
 ## 1. Create a Service Account
 
-1. Login to your [AWS](https//aws.amazon.com) account.
+1. Login to your [AWS](https//console.aws.amazon.com) account.
 2. Go to [IAM](https://console.aws.amazon.com/iam/home) dashboard.
 3. Click on *Users*.
 4. Click on *Add user* button.
