@@ -83,11 +83,13 @@ function MyApp() {
 
 ```js
 trackerAssist({
-  confirmText: string;
+  confirmText?: string;
+  config?: object;
 })
 ```
 
 - `confirmText`: Customize the text that gets displayed in the calling popup.
+- `config`: Contains any custom ICE/TURN server configuration. Defaults to `{ 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }], 'sdpSemantics': 'unified-plan' }`.
 
 ## Troubleshooting
 
