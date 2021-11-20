@@ -18,7 +18,8 @@ Integrate GitHub with OpenReplay and create issues directly from the recording p
 ### 2. Enable GitHub in OpenReplay
 
 1. Go to OpenReplay dashboard then 'Preferences > Integration'
-2. Select GitHub and paste the previously generated `token`
+2. Select GitHub. If you don't see it, then you must have enabled Jira (you cannot use both at the same time so make sure to disable Jira integration first).
+3. Paste the previously generated `token`
 
 A 'Create Issue' button would then appear in all recordings so you can quickly create and assign issues in GitHub.
 
