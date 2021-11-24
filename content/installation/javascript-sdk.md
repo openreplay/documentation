@@ -44,6 +44,24 @@ function MyApp() {
 }
 ```
 
+For NuxtJS, put the script inside a client-only plugin (don't forget to add it to your `nuxt.config.js`):
+```js
+// ~/plugins/openreplay.client.js
+
+import OpenReplay from '@openreplay/tracker/cjs'
+
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+})
+
+export default (context) => {
+  tracker.start()
+  // context available, e.g. for setting metadata from the store
+}
+
+```
+
+
 ## Options
 
 There are a set of options you can pass to the constructor. Only `projectKey` is required.
