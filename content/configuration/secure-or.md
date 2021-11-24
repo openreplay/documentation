@@ -15,7 +15,7 @@ Restart NGINX (and choose whether to enable the default HTTP to HTTPS redirectio
 
 ```bash
 cd openreplay/scripts/helm
-NGINX_REDIRECT_HTTPS=1 ./install.sh --app nginx
+NGINX_REDIRECT_HTTPS=1 ./openreplay-cli -i nginx
 ```
 
 If you don't have a certificate, generate one for your domain (i.e. openreplay.mycompany.com) using Let's Encrypt. Connect to OpenReplay instance, run `helm uninstall -n nginx-ingress nginx-ingress` then execute `bash openreplay/scripts/certbot.sh` and follow the steps.
@@ -67,5 +67,5 @@ add_header Content-Security-Policy "worker-src ‘self’ blob: https://openrepl
 
 ```bash
 cd openreplay/scripts/helm
-NGINX_REDIRECT_HTTPS=1 ./install.sh --app nginx
+NGINX_REDIRECT_HTTPS=1 ./openreplay-cli -i nginx
 ```

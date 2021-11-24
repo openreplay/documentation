@@ -75,7 +75,7 @@ Restart OpenReplay NGINX (and choose whether to enable the default HTTP to HTTPS
 
 ```bash
 cd openreplay/scripts/helm
-NGINX_REDIRECT_HTTPS=1 ./install.sh --app nginx
+NGINX_REDIRECT_HTTPS=1 ./openreplay-cli -i nginx
 ```
 
 You're all set now, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
