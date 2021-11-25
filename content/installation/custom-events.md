@@ -8,7 +8,7 @@ Custom events are great for adding more intelligence by recording domain-specifi
 
 ## Functional Events
 
-Use the `event` method to signal functional events such as *order completed* or *product added*. It takes 2 parameters: *name* (string) and *payload* (JS value that can be converted to a JSON object via JSON.stringify method [e.g. string/number/non-recursive object]).
+Use the `event` method to signal functional events such as *order completed* or *product added*. It takes 2 parameters: *name* (string) and *payload* (non-recursive JS object).
 
 ```js
 tracker.event('product_added', 'shoes');
@@ -20,7 +20,7 @@ Functional events are indexed and makes looking for specific session recordings 
 
 ## Technical Events
 
-`issue` is used to send technical events, like errors, that may occur in your stack or other downstream systems. `issue` takes 2 parameters: *name* (string) and *payload* (JS value that can be converted to a JSON object via JSON.stringify method [e.g.  string/number/non-recursive object]).
+`issue` is used to send technical events, like errors, that may occur in your stack or other downstream systems. `issue` takes 2 parameters: *name* (string) and *payload* (non-recursive JS object).
 
 ```js
 tracker.issue('payment_error', {code: 500, context: 42});
