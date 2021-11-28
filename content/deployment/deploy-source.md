@@ -37,13 +37,13 @@ sudo IMAGE_TAG=<my_tag_number> PUSH=1 DOCKER_REPO=<docker_hub_user_name> or <doc
 ```
 ## 3. Install OpenReplay
 
-1. To use the components you just built and pushed to your container registry, open the `vars.yaml` file with the command `vi openreplay/scripts/helm/vars.yaml` then uncomment and substitute the below variables:
+To use the components you just built and pushed to your container registry, open the `vars.yaml` file with the command `vi openreplay/scripts/helm/vars.yaml` then uncomment and substitute the below variables:
 - `docker_registry_username`: your registry username
 - `docker_registry_password`: your registry password
 - `docker_registry_url`: in case of docker hub, give your username, else the registry url
 - `image_tag`: the value of IMAGE_TAG used when building Backend and API
 
-2. Setup OpenReplay:
+### Setup OpenReplay
 
 ```bash
 cd openreplay/scripts/helm
@@ -51,7 +51,7 @@ sudo bash install.sh
 ```
 > **Note:** You'll be prompted to provide the domain on which OpenReplay will be running (e.g. openreplay.mycompany.com). This is required to continue the installation.
 
-3. Configure TLS/SSL
+### Configure TLS/SSL
 
 OpenReplay deals with sensitive user data and therefore requires HTTPS to run. This is mandatory, otherwise the tracker simply wouldn't start recording. Same thing for the dashboard, without HTTPS you won't be able to replay user sessions.
 
