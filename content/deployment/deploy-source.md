@@ -10,7 +10,7 @@ The minimum specs for the machine running OpenReplay are `2 vCPUs, 8 GB of RAM, 
 
 ## 1. Prerequisites
 
-1 Install docker
+1. Install docker:
 
 ```bash
 sudo apt update
@@ -19,7 +19,7 @@ user=`whoami`
 sudo chown $user /var/run/docker.sock
 ```
 
-2. Clone OpenReplay repo
+2. Clone OpenReplay repo:
 
 ```bash
 git clone https://github.com/openreplay/openreplay
@@ -29,7 +29,7 @@ git clone https://github.com/openreplay/openreplay
 
 1. Login to your container registry using `docker login <registry_url>`. If you have a docker hub account, then simply run `docker login`.
 
-2. Build API and Backend components then push them to your container registry
+2. Build API and Backend components then push them to your container registry:
 
 ```bash
 cd openreplay/scripts/helm
@@ -42,10 +42,8 @@ sudo IMAGE_TAG=<my_tag_number> PUSH=1 DOCKER_REPO=<docker_hub_user_name> or <doc
 - `docker_registry_password`: your registry password
 - `docker_registry_url`: in case of docker hub, give your username, else the registry url
 - `image_tag`: the value of IMAGE_TAG used when building Backend and API
-   
-For the sake of simplicity, we assume you're setting up OpenReplay on the same machine you used to run the above steps. If you intend to deploy your previously built components on a different machine, then ignore the following steps (alternatively check the [Deployment](/deployment) section for detailed tutorials on how to deploy on major public clouds).
 
-1. Setup OpenReplay
+2. Setup OpenReplay:
 
 ```bash
 cd openreplay/scripts/helm
@@ -75,9 +73,9 @@ cd openreplay/scripts/helm
 NGINX_REDIRECT_HTTPS=1 ./openreplay-cli -i nginx
 ```
 
-## 3. Build and deploy Frontend
+## 4. Build and deploy Frontend
 
-Finally, run the below comamnds to build the frontend from source then deploy it:
+Finally, run the below comamnds to build and deploy the frontend from source:
 
 ```bash
 cd openreplay/frontend
@@ -85,7 +83,6 @@ sudo bash build.sh
 cp -arl public frontend
 minio_pod=$(kubectl get po -n db -l app.kubernetes.io/name=minio -n db --output custom-columns=name:.metadata.name | tail -n+2)
 sudo kubectl -n db cp frontend $minio_pod:/data/
-sudo rm -rf frontend
 ```
 
 You're all set now, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
