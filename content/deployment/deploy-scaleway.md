@@ -34,7 +34,7 @@ ssh -i $SSH_KEY root@$INSTANCE_IP
 
 2. Install OpenReplay:
 
-```shellsession
+```bash
 git clone https://github.com/openreplay/openreplay.git
 cd openreplay/scripts/helm && bash install.sh
 ```
