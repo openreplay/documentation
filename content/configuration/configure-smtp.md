@@ -8,20 +8,19 @@ Certain functionalities such as `alerts`, `weekly reports`, `password reset` and
 
 ## SMTP configuration
 
-To enable SMTP, edit `chalice.yaml` in `openreplay/scripts/helm/app/` and update the below variables in `env` section.
+To enable SMTP, edit `vars.yaml` in `openreplay/scripts/helm/` and update the below variables:
 
 | Variable | Default | Description |
 |----------|-------------|-------------|
-| EMAIL_HOST |  | SMTP hostname (i.e. smtp.mailgun.org) |
-| EMAIL_PORT | 587 | SMTP port |
-| EMAIL_USER |  | SMTP username|
-| EMAIL_PASSWORD |  | SMTP password |
-| EMAIL_USE_TLS | true | For using TLS when connecting to the SMTP host |
-| EMAIL_USE_SSL | false | For using SSL when connecting to the SMTP host |
-| EMAIL_SSL_KEY |  | Path to your SSL key (if applicable) |
-| EMAIL_SSL_CERT |  | Path to your SSL certificate (if applicable) |
-| EMAIL_FROM | do-not-reply@openreplay.com | The sender email |
-| SITE_URL | https:// openreplay.mycompany.com | The URL of your OpenReplay instance |
+| email_host |  | SMTP hostname (i.e. smtp.mailgun.org) |
+| email_port | 587 | SMTP port |
+| email_user |  | SMTP username|
+| email_password |  | SMTP password |
+| email_use_tls | true | For using TLS when connecting to the SMTP host |
+| email_use_ssl | false | For using SSL when connecting to the SMTP host |
+| email_ssl_key |  | Path to your SSL key (if applicable) |
+| email_ssl_cert |  | Path to your SSL certificate (if applicable) |
+| email_from | do-not-reply@openreplay.com | The sender email |
 
 Then, reinstall the web server for the changes to take effect:
 
@@ -38,19 +37,18 @@ You can test the setup by inviting yourself (using another email) as a new team 
 3. Go to your DNS provider (specific instructions are provided by Mailgun) and add **all displayed records**
 4. Once all records added, click 'Verify DNS Settings'
 5. Now go to 'Sending' > 'Domains settings' > 'SMTP credentials' and click 'Add new SMTP user'. Enter 'Login' (i.e. openreplay) then click 'Create SMTP credentials'. A popup should appear, hit 'Copy' to copy the generated password.
-6. Use the displayed SMTP settings and credentials to configure SMTP in OpenReplay. Edit `chalice.yaml` in `openreplay/scripts/helm/app/` and update the below variables in `env` section:
+6. Use the displayed SMTP settings and credentials to configure SMTP in OpenReplay. Edit `vars.yaml` in `openreplay/scripts/helm/` and update the below variables:
 
 ```yaml
-EMAIL_HOST: smtp.eu.mailgun.org # from SMTP settings section
-EMAIL_PORT: 587
-EMAIL_USER: openreplay@mycompany.com # from SMTP credentials section
-EMAIL_PASSWORD: password # the one copied when you created SMTP credentials
-EMAIL_USE_TLS: true
-EMAIL_USE_SSL: false
-EMAIL_SSL_KEY:
-EMAIL_SSL_CERT:
-EMAIL_FROM: openreplay@mycompany.com # sender email, use your domain
-SITE_URL: https://openreplay.mycompany.com
+email_host: smtp.eu.mailgun.org # from SMTP settings section
+email_port: 587
+email_user: openreplay@mycompany.com # from SMTP credentials section
+email_password: password # the one copied when you created SMTP credentials
+email_use_tls: true
+email_use_ssl: false
+email_ssl_key:
+email_ssl_cert:
+email_from: openreplay@mycompany.com # sender email, use your domain
 ```
 
 7. Reinstall the web server for the changes to take effect:

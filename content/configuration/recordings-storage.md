@@ -60,51 +60,19 @@ Once the bucket created:
 
 ### Update backend services
 
-1. Login to your OpenReplay instance and go to `openreplay/scripts/helm/` then update the below variables in the `env` section of `vars.yaml` file:
+1. Login to your OpenReplay instance and go to `openreplay/scripts/helm/` then update the below variables in `vars.yaml` file:
 
 | Variable | Description |
 |----------|-------------|
 | minio_access_key | Your object storage key |
 | minio_secret_key | Your object storage secret |
-
-Then go to `openreplay/scripts/helm/app` then update the variables in the `env` section of each of the below files:
-
-2. `http.yaml`:
-
-| Variable | Description |
-|----------|-------------|
-| ASSETS_ORIGIN | The absolute path to your assets' bucket (i.e. `https://openreplay-assets.s3.eu-central-1.amazonaws.com`) |
-| AWS_REGION | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
-
-3. `storage.yaml`:
-
-| Variable | Description |
-|----------|-------------|
-| AWS_ENDPOINT | The URL (starting with `https`) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
-| AWS_REGION_WEB | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
-| S3_BUCKET_WEB | The recordings' bucket name (i.e. `openreplay-recordings`) |
-
-4. `assets.yaml`:
-
-| Variable | Description |
-|----------|-------------|
-| AWS_ENDPOINT | The URL (starting with `https`) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
-| AWS_REGION | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
-| S3_BUCKET_ASSETS | The assets' bucket name (i.e. `openreplay-assets`) |
-| ASSETS_ORIGIN | The absolute path to your assets' bucket (i.e. `https://openreplay-assets.s3.eu-central-1.amazonaws.com` |
-
-5. `chalice.yaml`:
-
-| Variable | Description |
-|----------|-------------|
-| AWS_DEFAULT_REGION | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
-| sessions_bucket | The recordings' bucket name (i.e. `openreplay-recordings`) |
-| sessions_region | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
+| s3_endpoint | The URL (starting with `https`) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
+| aws_region | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
+| assets_bucket | The assets' bucket name (i.e. `openreplay-assets`)  |
+| recordings_bucket | The recordings' bucket name (i.e. `openreplay-recordings`) |
 | sourcemaps_bucket | The sourcemaps' bucket name (i.e. `openreplay-sourcemaps`) |
-| js_cache_bucket | The assets' bucket name (i.e. `openreplay-assets`)  |
-| S3_HOST | The URL (starting with `https`) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
 
-6. Now go to `scripts/helm/roles/openreplay/templates/chalice.yaml` and comment the below line:
+2. Now open `scripts/helm/roles/openreplay/templates/chalice.yaml` and comment the below line:
 
 ```yaml
 ...
@@ -112,7 +80,7 @@ Then go to `openreplay/scripts/helm/app` then update the variables in the `env` 
 ...
  ```
 
-7. Reinstall the above backend services for the changes to take effect:
+3. Reinstall the above backend services for the changes to take effect:
 
 ```bash
 cd openreplay/scripts/helm
@@ -126,4 +94,4 @@ Newly recorded sessions should now be stored and retrieved (when replayed) from 
 
 ## Troubleshooting
 
-Can this procedure be simplified in the future? Yes and we're already working on that. In the meantime, if you encounter any issues, please connect to our [Slack](https://slack.openreplay.com) and get help from our community.
+If you encounter any issues, please connect to our [Slack](https://slack.openreplay.com) and get help from our community.

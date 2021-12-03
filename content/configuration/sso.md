@@ -41,11 +41,10 @@ To enable SSO, edit `chalice.yaml` in `openreplay/scripts/helm/app/` and update 
 | idp_name | The identity provider's name (optional) |
 | idp_sls_url | The `singleLogoutService` of your identity provider, also referred to as `SLO Endpoint (HTTP)` (optional) |
 
-Then, reinstall chalice for the changes to take effect:
+Then, reinstall the web server for the changes to take effect:
 
 ```bash
-cd openreplay/scripts/helm
-./openreplay-cli -i chalice
+cd openreplay/scripts/helm && ./openreplay-cli -i chalice
 ```
 
 ## Example using Okta
@@ -62,16 +61,18 @@ cd openreplay/scripts/helm
     - **firstName**: format `Basic` and set the value to `user.firstName`
     - **lastName**: format `Basic` and set the value to `user.lastName`
     - **internalId**: format `Basic` and set the value to `user.email`
-6. Press Next, Select 'I'm a software vendor. I'd like to integrate my app with Okta' then press 'Finish'
-7. In the Sign On tab, scroll down and press 'View Setup Instructions' to see you SAML2 configuration
-8. In your server, go to `openreplay/scripts/helm/app` and edit `chalice.yaml`
-9. Under the `env` section, set the following attributes:
+6. Define the below field in 'Group Attribute Statements':
+    - **role**: format `Basic` filter `Match Regex` value `.*` (or you can specify a different filter and regex according to your needs)
+7. Press Next, Select 'I'm a software vendor. I'd like to integrate my app with Okta' then press 'Finish'
+8. In the Sign On tab, scroll down and press 'View Setup Instructions' to see you SAML2 configuration
+9.  In your server, go to `openreplay/scripts/helm/app` and edit `chalice.yaml`
+10. Under the `env` section, set the following attributes:
    - **idp_entityId**: Identity Provider Issuer
    - **idp_sso_url**: Identity Provider Single Sign-On URL
    - **idp_x509cert**: X.509 Certificate, must be a one-line string, without line breaks (ou can use the [FORMAT A X509 CERTIFICATE tool](https://www.samltool.com/format_x509cert.php) to format your value)
    - **idp_name**: okta
-10. Save your changes and reinstall chalice: 
-    ```bash
-    cd openreplay/scripts/helm
-    ./openreplay-cli -i chalice
-    ```
+12. Finally, save your changes and reinstall the web server: 
+
+```bash
+cd openreplay/scripts/helm && ./openreplay-cli -i chalice
+```
