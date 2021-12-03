@@ -25,7 +25,8 @@ In the 'Attribute Statements' or the 'Parameters' section, please make sure to d
 | tenantKey | Its value can be found in the Dashboard, under 'Preferences' > 'Account' |
 | firstName | `user.firstName` |
 | lastName |  `user.lastName` |
-| internalId | internal ID or `user.email` (the user's ID in your identity management system) (optional) |
+| internalId | Internal ID or `user.email` (the user's ID in your identity management system) (optional) |
+| role | The user's role, depending on you Identity Provider it can be `user.role` or `group`, etc. (optional) |
 
 You should now have all the required values for the next step/section.
 
