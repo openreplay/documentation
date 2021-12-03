@@ -48,7 +48,7 @@ cd openreplay/scripts/helm
 ./openreplay-cli -i chalice
 ```
 
-## Example using [Okta](https://okta.com)
+## Example using Okta
 
 1. Login to you Okta administration dashboard and go to 'Applications' > 'Applications'
 2. Press Create new app integration, then select SAML 2.0 and press 'Next'
