@@ -11,7 +11,7 @@ OpenReplay supports un-minifying JavaScript via source maps. By uploading them t
 Install the sourcemap-uploader NPM module:
 
 ```bash
-npm i @openreplay/sourcemap-uploader
+npm i -g @openreplay/sourcemap-uploader
 ```
 
 ## Prerequisites
