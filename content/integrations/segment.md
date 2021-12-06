@@ -24,7 +24,7 @@ Your ProjectKey can be found in your OpenReplay dashboard under 'Preferences > P
 
 ## 3. Segment User Traits (Identify)
 
-See how to add [Metadata in OpenReplay](/data-privacy-security/metadata).
+See how to add [Metadata in OpenReplay](/installation/metadata).
 
 ## 4. All set!
 
