@@ -26,7 +26,8 @@ In the 'Attribute Statements' or the 'Parameters' section, please make sure to d
 | firstName | `user.firstName` |
 | lastName |  `user.lastName` |
 | internalId | Internal ID or `user.email` (the user's ID in your identity management system) (optional) |
-| role | The user's role, depending on you Identity Provider it can be `user.role` or `group`, etc. (optional) |
+| role | The user's role, depending on you Identity Provider it can be `user.role` or `group`, etc. (optional, default = `member`) |
+| adminPrivileges | If the user have admin privileges or not, if this field contains any value different from `false`, it will be considered as `true`. (optional, default = `false`) |
 
 You should now have all the required values for the next step/section.
 
@@ -64,6 +65,7 @@ cd openreplay/scripts/helm && ./openreplay-cli -i chalice
     - **internalId**: format `Basic` and set the value to `user.email`
 6. Define the below field in 'Group Attribute Statements':
     - **role**: format `Basic` filter `Match Regex` value `.*` (or you can specify a different filter and regex according to your needs)
+    - **adminPrivileges**: format `Basic` filter `Match Regex` value `admin` (the current user will have `admin privileges` if he is part of the **admin** group)
 7. Press Next, Select 'I'm a software vendor. I'd like to integrate my app with Okta' then press 'Finish'
 8. In the Sign On tab, scroll down and press 'View Setup Instructions' to see you SAML2 configuration
 9.  In your server, go to `openreplay/scripts/helm/app` and edit `chalice.yaml`
