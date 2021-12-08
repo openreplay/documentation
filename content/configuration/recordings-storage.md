@@ -72,15 +72,7 @@ Once the bucket created:
 | recordings_bucket | The recordings' bucket name (i.e. `openreplay-recordings`) |
 | sourcemaps_bucket | The sourcemaps' bucket name (i.e. `openreplay-sourcemaps`) |
 
-2. Now open `scripts/helm/roles/openreplay/templates/chalice.yaml` and comment the below line:
-
-```yaml
-...
-#S3_HOST: "https://{{ domain_name }}"
-...
- ```
-
-3. Reinstall the above backend services for the changes to take effect:
+2. Reinstall the above backend services for the changes to take effect:
 
 ```bash
 cd openreplay/scripts/helm
