@@ -85,11 +85,22 @@ function MyApp() {
 trackerAssist({
   confirmText?: string;
   config?: object;
+  onAgentConnect?: () => (()=>void | void)
 })
 ```
 
 - `confirmText`: Customize the text that gets displayed in the calling popup.
 - `config`: Contains any custom ICE/TURN server configuration. Defaults to `{ 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }], 'sdpSemantics': 'unified-plan' }`.
+- `onAgentConnect: () => (()=>void | void)`: This callback function is fired as soon as a live session starts. It can also return `onAgentDisconnect` which will be called when the session is disconnected. In case of an unstable connection, this may be called several times. Below is an example:
+
+```js
+onAgentConnect = () => {
+    console.log("Live session started")
+    const onAgentDisconnect =  () => console.log("Live session stopped")
+    return onAgentDisconnect
+}
+```
+
 
 ## Troubleshooting
 
