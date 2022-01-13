@@ -25,7 +25,7 @@ To enable SMTP, edit `vars.yaml` in `openreplay/scripts/helm/` and update the be
 Then, reinstall the web server for the changes to take effect:
 
 ```bash
-cd openreplay/scripts/helm && ./openreplay-cli -i chalice && ./openreplay-cli -i alerts
+cd openreplay/scripts/helm && ./openreplay-cli -i chalice ; ./openreplay-cli -i alerts
 ```
 
 You can test the setup by inviting yourself (using another email) as a new team member (in 'Preferences' > 'Users').
@@ -54,7 +54,7 @@ email_from: openreplay@mycompany.com # sender email, use your domain
 7. Reinstall the web server for the changes to take effect:
 
 ```bash
-cd openreplay/scripts/helm && ./openreplay-cli -i chalice && ./openreplay-cli -i alerts
+cd openreplay/scripts/helm && ./openreplay-cli -i chalice ; ./openreplay-cli -i alerts
 ```
 
 8. You can test the setup by inviting yourself (using another email) as a new team member (in 'Preferences' > 'Users').
