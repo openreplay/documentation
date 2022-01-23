@@ -40,5 +40,6 @@ In case you're protecting your OpenReplay instance with a proxy, ensure the belo
 |----------|-------------|
 | /ingest | For capturing events and recordings |
 | /api | For pulling and managing user data |
-| /assist | For live sessions and calls with end users (WebRTC) |
+| /assist | For live video/calls with end users (WebRTC) |
+| /ws-assist | For live session replays with end users |
 | /static/openreplay.js | JavaScript code that loads OpenReplay |

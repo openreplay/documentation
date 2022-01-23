@@ -81,3 +81,7 @@ In case it's not possible to continue the session (doesn't exist or is finished)
 ## Replays are incomplete
 
 This can be spotted in replays that have a single visited page, and that end as soon as a user navigates to another page. This usually happens in websites that are not single page applications (SPAs). To fix this, `tracker.start()` must be called on every page.
+
+## Replays are missing
+
+If you're not self-hosting OpenReplay but rather using our hosted solution, chances are that some sessions are not be recorded as requests to our servers may be blocked. That is usually caused by adblockers, VPN or browser extensions. Check [proxying](/troubleshooting/proxying) to overcome this.

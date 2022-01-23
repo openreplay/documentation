@@ -11,7 +11,7 @@ The CLI is helpful for managing basic aspects of your OpenReplay instance, thing
 Run the CLI with the `-h` option:
 
 ```bash
-cd openreplay/scripts/helm
+cd openreplay/scripts/helmcharts
 ./openreplay-cli -h
 ```
 
@@ -28,7 +28,8 @@ Usage: openreplay-cli [ -h | --help ]
                 [ -d | --status ]
                 [ -v | --verbose ]
                 [ -l | --logs SERVICE ]
-                [ -i | --install SERVICE ]
+                [ -i | --legacy-install SERVICE ]
+                [ -I | --helm-install SERVICE ]
                 [ -s | --stop SERVICE|all ]
                 [ -S | --start SERVICE|all ]
                 [ -r | --restart SERVICE|all ]
@@ -50,28 +51,25 @@ OpenReplay backend relies on the below components/services:
 
 ## Increase service capacity
 
-It's possible to increase the capacity of some services such as Postgres and Redis by overriding the default cpu/memory allocation values. These latter are determined during the setup process based on your instance capacity and should fit the needs of most installations.
+It's possible to increase the capacity of any service by overriding the default cpu/memory allocation values. These latter are determined during the setup process based on your instance capacity and should fit the needs of most installations.
 
- If you have a high volume and a big fat machine, simply open the `vars.yaml` file with the command `vi openreplay/scripts/helm/vars.yaml` and uncomment then substitute the below lines:
+ If you have a high volume and a big fat machine, simply edit the `openreplay/scripts/helmcharts/vars.yaml` file and override the service's resources. In the below example, we do it for the `http` worker. But this can be done for any service (i.e. sink, storage, postgresql, redis, etc.) by uncommenting and updating the below block. If you have to do it for more than one service, then simply copy and rename/update the same block (mind duplications).
 
 ```yaml
-db_resource_override:
-  postgresql:
-    resources:
-      limits:
-        cpu: 4096m
-        memory: 8192Mi
-      requests:
-        cpu: 1024m
-        memory: 2056Mi
-  redis: {}
+http:
+  resources:
+    limits:
+      cpu: 4096m
+      memory: 8192Mi
+    requests:
+      cpu: 1024m
+      memory: 2056Mi
 ```
 
-Then, reinstall the service (postgres|redis) for the new limits to take effect (your data won't be lost):
+Finally, reinstall the service for the new limits to take effect (your data won't be lost):
 
 ```bash
-cd openreplay/scripts/helm
-openreplay-cli -i postgresql # or redis
+cd openreplay/scripts/helmcharts && openreplay-cli -I
 ```
 
 ## Uninstall OpenReplay
@@ -79,10 +77,8 @@ openreplay-cli -i postgresql # or redis
 Run the below commands to uninstall OpenReplay:
 
 ```bash
-sudo systemctl stop k3s
-sudo systemctl disable k3s
-
-#sudo reboot # For restarting the machine
+helm uninstall openreplay -n app
+helm uninstall databases -n db
 
 sudo k3s-uninstall.sh
 sudo rm -rf /var/lib/rancher

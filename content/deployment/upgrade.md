@@ -4,16 +4,60 @@ metaTitle: "Upgrade Deployment"
 metaDescription: "How to upgrade your instance to the latest OpenReplay version."
 ---
 
-## Upgrade Deployment
-
 Upgrading your OpenReplay deployment to the latest version requires updating both your backend (instance) and tracker.
 
-### Upgrade Backend
+## Upgrade Backend
 
-1. Copy/backup the current openreplay folder to `_version-number`:
+### Upgrade Backend (from v1.3.6 or prior)
+
+Ensure you're on `v1.3.6`, if you're running a prior version of OpenReplay, then first update it to `v1.3.6`:
+   
+```bash 
+# Copy/backup the current openreplay folder to _version-number
+mv openreplay openreplay_v1.3.5
+git clone https://github.com/openreplay/openreplay -b v1.3.6
+cd openreplay/scripts/helm
+# bash upgrade.sh <old openreplay path>
+bash upgrade.sh ~/openreplay_v1.3.5
+```
+
+Once you're on `v1.3.6` then proceed with the below steps:
+
+1. Copy/backup the current openreplay folder to `_version-number` like below:
    
   ```bash 
-  mv openreplay openreplay_v1.3.0
+  mv openreplay openreplay_v1.3.6
+  ```
+
+2. Clone the new OpenReplay version. In this example we're upgrading to the latest available version:
+   
+  ```bash 
+  git clone https://github.com/openreplay/openreplay
+  ```
+
+3. Run the below script to automatically upgrade your `vars.yaml` to the new format:
+  
+  ```bash
+  cd openreplay/scripts/helmcharts
+  ansible localhost -m template -a "src=vars_template.yaml dest=vars.yaml" -e @~/openreplay_v1.3.6/scripts/helm/vars.yaml
+  ```
+
+4. Upgrade OpenReplay:
+
+  ```bash
+  cd openreplay/scripts/helmcharts
+  helm upgrade --install openreplay ./openreplay -n app --wait -f ./vars.yaml --atomic
+  ```
+
+> **Note:** 
+Manual overrides made to any service configuration file (i.e. `openreplay/scripts/helm/app/<app>.yaml`) will be reset. So if you have any custom overrides, like using an [external object storage service](/configuration/recordings-storage) for your recordings, or increased service capacity (cpu/memory), make sure to apply them to the new version (in `/openreplay/scripts/helmcharts/vars.yaml`) prior to running the upgrade script (step 4).
+
+### Upgrade Backend (from v1.4.0 or higher)
+
+1. Copy/backup the current openreplay folder to `_version-number` like below:
+   
+  ```bash 
+  mv openreplay openreplay_v1.4.0
   ```
 
 2. Clone the new OpenReplay version. In this example we're upgrading to the latest available version:
@@ -25,21 +69,26 @@ Upgrading your OpenReplay deployment to the latest version requires updating bot
 3. Upgrade OpenReplay:
 
   ```bash
-  cd openreplay/scripts/helm
-  # bash upgrade.sh <old openreplay path>
-  bash upgrade.sh ~/openreplay_v1.3.0
+  cd openreplay/scripts/helmcharts
+  cp ~/openreplay_v1.4.0/scripts/helmcharts/vars.yaml .
+  helm upgrade --install openreplay ./openreplay -n app --wait -f ./vars.yaml --atomic
   ```
 
-> **Note:** 
-Manual overrides made to any app's configuration file (i.e. `openreplay/scripts/helm/app/<app>.yaml`) will be reset. So if you have any custom overrides, like using an [external object storage service](/configuration/recordings-storage) for your recordings, make sure to apply them to the new version prior to running the upgrade script.
+4. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.4.0` to `v1.5.0` then update the `fromVersion` like below:
+  
+  ```yaml
+  fromVersion: "v1.5.0"
+  ```
 
 ### Upgrade Tracker
 
 Ensure your tracker is compatible with the new backend version by checking the below compatibility table:
 
-| Backend Version | Tracker Version |
+| Backend Version | Minimum Tracker Version |
 |----------|-------------|
-| v1.3.5 | 3.4.0 (or higher) |
-| v1.3.0 | 3.2.1 (or higher) |
-| v1.2.0 | 3.1.0 (or higher) |
-| v1.1.0 | 3.0.3 (or higher) |
+| v1.4.0 | 3.4.17 |
+| v1.3.6 | 3.4.16 |
+| v1.3.5 | 3.4.0 |
+| v1.3.0 | 3.2.1 |
+| v1.2.0 | 3.1.0 |
+| v1.1.0 | 3.0.3 |

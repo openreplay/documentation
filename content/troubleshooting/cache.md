@@ -13,4 +13,4 @@ OpenReplay needs access to resources, such as your stylesheets, icons and fonts,
 5. Run `mc rm --recursive --dangerous --force minio/sessions-assets` to remove all cached files (CSS, fonts and icons)
 6. Use `exit` to exit the Minio container
 7. Run `:quit` to exit the Kubernetes CLI
-8. Restart `assets` service by running `cd openreplay/scripts/helm && ./openreplay-cli -i assets`
+8. Restart `assets` service by running `cd openreplay/scripts/helmcharts && ./openreplay-cli -I`

@@ -18,14 +18,13 @@ OpenReplay stack can be installed on a single machine and Google Cloud is an ide
 
 ## Deploy OpenReplay
 
-Once your instance is `Running`, connect to it by hitting the `SSH` button then install OpenReplay:
+Once your instance is `Running`, connect to it by hitting the `SSH` button then install OpenReplay by providing the domain on which it will be running (e.g. DOMAIN_NAME=openreplay.mycompany.com):
 
 ```bash
 git clone https://github.com/openreplay/openreplay.git
-cd openreplay/scripts/helm && bash install.sh
+cd openreplay/scripts/helmcharts
+DOMAIN_NAME=openreplay.mycompany.com bash init.sh
 ```
-
-> **Note:** You'll be prompted to provide the domain on which OpenReplay will be running (e.g. openreplay.mycompany.com). This is required to continue the installation.
 
 ## Configure TLS/SSL
 
@@ -63,20 +62,30 @@ You're all set now, OpenReplay should be securely accessible on the subdomain yo
 
 Alternatively to creating a load balancer, you can bring (or generate) your own SSL certificate.
 
-First, go to Cloud DNS (or your other DNS service provider) and create an `A Record`. Use the domain you previously provided during the installation step and point it to the VM using its public IP (can be found in Compute Engine dashboard).
+1. First, go to Cloud DNS (or your other DNS service provider) and create an `A Record`. Use the domain you previously provided during the installation step and point it to the VM using its public IP (can be found in Compute Engine dashboard).
 
-Open the `vars.yaml` file with the command `vi openreplay/scripts/helm/vars.yaml` then substitute:
-- `domain_name`: this is where OpenReplay will be accessible (i.e. openreplay.mycompany.com)
-- `nginx_ssl_cert_file_path`: the path to you .cert file (i.e. /home/openreplay/my-cert.crt)
-- `nginx_ssl_key_file_path`: the path to your .pem file (i.e. /home/openreplay/my-key.pem)
+2. Rename (required) your private key to `site.key` and your certificate to `site.crt` then copy both files under `openreplay/scripts/helmcharts/openreplay/files/`. Now, simply uncomment the below block in `openreplay/scripts/helmcharts/vars.yaml`:
+   
+```yaml
+nginx-ingress:
+  sslKey: site.key
+  sslCert: site.crt
+```
 
-> **Note:** If you don't have a certificate, generate one for your domain (the one provided during installation) using Let's Encrypt. Connect to OpenReplay VM, run `helm uninstall -n nginx-ingress nginx-ingress` then execute `bash openreplay/scripts/certbot.sh` and follow the steps.
+> **Note:** If you don't have a certificate, generate one for your subdomain (the one provided during installation) using Let's Encrypt. Simply connect to OpenReplay VM, run `kubectl delete svc nginx-ingress -n app` then execute `bash openreplay/scripts/certbot.sh` and follow the steps.
 
-Restart OpenReplay NGINX (and choose whether to enable the default HTTP to HTTPS redirection using the `NGINX_REDIRECT_HTTPS` variable):
+3. If you wish to enable http to https redirection (recommended), then uncomment the below block, under the `nginx-ingress` section, in `openreplay/scripts/helmcharts/vars.yaml`:
+   
+```yaml
+nginx-ingress:
+  customServerConfigs: |
+    return 301 https://$host$request_uri;
+```
+
+4. Finally reinstall OpenReplay NGINX:
 
 ```bash
-cd openreplay/scripts/helm
-NGINX_REDIRECT_HTTPS=1 ./openreplay-cli -i nginx
+cd openreplay/scripts/helmcharts && ./openreplay-cli -I
 ```
 
 You're all set now, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).

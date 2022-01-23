@@ -12,9 +12,9 @@ In you Identity Provider's dashboard, create a new app called `openreplay` (you 
 
 | Variable | Value |
 |----------|-------------|
-| Audience (also called EntityID) | `YOUR_DOMAIN/api/sso/saml2/metadata/`|
-| Single Sign On URL (also called ACS URL or Consumer URL) | `YOUR_DOMAIN/api/sso/saml2/acs` |
-| Single Logout URL (also called SLO URL, optional) | `YOUR_DOMAIN/api/sso/saml2/sls` |
+| ACS URL (also called Single Sign On URL or Consumer URL) | `YOUR_DOMAIN/api/sso/saml2/acs/` |
+| Entity ID (also called Audience) | `YOUR_DOMAIN/api/sso/saml2/metadata/`|
+| Single Logout URL (also called SLO URL) | `YOUR_DOMAIN/api/sso/saml2/sls/` (optional) |
 | Name ID (sometimes it is configurable in the 'Attribute Statements' or the 'Parameters' section) | `Email` or `EmailAddress` or `urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress`, depending on your Identity Provider |
 | SAML initiator | Set it to `Service Provider` (optional) |
 
@@ -33,7 +33,7 @@ You should now have all the required values for the next step/section.
 
 ## SSO (SAML2) configuration
 
-To enable SSO, edit `chalice.yaml` in `openreplay/scripts/helm/app/` and update the below variables in `env` section:
+To enable SSO, edit `openreplay/scripts/helmcharts/vars.yaml` and uncomment then update the below env variables in `chalice` section:
 
 | Variable | Description |
 |----------|-------------|
@@ -46,7 +46,7 @@ To enable SSO, edit `chalice.yaml` in `openreplay/scripts/helm/app/` and update 
 Then, reinstall the web server for the changes to take effect:
 
 ```bash
-cd openreplay/scripts/helm && ./openreplay-cli -i chalice
+cd openreplay/scripts/helmcharts && ./openreplay-cli -I
 ```
 
 ## Example using Okta
@@ -55,7 +55,7 @@ cd openreplay/scripts/helm && ./openreplay-cli -i chalice
 2. Press 'Create new app integration', then select SAML 2.0 and press 'Next'
 3. Set the 'App Name' to openreplay (you can upload this [icon](../static/favicon.png) for your application) then press 'Next'
 4. Set:
-    - **Single sign on URL** to `YOUR_DOMAIN/api/sso/saml2/acs`
+    - **Single sign on URL** to `YOUR_DOMAIN/api/sso/saml2/acs/`
     - **Audience URI (SP Entity ID)** to `YOUR_DOMAIN/api/sso/saml2/metadata/`
     - **Name ID format** to `EmailAddress`
 5. Define the below fields in 'Attribute Statements':
@@ -68,8 +68,8 @@ cd openreplay/scripts/helm && ./openreplay-cli -i chalice
     - **adminPrivileges**: format `Basic` filter `Match Regex` value `admin` (the current user will have `admin privileges` if he is part of the **admin** group)
 7. Press Next, Select 'I'm a software vendor. I'd like to integrate my app with Okta' then press 'Finish'
 8. In the Sign On tab, scroll down and press 'View Setup Instructions' to see you SAML2 configuration
-9.  In your server, go to `openreplay/scripts/helm/app` and edit `chalice.yaml`
-10. Under the `env` section, set the following attributes:
+9. In your server, edit your `openreplay/scripts/helmcharts/vars.yaml`
+10. Under the `chalice` section, uncomment then set the following env variables:
    - **idp_entityId**: Identity Provider Issuer
    - **idp_sso_url**: Identity Provider Single Sign-On URL
    - **idp_x509cert**: X.509 Certificate, must be a one-line string, without line breaks (ou can use the [FORMAT A X509 CERTIFICATE tool](https://www.samltool.com/format_x509cert.php) to format your value)
@@ -77,5 +77,5 @@ cd openreplay/scripts/helm && ./openreplay-cli -i chalice
 12. Finally, save your changes and reinstall the web server: 
 
 ```bash
-cd openreplay/scripts/helm && ./openreplay-cli -i chalice
+cd openreplay/scripts/helmcharts && ./openreplay-cli -I
 ```
