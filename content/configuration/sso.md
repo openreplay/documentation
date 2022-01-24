@@ -136,5 +136,5 @@ cd openreplay/scripts/helmcharts && ./openreplay-cli -I
 15. Finally, save your changes and reinstall the web server: 
 
 ```bash
-cd openreplay/scripts/helmcharts && ./openreplay-cli -i chalice
+cd openreplay/scripts/helmcharts && ./openreplay-cli -I
 ```
