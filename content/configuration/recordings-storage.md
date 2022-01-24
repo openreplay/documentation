@@ -67,9 +67,9 @@ Once the bucket created:
 | secretKey | Your object storage secret |
 | endpoint | The URL (starting with `https`) of your object storage service (i.e. check the list of [S3 endpoints](https://docs.aws.amazon.com/general/latest/gr/s3.html) if you're on AWS, on Google Cloud Storage this would be `https://storage.googleapis.com`) |
 | region | The region (if applicable) of your buckets (i.e. if you're using AWS S3, this would be something like `us-east-1`) |
-| assets_bucket | The assets' bucket name (i.e. `openreplay-assets`)  |
-| recordings_bucket | The recordings' bucket name (i.e. `openreplay-recordings`) |
-| sourcemaps_bucket | The sourcemaps' bucket name (i.e. `openreplay-sourcemaps`) |
+| assetsBucket | The assets' bucket name (i.e. `openreplay-assets`)  |
+| recordingsBucket | The recordings' bucket name (i.e. `openreplay-recordings`) |
+| sourcemapsBucket | The sourcemaps' bucket name (i.e. `openreplay-sourcemaps`) |
 
 2. Reinstall the above backend services for the changes to take effect:
 
