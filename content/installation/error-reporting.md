@@ -19,7 +19,7 @@ The OpenReplay tracker supports logging 3 types of errors:
 * Rejected Promises - [PromiseRejectionEvent](https://developer.mozilla.org/en-US/docs/Web/API/PromiseRejectionEvent)
 * Error Events (onError) - [ErrorEvent](https://developer.mozilla.org/en-US/docs/Web/API/ErrorEvent)
 
-As of version 3.2.5 of the @openreplay/tracker package, all of the above can be reported using a single method:
+All of the above can be reported using a single method:
 
 ```js
 tracker.handleError(err);
