@@ -62,7 +62,7 @@ function MyApp() {
 ```js
 trackerFetch({
   failuresOnly: boolean;
-	sessionTokenHeader: string;
+  sessionTokenHeader: string;
   ignoreHeaders: Array<string> | boolean;
 })
 ```
