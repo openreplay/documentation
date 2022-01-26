@@ -46,7 +46,31 @@ Once you're on `v1.3.6` then proceed with the below steps:
 
   ```bash
   cd openreplay/scripts/helmcharts
-  helm upgrade --install openreplay ./openreplay -n app --wait -f ./vars.yaml --atomic
+  helm ls -n app | tail -n +2 | awk '{print $1}' | xargs -I{} helm uninstall {} -n app
+  helm uninstall nginx-ingress -n nginx-ingress
+  ./openreplay-cli -I
+  ```
+  
+5. If you're not using a load balancer and have generated your SSL certificate via the `certbot.sh` script, then copy your `site.key`and `site.crt` files to `openreplay/scripts/helmcharts/openreplay/files`:
+
+  ```
+  cd openreplay/scripts/helmcharts
+  cp -rf ~/site.* openreplay/files/
+  ./openreplay-cli -I
+  ```
+
+Then uncomment the below block in `openreplay/scripts/helmcharts/vars.yaml`:
+   
+   ```yaml
+   nginx-ingress:
+     sslKey: site.key
+     sslCert: site.crt
+   ```
+
+5. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.3.6` to `v1.4.0` then update the `fromVersion` like below:
+  
+  ```yaml
+  fromVersion: "v1.4.0"
   ```
 
 > **Note:** 
@@ -73,8 +97,16 @@ Manual overrides made to any service configuration file (i.e. `openreplay/script
   cp ~/openreplay_v1.4.0/scripts/helmcharts/vars.yaml .
   helm upgrade --install openreplay ./openreplay -n app --wait -f ./vars.yaml --atomic
   ```
+  
+4. If you're not using a load balancer and have generated your SSL certificate via the `certbot.sh` script, then copy your `site.key`and `site.crt` files to `openreplay/scripts/helmcharts/openreplay/files`:
 
-4. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.4.0` to `v1.5.0` then update the `fromVersion` like below:
+  ```
+  cd openreplay/scripts/helmcharts
+  cp -rf ~/site.* openreplay/files/
+  ./openreplay-cli -I
+  ```
+
+5. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.4.0` to `v1.5.0` then update the `fromVersion` like below:
   
   ```yaml
   fromVersion: "v1.5.0"
