@@ -87,7 +87,7 @@ See [Relay Network Layer](https://relay.dev/docs/en/network-layer) for details.
 For [Apollo](https://www.apollographql.com/) you should create a new `ApolloLink` with `recordGraphQL` call and put it to your chain. Here is an example on how to do it.
 
 ```js
-import { ApolloLink } from 'apollo-link';
+import { ApolloLink } from '@apollo/client';
 import { recordGraphQL } from './openreplay'; // see above for recordGraphQL definition
 
 const trackerApolloLink = new ApolloLink((operation, forward) => {
