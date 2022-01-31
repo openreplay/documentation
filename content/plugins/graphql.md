@@ -93,20 +93,12 @@ import { recordGraphQL } from './openreplay'; // see above for recordGraphQL def
 const trackerApolloLink = new ApolloLink((operation, forward) => {
   return forward(operation).map(result) => {
     const operationDefinition = operation.query.definitions[0];
-    if (operationDefinition.kind === 'OperationDefinition') {
-      return recordGraphQL(
-        operationDefinition.operation,
-        operation.operationName,
-        operation.variables,
-        result);
-      } 
-    else {
-      return recordGraphQL(
-        'unknown?',
-        operation.operationName,
-        operation.variables,
-        result);
-    }
+    return recordGraphQL(
+      operationDefinition.kind === 'OperationDefinition' ? operationDefinition.operation : 'unknown?',
+      operation.operationName,
+      operation.variables,
+      result
+    );
   });
 });
 //...
