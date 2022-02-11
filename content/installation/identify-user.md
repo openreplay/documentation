@@ -8,8 +8,15 @@ Associate your internal-user-id with the session being recorded by passing the u
 
 ```js
 const tracker = new OpenReplay({
-  projectKey: PROJECT_KEY,
-  userID: USER_ID
+  projectKey: PROJECT_KEY
+});
+
+tracker.start({
+  userID: "john@doe.com",
+  metadata: {
+    balance: "10M",
+    plan: "free"
+  }
 });
 ```
 

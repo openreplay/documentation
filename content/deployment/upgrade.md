@@ -6,11 +6,9 @@ metaDescription: "How to upgrade your instance to the latest OpenReplay version.
 
 Upgrading your OpenReplay deployment to the latest version requires updating both your backend (instance) and tracker.
 
-## Upgrade Backend
+## Upgrade Backend (from v1.3.6 or prior)
 
-### Upgrade Backend (from v1.3.6 or prior)
-
-Ensure you're on `v1.3.6`, if you're running a prior version of OpenReplay, then first update it to `v1.3.6`:
+First of all, ensure you're on `v1.3.6`. If that's already the case, then ignore the below commands and move to step 1). If not, update your OpenReplay installation to `v1.3.6`:
    
 ```bash 
 # Copy/backup the current openreplay folder to _version-number
@@ -76,7 +74,7 @@ Then uncomment the below block in `openreplay/scripts/helmcharts/vars.yaml`:
 > **Note:** 
 Manual overrides made to any service configuration file (i.e. `openreplay/scripts/helm/app/<app>.yaml`) will be reset. So if you have any custom overrides, like using an [external object storage service](/configuration/recordings-storage) for your recordings, or increased service capacity (cpu/memory), make sure to apply them to the new version (in `/openreplay/scripts/helmcharts/vars.yaml`) prior to running the upgrade script (step 4).
 
-### Upgrade Backend (from v1.4.0 or higher)
+## Upgrade Backend (from v1.4.0 or higher)
 
 1. Copy/backup the current openreplay folder to `_version-number` like below:
    
@@ -112,15 +110,16 @@ Manual overrides made to any service configuration file (i.e. `openreplay/script
   fromVersion: "v1.5.0"
   ```
 
-### Upgrade Tracker
+## Upgrade Tracker
 
-Ensure your tracker is compatible with the new backend version by checking the below compatibility table:
+Ensure your tracker (and tracker-assist plugin if you do use the Assist plugin) is compatible with the new backend version by checking the below compatibility table:
 
-| Backend Version | Minimum Tracker Version |
+| Backend Version | Minimum Tracker Version | Minimum Tracker-Assist Version |
 |----------|-------------|
-| v1.4.0 | 3.4.17 |
-| v1.3.6 | 3.4.16 |
-| v1.3.5 | 3.4.0 |
-| v1.3.0 | 3.2.1 |
-| v1.2.0 | 3.1.0 |
-| v1.1.0 | 3.0.3 |
+| v1.5.0 | 3.5.0 | 3.5.0 |
+| v1.4.0 | 3.4.17 | 3.4.16 |
+| v1.3.6 | 3.4.16 | 3.4.15 |
+| v1.3.5 | 3.4.0 | 3.4.13 |
+| v1.3.0 | 3.2.1 | 3.4.12 |
+| v1.2.0 | 3.1.0 | |
+| v1.1.0 | 3.0.3 | |

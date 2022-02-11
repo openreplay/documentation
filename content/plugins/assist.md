@@ -34,7 +34,7 @@ If your OpenReplay tracker is set up using the JS snippet, then simply replace t
   r.issue=function(k,p){r.push([6,k,p])};
   r.isActive=function(){return false};
   r.getSessionToken=function(){};
-})(0, "PROJECT_KEY", "//static.openreplay.com/3.4.17/openreplay-assist.js",1,28);
+})(0, "PROJECT_KEY", "//static.openreplay.com/3.5.0/openreplay-assist.js",1,28);
 </script>
 ```
 
@@ -83,16 +83,33 @@ function MyApp() {
 
 ```js
 trackerAssist({
-  confirmText?: string;
+  callConfirm?: string|ConfirmOptions;
+  controlConfirm?: string|ConfirmOptions;
   config?: object;
   onAgentConnect?: () => (()=>void | void);
   onCallStart?: () => (()=>void | void);
 })
 ```
 
-- `confirmText`: Customize the text that gets displayed in the calling popup.
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
+
+- `callConfirm`: Customize the text and/or layout of the call request popup. 
+- `controlConfirm`: Customize the text and/or layout of the remote control request popup.
 - `config`: Contains any custom ICE/TURN server configuration. Defaults to `{ 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }], 'sdpSemantics': 'unified-plan' }`.
 - `onAgentConnect: () => (()=>void | void)`: This callback function is fired as soon as a live session starts. It can also return `onAgentDisconnect` which will be called when the session is disconnected. In case of an unstable connection, this may be called several times. Below is an example:
+
 ```js
 onAgentConnect = () => {
   console.log("Live session started")

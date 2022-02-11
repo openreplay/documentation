@@ -41,8 +41,7 @@ Follow the below snippet if your web app is Server-Side-Rendered (SSR) (i.e. Nex
 import OpenReplay from '@openreplay/tracker/cjs';
 //...
 const tracker = new OpenReplay({
-      projectKey: PROJECT_KEY,
-      onStart: () => { tracker.setUserID('MY_USER_ID'); } // optional
+      projectKey: PROJECT_KEY
 });
 //...
 function MyApp() {

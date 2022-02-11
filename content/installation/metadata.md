@@ -14,7 +14,23 @@ Metadata must be explicitly specified from the dashboard from 'Preferences > Met
 
 ## 2. Inject Metadata when recording sessions
 
-Once the key(s) added, in this example `plan`, you can then use the `metadata` method in your code to inject custom user data in the form of a key/value pair (`string`).
+Once the key(s) added (in this example `plan`) then you can inject the metadata on tracker's start in the form of a key/value pair (`string`):
+
+```js
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+
+tracker.start({
+  userID: "john@doe.com",
+  metadata: {
+    balance: "10M",
+    plan: "free"
+  }
+});
+```
+
+If that's not possible (some or all metadata may be set/known only later in the navigation flow, so way after the tracker starts), then call the `setMetadata` method to do so: 
 
 ```js
 tracker.setMetadata('plan', 'free');

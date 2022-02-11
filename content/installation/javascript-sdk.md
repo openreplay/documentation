@@ -24,7 +24,7 @@ import OpenReplay from '@openreplay/tracker';
 const tracker = new OpenReplay({
   projectKey: PROJECT_KEY
 });
-tracker.start();
+tracker.start(); //  returns a promise with session info (sessionID, sessionToken, userUUID)
 ```
 
 Otherwise, if your web app is **Server-Side-Rendered (SSR)** (i.e. NextJS, NuxtJS) use the below snippet. Ensure `tracker.start()` is called once the app is started (in `useEffect` or `componentDidMount`).
@@ -34,12 +34,11 @@ import OpenReplay from '@openreplay/tracker/cjs';
 //...
 const tracker = new OpenReplay({
       projectKey: PROJECT_KEY,
-      onStart: () => { tracker.setUserID('MY_USER_ID'); } // optional
 });
 //...
 function MyApp() {
   useEffect(() => { // use componentDidMount in case of React Class Component
-    tracker.start();
+    tracker.start(); //  returns a promise with session info (sessionID, sessionToken, userUUID)
   }, [])
 }
 ```
@@ -55,10 +54,9 @@ const tracker = new OpenReplay({
 })
 
 export default (context) => {
-  tracker.start()
+  tracker.start()  //  returns a promise with session info (sessionID, sessionToken, userUUID)
   // context available, e.g. for setting metadata from the store
 }
-
 ```
 
 ## Options
@@ -72,10 +70,10 @@ There are a set of options you can pass to the constructor. Only `projectKey` is
 - `ingestPoint?: string` Your OpenReplay domain (i.e. https://openreplay.mydomain.com/ingest), to which the tracker will be sending events. This is optional for OpenReplay Cloud users. Default: `https://api.openreplay.com/ingest` (which points to OpenReplay Cloud).
 - `userID?: string` The ID of your end user. This can also be passed later in your code using the `setUserID()` method. 
 - `revID?: string` The revision ID of your web app. Useful when searching for issues happening on a specific release version.
-- `onStart?: (info: { sessionToken: string, userUUID: string }) => void` This event is fired when the tracker is started. Useful for logging/debugging purposes.
 - `resourceBaseHref?: string` Refers to the publicly accessible domain where assets (styles, fonts and icons) could be fetched by OpenReplay. Since they're required for proper session replay, this option is useful to get around the limitation of having your site (and therefore assets) hosted in a private domain. Example: `https://mypublicsite.com/assets/`.
 - `captureIFrames?: boolean` For capturing all of the same-domain iFrames in your web app. If you wish to track a specific iFrame, then instead simply add the `data-openreplay-capture` HTML attribute to the `<iframe>` tag. Default: `false`.
 - `heatmaps?: boolean` For disabling click maps. Default: `true`.
+- `verbose?: boolean` For enabling logs. Default: `false`.
 - `autoResetOnWindowOpen?: boolean` Enable this option to reset the sessionID when opening a new tab from your application. This overwrites the `window.open` method to avoid duplicate sessionIDs due to shared session storage between browser tabs. Default: `false`.
 
 ### Privacy

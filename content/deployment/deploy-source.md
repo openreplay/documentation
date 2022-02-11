@@ -33,7 +33,7 @@ git clone https://github.com/openreplay/openreplay
 
 ```bash
 cd openreplay/scripts/helm
-sudo IMAGE_TAG=<my_tag_number> PUSH=1 DOCKER_REPO=<docker_hub_user_name> or <docker registry url> bash build_deploy.sh
+sudo IMAGE_TAG=<my_tag_number> PUSH=1 DOCKER_REPO=index.docker.io/<username> or <docker registry url> bash build_deploy.sh
 ```
 
 ## 3. Updates Images
