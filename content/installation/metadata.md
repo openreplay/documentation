@@ -14,6 +14,23 @@ Metadata must be explicitly specified from the dashboard from 'Preferences > Met
 
 ## 2. Inject Metadata when recording sessions
 
+### With JavaScript snippet
+
+Below is an example on how to inject the metadata (in this example `plan`). Note the `startOpts` variable/line added, also the parameters change in the second line.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+(function(A,s,a,y,e,r){
+  var startOpts = { userID: getUserID(), metadata: { plan: getPlan()} }
+  r=window.OpenReplay=[s,r,e,[y-1,startOpts]];
+  ...
+})(0, "GxPpaDARdn2345fgt321", "//static.openreplay.com/3.5.0/openreplay.js",1,29);
+</script>
+```
+
+### With NPM
+
 Once the key(s) added (in this example `plan`) then you can inject the metadata on tracker's start in the form of a key/value pair (`string`):
 
 ```js
