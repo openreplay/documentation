@@ -46,7 +46,7 @@ Once you're on `v1.3.6` then proceed with the below steps:
   cd openreplay/scripts/helmcharts
   helm ls -n app | tail -n +2 | awk '{print $1}' | xargs -I{} helm uninstall {} -n app
   helm uninstall nginx-ingress -n nginx-ingress
-  helm upgrade --install openreplay ./openreplay -f vars.yaml --atomic --forceMigration=true
+  helm upgrade --install openreplay ./openreplay -f vars.yaml --atomic --set forceMigration=true
   ```
   
 5. If you're not using a load balancer and have generated your SSL certificate via the `certbot.sh` script, then copy your `site.key`and `site.crt` files to `openreplay/scripts/helmcharts/openreplay/files`:
