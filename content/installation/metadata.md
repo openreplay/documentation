@@ -14,24 +14,11 @@ Metadata must be explicitly specified from the dashboard from 'Preferences > Met
 
 ## 2. Inject Metadata when recording sessions
 
-### With JavaScript snippet
-
-Below is an example on how to inject the metadata (in this example `plan`). Note the `startOpts` variable/line added, also the parameters change in the second line.
-
-```js
-<!-- OpenReplay Tracking Code -->
-<script>
-(function(A,s,a,y,e,r){
-  var startOpts = { userID: getUserID(), metadata: { plan: getPlan()} }
-  r=window.OpenReplay=[s,r,e,[y-1,startOpts]];
-  ...
-})(0, "GxPpaDARdn2345fgt321", "//static.openreplay.com/3.5.0/openreplay.js",1,29);
-</script>
-```
+Once the key(s) added (in this example `plan`) then you can inject the metadata on tracker' start in the form of a key/value pair (`string`).
 
 ### With NPM
 
-Once the key(s) added (in this example `plan`) then you can inject the metadata on tracker's start in the form of a key/value pair (`string`):
+Inject the metadata on tracker' start (in this example `plan`).
 
 ```js
 const tracker = new OpenReplay({
@@ -50,7 +37,39 @@ tracker.start({
 If that's not possible (some or all metadata may be set/known only later in the navigation flow, so way after the tracker starts), then call the `setMetadata` method to do so: 
 
 ```js
-tracker.setMetadata('plan', 'free');
+tracker.setMetadata('plan', 'free'); // after tracker.start()
+```
+
+### With JavaScript snippet
+
+Below is an example on how to inject the metadata (in this example `plan`) using the snippet. Note the `startOpts` variable/line added, also the parameters change in the second line.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+(function(A,s,a,y,e,r){
+  var startOpts = { userID: getUserID(), metadata: { plan: getPlan()} } // use startOpts variable to inject metadata
+  r=window.OpenReplay=[s,r,e,[y-1,startOpts]]; // pass startOpts on tracker's start
+  ...
+})(0, "GxPpaDARdn2345fgt321", "//static.openreplay.com/3.5.0/openreplay.js",1,29);
+</script>
+```
+
+If that's not possible (metadata is known later in the navigation flow, so way after the tracker starts), then instead call the `setMetadata` method to identify your users. The identity of the user can be changed anytime during the session by calling `setMetadata`. However, OpenReplay will only keep the last injected user ID.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[s,r,e,[y-1]];
+  s=document.createElement('script');s.src=a;s.async=!A;
+  document.getElementsByTagName('head')[0].appendChild(s);
+  ...
+})(0, "GxPpaDARdn2345fgt321", "//static.openreplay.com/3.5.2/openreplay.js",1,29);
+</script>
+  ...
+  OpenReplay.setMetadata("plan", "free"); // set metadata later in your code
+  ...
 ```
 
 ## 3. Search for Sessions Recordings using Metadata
