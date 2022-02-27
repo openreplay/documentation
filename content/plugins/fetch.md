@@ -76,6 +76,7 @@ trackerFetch({
 ```js
 type Request = RequestInit & {
   url: string
+  
 }
 ```
 
