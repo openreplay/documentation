@@ -81,6 +81,7 @@ trackerAssist({
   config?: object;
   onAgentConnect?: () => (()=>void | void);
   onCallStart?: () => (()=>void | void);
+  onRemoteControlStart?: () => (()=>void | void);
 })
 ```
 
@@ -110,13 +111,24 @@ onAgentConnect = () => {
   return onAgentDisconnect
 }
 ```
-- `onACallStart: () => (()=>void | void)`: This callback function is fired as soon as a call (webRTC) starts. It can also return `onCallEnd` which will be called when the call ends. In case of an unstable connection, this may be called several times. Below is an example:
+
+- `onCallStart: () => (()=>void | void)`: This callback function is fired as soon as a call (webRTC) starts. It can also return `onCallEnd` which will be called when the call ends. In case of an unstable connection, this may be called several times. Below is an example:
+
 ```js
 onCallStart: () => {
   console.log("Call started")
   const onCallEnd = () => console.log("Call ended")
   return onCallEnd
 }
+```
+
+- `onRemoteControlStart: () => (()=>void | void)`: This callback function is fired as soon as a remote control session starts. It can also return `onRemoteControlEnd` which will be called when the remote control permissions are revoked. Below is an example:
+
+```js
+onCallStart: () => {
+  console.log("Remote control started")
+  const onCallEnd = () => console.log("Remote control ended")
+  return onCallEnd
 }
 ```
 
