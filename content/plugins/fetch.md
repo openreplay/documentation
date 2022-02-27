@@ -64,19 +64,65 @@ trackerFetch({
   failuresOnly: boolean;
   sessionTokenHeader: string;
   ignoreHeaders: Array<string> | boolean;
-  requestSanitizer: (Request) => Request;
+  requestSanitizer: (Request) => Request | null;
+  responseSanitizer: (Response) => Response | null;
 })
 ```
 
 - `failuresOnly`: Captures requests having 4xx-5xx HTTP status code. Default: `false`.
 - `sessionTokenHeader`: In case you have enabled some of our backend [integrations](/integrations) (i.e. Sentry), you can use this option to specify the header name (i.e. 'X-OpenReplay-SessionToken'). This latter gets appended automatically to each fetch request to contain the OpenReplay sessionToken's value. Default: `undefined`.
 - `ignoreHeaders`: Helps define a list of headers you don't wish to capture. Set its value to `false` to capture all of them (`true` if none). Default: `['Cookie', 'Set-Cookie', 'Authorization']` so sensitive headers won't be captured.
-- `requestSanitizer`: Sanitize sensitive data from fetch requests or ignore request/response. You can redact fields on the request object by modifying then returning it from the function:
+- `requestSanitizer`: Sanitize sensitive data from fetch requests or ignore request. You can redact fields on the request object by modifying then returning it from the function:
 
 ```js
-type Request = RequestInit & {
-  url: string
-  
+interface Request {
+  url: string,
+  body: string | Object,
+  headers: Record<string, string>
+}
+
+requestSanitizer: request => { // sanitize the body or headers
+  if (request.url === "/auth") {
+    request.body = null
+  }
+
+  if (request.headers['x-auth-token']) {
+      request.headers['x-auth-token'] = 'SANITIZED';
+  }
+
+  return request
+}
+
+requestSanitizer: request => { // ignore the request that starts with /secure
+  if (request.url.startsWith("/secure")) {
+    return null
+  }
+  return request
+}
+```
+
+- `responseSanitizer`: Sanitize sensitive data from fetch responses or ignore response. You can redact fields on the response object by modifying then returning it from the function:
+
+```js
+interface Response {
+  url: string,
+  body: string,
+  headers: Record<string, string>,
+  status: number
+}
+
+responseSanitizer: response => { // sanitize the body
+  if (response.url === "/auth") {
+    response.body = null
+  }
+  return response
+}
+
+responseSanitizer: response => { // ignore the response when status equals 200
+  if (response.status === 200) {
+    response.body = null
+  }
+  return response
 }
 ```
 
