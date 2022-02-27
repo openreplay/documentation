@@ -61,6 +61,7 @@ function MyApp() {
 
 ```js
 trackerFetch({
+  replaceDefault: boolean;
   failuresOnly: boolean;
   sessionTokenHeader: string;
   ignoreHeaders: Array<string> | boolean;
@@ -69,6 +70,7 @@ trackerFetch({
 })
 ```
 
+- `replaceDefault`: Replaces the default `window.fetch`. Default: `false`.
 - `failuresOnly`: Captures requests having 4xx-5xx HTTP status code. Default: `false`.
 - `sessionTokenHeader`: In case you have enabled some of our backend [integrations](/integrations) (i.e. Sentry), you can use this option to specify the header name (i.e. 'X-OpenReplay-SessionToken'). This latter gets appended automatically to each fetch request to contain the OpenReplay sessionToken's value. Default: `undefined`.
 - `ignoreHeaders`: Helps define a list of headers you don't wish to capture. Set its value to `false` to capture all of them (`true` if none). Default: `['Cookie', 'Set-Cookie', 'Authorization']` so sensitive headers won't be captured.
@@ -86,7 +88,7 @@ requestSanitizer: request => { // sanitize the body or headers
     request.body = null
   }
 
-  if (request.headers['x-auth-token']) {
+  if (request.headers['x-auth-token']) { // can also use ignoreHeaders option instead
       request.headers['x-auth-token'] = 'SANITIZED';
   }
 
