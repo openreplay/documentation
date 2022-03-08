@@ -27,12 +27,13 @@ Below is an example on how to send a functional event using the snippet.
 ```js
 <!-- OpenReplay Tracking Code -->
 <script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: ""}; 
 (function(A,s,a,y,e,r){
-  r=window.OpenReplay=[s,r,e,[y-1]];
-  s=document.createElement('script');s.src=a;s.async=!A;
-  document.getElementsByTagName('head')[0].appendChild(s);
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
   ...
-})(0, "GxPpaDARdn2345fgt321", "//static.openreplay.com/3.5.2/openreplay.js",1,29);
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
 </script>
   ...
   OpenReplay.event('product_added', 'shoes'); // send a functional event later in your code
@@ -60,12 +61,13 @@ Below is an example on how to send a technical event using the snippet.
 ```js
 <!-- OpenReplay Tracking Code -->
 <script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" }; 
 (function(A,s,a,y,e,r){
-  r=window.OpenReplay=[s,r,e,[y-1]];
-  s=document.createElement('script');s.src=a;s.async=!A;
-  document.getElementsByTagName('head')[0].appendChild(s);
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
   ...
-})(0, "GxPpaDARdn2345fgt321", "//static.openreplay.com/3.5.2/openreplay.js",1,29);
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
 </script>
   ...
   OpenReplay.issue('payment_error', {code: 500, context: 42}); // send a technical event (issue) later in your code

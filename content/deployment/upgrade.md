@@ -65,10 +65,10 @@ Then uncomment the below block in `openreplay/scripts/helmcharts/vars.yaml`:
      sslCert: site.crt
    ```
 
-5. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.3.6` to `v1.4.0` then update the `fromVersion` like below:
+5. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.3.6` to `v1.5.2` then update the `fromVersion` like below:
   
   ```yaml
-  fromVersion: "v1.4.0"
+  fromVersion: "v1.5.2"
   ```
 
 > **Note:** 
@@ -104,10 +104,10 @@ Manual overrides made to any service configuration file (i.e. `openreplay/script
   ./openreplay-cli -I
   ```
 
-5. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.4.0` to `v1.5.0` then update the `fromVersion` like below:
+5. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.4.0` to `v1.5.2` then update the `fromVersion` like below:
   
   ```yaml
-  fromVersion: "v1.5.0"
+  fromVersion: "v1.5.2"
   ```
 
 ## Upgrade Tracker
@@ -116,6 +116,9 @@ Ensure your tracker (and tracker-assist plugin if you do use the Assist plugin) 
 
 | Backend Version | Minimum Tracker Version | Minimum Tracker-Assist Version |
 |----------|-------------|
+| 1.5.3 | 3.5.3 | 3.5.5 |
+| 1.5.2 | 3.5.2 | 3.5.4 |
+| 1.5.1 | 3.5.1 | 3.5.3 |
 | 1.5.0 | 3.5.0 | 3.5.0 |
 | 1.4.0 | 3.4.17 | 3.4.16 |
 | 1.3.6 | 3.4.16 | 3.4.15 |

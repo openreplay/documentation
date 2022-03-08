@@ -32,16 +32,18 @@ tracker.setUserID('john@doe.com'); // after tracker.start()
 
 ### With JavaScript snippet
 
-Below is an example on how to inject the userID using the snippet. Note the `startOpts` variable/line added, also the parameters change in the second line.
+Below is an example on how to inject the userID using the snippet. Note the `startOpts` variable/line to inject the userID.
 
 ```js
 <!-- OpenReplay Tracking Code -->
 <script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: getUserID() }; // use startOpts variable to inject userID
 (function(A,s,a,y,e,r){
-  var startOpts = { userID: getUserID() } // use startOpts variable to inject userID
-  r=window.OpenReplay=[s,r,e,[y-1,startOpts]]; // pass startOpts on tracker's start
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
   ...
-})(0, "GxPpaDARdn2345fgt321", "//static.openreplay.com/3.5.0/openreplay.js",1,29);
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
 </script>
 ```
 
@@ -50,12 +52,13 @@ If that's not possible (userID is known later in the navigation flow, so way aft
 ```js
 <!-- OpenReplay Tracking Code -->
 <script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" };
 (function(A,s,a,y,e,r){
-  r=window.OpenReplay=[s,r,e,[y-1]];
-  s=document.createElement('script');s.src=a;s.async=!A;
-  document.getElementsByTagName('head')[0].appendChild(s);
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
   ...
-})(0, "GxPpaDARdn2345fgt321", "//static.openreplay.com/3.5.2/openreplay.js",1,29);
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
 </script>
   ...
   OpenReplay.setUserID("john@doe.com"); // set the userID later in your code

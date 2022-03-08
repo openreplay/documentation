@@ -21,13 +21,13 @@ If your OpenReplay tracker is set up using the JS snippet, then simply replace t
 ```js
 <!-- OpenReplay Tracking Code -->
 <script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" };
 (function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
   ...
-  r.start=function(v){r.push([0])};
-  r.stop=function(v){r.push([1])};
-  r.setUserID=function(id){r.push([2,id])};
-  ...
-})(0, "PROJECT_KEY", "//static.openreplay.com/3.5.0/openreplay-assist.js",1,28);
+})("//static.openreplay.com/latest/openreplay-assist.js", 1, 0, initOpts, startOpts);
 </script>
 ```
 
