@@ -77,4 +77,4 @@ trackerNgRx({
 
 ## Troubleshooting
 
-Having trouble setting up this plugin? please connect to our [Slack](https://slack.openreplay.com) and get help from our community.
+Having trouble setting up this plugin? please connect to our [Discord](https://discord.openreplay.com) and get help from our community.

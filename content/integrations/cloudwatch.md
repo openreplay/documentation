@@ -83,4 +83,4 @@ The name of the tag `openReplaySessionToken` is case sensitive.
 
 ## Troubleshooting
 
-If you encounter any issues, connect to our [Slack](https://slack.openreplay.com) and get help from our community.
+If you encounter any issues, connect to our [Discord](https://discord.openreplay.com) and get help from our community.
