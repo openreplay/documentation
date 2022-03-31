@@ -4,7 +4,7 @@ metaTitle: "How to assist your users with live session replay"
 metaDescription: "How to setup OpenReplay Assist and support your end users through live screen and WebRTC."
 ---
 
-The truth is, session replay is a tool that every product and dev team needs once their product is in production. 
+Session replay is a tool that every product and dev team needs once their application is in production. 
 These tools allow them to understand how their final users interact with the product without the potential bias of a controlled user test group. With that information, they can understand things like user experience gaps, problems in the business logic due to incorrect interactions from the user, edge cases that need complex sequences of actions to be triggered, and many other options.
 
 However, there is one use case that traditional session replay tools can't really handle: live session support.
@@ -12,8 +12,6 @@ However, there is one use case that traditional session replay tools can't reall
 Having the ability to see _live_ what your users are doing and respond to it directly, even taking control over their mouse or jumping on a quick call to _show_ them the problem, is priceless. And that is why OpenReplay implemented the [Assist feature](https://openreplay.com/feature-assist.html).
 
 ## What can OpenReplay Assist do for you?
-
-Before we get to installing things, let's quickly understand what we can do with assist.
 
 In a normal scenario where you set up your application to record a user session, you'd get the usual events, errors and problems with your app delivered to your instance of OpenReplay (or to the SaaS version) after a few minutes of closing the tab (the app needs to make sure you didn't close it by accident after all). You'll be able to analyze step by step what the user did, but if you _do_ find a problem, you won't be able to review it directly with said user.
 
