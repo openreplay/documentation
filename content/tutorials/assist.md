@@ -1,5 +1,5 @@
 ---
-title: "How to assist your users with live session replay"
+title: "Assist"
 metaTitle: "How to assist your users with live session replay"
 metaDescription: "How to setup OpenReplay Assist and support your end users through live screen and WebRTC."
 ---
