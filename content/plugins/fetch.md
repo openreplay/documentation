@@ -61,70 +61,70 @@ function MyApp() {
 
 ```js
 trackerFetch({
-  replaceDefault: boolean;
+  overrideGlobal: boolean;
   failuresOnly: boolean;
   sessionTokenHeader: string;
   ignoreHeaders: Array<string> | boolean;
-  requestSanitizer: (Request) => Request | null;
-  responseSanitizer: (Response) => Response | null;
+  sanitiser: (RequestResponseData) => RequestResponseData | null;
 })
 ```
 
-- `replaceDefault`: Replaces the default `window.fetch`. Default: `false`.
+- `overrideGlobal`: Overrides the default `window.fetch`. Default: `false`.
 - `failuresOnly`: Captures requests having 4xx-5xx HTTP status code. Default: `false`.
 - `sessionTokenHeader`: In case you have enabled some of our backend [integrations](/integrations) (i.e. Sentry), you can use this option to specify the header name (i.e. 'X-OpenReplay-SessionToken'). This latter gets appended automatically to each fetch request to contain the OpenReplay sessionToken's value. Default: `undefined`.
 - `ignoreHeaders`: Helps define a list of headers you don't wish to capture. Set its value to `false` to capture all of them (`true` if none). Default: `['Cookie', 'Set-Cookie', 'Authorization']` so sensitive headers won't be captured.
-- `requestSanitizer`: Sanitize sensitive data from fetch requests or ignore request. You can redact fields on the request object by modifying then returning it from the function:
+- `sanitiser`: Sanitise sensitive data from fetch request/response or ignore request comletely. You can redact fields on the request object by modifying then returning it from the function:
 
-```js
-interface Request {
-  url: string,
-  body: string | Object,
-  headers: Record<string, string>
+```typescript
+interface RequestData {
+  body: BodyInit | null | undefined; // whatewer you've put in the init.body in fetch(url, init)
+  headers: Record<string, string>;
 }
 
-requestSanitizer: request => { // sanitize the body or headers
-  if (request.url === "/auth") {
-    request.body = null
-  }
-
-  if (request.headers['x-auth-token']) { // can also use ignoreHeaders option instead
-      request.headers['x-auth-token'] = 'SANITIZED';
-  }
-
-  return request
+interface ResponseData {
+  body: string | Object | null;  // Object if response is of JSON type
+  headers: Record<string, string>;
 }
 
-requestSanitizer: request => { // ignore the request that starts with /secure
-  if (request.url.startsWith("/secure")) {
+interface RequestResponseData {
+  readonly status: number;
+  readonly method: string;
+  url: string;
+  request: RequestData;
+  response: ResponseData;
+}
+
+sanitiser: (data: RequestResponseData) => { // sanitise the body or headers
+  if (data.url === "/auth") {
+    data.request.body = null
+  }
+
+  if (data.request.headers['x-auth-token']) { // can also use ignoreHeaders option instead
+    data.request.headers['x-auth-token'] = 'SANITISED';
+  }
+
+  // Sanitise response
+  if (data.status < 400 && data.response.body.token) {
+    data.response.body.token = "<TOKEN>"  
+  }
+
+  return data
+}
+
+// OR
+
+sanitiser: data => { // ignore requests that start with /secure
+  if (data.url.startsWith("/secure")) {
     return null
   }
-  return request
-}
-```
-
-- `responseSanitizer`: Sanitize sensitive data from fetch responses or ignore response. You can redact fields on the response object by modifying then returning it from the function:
-
-```js
-interface Response {
-  url: string,
-  body: string,
-  headers: Record<string, string>,
-  status: number
+  return data
 }
 
-responseSanitizer: response => { // sanitize the body
-  if (response.url === "/auth") {
-    response.body = null
-  }
-  return response
-}
+// OR
 
-responseSanitizer: response => { // ignore the response when status equals 200
-  if (response.status === 200) {
-    response.body = null
-  }
-  return response
+sanitiser: data => { // sanitise request url: replace all numbers
+  data.url = data.url.replace(/\d/g, "*")
+  return data
 }
 ```
 
