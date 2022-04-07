@@ -1,6 +1,6 @@
 ---
-title: "Capturing Your User's Requests and Responses to Find Problems with your Application"
-metaTitle: "Capturing Your User's Requests and Responses to Find Problems with your Application"
+title: "Fetch Plugin"
+metaTitle: "Using the Fetch Plugin from OpenReplay"
 metaDescription: "Capture the request data to understand the type of mistakes you're making on the front-end"
 ---
 Sometimes errors in your client code aren't as evident as when you get a blank screen because none of your JavaScript code works.
