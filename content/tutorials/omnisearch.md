@@ -1,6 +1,6 @@
 ---
-title: "Taking advantage of the Omnisearch"
-metaTitle: "Taking advantage of the Omnisearch"
+title: "OmniSearch"
+metaTitle: "Taking advantage of the OmniSearch"
 metaDescription: "Take advantage of the powerful search feature of OpenReplay"
 ---
 
@@ -11,7 +11,6 @@ For the purpose of the examples shown here, we're going to be discussing the tes
 Here is a screenshot of the UI our fake users would have the interact with:
 
 ![](https://i.imgur.com/6BtPzTs.png)
-
 
 ## Performing a simple search 
 The most basic use case for the search bar, is to search sessions of a particular user. Either because that's your testing user or because you're looking for the session of a client who's complaining about your product.
@@ -64,7 +63,6 @@ Let's take a look at what that would look like in the UI:
 
 ![](https://i.imgur.com/RX9PeH3.png)
 
-
 There are several things to note here:
 
 1. The user id is treated as a normal filter while the rest of the parameters are treated as events. This is because you can also specify the order in which these events take place (and the user id will always be there).
@@ -94,10 +92,8 @@ After that, your saved search will appear next to the search bar, like so:
 
 ![](https://i.imgur.com/n1GsndD.png)
 
-
 ---
 
 The Omnisearch provides you with search superpowers, but to take advantage of them, you have to pick the right options.
 
 If you still have questions, make sure to reach out to our devs on our [Discord community](https://discord.openreplay.com/).
-
