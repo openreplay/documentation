@@ -3,6 +3,7 @@ title: "Taking advantage of the Omnisearch"
 metaTitle: "Taking advantage of the Omnisearch"
 metaDescription: "Take advantage of the powerful search feature of OpenReplay"
 ---
+# Taking advantage of the Omnisearch
 
 The top search bar you see on the UI of OpenReplay is much more than a simple search bar, it allows you to craft very complex search queries with very little effort.
 
@@ -25,7 +26,36 @@ When you do that, you'll see the option to specify the user id as part of the fi
 
 ![](https://i.imgur.com/6Ac5cDB.png)
 
-By default, the filter with try to match the exact word you put in there, that's because of the "is" modifier next to the input field. You can change that to other behaviors, such as:
+As a note, the full list of filters you have access to is the following:
+
+- **Click**: filter by _where_ the user is clicking.
+- **Input**: filter by the input used by the user.
+- **Page**: filter by the URI of the page used during the replay session.
+- **RevId**: filter by the revision ID of your app (only if used with the SDK).
+- **Referrer**: The URL from where the user is arriving at your application.
+- **Duration**: filter the replays by their duration.
+- **User** Country: filter by the country of the user interacting with your app (calculated using their public IP address).
+- **Custom Events**: filter by the custom event triggered from the SDK.
+- **Network Request**: filter by the properties of the request issued by the UI (payload, URL, etc).
+- **GraphQL**: filter by the properties of the GraphQL query (name, method and payload).
+- **StateAction**: filter by the action on the state store (i.e Redux, VueX, etc).
+- **Error**: filter by Error Message (i.e the message used when throwing an exception)
+- **Issue**: filter by issue type (Click Rage, Dead Click, Excessive Scrolling, Bad Request, Missing Resources and Memory).
+- **User OS**: filter by the OS of your users.
+- **User Browser**: filter by the name of the browser used by your user (only filters by actual data, so if you can't find results by searching for "Chrome" it means none of your users are using it).
+- **User Device**: filter by the mobile version of the device used by the user.
+- **Platform**: filter by the platform used by your user (either Mobile, Tablet or Desktop).
+- **User Id**: filter by the ID of your user (set with the `setUserID` method).
+- **DOM complete**: filter by the time it takes for the DOM Complete event to be triggered.
+- **Largest contentful paint**: filter by the time it takes for the DOM Complete event to be triggered.
+- **Time to First Byte**: filter by the time it takes for the [TTFB event](https://fr.wikipedia.org/wiki/Time_to_first_byte) to be triggered.
+- **AVG CPU Load**: filters by the average CPU load during the session.
+- **AVG Memory Usage**: filters by the average memory usage during the session.
+- **Failed Request**: Boolean, filters the sessions that do not have failed requests.
+
+ 
+
+Moving on, by default the filter will try to match the exact word you put in there. That's because of the "is" modifier next to the input field. You can change that to other behaviors, such as:
 
 - is any
 - is not
@@ -56,7 +86,7 @@ In our case, we want to search for:
 
 - A particular user id.
 - All sessions with a click on a specific link.
-- All sessions with requests to one particular URL.
+    - All sessions with requests to one particular URL.
 - Finally, all sessions sharing the same family of status codes.
 
 When you tie all these filters together, you get a complex search filter that matches your particular sessions.
@@ -74,7 +104,40 @@ There are several things to note here:
 5. Notice the "AND" highlighted on the top right corner next to "OR" and "THEN". That modifier makes it so all steps and filters are evaluated with an AND. We could change them to an OR (for example), if we wanted them all to be evaluated individually.
 
 You can change filters around, or even boolean conditions to make your filter exactly how you need it.
-And if you're happy with the result, just to make sure you don't have to set it up every time you need it, you can save your filter.
+
+But what if your search requires multiple steps? What if you're looking for sessions that conform to a certain funnel? Let's take a look at how you can set a multi-step funnel with the search filters.
+
+## Creating a funnel from the search filters
+
+A funnel is nothing more than a set of steps your users have to go through to get to some point. Usually when that happens some users will not go through, perhaps because they lost their interest or perhaps due to errors in your application.
+And it is for the second scenario that OpenReplay can help you identify issues.
+
+The first thing to do is to define the funnel using the OmniSearch. To do that, simply state the steps required using the many filters listed above.
+
+For our example, I'm going to search for sessions in which the following happens:
+
+- The user is visiting the home page of my app (URI being "/").
+- The user interacts with the "first name" input field.
+- The user then clicks on the "second page" link.
+- The user is taken to a different page with URI "/second-page".
+- The user then clicks on the link "Home page".
+
+As you can see, the list of steps can be any random combination that makes sense within your app.
+This particular example would look like this:
+
+![](https://i.imgur.com/uEx2yGZ.png)
+
+By itself this search would list the sessions that match the pattern. However, we can take this a bit further by saving it as a funnel and then analizing the insight gathered by OpenReplay.
+
+Clicking on the "Save funnel" will prompt you to add a name to your funnel and it'll appear on the lower left corner of the screen.
+
+![](https://i.imgur.com/bt5O08M.png)
+
+And once you enter the funnel, you'll get an overview of what happens during the funnel:
+
+![](https://i.imgur.com/cgyJaKO.png)
+
+As you can appreciate, in this example we can see issues with Dead Clicks and Click Rages in 3 different sessions.
 
 ## Saving your filters
 This functionality makes sure you're not having to re-create your complex filters every time you want to use them.
