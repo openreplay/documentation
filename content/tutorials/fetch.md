@@ -1,15 +1,13 @@
 ---
 title: "Fetch Plugin"
-metaTitle: "Using the Fetch Plugin from OpenReplay"
+metaTitle: "How to use the Fetch Plugin"
 metaDescription: "Capture the request data to understand the type of mistakes you're making on the front-end"
 ---
 Sometimes errors in your client code aren't as evident as when you get a blank screen because none of your JavaScript code works.
 Sometimes the issue with your app is that given certain actions your user can take, you're incorrectly forming a request to the server.
 The client code works, you don't get any JS errors on the console, but your back-end doesn't really like what you're sending it.
 
-Using OpenReplay, you can capture the client-server communication as part of your standard session replay, and review it later.
-So let's take a look at how we can do that and what kind of benefit we can get from it.
-
+Using OpenReplay, you can capture the client-server communication as part of your standard session replay, and review it later. So let's take a look at how we can do that and what kind of benefit we can get from it.
 
 ## A sample app
 For the purposes of this how-to, I've created a simple React application that makes use of the [Bored API](https://www.boredapi.com/). This is a very simple API that returns a random activity suggestion based on some parameters.
@@ -25,6 +23,7 @@ And the `Suggestion` component simply renders the suggestion inside a nice-looki
 I'm going to focus on the first one, since it's the only one sending requests using the `fetch` function. Let's take a quick look at the component to understand what's it doing.
 
 ### The code of the SearchForm component
+
 This is not a complex component, but there is a section that is especially relevant for this particular use case, so let's take a quick look at it.
 
 ```javascript 
@@ -54,7 +53,6 @@ const getSomething = async (evt) => {
 
     return false
   }
-
 
     return (
         <Container>
@@ -109,6 +107,7 @@ So what can we do?
 Let's install and set up the fetch plugin.
 
 ### Setting up OpenReplay's Fetch plugin
+
 Lucky for us, doing this is even easier than installing the main tracker.
 We're going to use the NPM version, so install it with the following command:
 
@@ -126,6 +125,7 @@ In our case that's not the case, so I'm passing the `fetch` function as a prop f
 That's all we need to do, now deploy the change, test the app, close the tab and wait a couple of minutes. The session should appear soon enough and you can hit the "play" button.
 
 ## Inspecting the client-server communication
+
 For the purpose of the example, let's also look at a problem I started seeing after I published the application.
 
 Notice the warning box I get in this case:
@@ -152,6 +152,7 @@ Yes, I'm sending an `undefined` as the value of the `maxprice` attribute. I tota
 Granted, it's an easy fix now that I know where the problem is, but thanks to this process I would've been able to either raise a very detailed error report, or directly helped the developer identify and solve the problem without having to test myself and reproduce the issue. 
 
 ## Putting privacy to the test
+
 Alright, let's take this example a bit further, let's pretend I also need my user's phone number for this request. I clearly don't, but just humor me for a minute.
 
 I'll add the field to the form, and I'll update the code to capture that value and send it as part of the request.
@@ -185,13 +186,13 @@ The following screenshot shows what I just describes:
 
 ![](https://i.imgur.com/kKL47Rd.png)
 
-
 In the right section of the screen, you can see the full phone number. This happens because while the normal tracker can understand the phone number field to be a numeric field, it will not capture its input just in case the number represents personal information. But on the request side, we can't really make that assumption since the developer could've done anything with the data, or even the name of the parameter. 
 So the question then, is: can we protect our user's privacy with this plugin?
 
 And the answer, I'm happy to report, is: YES we can.
 
 ### Sanitizing the request data
+
 If you go back to the start of this article, when I configured the plugin, you'll see that I used the default options. However, as part of those options you can specify a callback meant to sanitize data. This callback receives a single attribute with both, the request and the response object. You can then choose to edit them however you want, they will not affect the actual request but will change the way the data is displayed on the OpenReplay UI. 
 
 For example, let's say I want to change the "phonenumber" attribute and remove the numbers so we avoid leaking that information. This can be done like this:

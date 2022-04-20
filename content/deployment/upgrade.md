@@ -116,6 +116,8 @@ Ensure your tracker (and tracker-assist plugin if you do use the Assist plugin) 
 
 | Backend Version | Minimum Tracker Version | Minimum Tracker-Assist Version |
 |----------|-------------|
+| 1.5.5 | 3.5.6 | 3.5.9 |
+| 1.5.4 | 3.5.4 | 3.5.7 |
 | 1.5.3 | 3.5.3 | 3.5.5 |
 | 1.5.2 | 3.5.2 | 3.5.4 |
 | 1.5.1 | 3.5.1 | 3.5.3 |
