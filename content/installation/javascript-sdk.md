@@ -71,7 +71,7 @@ There are a set of options you can pass to the constructor. Only `projectKey` is
 - `userID?: string` The ID of your end user. This can also be passed later in your code using the `setUserID()` method. 
 - `revID?: string` The revision ID of your web app. Useful when searching for issues happening on a specific release version.
 - `resourceBaseHref?: string` Refers to the publicly accessible domain where assets (styles, fonts and icons) could be fetched by OpenReplay. Since they're required for proper session replay, this option is useful to get around the limitation of having your site (and therefore assets) hosted in a private domain. Example: `https://mypublicsite.com/assets/`.
-- `captureIFrames?: boolean` For capturing all of the same-domain iFrames in your web app. If you wish to track a specific iFrame, then instead simply add the `data-openreplay-capture` HTML attribute to the `<iframe>` tag. Default: `false`.
+- `captureIFrames?: boolean` For capturing all of the same-domain iFrames in your web app. If you wish to track a specific iFrame, then instead simply add the `data-openreplay-capture` HTML attribute to the `<iframe>` tag. Default: `true`.
 - `heatmaps?: boolean` For disabling click maps. Default: `true`.
 - `verbose?: boolean` For enabling logs. Default: `false`.
 - `autoResetOnWindowOpen?: boolean` Enable this option to reset the sessionID when opening a new tab from your application. This overwrites the `window.open` method to avoid duplicate sessionIDs due to shared session storage between browser tabs. Default: `false`.

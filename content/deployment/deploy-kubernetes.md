@@ -66,22 +66,18 @@ Alternatively to creating a load balancer, you can bring (or generate) your own 
 
 1. First, go to your DNS service provider and add an `A Record`. Use the domain you previously provided during the installation step and point it to the cluster using its public IP.
 
-2. Rename (required) your private key to `site.key` and your certificate to `site.crt` then copy both files under `openreplay/scripts/helmcharts/openreplay/files/`. Now, simply uncomment the below block in `openreplay/scripts/helmcharts/vars.yaml`:
+2. If you're bringing your own certificate, create an SSL secret using the following command: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt`.
+
+> **Note:** If you don't have a certificate, generate one, that auto-renews, for your subdomain (the one provided during installation) using Let's Encrypt. Simply connect to OpenReplay instance, run `bash openreplay/scripts/helmcharts/certmanager.sh` and follow the steps.
+
+1. If you wish to enable http to https redirection (recommended), then uncomment the below block, under the `ingress-nginx` section, in `openreplay/scripts/helmcharts/vars.yaml`:
    
 ```yaml
-nginx-ingress:
-  sslKey: site.key
-  sslCert: site.crt
-```
-
-> **Note:** If you don't have a certificate, generate one for your subdomain (the one provided during installation) using Let's Encrypt. Simply connect to OpenReplay instance, run `kubectl delete svc nginx-ingress -n app` then execute `bash openreplay/scripts/certbot.sh` and follow the steps.
-
-3. If you wish to enable http to https redirection (recommended), then uncomment the below block, under the `nginx-ingress` section, in `openreplay/scripts/helmcharts/vars.yaml`:
-   
-```yaml
-nginx-ingress:
-  customServerConfigs: |
-    return 301 https://$host$request_uri;
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
 ```
 
 4. Finally reinstall OpenReplay NGINX:
