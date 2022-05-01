@@ -68,7 +68,7 @@ Alternatively to creating a load balancer, you can bring (or generate) your own 
 
 > **Note:** If you don't have a certificate, generate one, that auto-renews, for your subdomain (the one provided during installation) using Let's Encrypt. Simply connect to OpenReplay instance, run `cd openreplay/scripts/helmcharts && bash certmanager.sh` and follow the steps.
 
-1. If you wish to enable http to https redirection (recommended), then uncomment the below block, under the `ingress-nginx` section, in `openreplay/scripts/helmcharts/vars.yaml`:
+3. If you wish to enable http to https redirection (recommended), then uncomment the below block, under the `ingress-nginx` section, in `openreplay/scripts/helmcharts/vars.yaml`:
    
 ```yaml
 ingress-nginx: &ingress-nginx
