@@ -81,4 +81,4 @@ Newly recorded sessions should now be stored and retrieved (when replayed) from 
 
 ## Troubleshooting
 
-If you encounter any issues, please connect to our [Discord](https://discord.openreplay.com) and get help from our community.
+If you encounter any issues, please connect to our [Slack](https://slack.openreplay.com) and get help from our community.

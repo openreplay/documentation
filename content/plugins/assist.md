@@ -145,4 +145,4 @@ Failed to compile.
 Critical dependency: the request of a dependency is an expression
 ```
 
-If you encounter any other issue, please connect to our [Discord](https://discord.openreplay.com) and get help from our community.
+If you encounter any other issue, please connect to our [Slack](https://slack.openreplay.com) and get help from our community.
