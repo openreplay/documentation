@@ -1,7 +1,7 @@
 ---
 title: "Deployment"
 metaTitle: "Deployment"
-metaDescription: "Easy deploy on major public cloud providers (AWS, GCP, Azure, DigitalOcean, Scaleway)"
+metaDescription: "Easy deploy on major public cloud providers (AWS, GCP, Azure, DigitalOcean, Scaleway and OVHcloud)"
 ---
 
 OpenReplay can be deployed anywhere. Here are step-by-step tutorials for deployment options using all the major cloud providers.
@@ -13,6 +13,8 @@ OpenReplay can be deployed anywhere. Here are step-by-step tutorials for deploym
 - [Azure](/deployment/deploy-azure)
 - [Digital Ocean](/deployment/deploy-digitalocean)
 - [Scaleway](/deployment/deploy-scaleway)
+- [OVHcloud](/deployment/deploy-ovhcloud)
+- [Ubuntu](/deployment/deploy-ubuntu)
 - [Kubernetes](/deployment/deploy-kubernetes)
 
 You can also deploy from [source](/deployment/deploy-source). Even though this method takes more effort, it gives a lot of flexibility as you can use the latest code and customize it if needed.

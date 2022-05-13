@@ -1,3 +1,4 @@
+const { CACHING_PARAMS } = require("gatsby-plugin-s3/constants");
 require("dotenv").config();
 const queries = require("./src/utils/algolia");
 const config = require("./config");
@@ -46,6 +47,20 @@ const plugins = [
       head: true,
       // enable ip anonymization
       anonymize: true,
+    },
+  },
+  {
+    resolve: `gatsby-plugin-s3`,
+    options: {
+      bucketName: process.env.AWS_S3_BUCKET_NAME,
+      region: 'eu-central-1',
+      removeNonexistentObjects: false,
+      params: {
+        ...CACHING_PARAMS,
+        'media/**': {
+          CacheControl: 'public, max-age=31536000, immutable',
+        },
+      }
     },
   },
 ];
