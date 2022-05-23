@@ -1,6 +1,6 @@
 ---
-title: "Delete Recordings"
-metaTitle: "Delete Recordings"
+title: "Recording Storage"
+metaTitle: "Recording Storage"
 metaDescription: "Delete recordings in bulk from database and cleanup your storage."
 ---
 
