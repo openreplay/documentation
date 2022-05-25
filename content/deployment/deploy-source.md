@@ -48,7 +48,7 @@ kubectl create secret -n app docker-registry my-registry-secret \
         --docker-email=no@email.local 
 ```
 
-1. To use the components you just built and pushed to your container registry, update each component's chart by editing the following variables in its `openreplay/scripts/helmcharts/openreplay/charts/<app>/values.yaml` file:
+2. To use the components you just built and pushed to your container registry, update each component's chart by editing the following variables in its `openreplay/scripts/helmcharts/openreplay/charts/<app>/values.yaml` file:
 - `repository`: should point to MY_CONTAINER_REGISTRY_URL/COMPONENT_NAME (give your username in case of docker hub, otherwise use the container registry url)
 - `pullPolicy`: set to "Always"
 - `tag`: the value of IMAGE_TAG used when building Backend and API
@@ -86,22 +86,18 @@ You must therefore bring (or generate) your own SSL certificate.
 
 1. First, go to DNS service provider and create an `A Record`. Use the domain you previously provided during the installation step and point it to your machine using its public IP.
 
-2. Rename (required) your private key to `site.key` and your certificate to `site.crt` then copy both files under `openreplay/scripts/helmcharts/openreplay/files/`. Now, simply uncomment the below block in `openreplay/scripts/helmcharts/vars.yaml`:
+2. If you're bringing your own certificate, create Kubernetes SSL secret using the following command: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt`.
+
+> **Note:** If you don't have a certificate, generate one, that auto-renews, for your subdomain (the one provided during installation) using Let's Encrypt. Run `cd openreplay/scripts/helmcharts && bash certmanager.sh` and follow the steps.
+
+3. If you wish to enable http to https redirection (recommended), then uncomment the below block, under the `ingress-nginx` section, in `openreplay/scripts/helmcharts/vars.yaml`:
    
 ```yaml
-nginx-ingress:
-  sslKey: site.key
-  sslCert: site.crt
-```
-
-> **Note:** If you don't have a certificate, generate one for your subdomain (the one provided during installation) using Let's Encrypt. Run `kubectl delete svc nginx-ingress -n app` then execute `bash openreplay/scripts/certbot.sh` and follow the steps.
-
-3. If you wish to enable http to https redirection (recommended), then uncomment the below block, under the `nginx-ingress` section, in `openreplay/scripts/helmcharts/vars.yaml`:
-   
-```yaml
-nginx-ingress:
-  customServerConfigs: |
-    return 301 https://$host$request_uri;
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
 ```
 
 4. Finally reinstall OpenReplay NGINX:
@@ -126,4 +122,4 @@ You're all set now, OpenReplay should be accessible on your subdomain. You can c
 
 ## Troubleshooting
 
-If you encounter any issues, connect to our [Discord](https://discord.openreplay.com) and get help from our community.
+If you encounter any issues, connect to our [Slack](https://slack.openreplay.com) and get help from our community.

@@ -1,14 +1,14 @@
 ---
-title: "Recordings Storage"
-metaTitle: "Recordings Storage"
+title: "External Storage"
+metaTitle: "External Storage"
 metaDescription: "How to change the default storage destination of your recordings."
 ---
 
-Each session recording takes the form of a file. In fact, OpenReplay dumps what's necessary to replay a session (DOM mutations, mouse coordinates, console logs, network activity and much more) into a single file. These objects are by default stored on your instance, but the destination can be changed to any S3 object storage service which allows for greater scalability and lower your deployment costs.
+OpenReplay [session recordings](/configuration/recording-storage) are by default stored on your instance, but the destination can be changed to any S3 object storage service, which allows for greater scalability and lower deployment costs.
 
 ## Change recordings' storage destination
 
-Recordings can be persisted in any object storage destination as long as it's S3 compatible, which makes OpenReplay compatible with the major public cloud services. Below are the steps to configure a different destination for your recordings:
+Recordings can be persisted in any object storage destination as long as it's S3 compatible, which makes OpenReplay compatible with all major public cloud services. Below are the steps to configure a different destination for your recordings:
 
 ### Create the necessary buckets
 
@@ -81,4 +81,4 @@ Newly recorded sessions should now be stored and retrieved (when replayed) from 
 
 ## Troubleshooting
 
-If you encounter any issues, please connect to our [Discord](https://discord.openreplay.com) and get help from our community.
+If you encounter any issues, please connect to our [Slack](https://slack.openreplay.com) and get help from our community.

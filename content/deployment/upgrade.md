@@ -49,26 +49,16 @@ Once you're on `v1.3.6` then proceed with the below steps:
   helm upgrade --install openreplay ./openreplay -n app -f vars.yaml --atomic --set forceMigration=true
   ```
   
-5. If you're not using a load balancer and have generated your SSL certificate via the `certbot.sh` script, then copy your `site.key`and `site.crt` files to `openreplay/scripts/helmcharts/openreplay/files`:
+5. If you're not using a load balancer and have generated your SSL certificate via the `certmanager.sh` script:
 
   ```
-  cd openreplay/scripts/helmcharts
-  cp -rf ~/site.* openreplay/files/
-  ./openreplay-cli -I
+  cd openreplay/scripts/helmcharts && bash certmanager.sh
   ```
 
-Then uncomment the below block in `openreplay/scripts/helmcharts/vars.yaml`:
-   
-   ```yaml
-   nginx-ingress:
-     sslKey: site.key
-     sslCert: site.crt
-   ```
-
-5. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.3.6` to `v1.5.2` then update the `fromVersion` like below:
+6. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.3.6` to `v1.6.0` then update the `fromVersion` like below:
   
   ```yaml
-  fromVersion: "v1.5.2"
+  fromVersion: "v1.6.0"
   ```
 
 > **Note:** 
@@ -92,31 +82,37 @@ Manual overrides made to any service configuration file (i.e. `openreplay/script
 
   ```bash
   cd openreplay/scripts/helmcharts
-  cp ~/openreplay_v1.4.0/scripts/helmcharts/vars.yaml .
+
+  # Merge previous vars.yaml with current var.yaml (using yq for yaml parsing)
+  cp ~/openreplay_v1.4.0/scripts/helmcharts/vars.yaml old_vars.yaml
+  wget https://github.com/mikefarah/yq/releases/download/v4.24.4/yq_linux_amd64 -O yq
+  chmod +x ./yq
+  ./yq '. *= load("old_vars.yaml")' vars.yaml > new_vars.yaml
+  mv new_vars.yaml vars.yaml
+    
+  # Upgrade openreplay
   helm upgrade --install openreplay ./openreplay -n app --wait -f ./vars.yaml --atomic
   ```
   
-4. If you're not using a load balancer and have generated your SSL certificate via the `certbot.sh` script, then copy your `site.key`and `site.crt` files to `openreplay/scripts/helmcharts/openreplay/files`:
+4. If you're not using a load balancer and have generated your SSL certificate via the `certmanager.sh` script:
 
   ```
-  cd openreplay/scripts/helmcharts
-  cp -rf ~/site.* openreplay/files/
-  ./openreplay-cli -I
+  cd openreplay/scripts/helmcharts && bash certmanager.sh
   ```
 
-5. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.4.0` to `v1.5.2` then update the `fromVersion` like below:
+5. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.4.0` to `v1.6.0` then update the `fromVersion` like below:
   
   ```yaml
-  fromVersion: "v1.5.2"
+  fromVersion: "v1.6.0"
   ```
-
+ 
 ## Upgrade Tracker
 
 Ensure your tracker (and tracker-assist plugin if you do use the Assist plugin) is compatible with the new backend version by checking the below compatibility table:
 
-| Backend Version | Minimum Tracker Version | Minimum Tracker-Assist Version |
+| Backend Version | Minimum Tracker Version | Minimum Assist Version (NPM) |
 |----------|-------------|
-| 1.5.5 | 3.5.6 | 3.5.9 |
+| 1.6.0 | 3.5.10 | 3.5.8 |
 | 1.5.4 | 3.5.4 | 3.5.7 |
 | 1.5.3 | 3.5.3 | 3.5.5 |
 | 1.5.2 | 3.5.2 | 3.5.4 |
