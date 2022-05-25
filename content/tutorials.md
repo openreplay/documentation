@@ -11,3 +11,6 @@ Follow the below tutorials to get the most out of OpenReplay.
 - [Fetch Plugin](/tutorials/fetch): Learn how to set up and sanitize request information using the Fetch plugin.
 - [OmniSearch](/tutorials/omnisearch): Take advantage of our powerful search feature to find the right type of session for your project.
 - [Issue Types](/tutorials/issues): Learn what all the auto-detected issues mean and how to get the most out of them.
+- [Creating custom dashboards](/tutorials/custom-dashboard): Learn how to leverage custom dashboards to visualize the current state of your system.
+- Getting started with...
+   - [Next.js and OpenReplay](/tutorials/next): Learn how to integrate the tracker into your Next.js application.
