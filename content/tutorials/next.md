@@ -3,6 +3,7 @@ title: "Using the Tracker with Next.js"
 metaTitle: "Adding the OpenReplay Tracker to your Next.js application"
 metaDescription: "Learn how to get the tracker working on your Next.js application"
 ---
+
 Getting the tracker to work on a Next.js application is quite straightforward. Since Next.js works on top of React, the process is quite similar, the main difficulty comes from the Server Side Rendering capabilities of Next.js.
 
 But once you understand how they work and how to structure your client-only code, you’ll be tracking your users in no time.
