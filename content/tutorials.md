@@ -14,3 +14,4 @@ Follow the below tutorials to get the most out of OpenReplay.
 - [Creating custom dashboards](/tutorials/custom-dashboard): Learn how to leverage custom dashboards to visualize the current state of your system.
 - Getting started with...
    - [Next.js and OpenReplay](/tutorials/next): Learn how to integrate the tracker into your Next.js application.
+   - [Nuxt and OpenReplay](/tutorials/nuxt): Learn how to integrate the tracker into your Nuxt application.
