@@ -54,7 +54,7 @@ This function also takes on a “configuration” object that you can extend for
 
 With your custom function, you could be providing the customer ID of your store, or the user’s email addressa or anything that uniquely identifies the user within your app. This way you can track their session replays across time in case they have a particular problem that others aren’t reporting.
 
-### Handling the `projectKey` in your code
+### Handling the "projectKey" in your code
 
 As a note, the `projectKey` that you configure is the one provided by OpenReplay’s platform. This value should not be stored hardcoded in your code for security reasons, but rather on some kind of configuration file/sytem.
 
