@@ -119,6 +119,8 @@ export default function Page({projectKey}) {
 
 This time around, you’re using a server-side variable through the `getStaticProps`call. Once the tracker has started working, then the rest of your user’s session will be recorded.
 
+You can clone [this example repo](https://github.com/deleteman/openreplay-nuxt-example) and use it as a template if you need a full-working Nuxt project.
+
 This is a safer approach, since you’re not sharing secure data (the project’s key) with the client.
 
 If you have any issues setting up the tracker on your Next-based project, please reach out to us on our [Slack community](https://slack.openreplay.com/) and ask our devs directly!
