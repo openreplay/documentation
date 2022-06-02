@@ -39,7 +39,7 @@ For security reasons, the tracker only runs on web apps that use SSL (HTTPS). If
 
 If you see an error similar to the below, then OpenReplay couldn't start due to a missing content security policy. See [here](/troubleshooting/csp) for the policy to add.
 
-![CSP Error](./static/csp-error.jpg#center)
+![CSP Error](../static/csp-error.jpg#center)
 
 ### OpenReplay is blocked
 
@@ -84,4 +84,4 @@ This can be spotted in replays that have a single visited page, and that end as 
 
 ## Replays are missing
 
-If you're not self-hosting OpenReplay but rather using our hosted solution, chances are that some sessions are not be recorded as requests to our servers may be blocked. That is usually caused by adblockers, VPN or browser extensions. Check [proxying](/troubleshooting/proxying) to overcome this.
+If you're not self-hosting OpenReplay but rather using our hosted solution, chances are that some sessions are not be recorded as requests to our servers may be blocked. That is usually caused by adblockers, VPN or browser extensions.
