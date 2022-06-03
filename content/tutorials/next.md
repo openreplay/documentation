@@ -82,7 +82,7 @@ With your custom function, you could be providing the customer ID of your store,
 
 💡**A note for self-hosted users**: if you’re using the self-hosted version of OpenReplay, you’ll also have to specify the `ingestPoint` configuration property. This property specifies the ingestion endpoint for the tracker’s data. Cloud users don’t need this, because by default the tracker will now where the SaaS version of this endpoint is, but if you’re self-hosting it, you’ll need to specify it (it should be something like `https://openreplay.mydomain.com/ingest`) 
 
-### Handling the `projectKey` in your code
+### Handling the "projectKey" in your code
 
 As a note, the `projectKey` that you configure is the one provided by OpenReplay’s platform. This value should not be stored hardcoded in your code for security reasons, but rather on some kind of configuration file/sytem.
 
