@@ -58,6 +58,15 @@ The easiest way to handle SSL in AWS is to setup a load balancer (ELB) and run O
 
 Once created, go to Route 53 (or your DNS service provider) and create an `A Record` that points to the load balancer using its DNS name (can be found in ELB dashboard).
 
+Finally, enable the `use-forwarded-headers`, by uncommenting the below line under the `ingress-nginx` section, in `openreplay/scripts/helmcharts/vars.yaml`:
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      use-forwarded-headers: true
+```
+
 You're all set now, OpenReplay should be securely accessible on the subdomain you just set up. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 
 ### Bring/generate your SSL certificate (option 2)

@@ -54,9 +54,16 @@ On the main benefits of running OpenReplay behind a cloud load balancer is to ha
 - [Azure - Load Balancer]([/deployment/deploy-azure#setupazurefrontdoor(option1)](https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-overview))
 - [Digital Ocean - Configure TLS/SSL](/deployment/deploy-digitalocean#configuretls/ssl)
 
-Then ensure your cluster provisions a [service type](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer) `LoadBalancer` so the traffic from the cloud load balancer  can be directed at OpenReplay backend.
+Then ensure your cluster provisions a [service type](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer) `LoadBalancer` so the traffic from the cloud load balancer can be directed at OpenReplay backend. Now, go to your DNS service provider and create an `A Record` that points to the cluster using its public IP.
 
-Finally, go to your DNS service provider and create an `A Record` that points to the cluster using its public IP.
+Finally, enable the `use-forwarded-headers`, by uncommenting the below line under the `ingress-nginx` section, in `openreplay/scripts/helmcharts/vars.yaml`:
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      use-forwarded-headers: true
+```
 
 You're all set now, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 
