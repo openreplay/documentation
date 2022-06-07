@@ -86,7 +86,7 @@ You must therefore bring (or generate) your own SSL certificate.
 
 1. First, go to DNS service provider and create an `A Record`. Use the domain you previously provided during the installation step and point it to your machine using its public IP.
 
-2. If you're bringing your own certificate, create Kubernetes SSL secret using the following command: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt`.
+2. If you're bringing your own certificate, create Kubernetes SSL secret using the following command: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
 
 > **Note:** If you don't have a certificate, generate one, that auto-renews, for your subdomain (the one provided during installation) using Let's Encrypt. Run `cd openreplay/scripts/helmcharts && bash certmanager.sh` and follow the steps.
 

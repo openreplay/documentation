@@ -42,7 +42,7 @@ You must therefore generate (or bring) your own SSL certificate.
 
 1. First, go to 'Manage' > 'Networking' > 'Domains' (or your other DNS service provider) and create an `A Record`. Use the domain you previously provided during the installation step and point it to the droplet using its public IP (can be found in Droplets tab).
 
-2. If you're bringing your own certificate, create an SSL secret using the following command: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt`.
+2. If you're bringing your own certificate, create an SSL secret using the following command: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
 
 > **Note:** If you don't have a certificate, generate one, that auto-renews, for your subdomain (the one provided during installation) using Let's Encrypt. Simply connect to OpenReplay droplet, run `cd openreplay/scripts/helmcharts && bash certmanager.sh` and follow the steps.
 
