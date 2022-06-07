@@ -117,4 +117,6 @@ Make sure you call the tracker after the mounted event has been triggered. You c
 
 After this, the tracker should start sending data to the platform once deployed.
 
+For the **full code** of a working Nuxt-based application, you can check out [this repository](https://github.com/deleteman/openreplay-nuxt-example).
+
 If you have any issues setting up the tracker on your Nuxt-based project, please reach out to us on our [Slack community](https://slack.openreplay.com/) and ask our devs directly!

@@ -131,4 +131,6 @@ export default function YourComponent({projectKey}) {
 
 If you don’t need as much control, you can join both, the “init message” and the “start tracking message”, so that you only need to call a single function to get the tracking going.
 
+For the **full code** of a working Next-based application, you can check out [this repository](https://github.com/deleteman/openreplay-next-example).
+
 If you have any issues setting up the tracker on your Next-based project, please reach out to us on our [Slack community](https://slack.openreplay.com/) and ask our devs directly!
