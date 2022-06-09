@@ -11,10 +11,10 @@ OpenReplay stack can be installed on a single machine and Google Cloud is an ide
 1. Go to 'Compute Engine' Dashboard and select 'VM Instances' from the left-side menu bar
 2. Click 'Create Instance'
 3. Select your preferred 'region' and 'zone'
-4. Choose your machine type. The minimum specs are `2 vCPUs, 8 GB of RAM, 50 GB of storage`, otherwise OpenReplay backend services won't simply start. So, we recommend **at least** the `e2-standard-2` (or an equivalent) which is enough for a low/moderate volume. If you're expecting high traffic, you should scale from here.
-4. Change your boot disk to *Ubuntu 20.04 LTS*, then pick *SSD persistent disk* for the boot disk type and set the size to 50 GB.
-5. Check both 'Allow HTTP traffic' and 'Allow HTTPS traffic' in Firewall
-9. Click 'Create'
+4. Choose your machine type. The minimum specs are `2 vCPUs, 8 GB of RAM, 50 GB of storage`, otherwise OpenReplay backend services won't simply start. So, we recommend **at least** the `n2-standard-2` (or an equivalent - note that the `e2-standard-2` has been known to give issues during deployment) which is enough for a low/moderate volume. If you're expecting high traffic, you should scale from here.
+5. Change your boot disk to *Ubuntu 20.04 LTS* or higher, then pick *SSD persistent disk* for the boot disk type and set the size to 50 GB.
+6. Check both 'Allow HTTP traffic' and 'Allow HTTPS traffic' in Firewall
+7. Click 'Create'
 
 ## Deploy OpenReplay
 
