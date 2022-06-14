@@ -48,7 +48,7 @@ emailUseTls: 'true'
 emailUseSsl: 'false'
 emailSslKey: ''
 emailSslCert: ''
-emailFrom: 'openreplay@mycompany.com # sender email, use your domain'
+emailFrom: 'openreplay@mycompany.com' # sender email, use your domain'
 ```
 
 7. Reinstall the web server for the changes to take effect:
