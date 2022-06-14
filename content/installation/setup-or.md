@@ -53,6 +53,14 @@ function MyApp() {
 
 If you would like to go further in configuring the tracker, check [JavaScript SDK](/installation/javascript-sdk#options) for the list of available options.
 
+## Integrating with other frameworks
+If you're not using OpenReplay inside a bare application, you're likely to be using a Web Dev framework, like Next.js, Nuxt or something else.
+Check out our personalized tutorials for each of the supported frameworks:
+
+- [Using OpenReplay with Next.js](/tutorials/next)
+- [Using OpenReplay with Nuxt](/tutorials/nuxt)
+- [Using OpenReplay with Remix](/tutorials/remix)
+
 ## Next Steps
 
 Now that you have installed the tracker and deployed your web app, session recordings should appear within few minutes. Well done!

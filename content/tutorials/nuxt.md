@@ -1,5 +1,5 @@
 ---
-title: "Using the Tracker with Nuxt"
+title: "Using OpenReplay with Nuxt"
 metaTitle: "Adding the OpenReplay Tracker into your Nuxt.js app"
 metaDescription: "Learn how to get the tracker working on your Nuxt application"
 ---

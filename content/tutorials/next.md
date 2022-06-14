@@ -1,5 +1,5 @@
 ---
-title: "Using the Tracker with Next.js"
+title: "Using OpenReplay with Next.js"
 metaTitle: "Adding the OpenReplay Tracker to your Next.js application"
 metaDescription: "Learn how to get the tracker working on your Next.js application"
 ---

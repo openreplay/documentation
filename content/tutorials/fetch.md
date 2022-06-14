@@ -1,6 +1,6 @@
 ---
-title: "Fetch Plugin"
-metaTitle: "How to use the Fetch Plugin"
+title: "Sanitizing Private Data with the Fetch Plugin"
+metaTitle: "How to use the Fetch Plugin to Sanitize your user's data"
 metaDescription: "Capture the request data to understand the type of mistakes you're making on the front-end"
 ---
 Sometimes errors in your client code aren't as evident as when you get a blank screen because none of your JavaScript code works.
