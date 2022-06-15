@@ -60,7 +60,7 @@ function reducer(state, action) {
         }
     }
 
-export default function TrackerProvider({children, config}) {
+export default function TrackerProvider({children, config = {}}) {
     let [state, dispatch] = useReducer(reducer, {tracker: null, config})
     let value = {
         startTracking: () => dispatch({type: 'start'}),
