@@ -213,7 +213,7 @@ async function getMakeUpProducts(): Promise<Product[]> {
 
 The only thing of note here is the  apiKey parameter. For this tutorial, we’ll assume we want to protect the API Key to ensure this information is protected.
 
-## **Sanitizing** the request data
+## Sanitizing the request data
 
 The sanitizer function will be defined as part of the plugin's configuration, so we’ll go back to the `_app.tsx` file, and add to the `plugins` variable.
 
