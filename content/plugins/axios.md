@@ -124,6 +124,10 @@ sanitiser: data => { // sanitise request url: replace all numbers
 }
 ```
 
+## Tutorial
+If you're looking for a practical example of how to use this plugin to capture and sanitize request data, check out [our detailed tutorial over here](/tutorials/axios).
+
+
 ## Troubleshooting
 
 Having trouble setting up this plugin? please connect to our [Slack](https://slack.openreplay.com) and get help from our community.
