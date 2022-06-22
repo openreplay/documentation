@@ -3,8 +3,6 @@ title: "Using the Redux Plugin to capture state changes"
 metaTitle: "Using the Redux Plugin to capture state changes"
 metaDescription: "Learn how to capture state changes using the Redux plugin and visualize them in the session replays"
 ---
-# Set Up the Redux Plugin to Track State Changes from OpenReplay
-
 If you need extra visibility when replaying your users’ sessions, getting a glimpse into the application state can be very helpful.
 
 In the case of Redux, OpenReplay [provides a plugin](https://docs.openreplay.com/plugins/redux) that allows you to integrate into the internal workings of the store. This plugin will let you see the state (no pun intended!) of the Redux store and the actions dispatched throughout the recorded session.
