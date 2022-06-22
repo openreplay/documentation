@@ -64,3 +64,24 @@ Obscuring any UI component/part using the `data-openreplay-masked` HTML attribut
 Excluded DOM elements, as well as their children, will be sanitized at the tracker level and therefore won't be visible in the session replays. In the below example, we masked user events so they won't appear in our session recordings.
 
 ![Obscured UI Components in Session Replay](../static/gdpr-2.png#center)
+
+### Entire Containers
+
+You can hide an entire piece of html using the `data-openreplay-htmlmasked` HTML attribute when you need to remove sensitive data like charts.
+
+```HTML
+<div style="background-color:lightblue" data-openreplay-htmlmasked>
+  <div> sensitive information </div>
+  <svg> important chart </svg>
+</div>
+```
+
+will result in following DOM to be recorded by the tracker:
+
+```HTML
+<div style="background-color:lightblue" data-openreplay-htmlmasked>
+
+</div>
+```
+
+**Keep in mind that parent container's size should be constant**
