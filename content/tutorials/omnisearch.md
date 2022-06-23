@@ -1,7 +1,7 @@
 ---
-title: "Leaning to use the OmniSearch"
+title: "How to use OmniSearch"
 metaTitle: "Taking advantage of the OmniSearch"
-metaDescription: "Take advantage of the powerful search feature of OpenReplay"
+metaDescription: "Take advantage of the powerful search feature in OpenReplay"
 ---
 # Taking advantage of the Omnisearch
 
