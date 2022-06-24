@@ -27,3 +27,4 @@ Follow along with these tutorials to learn using real-world use cases.
    - [Next.js and OpenReplay](/tutorials/next): Learn how to integrate the tracker into your Next.js application.
    - [Nuxt and OpenReplay](/tutorials/nuxt): Learn how to integrate the tracker into your Nuxt application.
    - [Remix and OpenReplay](/tutorials/remix): Learn how to integrate the tracker into your Remix application.
+   - [Svelte and OpenReplay](/tutorials/svelte): Learn how to integrate the tracker into your Svelte application.
