@@ -28,3 +28,4 @@ Follow along with these tutorials to learn using real-world use cases.
    - [Nuxt and OpenReplay](/tutorials/nuxt): Learn how to integrate the tracker into your Nuxt application.
    - [Remix and OpenReplay](/tutorials/remix): Learn how to integrate the tracker into your Remix application.
    - [Svelte and OpenReplay](/tutorials/svelte): Learn how to integrate the tracker into your Svelte application.
+   - [Gatsby and OpenReplay](/tutorials/gatsby): Learn how to integrate the tracker into your Gatsby project.
