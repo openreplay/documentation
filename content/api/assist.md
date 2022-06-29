@@ -6,7 +6,8 @@ metaDescription: "How to search all live sessions for a particular project."
 
 ## Retrieve live sessions
 
-Only available for EE edition.
+Only available for Enterprise Edition (EE).
+
 Returns the list of live sessions for a particular project.
 
 ### Method
