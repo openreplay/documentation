@@ -103,11 +103,14 @@ Search in the list of live sessions for a particular project.
 | filters | array of filter | The list of filters, check next table (default:[])   |
 
 filter object:
+
 | Name | Type | Description |
 |---------|-----------------|------------------------------------------------------|
 | value | array of strings | The list of values (default:[])         |
 | type | case insensitive string | The filter attribute (required) |
 | source | string | The metadata attribue name for type=metadata (default:"")           |
+
+PS: if `values=[]`; the search will look for the live-sessions that have a given attribute.
 
 ### Request Headers
 
@@ -120,7 +123,9 @@ Key'.
 
 ### Example Request
 
-The following example will look for the first 10 live-sessions (reverse sort by timestamp) that have a `userId contains openreplay` and `metadata.plan contains trial or free`
+The following example will look for the first 10 live-sessions (reverse sort by timestamp) that have
+a `userId contains openreplay` and `metadata.plan contains trial or free`
+
 ```curl
 curl -X POST \
   https://openreplay.example.com/api/v1/aYYaFHiagqdXKEmVlmvJ/assist/sessions \
@@ -159,7 +164,9 @@ curl -X POST \
       {
         "pageTitle": "OpenReplay Blog",
         "sessionID": "6975518573799185",
-        "metadata": {"plan": "trial"},
+        "metadata": {
+          "plan": "trial"
+        },
         "userID": "dev@openreplay.com",
         "userUUID": "8998545b-553c-4f41-a39d-d7cba7fac2d1",
         "projectKey": "aYYaFHiagqdXKEmVlmvJ",
