@@ -104,13 +104,21 @@ Search in the list of live sessions for a particular project.
 
 filter object:
 
-| Name | Type | Description |
-|---------|-----------------|------------------------------------------------------|
-| value | array of strings | The list of values (default:[])         |
-| type | case insensitive string | The filter attribute (required) |
-| source | string | The metadata attribue name for type=metadata (default:"")           |
+| Name | Type                              | Description |
+|---------|-----------------------------------|------------------------------------------------------|
+| value | array of case insensitive strings | The list of values (default:[])         |
+| type | case insensitive string           | The filter attribute (required) |
+| source | case insensitive string           | The metadata attribue name for type=metadata (default:"")           |
+
+The search will look for the live-sessions that have an attribute name that contains the given `type` and have a value that contains 1 of the given `value`.
+
 
 PS: if `values=[]`; the search will look for the live-sessions that have a given attribute.
+
+For example if you are looking for sessions that have a specific metadata (any value): 
+```json
+{"value": [], "type": "METADATA", "source": "myMeta"}
+```
 
 ### Request Headers
 
@@ -124,7 +132,7 @@ Key'.
 ### Example Request
 
 The following example will look for the first 10 live-sessions (reverse sort by timestamp) that have
-a `userId contains openreplay` and `metadata.plan contains trial or free`
+a `userId` contains 'openreplay' and `metadata.plan` contains 'trial' or 'free'.
 
 ```curl
 curl -X POST \
