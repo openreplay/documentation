@@ -112,6 +112,9 @@ See [Apollo Link](https://www.apollographql.com/docs/link/) and
 [Apollo Networking](https://www.apollographql.com/docs/react/networking/network-layer/)
 for details.
 
+## Tutorial
+If you're looking for a practical example of how to use this plugin to capture operation data (mutations and queries) in your session replays, check out [our detailed tutorial over here](/tutorials/graphql).
+
 ## Troubleshooting
 
 Having trouble setting up this plugin? please connect to our [Slack](https://slack.openreplay.com) and get help from our community.

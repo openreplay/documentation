@@ -14,6 +14,7 @@ Follow along with these tutorials to learn using real-world use cases.
 - [Fetch Plugin](/tutorials/fetch): Learn how to set up and sanitize request information using the Fetch plugin.
 - [Axios Plugin](/tutorials/axios): Learn how to set up and sanitize request information using the Axios plugin.
 - [Redux Plugin](/tutorials/redux): Learn how to set up the Redux plugin to capture state changes in your session replays.
+- [GraphQL Plugin](/tutorials/graphql): Learn how to set up the GraphQL plugin to capture operation data in your session replays.
 
 ### Features
 
