@@ -4,6 +4,7 @@ metaTitle: "Tutorials"
 metaDescription: "Tutorials and How-tos for getting the most out of OpenReplay."
 ---
 
+
 Follow the below tutorials to get the most out of OpenReplay.
 
 ## How-tos
@@ -29,4 +30,6 @@ Follow along with these tutorials to learn using real-world use cases.
    - [Nuxt and OpenReplay](/tutorials/nuxt): Learn how to integrate the tracker into your Nuxt application.
    - [Remix and OpenReplay](/tutorials/remix): Learn how to integrate the tracker into your Remix application.
    - [Svelte and OpenReplay](/tutorials/svelte): Learn how to integrate the tracker into your Svelte application.
+   - [Angular and OpenReplay](/tutorials/angular): Learn how to integrate the tracker into your Angular application and track request data.
    - [Gatsby and OpenReplay](/tutorials/gatsby): Learn how to integrate the tracker into your Gatsby project.
+
