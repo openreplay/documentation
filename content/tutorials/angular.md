@@ -1,6 +1,6 @@
 ---
-title: "Using OpenReplay with Angular"
-metaTitle: "Adding the OpenReplay Tracker to your Angular application"
+title: "Intercept HTTP Requests in Angular"
+metaTitle: "Tracking HTTP requests in your Angular application with the OpenReplay"
 metaDescription: "Learn how to get the tracker working on your Angular application"
 ---
 If you’re trying to track the requests sent with your Angular application, OpenReplay does not provide a plugin as it does for Fetch or Axios.
