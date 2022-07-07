@@ -55,10 +55,10 @@ Once you're on `v1.3.6` then proceed with the below steps:
   cd openreplay/scripts/helmcharts && bash certmanager.sh
   ```
 
-6. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.3.6` to `v1.6.0` then update the `fromVersion` like below:
+6. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.3.6` to `v1.7.0` then update the `fromVersion` like below:
   
   ```yaml
-  fromVersion: "v1.6.0"
+  fromVersion: "v1.7.0"
   ```
 
 > **Note:** 
@@ -89,7 +89,9 @@ Manual overrides made to any service configuration file (i.e. `openreplay/script
   chmod +x ./yq
   ./yq '. *= load("old_vars.yaml")' vars.yaml > new_vars.yaml
   mv new_vars.yaml vars.yaml
-    
+  # Cleanup depricated resource
+  kubectl delete ing -n db minio-frontend
+  
   # Upgrade openreplay
   helm upgrade --install openreplay ./openreplay -n app --wait -f ./vars.yaml --atomic
   ```
@@ -100,10 +102,10 @@ Manual overrides made to any service configuration file (i.e. `openreplay/script
   cd openreplay/scripts/helmcharts && bash certmanager.sh
   ```
 
-5. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.4.0` to `v1.6.0` then update the `fromVersion` like below:
+5. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.4.0` to `v1.7.0` then update the `fromVersion` like below:
   
   ```yaml
-  fromVersion: "v1.6.0"
+  fromVersion: "v1.7.0"
   ```
  
 ## Upgrade Tracker
@@ -112,6 +114,7 @@ Ensure your tracker (and tracker-assist plugin if you do use the Assist plugin) 
 
 | Backend Version | Minimum Tracker Version | Minimum Assist Version (NPM) |
 |----------|-------------|
+| 1.7.0 | 3.5.15 | 3.5.14 |
 | 1.6.0 | 3.5.12 | 3.5.11 |
 | 1.5.4 | 3.5.4 | 3.5.7 |
 | 1.5.3 | 3.5.3 | 3.5.5 |
