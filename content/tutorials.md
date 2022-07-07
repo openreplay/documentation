@@ -22,6 +22,7 @@ Follow along with these tutorials to learn using real-world use cases.
 
 - [OmniSearch](/tutorials/omnisearch): Take advantage of our powerful search feature to find the right type of session for your project.
 - [Issue Types](/tutorials/issues): Learn what all the auto-detected issues mean and how to get the most out of them.
+- [Enhance your tracking ability with Custom Eventsl](/tutorials/custom-events): Learn about custom events and how you can increase your tracking super powers.
 - [Creating custom dashboards](/tutorials/custom-dashboard): Learn how to leverage custom dashboards to visualize the current state of your system.
 
 ### Integrations with other frameworks

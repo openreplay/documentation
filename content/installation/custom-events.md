@@ -73,3 +73,11 @@ var startOpts = { userID: "" };
   OpenReplay.issue('payment_error', {code: 500, context: 42}); // send a technical event (issue) later in your code
   ...
 ```
+
+## Tutorial
+If you're looking for a practical example of how to use custom events, check out [our detailed tutorial over here](/tutorials/custom-events).
+
+## Troubleshooting
+
+Having trouble using custom events? please connect to our [Slack](https://slack.openreplay.com) and get help from our community.
+
