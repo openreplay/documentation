@@ -89,7 +89,9 @@ Manual overrides made to any service configuration file (i.e. `openreplay/script
   chmod +x ./yq
   ./yq '. *= load("old_vars.yaml")' vars.yaml > new_vars.yaml
   mv new_vars.yaml vars.yaml
-    
+  # Cleanup depricated resource
+  kubectl delete ing -n db minio-frontend
+  
   # Upgrade openreplay
   helm upgrade --install openreplay ./openreplay -n app --wait -f ./vars.yaml --atomic
   ```
