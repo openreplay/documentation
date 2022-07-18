@@ -22,7 +22,7 @@ Click on the Dashboards section on the main menu to get started.
 
 Then click on the "Create Dashboard" button that's staring at you right from the middle of the screen:
 
-![https://i.imgur.com/kcViMTV.png](https://i.imgur.com/kcViMTV.png)
+![Create a new dashboard](./images/create-dashboard.png)
 
 Once you click on it, you'll be presented with every single metric that OpenReplay is capturing about your application. 
 
@@ -92,9 +92,31 @@ You have 40 metrics to choose from, that means you can create the type of dashbo
 
 Once presented with the list of metrics, all you have to do is click the ones you want, and once you have them all, click on the "Create" button located in the lower left corner of the screen.
 
+### Creating custom metrics
+Other than the pre-defined metrics presented by the platform, you can create your own to fully customize the level of details you have inside your dashboards.
+Under the same Dashboards section, instead of creating a new dashboard, click on the Metrics option on the left side of the screen and choose "Create Metric".
+
+![Creating a custom metric](./images/create-custom-metric.png)
+
+Give it a name, in my case I'll call it "Sessions from Spain" (you'll see why in a minute).
+Then choose the metric type, you have:
+
+- **Timeseries**: this will plot the number of sessions that match the filtering criteria from below.
+- **Table of [option]**: this will list whatever you select for "option" (it can be either Users, Sessions, JS Errors, Issues, Browsers, Devices, Countries and URLs ). Each element on this list will be clickable and you'll be able to get more details from it.
+- **Funnels**: it will create a funnel based on the filters you select.
+
+If you'd like to know how to work with the JSErrors list, check out [this other tutorial](/tutorials/js-errors-dashboard).
+
+For this example, I'm going to create a metric that lists all sessions from the product's page that come from Spain. This will let me quickly see how many sessions I get inside my chosen time window and at the same time, I'll be able to reproduce them with a simple click.
+
+![Filtering inside a custom metric](./images/new-custom-metric.png)
+
+You can duplicate this metric, and filter them by other countries, that way you can get a glimpse of who's accessing a specific section of your site from different countries and how are they interacting with it.
+
 ## Creating a custom dashboard
 
 For example, let's assume you're trying to create a simple dashboard that shows the slowness indicators to understand where the slow-related problems are coming from.
+And on top of that, you'll want to add the list of prople from Spain that have reached the product page of your e-commerce site. 
 
 So you'll go with:
 
@@ -103,11 +125,12 @@ So you'll go with:
 - Framerate
 - Response time
 - Time to Interactive
+- Your custom "Sessions from spain" metric
 
 Depending on your use case, you could think about adding others, but for this example, these metrics will provide us with the full picture of what we're trying to understand: if our pages are slow and what is causing it.
 The result should look something like this:
 
-![https://i.imgur.com/nzeY4fb.png](https://i.imgur.com/nzeY4fb.png)
+![The final dashboard](./images/the-final-dashboard.png)
 
 The widgets you added can be moved around to make sure you see first the ones you're most interested in.
 
