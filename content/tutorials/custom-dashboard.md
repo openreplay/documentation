@@ -103,7 +103,7 @@ Then choose the metric type, you have:
 
 - **Timeseries**: this will plot the number of sessions that match the filtering criteria from below.
 - **Table of [option]**: this will list whatever you select for "option" (it can be either Users, Sessions, JS Errors, Issues, Browsers, Devices, Countries and URLs ). Each element on this list will be clickable and you'll be able to get more details from it.
-- **Funnels**: it will create a funnel based on the filters you select.
+- **Funnels**: it will create a funnel based on the filters you select (check out [this tutorial](/tutorials/funnels) to understand how to take advantage of funnels).
 
 If you'd like to know how to work with the JSErrors list, check out [this other tutorial](/tutorials/js-errors-dashboard).
 

@@ -26,6 +26,7 @@ Follow along with these tutorials to learn using real-world use cases.
 - Dashboards:
 
    - [Creating custom dashboards](/tutorials/custom-dashboard): Learn how to leverage custom dashboards to visualize the current state of your system.
+   - [Creating custom funnel](/tutorials/funnels): Learn how to create custom funnels to understand what's causing your conversion drops.
    - [Showing JavaScript errors on a custom dashboards](/tutorials/js-errors-dashboard): Add a custom metric (JS Errors) into your Dashboards with this tutorial.
 
 ### Integrations with other frameworks
