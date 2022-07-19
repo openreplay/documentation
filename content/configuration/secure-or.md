@@ -86,16 +86,15 @@ cd openreplay/scripts/helmcharts && ./openreplay-cli -I
 
 ## Enabling CORS
 
-Open `openreplay/scripts/helmcharts/vars.yaml` and enable CORS in the `http` block: 
+Cross-domain requests are allowed, by default, from all origins (`Access-Control-Allow-Origin: *`). If you wish to restrict recordings from few domains only, then open `openreplay/scripts/helmcharts/vars.yaml` and update the `http` block as below:
 
 ```yaml
 http:
   ingress:
     annotations:
       nginx.ingress.kubernetes.io/enable-cors: "true"
+      nginx.ingress.kubernetes.io/cors-allow-origin: "https://origin-site1.com:4443, http://origin-site2.com"
 ```
-
-> **Note:** The above configuration will enable cross-domain requests from all origins (`Access-Control-Allow-Origin: *`).
 
 Then, reinstall NGINX:
 
