@@ -93,7 +93,7 @@ http:
   ingress:
     annotations:
       nginx.ingress.kubernetes.io/enable-cors: "true"
-      nginx.ingress.kubernetes.io/cors-allow-origin: "https://origin-site1.com:4443, http://origin-site2.com"
+      nginx.ingress.kubernetes.io/cors-allow-origin: "https://origin-site1.com:443, http://origin-site2.com"
 ```
 
 Then, reinstall NGINX:
