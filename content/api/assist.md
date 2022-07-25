@@ -105,11 +105,12 @@ Search in the list of live sessions for a particular project.
 
 filter object:
 
-| Name | Type                              | Description |
-|---------|-----------------------------------|------------------------------------------------------|
-| value | array of case insensitive strings | The list of values (default:[])         |
-| type | case insensitive string           | The filter attribute (required) |
-| source | case insensitive string           | The metadata attribue name for type=metadata (default:"")           |
+| Name     | Type                              | Description                                                                        |
+|----------|-----------------------------------|------------------------------------------------------------------------------------|
+| value    | array of case insensitive strings | The list of values (default:[])                                                    |
+| type     | case insensitive string           | The filter attribute (required)                                                    |
+| source   | case insensitive string           | The metadata attribue name for type=metadata (default:"")                          |
+| operator | case sensitive string           | The operator to use for each value, can be "contains" or "is" (default:"contains") |
 
 The search will look for the live-sessions that have an attribute name that contains the given `type` and have a value that contains 1 of the given `value`.
 
