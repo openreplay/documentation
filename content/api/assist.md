@@ -148,13 +148,15 @@ curl -X POST \
                 "trial", "free"
             ],
             "type": "METADATA",
-            "source": "plan"
+            "source": "plan",
+            "operator": "is"
         },
         {
             "value": [
                 "openreplay"
             ],
-            "type": "USERID"
+            "type": "USERID",
+            "operator": "contains"
         }
     ],
     "sort": "timestamp",
