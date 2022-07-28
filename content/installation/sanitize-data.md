@@ -63,6 +63,8 @@ Obscuring any UI component/part using the `data-openreplay-masked` HTML attribut
 
 Excluded DOM elements, as well as their children, will be sanitized at the tracker level and therefore won't be visible in the session replays. In the below example, we masked user events so they won't appear in our session recordings.
 
+**Note** even if your excluded DOM elements contain `input` fields, these fields will not be sanitized. If you're looking to sanitize the content of these fields, either use the `data-openreplay-hidden` if you have access to the inputs, or the `data-openreplay-htmlmasked` attribute (see below) to remove the entire HTML element container (and children) from the recording.
+
 ![Obscured UI Components in Session Replay](../static/gdpr-2.png#center)
 
 ### Entire Containers
