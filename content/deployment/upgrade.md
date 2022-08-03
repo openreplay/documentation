@@ -27,7 +27,7 @@ Once you're on `v1.3.6` then proceed with the below steps:
   mv openreplay openreplay_v1.3.6
   ```
 
-2. Clone the new OpenReplay version. In this example we're upgrading to the latest available version:
+2. Clone the new OpenReplay version. In this example we're upgrading to v1.4.0:
    
   ```bash 
   git clone https://github.com/openreplay/openreplay -b v1.4.0
