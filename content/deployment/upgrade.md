@@ -6,7 +6,7 @@ metaDescription: "How to upgrade your instance to the latest OpenReplay version.
 
 Upgrading your OpenReplay deployment to the latest version requires updating both your backend (instance) and tracker.
 
-## Upgrade Backend (from v1.3.6 or prior)
+## Upgrade Backend (from v1.3.6 or prior) to v1.4.0
 
 First of all, ensure you're on `v1.3.6`. If that's already the case, then ignore the below commands and move to step 1). If not, update your OpenReplay installation to `v1.3.6`:
    
@@ -30,7 +30,7 @@ Once you're on `v1.3.6` then proceed with the below steps:
 2. Clone the new OpenReplay version. In this example we're upgrading to the latest available version:
    
   ```bash 
-  git clone https://github.com/openreplay/openreplay
+  git clone https://github.com/openreplay/openreplay -b v1.4.0
   ```
 
 3. Run the below script to automatically upgrade your `vars.yaml` to the new format:
@@ -55,10 +55,10 @@ Once you're on `v1.3.6` then proceed with the below steps:
   cd openreplay/scripts/helmcharts && bash certmanager.sh
   ```
 
-6. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.3.6` to `v1.7.0` then update the `fromVersion` like below:
+6. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.3.6` to `v1.4.0` then update the `fromVersion` like below:
   
   ```yaml
-  fromVersion: "v1.7.0"
+  fromVersion: "v1.4.0"
   ```
 
 > **Note:** 
