@@ -55,7 +55,7 @@ Once the bucket created:
 }
 ```
 
-3. Finally, make sure to generate the appropriate access keys so OpenReplay backend can programmatically access these buckets. 
+1. Finally, make sure to generate the appropriate access keys so OpenReplay backend can programmatically access **only these** buckets. 
 
 ### Update backend services
 
