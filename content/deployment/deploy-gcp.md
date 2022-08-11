@@ -4,7 +4,11 @@ metaTitle: "Deploy to Google Cloud"
 metaDescription: "Step-by-step guide for deploying OpenReplay on Google Cloud."
 ---
 
-OpenReplay stack can be installed on a single machine and Google Cloud is an ideal candidate. Here's how to do it.
+OpenReplay stack can be installed on a single machine and Google Cloud is an ideal candidate. 
+
+Watch [this YouTube video](https://youtu.be/t31fj-0t3Dw) to understand how to quickly deploy OpenReplay to GCP, or continue reading for more details.
+
+
 
 ## Launch a VM
 

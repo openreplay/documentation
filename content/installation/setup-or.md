@@ -4,7 +4,11 @@ metaTitle: "Setup OpenReplay"
 metaDescription: "How to quickly setup OpenReplay and start recording sessions and metrics."
 ---
 
-Getting started with OpenReplay is straightforward. There are 2 ways you can get OpenReplay up and running: using the script or the npm package.
+Getting started with OpenReplay is straightforward. 
+
+If you'd like to watch a quick tutorial on how to get started, use [this YouTube video](https://www.youtube.com/watch?v=EWbtMK3qK30), otherwise keep reading for more details.
+
+There are 2 ways you can get OpenReplay up and running: using the script or the npm package.
 
 ## Using Script
 

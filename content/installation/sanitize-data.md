@@ -8,6 +8,8 @@ You can sanitize what OpenReplay captures at both a global and/or granular level
 
 We are constantly improving our privacy related features, so let us know if you need something that which we don't yet support.
 
+If you'd like to watch a quick tutorial on how to sanitize data, use [this YouTube video](https://youtu.be/22-UCoocy6s), otherwise keep reading for more details.
+
 ## Global Level
 
 Data can be sanitized at the tracker level, when setting up OpenReplay.
