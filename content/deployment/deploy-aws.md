@@ -4,7 +4,9 @@ metaTitle: "Deploy to AWS"
 metaDescription: "Step-by-step guide for deploying OpenReplay on Amazon AWS."
 ---
 
-OpenReplay stack can be installed on a single machine and AWS EC2 is an ideal candidate. Here's how to do it.
+OpenReplay stack can be installed on a single machine and AWS EC2 is an ideal candidate. 
+
+Watch [this YouTube video](https://www.youtube.com/watch?v=0-02jJyL4_A) to understand how to quickly deploy OpenReplay to AWS, or continue reading for more details.
 
 ## Launch an EC2 instance
 
