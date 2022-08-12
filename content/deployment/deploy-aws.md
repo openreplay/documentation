@@ -54,9 +54,9 @@ The easiest way to handle SSL in AWS is to setup a load balancer (ELB) and run O
 3. Add a listener to HTTPS (keep this one only) and make sure to select the same subnet(s) in which your OpenReplay instance is running.
 4. Choose an existing certificate (i.e. *.mycompany.com) or generate a new one from AWS Certificate Manager (ACM). You can also import yours.
 5. Configure Security Groups: Select the security group previously created for the OpenReplay instance (you can find it 'EC2 Dashboard' under the 'Security' tab)
-6. Configure Routing: Define a name and select `IP` in *Target Type*. Keep the other default parameters
-7. Register Targets: Add the instance's private IP (port 80) click 'Add to list' (the private IP can be found in EC2 dashboard)
-8. Review then 'Create'
+6. Configure Listener and routing: Keep the default protocol and port (`HTTP:80`). Now, create a new target group. Give it a name and select `IP addresses` in *Target Type*. Ensure the *Health check path* is set to `/healthz` while keeping the other default parameters. Click on 'Next' to register targets, add the OpenReplay instance's private IPv4 (ports `80`) then add the target to the list (the private IP can be found in EC2 dashboard). Review then click on 'Create target group'.
+7. Now, go back to the LB creation page and forward this new target group to the LB listener.
+8. Review then 'Create load balancer'
 
 Once created, go to Route 53 (or your DNS service provider) and create an `A Record` that points to the load balancer using its DNS name (can be found in ELB dashboard).
 

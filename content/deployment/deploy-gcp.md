@@ -8,8 +8,6 @@ OpenReplay stack can be installed on a single machine and Google Cloud is an ide
 
 Watch [this YouTube video](https://youtu.be/t31fj-0t3Dw) to understand how to quickly deploy OpenReplay to GCP, or continue reading for more details.
 
-
-
 ## Launch a VM
 
 1. Go to 'Compute Engine' Dashboard and select 'VM Instances' from the left-side menu bar
@@ -52,7 +50,7 @@ Now it's time to create the load balancer:
 3. Choose 'From Internet to my VMs' then click 'Continue'
 4. Start with 'Backend configuration' and click on 'Backend services' > 'Create a backend service'
 5. Select *Instance group* for 'Backend type'. In 'Backends' > 'New backend', choose the instance group you previously created, set the port to `80` then hit 'Done'.
-6. Scroll down to 'Health Check' and 'Create a health check'. Choose HTTP for the 'Protocol' and set the 'Port' to `80` while keeping the other default values. Hit 'Save'.
+6. Scroll down to 'Health Check' and 'Create a health check'. Choose HTTP for the 'Protocol', set the 'Port' to `80` then change the 'Request path' to `/healthz`. Keepg the other default values, then hit 'Save'.
 7. In 'Advanced Options', check 'Enable Cloud CDN', set 'Session Affinity' to `Client IP` then add `Access-Control-Allow-Origin` in 'Custom Response Headers'.
 8. Click 'Create'
 9.  In 'Frontend configuration', choose HTTPS for 'Protocol' then in 'Certificate' create a new certificate (managed by Google) or bring yours. Hit 'Done'.
