@@ -22,6 +22,7 @@ Learn from the below tutorials using real-world use cases.
 ### Features
 
 - [OmniSearch](/tutorials/omnisearch): Take advantage of our powerful search feature to find the right type of session for your project.
+- [Adding users to your team](/tutorials/adding-users): Learn how to add users to your self-hosted instance of OpenReplay.
 - [Issue Types](/tutorials/issues): Learn what all the auto-detected issues mean and how to get the most out of them.
 - [Enhance your tracking ability with Custom Events](/tutorials/custom-events): Learn about custom events and how you can increase your tracking super powers.
 - Dashboards:
