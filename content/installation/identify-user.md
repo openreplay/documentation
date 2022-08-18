@@ -6,6 +6,8 @@ metaDescription: "How to associate an internal-user id with the session recordin
 
 Associate your internal-user-id with the session being recorded by following the below steps.
 
+If you're looking for a quick how-to on associating your users to their replays, check out [this video we made for you](https://youtu.be/xfotXkeyXZM). Otherwise, keep reading!
+
 ### With NPM
 
 Inject the userID on tracker' start:
