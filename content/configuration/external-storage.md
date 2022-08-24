@@ -38,7 +38,7 @@ Once the bucket created:
 ]
 ```
 
-2. Enable public access to the `openreplay-assets` bucket **only**. This latter contains only stylesheets, icons and fonts that are required for proper session replay. If you're on AWS, that would be under 'Permissions > Bucket policy' using the following configuration:
+2. Enable public access to the `openreplay-assets` bucket **only**. This latter contains only stylesheets, icons and fonts that are required for proper session replay. If you're on AWS, first navigate to 'Permissions > Block public access (bucket settings)' and turn it off, then go to 'Permissions > Bucket policy' and use the following configuration:
 
 ```json
 {
@@ -55,7 +55,17 @@ Once the bucket created:
 }
 ```
 
-3. Finally, make sure to generate the appropriate access keys so OpenReplay backend can programmatically access **only these 3** buckets. 
+3. Finally, make sure to generate the appropriate access keys to **these 3 buckets only** so OpenReplay backend can programmatically access them to upload files. The required S3 permissions are:
+
+```json
+"s3:PutObject",
+"s3:GetObjectAcl",
+"s3:GetObject",
+"s3:GetObjectTagging",
+"s3:ListBucket",
+"s3:PutObjectTagging",
+"s3:GetBucketLocation"
+```
 
 ### Update backend services
 
