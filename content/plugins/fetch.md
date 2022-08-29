@@ -6,6 +6,8 @@ metaDescription: "Fetch plugin for OpenReplay."
 
 This plugin allows you to capture `fetch` payloads and inspect them later on while replaying session recordings. This is very useful for understanding and fixing issues.
 
+If you'd like to watch a Video Tutorial about the Fetch plugin, check out [this YouTube video](https://www.youtube.com/watch?v=YFCKstPZzZg).
+
 ## Installation
 
 ```bash
