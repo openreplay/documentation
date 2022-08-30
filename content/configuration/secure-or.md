@@ -20,6 +20,17 @@ ingress-nginx: &ingress-nginx
       force-ssl-redirect: true
 ```
 
+> **Note:** Our `ingress-nginx` runs by default on ports `80|443`, but this can be easily changed, if needed, in `vars.yaml`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
 Finally reinstall NGINX:
 
 ```bash

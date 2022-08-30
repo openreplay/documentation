@@ -4,7 +4,7 @@ metaTitle: "External Storage"
 metaDescription: "How to change the default storage destination of your recordings."
 ---
 
-OpenReplay [session recordings](/configuration/recording-storage) are by default stored on your instance, but the destination can be changed to any S3 object storage service, which allows for greater scalability and lower deployment costs.
+OpenReplay [session recordings](/configuration/recording-storage) are by default stored on your instance, but the destination can be changed to any S3-compatible object storage service, which allows for greater scalability and lower deployment costs.
 
 ## Change recordings' storage destination
 

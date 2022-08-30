@@ -12,4 +12,5 @@ Your OpenReplay instance can be easily configured. Here are step-by-step tutoria
 - [Proxy Settings](/configuration/proxy-settings): Run OpenReplay behind a proxy like NGINX or Apache2.
 - [Recording Storage & Cleanup](/configuration/recording-storage): How recordings are stored, and how to delete in bulk from database and cleanup your storage.
 - [External Recordings' Storage](/configuration/external-storage): Change the default storage destination of your recordings.
+- [External Database](/configuration/external-db): Use an external Postgres DB for OpenReplay.
 - [Single-Sign-On (SAML)](/configuration/sso): Setup Single-Sign-On (SSO) via SAML.
