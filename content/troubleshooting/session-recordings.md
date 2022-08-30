@@ -85,3 +85,7 @@ This can be spotted in replays that have a single visited page, and that end as 
 ## Replays are missing
 
 If you're not self-hosting OpenReplay but rather using our hosted solution, chances are that some sessions are not be recorded as requests to our servers may be blocked. That is usually caused by adblockers, VPN or browser extensions.
+
+## My problem is not listed
+
+If you encounter any issues that are not listed in this page, feel free to connect to our [Slack](https://slack.openreplay.com) and get help from our community.
