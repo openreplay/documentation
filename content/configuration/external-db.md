@@ -30,7 +30,11 @@ The local schema and recorded data must now be exported to the external Postgres
 kubectl exec -n db postgresql-postgresql-0 -- bash -c 'PGPASSWORD=<postgresPassword from vars.yaml> pg_dumpall -U postgres '"  > ~/path/to/dump.sql
 ```
 
-2. Install the Postgres client on your instance and ensure it has access to the external database.
+2. Install the Postgres client on your OpenReplay instance and ensure it has access to the external database:
+
+```bash
+sudo apt install postgresql-client
+```
    
 3. Restore the backup into the new externalPostgres:
 
