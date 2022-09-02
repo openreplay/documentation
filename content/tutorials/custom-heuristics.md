@@ -1,10 +1,15 @@
-# Creating new heuristics
+---
+title: "Custom Heuristics"
+metaTitle: "Custom Heuristics"
+metaDescription: "How to extend the heuristics service with you own algorithm"
+---
 
-## Heuristics
-We call heuristics simple and robust algorithms for detecting issues such as high CPU or click rage. For explanation how the existing algorithms work, please check the documentation. Here we'll use one example to understand how heuristics work and how to create your own detector and see its results on the dashboard.
+We call heuristics simple and robust algorithms for detecting issues such as high CPU or click rage. Here we'll use one example to understand how heuristics work and how to create your own detector and see its results on the dashboard.
+
 ## Templates
-A template for the heuristics is located in the path
-`openreplay/backend/pkg/handlers/custom`.
+
+A template for the heuristics is located in the path `openreplay/backend/pkg/handlers/custom`.
+
 ```tsx
 package custom
 
@@ -23,6 +28,7 @@ func (h *CustomHandler) Build() Message {
 	return nil
 }
 ```
+
 When the heuristic method is created it can be added by modifying the file `main.go` in the path
 `openreplay/backend/cmd/heuristics` by importing the costume module and adding the custom function into the message processor handler.
 ```tsx
@@ -67,9 +73,10 @@ func main() {
         }
         ...
 }
-
 ```
-## Quick Return example
+
+## Quick Return Example
+
 For this example, we will create the Quick Return heuristic, which will send a signal everytime we return to the same webpage url within less than five seconds. The method implemented to detect such event will be taking advantage of the events SetPageLocation and MouseClick. Everytime we have a mouse click we update the current timestamp and if a SetPageEvent message is received within the five next seconds pointing the current webpage, then we return a QuickReturn event.
 
 We create the file `quickreturn.go` in the path `openreplay/backend/pkg/handlers/custom` containing the code shown below
@@ -128,7 +135,9 @@ func (h *QuickReturnDetector) Build() Message {
     }
 }
 ```
-Now the heuristic it is created, it only needs to be enabled. In order to do so, we have to add the heuristic to the file `main.go` in the path `openreplay/backend/cmd/heuristics` as follows
+
+Now the heuristic it is created, it only needs to be enabled. In order to do so, we have to add the heuristic to the file `main.go` in the path `openreplay/backend/cmd/heuristics` as follows:
+
 ```tsx
 package main
 
@@ -174,6 +183,11 @@ func main() {
         ...
 }
 ```
+
 The heuristic is now available and the messages are sent as a Custom Event. To recompile the code follow the steps in *build and deploy* section from [**deploy from source**](https://docs.openreplay.com/deployment/deploy-source) page.
 
 In this simple process we have created a new detector. Of course, your algorithm can be more sophisticated and include a combination of different type of events.
+
+## Questions?
+
+If you encounter any issues, connect to our [Slack](https://slack.openreplay.com) and get help from our community.

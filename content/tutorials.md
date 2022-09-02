@@ -39,3 +39,6 @@ Learn from the below tutorials using real-world use cases.
    - [Svelte and OpenReplay](/tutorials/svelte): Learn how to integrate the tracker into your Svelte application.
    - [Angular and OpenReplay](/tutorials/angular): Learn how to integrate the tracker into your Angular application and track request data.
    - [Gatsby and OpenReplay](/tutorials/gatsby): Learn how to integrate the tracker into your Gatsby project.
+
+### Extend OpenReplay with new features
+- [Custom heuristic](/tutorials/custom-heuristics): Make your own issue detection algorithm and add it to OpenReplay heuristics engine.
