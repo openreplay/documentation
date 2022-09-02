@@ -66,7 +66,7 @@ There are a set of options you can pass to the constructor. Only `projectKey` is
 ### General Purpose
 
 - `projectKey: string` The ID of the project you're tracking.
-- `sessionToken?: string` The token of the initial session. This is useful when sessions traverse different subdomains on your web app but you want to stitch them into a single recording. In case it's not possible to continue the session (doesn't exist or is finished), the tracker will automatically start a new one. Session token is also useful for many [integrations](/integrations).
+- `sessionHash?: string` The hash of the initial session. This is useful when sessions traverse different subdomains on your web app but you want to stitch them into a single recording. In case it's not possible to continue the session (doesn't exist or is finished), the tracker will automatically start a new one. It's also returned on `stop()`.
 - `ingestPoint?: string` Your OpenReplay domain (i.e. https://openreplay.mydomain.com/ingest), to which the tracker will be sending events. This is optional for OpenReplay Cloud users. Default: `https://api.openreplay.com/ingest` (which points to OpenReplay Cloud). 
 - `revID?: string` The revision ID of your web app. Useful when searching for issues happening on a specific release version.
 - `resourceBaseHref?: string` Refers to the publicly accessible domain where assets (styles, fonts and icons) could be fetched by OpenReplay. Since they're required for proper session replay, this option is useful to get around the limitation of having your site (and therefore assets) hosted in a private domain. Example: `https://mypublicsite.com/assets/`.

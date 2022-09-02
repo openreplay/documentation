@@ -6,65 +6,9 @@ metaDescription: "How to upgrade your instance to the latest OpenReplay version.
 
 Upgrading your OpenReplay deployment to the latest version requires updating both your backend (instance) and tracker.
 
-## Upgrade Backend (from v1.3.6 or prior) to v1.4.0
-
-First of all, ensure you're on `v1.3.6`. If that's already the case, then ignore the below commands and move to step 1). If not, update your OpenReplay installation to `v1.3.6`:
-   
-```bash 
-# Copy/backup the current openreplay folder to _version-number
-mv openreplay openreplay_v1.3.5
-git clone https://github.com/openreplay/openreplay -b v1.3.6
-cd openreplay/scripts/helm
-# bash upgrade.sh <old openreplay path>
-bash upgrade.sh ~/openreplay_v1.3.5
-```
-
-Once you're on `v1.3.6` then proceed with the below steps:
-
-1. Copy/backup the current openreplay folder to `_version-number` like below:
-   
-  ```bash 
-  mv openreplay openreplay_v1.3.6
-  ```
-
-2. Clone the new OpenReplay version. In this example we're upgrading to v1.4.0:
-   
-  ```bash 
-  git clone https://github.com/openreplay/openreplay -b v1.4.0
-  ```
-
-3. Run the below script to automatically upgrade your `vars.yaml` to the new format:
-  
-  ```bash
-  cd openreplay/scripts/helmcharts
-  ansible localhost -m template -a "src=vars_template.yaml dest=vars.yaml" -e @~/openreplay_v1.3.6/scripts/helm/vars.yaml
-  ```
-
-4. Upgrade OpenReplay:
-
-  ```bash
-  cd openreplay/scripts/helmcharts
-  helm ls -n app | tail -n +2 | awk '{print $1}' | xargs -I{} helm uninstall {} -n app
-  helm uninstall nginx-ingress -n nginx-ingress
-  helm upgrade --install openreplay ./openreplay -n app -f vars.yaml --atomic --set forceMigration=true
-  ```
-  
-5. If you're not using a load balancer and have generated your SSL certificate via the `certmanager.sh` script:
-
-  ```
-  cd openreplay/scripts/helmcharts && bash certmanager.sh
-  ```
-
-6. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.3.6` to `v1.4.0` then update the `fromVersion` like below:
-  
-  ```yaml
-  fromVersion: "v1.4.0"
-  ```
-
-> **Note:** 
-Manual overrides made to any service configuration file (i.e. `openreplay/scripts/helm/app/<app>.yaml`) will be reset. So if you have any custom overrides, like using an [external object storage service](/configuration/recordings-storage) for your recordings, or increased service capacity (cpu/memory), make sure to apply them to the new version (in `/openreplay/scripts/helmcharts/vars.yaml`) prior to running the upgrade script (step 4).
-
 ## Upgrade Backend (from v1.4.0 or higher)
+
+>**Note:** If your OpenReplay version is prior to `v1.4.0` then [read this first](/deployment/deprecated-versions) before continuing with the below instructions.
 
 1. Copy/backup the current openreplay folder to `_version-number` like below:
    
@@ -102,10 +46,10 @@ Manual overrides made to any service configuration file (i.e. `openreplay/script
   cd openreplay/scripts/helmcharts && bash certmanager.sh
   ```
 
-5. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.4.0` to `v1.7.0` then update the `fromVersion` like below:
+5. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.4.0` to `v1.8.0` then update the `fromVersion` like below:
   
   ```yaml
-  fromVersion: "v1.7.0"
+  fromVersion: "v1.8.0"
   ```
  
 ## Upgrade Tracker
@@ -114,6 +58,7 @@ Ensure your tracker (and tracker-assist plugin if you do use the Assist plugin) 
 
 | Backend Version | Minimum Tracker Version | Minimum Assist Version (NPM) |
 |----------|-------------|
+| 1.8.0 | 3.5.16 | 3.5.15 |
 | 1.7.0 | 3.5.15 | 3.5.14 |
 | 1.6.0 | 3.5.12 | 3.5.11 |
 | 1.5.4 | 3.5.4 | 3.5.7 |
@@ -127,3 +72,7 @@ Ensure your tracker (and tracker-assist plugin if you do use the Assist plugin) 
 | 1.3.0 | 3.2.1 | 3.4.12 |
 | 1.2.0 | 3.1.0 | N/A |
 | 1.1.0 | 3.0.3 | N/A |
+
+## Troubleshooting
+
+If you encounter any issue during the upgrade process, reach out on [Slack](https://slack.openreplay.com) and get help from our community.
