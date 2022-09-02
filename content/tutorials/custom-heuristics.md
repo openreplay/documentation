@@ -174,6 +174,6 @@ func main() {
         ...
 }
 ```
-The heuristic is now available and the messages are sent as a Custom Event.
+The heuristic is now available and the messages are sent as a Custom Event. To recompile the code follow the steps in *build and deploy* section from [**deploy from source**](https://docs.openreplay.com/deployment/deploy-source) page.
 
-n this simple process we have created a new detector. Of course, your algorithm can be more sophisticated and include a combination of different type of events.
+In this simple process we have created a new detector. Of course, your algorithm can be more sophisticated and include a combination of different type of events.
