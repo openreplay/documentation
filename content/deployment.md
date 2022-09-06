@@ -22,4 +22,4 @@ You can also deploy from [source](/deployment/deploy-source). Even though this m
 ## Admin
 
 - [Administer OpenReplay](/deployment/openreplay-admin): For easy management of your instance by directly accessing logs, reinstalling services, increasing capacity and more.
-- [Upgrade Deployment](/deployment/upgrade): Keep your OpenReplay instance updated by uprading it to the latest version.
+- [Upgrade Deployment](/deployment/upgrade): Keep your OpenReplay instance updated by upgrading it to the latest version.

@@ -58,7 +58,7 @@ Ensure your tracker (and tracker-assist plugin if you do use the Assist plugin) 
 
 | Backend Version | Minimum Tracker Version | Minimum Assist Version (NPM) |
 |----------|-------------|
-| 1.8.0 | 3.5.16 | 3.5.15 |
+| 1.8.0 | 3.6.1 | 3.6.0 |
 | 1.7.0 | 3.5.15 | 3.5.14 |
 | 1.6.0 | 3.5.12 | 3.5.11 |
 | 1.5.4 | 3.5.4 | 3.5.7 |
