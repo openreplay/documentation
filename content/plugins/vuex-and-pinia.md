@@ -1,7 +1,7 @@
 ---
-title: "VueX"
-metaTitle: "VueX"
-metaDescription: "VueX plugin for OpenReplay."
+title: "VueX And Pinia"
+metaTitle: "VueX And Pinia"
+metaDescription: "VueX/Pinia plugin for OpenReplay."
 ---
 
 This plugin allows you to capture `VueX` **and** `Pinia` mutations/state and inspect them later on while replaying session recordings. This is very useful for understanding and fixing issues.
