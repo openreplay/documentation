@@ -11,9 +11,10 @@ Learn about the different plugins to capture your application's store, monitor q
 
 ## Store Management
 - [Redux](/plugins/redux): For capturing Redux actions and state.
-- [VueX](/plugins/vuex-and-pinia): For capturing VueX actions and state.
-- [MobX](/plugins/mobx): For capturing MobX store.
-- [NgRx](/plugins/ngrx): For capturing NgRx actions .
+- [VueX](/plugins/vuex): For capturing VueX actions and state.
+- [Pinia](/plugins/pinia): For capturing Pinia stores.
+- [MobX](/plugins/mobx): For capturing MobX stores.
+- [NgRx](/plugins/ngrx): For capturing NgRx actions.
 
 ## Queries
 - [Fetch](/plugins/fetch): For tracking fetch requests and responses.
