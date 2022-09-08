@@ -14,7 +14,7 @@ npm i @openreplay/tracker-vuex
 
 ## Usage
 
-Initialize the `@openreplay/tracker` package as usual and load the plugin into it. Then put the generated plugin into your `plugins` field of your store.
+Initialize the `@openreplay/tracker` package as usual and load the plugin into it. Call the plugin and to set up the store name, this will return a named store tracker instance which you can call with your store exemplar as an argument to enable tracking of this store.
 
 ### If your website is a Single Page Application (SPA)
 
