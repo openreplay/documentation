@@ -7,11 +7,13 @@ metaDescription: "VueX/Pinia plugin for OpenReplay."
 This plugin allows you to capture `VueX` **and** `Pinia` mutations/state and inspect them later on while replaying session recordings. This is very useful for understanding and fixing issues.
 
 ## Installation
+
 ```bash
 npm i @openreplay/tracker-vuex
 ```
 
 ## Usage
+
 Initialize the `@openreplay/tracker` package as usual and load the plugin into it. Then put the generated plugin into your `plugins` field of your store.
 
 ### If your website is a Single Page Application (SPA)
@@ -25,7 +27,7 @@ const tracker = new OpenReplay({
   projectKey: PROJECT_KEY
 });
 ```
-**tracker-vuex version 4.0.0:**
+#### With tracker-vuex version >= 4.0.0
 
 ```js
 const vuexPlugin = tracker.use(trackerVuex(<options>));  // check list of available options below
@@ -38,7 +40,7 @@ const store = createStore({
 })
 ```
 
-**tracker-vuex version 3.0.0:**
+#### With tracker-vuex version <= 3.0.0
 
 ```js
 const vuexPlugin = tracker.use(trackerVuex(<options>));  // check list of available options below
@@ -90,21 +92,21 @@ const store = new Vuex.Store({
 });
 ```
 
-## Pinia support
+## Pinia Support
 
-SPA
+### If your website is a Single Page Application (SPA)
+
 ```js
 import OpenReplay from '@openreplay/tracker';
 import trackerVuex from '@openreplay/tracker-vuex';
 ```
 
-SSR App
+### If your web app is Server-Side-Rendered (SSR)
+
 ```js
 import OpenReplay from '@openreplay/tracker/cjs';
 import trackerVuex from '@openreplay/tracker-vuex/cjs';
-```
 
-```js
 //...
 
 const tracker = new OpenReplay({
@@ -147,7 +149,9 @@ trackerVuex({
   },
 })
 ```
+
 ## Tutorial
+
 If you're looking for a practical example of how to use this plugin to capture state changes in your session replays, check out [our detailed tutorial over here](/tutorials/vuex).
 
 ## Troubleshooting
