@@ -136,7 +136,7 @@ onCallStart: () => {
 
 ### Critical dependency: the request of a dependency is an expression
 
-Please apply this [workaround](https://github.com/peers/peerjs/issues/630#issuecomment-910028230) if you face the below error when compiling:
+If you're running tracker-assist `v3.5.14 or prior` and you're getting the below error when compiling, apply this [workaround](https://github.com/peers/peerjs/issues/630#issuecomment-910028230).
 
 ```log
 Failed to compile.
