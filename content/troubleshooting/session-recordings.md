@@ -39,7 +39,7 @@ For security reasons, the tracker only runs on web apps that use SSL (HTTPS). If
 
 If you see an error similar to the below, then OpenReplay couldn't start due to a missing content security policy. See [here](/troubleshooting/csp) for the policy to add.
 
-![CSP Error](../static/csp-error.jpg#center)
+![CSP Error](/static/csp-error.jpg#center)
 
 ### OpenReplay is blocked
 
@@ -67,13 +67,24 @@ If your web app includes iframes, then you won't be able to playback their conte
 
 ## Replays are broken across subdomains
 
-Sites that spread across many subdomains will generate multiple sessions for the same visit. You can stitch them into a single recording by passing `sessionToken`to the tracker's constructor. `sessionToken` can be kept then retrieved from your cross-domain storage (e.g. cookies).
+Sites that spread across many subdomains will generate multiple sessions for the same visit. You can stitch them into a single recording by passing `sessionHash`to the tracker's `start()` method. `sessionHash` can be kept then retrieved from your cross-domain storage (e.g. cookies).
 
 ```js
+// Initialize the tracker as you would normally do
 const tracker = new OpenReplay({
-  projectKey: PROJECT_KEY,
-  sessionToken: getSessionToken("OpenReplay_SessionToken"), // from cookies
-  onStart: ({ sessionToken: string }) => { setSessionToken("OpenReplay_SessionToken", sessionToken) }
+  projectKey: PROJECT_KEY
+})
+...
+// Make sure the tracker is stopped when passing subdomains and collect the sessionHash
+const sessionHash = tracker.stop(); // This can be saved in cookies or passed through URL (if needed)
+...
+// Initialize another tracker on the new subdomain with the same projectKey
+const trackerNewDomain = new OpenReplay({
+  projectKey: PROJECT_KEY
+})
+// Pass the sessionHash to the newly started session
+trackerNewDomain.start({ 
+  sessionHash, // This can be retrieved from cookies or URL (if needed)
 })
 ```
 In case it's not possible to continue the session (doesn't exist or is finished), the tracker will automatically start a new one.
