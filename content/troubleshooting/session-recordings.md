@@ -39,7 +39,7 @@ For security reasons, the tracker only runs on web apps that use SSL (HTTPS). If
 
 If you see an error similar to the below, then OpenReplay couldn't start due to a missing content security policy. See [here](/troubleshooting/csp) for the policy to add.
 
-![CSP Error](/static/csp-error.jpg#center)
+![CSP Issue](../static/csp-issue.jpg#center)
 
 ### OpenReplay is blocked
 
