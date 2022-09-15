@@ -2,6 +2,7 @@ import React from "react";
 import CodeBlock from "./codeBlock";
 import AnchorTag from "./anchor";
 import '../styles.css';
+import Card from './card'
 
 export default {
   h1: props => <h1 className='heading1' id={props.children.replace(/\s+/g, '').toLowerCase()} {...props} />,
@@ -13,7 +14,8 @@ export default {
   p: props => <p className='paragraph' {...props} />,
   pre: props => <pre className='pre' {...props} />,
   code: CodeBlock,
-  a: AnchorTag
+  a: AnchorTag,
+  Card,
   // TODO add `img`
   // TODO add `blockquote`
   // TODO add `ul`

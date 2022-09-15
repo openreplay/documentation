@@ -5,6 +5,8 @@ import ThemeProvider from "./themeProvider";
 import mdxComponents from "./mdxComponents";
 import Sidebar from "./sidebar";
 import RightSidebar from "./rightSidebar";
+import VersionSelector from './versionSelector'
+
 
 const Wrapper = styled('div')`
   display: flex;
@@ -48,7 +50,10 @@ const Layout = ({ children, location }) => (
           <Sidebar location={location} />
         </LeftSideBarWidth>
         <Content>
-          <MaxWidth>{children}</MaxWidth>
+          <MaxWidth>
+            <VersionSelector />
+            {children}
+          </MaxWidth>
         </Content>
         <RightSideBarWidth className={'hiddenMobile'}>
           <RightSidebar location={location} />

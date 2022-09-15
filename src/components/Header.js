@@ -7,8 +7,13 @@ import './styles.css';
 import config from '../../config.js';
 import Loadable from 'react-loadable';
 import LoadingProvider from './mdxComponents/loading';
+//const help = require('./images/help.svg');
+import Sidebar from "./sidebar";
+import { SyncDisabled } from 'styled-icons/material';
 
-const help = require('./images/help.svg');
+
+/* eslint-disabled  import/first */
+
 const isSearchEnabled = config.header.search && config.header.search.enabled ? true : false;
 
 let searchIndices = [];
@@ -18,7 +23,6 @@ if(isSearchEnabled && config.header.search.indexName) {
   );
 }
 
-import Sidebar from "./sidebar";
 
 const LoadableComponent = Loadable({
   loader: () => import('./algoliaSearch/index'),
