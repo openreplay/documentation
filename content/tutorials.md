@@ -18,6 +18,7 @@ Learn from the below tutorials using real-world use cases.
 - [Redux Plugin](/tutorials/redux): Learn how to set up the Redux plugin to capture state changes in your session replays.
 - [VueX Plugin](/tutorials/vuex): Learn how to set up the VueX plugin to capture state changes in your session replays.
 - [GraphQL Plugin](/tutorials/graphql): Learn how to set up the GraphQL plugin to capture operation data in your session replays.
+- [Zustand Plugin](/tutorials/zustand): Tracking state data from Zustand with the Zustand Tracker plugin.
 
 ### Features
 
