@@ -8,11 +8,13 @@ This plugin allows you to capture `MobX` mutations and inspect them later on whi
 
 
 ## Installation
+
 ```bash
 npm i @openreplay/tracker-mobx
 ```
 
 ## Usage
+
 Initialize the `@openreplay/tracker` package as usual and load the plugin into it.
 Then use returned value to track MobX obervables.
 
@@ -33,3 +35,7 @@ observe(myArray);
 
 myArray.push("Hello world"); // This mutation will be tracked
 ```
+
+## Troubleshooting
+
+Having trouble setting up this plugin? Please connect to our [Slack](https://slack.openreplay.com) and get help from our community.
