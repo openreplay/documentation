@@ -4,9 +4,17 @@ import Collapse from '../images/Collapse';
 import Expand from '../images/Expand';
 import config from '../../../config';
 import TreeNode from './treeNode';
+import { ImportExportDimensions } from 'styled-icons/material';
 
-const calculateTreeData = edges => {
-  const originalData = config.sidebar.ignoreIndex ? edges.filter(({node: {fields: {slug}}}) => slug !== '/') : edges;
+const calculateTreeData = (edges, currentVersion) => {
+  let originalData = config.sidebar.ignoreIndex ? edges.filter(({node: {fields: {slug}}}) => slug !== '/') : edges;
+  originalData = originalData.filter( edge => {
+    if(currentVersion.indexOf("v") == 0) { //we're looking for a specific version
+      return edge.node.fields.slug.indexOf(currentVersion) != -1
+    } else {
+      return !edge.node.fields.slug.match(/\/v[0-9]+.[0-9]+.[0-9]+/)
+    }
+  })
   const tree = originalData.reduce((accu, {node: {fields: {slug, title}}}) => {
     const parts = slug.split('/');
     let {items: prevItems} = accu;
@@ -38,12 +46,19 @@ const calculateTreeData = edges => {
     }
     return accu;
   }, {items: []});
-  const {sidebar: {forcedNavOrder = []}} = config;
-  const tmp = [...forcedNavOrder];
+  const {sidebar: {forcedNavOrder = [], versionedNavOrder = []} } = config;
+
+  let tmp = [];
+  if(currentVersion == "") {
+    tmp = [...forcedNavOrder];
+  } else {
+    tmp = versionedNavOrder.map( url => url.replace("<VERSION>", currentVersion))
+  }
   if(config.gatsby && config.gatsby.trailingSlash) {
   }
   tmp.reverse();
   return tmp.reduce((accu, slug) => {
+    //slug = "/" + currentVersion + slug
     const parts = slug.split('/');
     let {items: prevItems} = accu;
     const slicedParts = config.gatsby && config.gatsby.trailingSlash ? parts.slice(1, -2) : parts.slice(1, -1);
@@ -82,16 +97,26 @@ const calculateTreeData = edges => {
 }
 
 const Tree = ({edges, location}) => {
+ 
+  let currentVersion = window.location.pathname.split("/")[1]
+  if(currentVersion.indexOf("v") != 0) {
+    currentVersion = "";
+  }
   let [treeData] = useState(() => {
-    return calculateTreeData(edges);
+    return calculateTreeData(edges, currentVersion);
   });
+
 
   const defaultCollapsed = {};
   treeData.items.forEach(item => {
-    if (config.sidebar.collapsedNav && config.sidebar.collapsedNav.includes(item.url)) {
-      defaultCollapsed[item.url] = !!location && !location.pathname.startsWith(item.url);
+
+    let startWithString = item.url
+    //let startWithString = (currentVersion) ? "/" + currentVersion + item.url : item.url
+
+    if (config.sidebar.collapsedNav && config.sidebar.collapsedNav.find( path => item.url && item.url.indexOf(path) != -1)) {
+      defaultCollapsed[startWithString] = !!location && !location.pathname.startsWith(startWithString);
     } else {
-      defaultCollapsed[item.url] = false;
+      defaultCollapsed[startWithString] = false;
     }
   });
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
@@ -102,9 +127,17 @@ const Tree = ({edges, location}) => {
     });
   }
   useEffect(() => {
+    let parts = location.pathname.split("/")
+    let index = ""
+    if(parts[1].charAt(0) == 'v') {
+      index = parts[2]
+    } else {
+      index = parts[1]
+    }
+
     setCollapsed({
       ...collapsed,
-      ["/" + location.pathname.split("/")[1]]: false,
+      ["/" + index]: false,
     });
   }, [location.pathname]);
   const someCollapsed = Object.values(collapsed).some(c => c);

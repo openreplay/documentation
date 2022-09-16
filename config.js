@@ -28,7 +28,7 @@ const config = {
 	},
 	"sidebar": {
 		"forcedNavOrder": [
-			"/index",
+			"/",
 			"/deployment",
 			"/installation",
 			"/configuration",
@@ -39,17 +39,29 @@ const config = {
 			"/troubleshooting",
 			"/structure"
 		],
-    "collapsedNav": [
-			"/deployment",
-			"/installation",
-			"/configuration",
-			"/tutorials",
-			"/plugins",
-			"/api",
-			"/integrations",
-			"/troubleshooting",
-			"/structure"
-    ],
+		"versionedNavOrder": [
+			"/<VERSION>/index",
+			"/<VERSION>/deployment",
+			"/<VERSION>/installation",
+			"/<VERSION>/configuration",
+			"/<VERSION>/tutorials", // add trailing slash if enabled above
+    		"/<VERSION>/plugins",
+			"/<VERSION>/api",
+			"/<VERSION>/integrations",
+			"/<VERSION>/troubleshooting",
+			"/<VERSION>/structure"
+		],
+		"collapsedNav": [
+				"/deployment",
+				"/installation",
+				"/configuration",
+				"/tutorials",
+				"/plugins",
+				"/api",
+				"/integrations",
+				"/troubleshooting",
+				"/structure"
+		],
 		"frontLine": false,
 		"ignoreIndex": false,
 	},

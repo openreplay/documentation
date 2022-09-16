@@ -5,6 +5,8 @@ import config from '../../../config';
 import Link from "../link";
 
 const TreeNode = ({className = '', setCollapsed, collapsed, url, title, items, activeSection, ...rest}) => {
+  let currentVersion = window.location.pathname.split("/")[1]
+
   const isCollapsed = collapsed[url];
   const collapse = (e) => {
     e.preventDefault();
@@ -16,11 +18,15 @@ const TreeNode = ({className = '', setCollapsed, collapsed, url, title, items, a
   if(typeof(document) != 'undefined') {
     location = document.location;
   }
+  let pathname = location.pathname.replace("index", "")
   const active =
-    location && (location.pathname === url || location.pathname === (config.gatsby.pathPrefix + url));
+    location && ((typeof url == "undefined" && pathname == "/" + currentVersion + "/") ||  pathname === url || pathname === (config.gatsby.pathPrefix + url));
+
   const activeHeading = hasChildren && (location && (location.pathname.startsWith(url)));
-  const isHeading = hasChildren || url==="/";
+  const isHeading = hasChildren || url==="/" || (typeof url == "undefined") || url.match(/\/v[0-9]+.[0-9]+.[0-9]+\/index/);
   const calculatedClassName = `${className} item ${active ? 'active' : ''} ${ isHeading ? "heading" : ""} ${activeHeading ? "activeHeading" : "" }`;
+
+
   return (
     <li
       className={calculatedClassName}
@@ -42,6 +48,7 @@ const TreeNode = ({className = '', setCollapsed, collapsed, url, title, items, a
       }
 
       {!isCollapsed && hasChildren ? (
+        
         items.map((item, index) => (
           <TreeNode
             key={item.url + index.toString()}

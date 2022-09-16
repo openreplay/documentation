@@ -65,7 +65,7 @@ const Autocomplete = ({ hits, currentRefinement, refine, className }) => {
 	    	}
 	    	<ScrollWrapper>
 			    { hits.map(hit => (
-		      	<ItemLink key={hit.objectID} to={hit.slug} onCLick={ () => setFocus(false) }>
+		      	<ItemLink key={hit.objectID} to={hit.slug} onClick={ () => setFocus(false) }>
 			      	<h4>
 			      		<Highlight hit={hit} attribute="title" />
 			      	</h4>
