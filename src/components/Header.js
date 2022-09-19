@@ -7,6 +7,7 @@ import './styles.css';
 import config from '../../config.js';
 import Loadable from 'react-loadable';
 import LoadingProvider from './mdxComponents/loading';
+import Sidebar from "./sidebar";
 
 const help = require('./images/help.svg');
 const isSearchEnabled = config.header.search && config.header.search.enabled ? true : false;
@@ -18,7 +19,6 @@ if(isSearchEnabled && config.header.search.indexName) {
   );
 }
 
-import Sidebar from "./sidebar";
 
 const LoadableComponent = Loadable({
   loader: () => import('./algoliaSearch/index'),

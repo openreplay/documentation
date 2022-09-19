@@ -18,6 +18,8 @@ Let's take a look at how users can do that.
 
 ## Creating a custom dashboard
 
+**Note:** If you want a quick tutorial showing you how to implement a dashboard with custom metrics, you can checkout [this YouTube video](https://www.youtube.com/watch?v=hxnONp79Mwc).
+
 Click on the Dashboards section on the main menu to get started.
 
 Then click on the "Create Dashboard" button that's staring at you right from the middle of the screen:
