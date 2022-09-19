@@ -98,7 +98,10 @@ const calculateTreeData = (edges, currentVersion) => {
 
 const Tree = ({edges, location}) => {
  
-  let currentVersion = window.location.pathname.split("/")[1]
+  let currentVersion = "";
+  if(typeof window !== "undefined")
+    currentVersion = window.location.pathname.split("/")[1]
+
   if(currentVersion.indexOf("v") != 0) {
     currentVersion = "";
   }

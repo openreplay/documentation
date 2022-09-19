@@ -20,7 +20,7 @@ const config = {
 		},
 		"search": {
 			"enabled": true,
-			"indexName": "docs",
+			"indexName": "multiVersionDocs",
 			"algoliaAppId": "U4QCXPQXGS",
 			"algoliaSearchKey": "2a3ef939829cab2c44515086f080f879",
 			"algoliaAdminKey": process.env.ALGOLIA_ADMIN_KEY

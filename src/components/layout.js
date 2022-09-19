@@ -5,7 +5,6 @@ import ThemeProvider from "./themeProvider";
 import mdxComponents from "./mdxComponents";
 import Sidebar from "./sidebar";
 import RightSidebar from "./rightSidebar";
-import VersionSelector from './versionSelector'
 
 
 const Wrapper = styled('div')`
@@ -51,7 +50,6 @@ const Layout = ({ children, location }) => (
         </LeftSideBarWidth>
         <Content>
           <MaxWidth>
-            <VersionSelector />
             {children}
           </MaxWidth>
         </Content>

@@ -5,7 +5,10 @@ import config from '../../../config';
 import Link from "../link";
 
 const TreeNode = ({className = '', setCollapsed, collapsed, url, title, items, activeSection, ...rest}) => {
-  let currentVersion = window.location.pathname.split("/")[1]
+  let currentVersion = ""
+  if(typeof window != "undefined") {
+    currentVersion = window.location.pathname.split("/")[1]
+  }
 
   const isCollapsed = collapsed[url];
   const collapse = (e) => {
@@ -18,7 +21,8 @@ const TreeNode = ({className = '', setCollapsed, collapsed, url, title, items, a
   if(typeof(document) != 'undefined') {
     location = document.location;
   }
-  let pathname = location.pathname.replace("index", "")
+  let pathname = (typeof location != "undefined") ? location.pathname.replace("index", ""): ""
+
   const active =
     location && ((typeof url == "undefined" && pathname == "/" + currentVersion + "/") ||  pathname === url || pathname === (config.gatsby.pathPrefix + url));
 

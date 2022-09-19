@@ -10,6 +10,7 @@ import LoadingProvider from './mdxComponents/loading';
 //const help = require('./images/help.svg');
 import Sidebar from "./sidebar";
 import { SyncDisabled } from 'styled-icons/material';
+import VersionSelector from './versionSelector'
 
 
 /* eslint-disabled  import/first */
@@ -28,6 +29,11 @@ const LoadableComponent = Loadable({
   loader: () => import('./algoliaSearch/index'),
   loading: LoadingProvider,
 });
+
+const MyVersionComponent = Loadable({
+  loader: () => import("./versionSelector"),
+  loading: LoadingProvider
+})
 
 function myFunction() {
   var x = document.getElementById("navbar");
@@ -96,9 +102,11 @@ const Header = ({location}) => (
                 <span className={'iconBar'}></span>
               </span>
             </div>
+
             {isSearchEnabled ? (
               <div className={'searchWrapper hiddenMobile navBarUL'}>
                 <LoadableComponent collapse={true} indices={searchIndices} />
+                <MyVersionComponent/>
               </div>
               ): null}
             <div id="navbar" className={'topnav'}>
