@@ -1,0 +1,33 @@
+---
+title: "Google Tag Manager"
+metaTitle: "Google Tag Manager"
+metaDescription: "How to install OpenReplay with Google Tag Manager (GTM) on live environments."
+---
+
+Copy/paste the tracker's code from OpenReplay dashboard, under 'Preferences > Projects'. The code is unique to each project.
+
+![Tracking Code](../static/GTM-5.JPG#center)
+
+Then go to your Google Tag Manager account and follow the below steps:
+
+1. Click on *Add a new tag*
+
+![Add New Tag](../static/GTM-3.png#center)
+
+2. *Choose a tag type* to begin the setup
+3. Select *Custom HTML* from the list then paste the copied snippet into the text field
+
+![Custom HTML](../static/GTM-4.JPG#center)
+
+4. Click *Choose a trigger* to make some actions and select **All Pages**
+
+![All Pages](../static/GTM-7.JPG#center)
+
+5. Name the tag and then *Save*
+6. *Submit* your changes
+
+![Submit](../static/submit.JPG#center)
+
+7. Make sure your live environment is selected, then hit *Publish*
+
+![Publish](../static/GTM-10.png#center)
