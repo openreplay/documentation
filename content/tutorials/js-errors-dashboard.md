@@ -76,6 +76,6 @@ And that’s it, you’ve successfully created a new dashboard using your own cu
 
 If you’d like to read more details about the built-in metrics provided by OpenReplay, please check out [this other tutorial here](https://docs.openreplay.com/tutorials/custom-dashboard).
 
----
+## Do you have questions?
 
 If you have any issues with creating a custom dashboard in you project, please contact us on our [Slack community](https://slack.openreplay.com/) and ask our devs directly!

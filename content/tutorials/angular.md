@@ -177,4 +177,6 @@ In fact, you can even take that code and sanitize any field from the request or 
 
 You can [check out this repository](https://github.com/deleteman/openreplay-angular-example) for the **complete source code** of a working Angular-based application with the Tracker.
 
+## Do you have questions?
+
 If you have any issues setting up the Tracker on your Angular project, please contact us on our [Slack community](https://slack.openreplay.com/) and ask our devs directly!

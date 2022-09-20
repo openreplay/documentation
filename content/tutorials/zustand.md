@@ -176,7 +176,7 @@ When clicking on it, you’ll see the content of the store, and you’ll be able
 
 Notice the name of the store, it’s actually the name we used when calling the zustand method the first time around.
 
----
+## Do you have questions?
 
 If you’re not using Next.js but other framework, the way of using it should be similar, the key is the way in which you create the store. As long as you find a way to use the logger function when creating it, you’ll be able to track the state during the replay.
 

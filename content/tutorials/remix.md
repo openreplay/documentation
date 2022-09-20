@@ -197,6 +197,8 @@ Once you start testing it, you’ll see the replays listed a few minutes after t
 💡 **Remember**: the tracker won't work locally, and you won't see your local tests on the platform. You'll have to deploy the application for the tracker to have access to the OpenReplay back-end.
 
 
+## Do you have questions?
+
 For the **full code** of a working Remix-based application, you can check out [this repository](https://github.com/deleteman/openreplay-remix-example).
 
 If you have any issues setting up the tracker on your Remix-based project, please reach out to us on our [Slack community](https://slack.openreplay.com/) and ask our devs directly!

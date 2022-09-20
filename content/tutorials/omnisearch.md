@@ -155,8 +155,7 @@ After that, your saved search will appear next to the search bar, like so:
 
 ![](https://i.imgur.com/n1GsndD.png)
 
----
-
 The Omnisearch provides you with search superpowers, but to take advantage of them, you have to pick the right options.
+## Do you have questions?
 
-If you still have questions, make sure to reach out to our devs on our [Discord community](https://discord.openreplay.com/).
+If you still have questions, make sure to reach out to our devs on our  [Slack community](https://slack.openreplay.com/).

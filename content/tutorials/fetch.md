@@ -212,9 +212,8 @@ As you can see, the change is simple, we replace only the numbers on this attrib
 
 Now your user's data is secured once again. 
 
----
+## Do you have questions?
 
-Session replays are fantastic tools to identify bugs, even for those cases where there are no direct error messages indicating where the problems are (like an error message on the console would do).
-Furthermore, you get infinite replayability without having to go through the process yourself to validate a bug and you get the full details of the user actions, including any that they might ignore and not report because they consider them irrelevant.
+If you'd like to check out the code to look at this example in detail, you can find it [here on GitHub](https://github.com/deleteman/im-bored-app).
 
-If you have any issues setting up the Fetch plugin or the Tracker itself, please reach out to us on our [Discord community](https://discord.openreplay.com/) and ask our devs directly!
+If you have any issues setting up the Fetch plugin or the Tracker itself, please reach out to us on our  [Slack community](https://slack.openreplay.com/) and ask our devs directly!

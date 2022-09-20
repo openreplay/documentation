@@ -242,4 +242,4 @@ If you’d like to test the code, you can clone this [Github](https://github.com
 
 ## Do you have questions?
 
-If you have any issues setting up the tracker on your Remix-based project, please reach out to us on our [Slack community](https://slack.openreplay.com/) and ask our devs directly!
+If you have any issues setting up the Axios plugin on your project, please reach out to us on our [Slack community](https://slack.openreplay.com/) and ask our devs directly!

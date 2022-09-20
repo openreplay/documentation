@@ -52,8 +52,8 @@ Take a look at the following screenshot showing the details of a failed request:
 
 Notice the **404 status** code on the top right corner of the screen. And the rest of the request information that is below it.
 
----
+## Do you have questions?
 
 Learn to take advantage of the issue types and the filters on the list of replays to help you find the most problematic ones.
     
-If you have further questions about this topic, please reach out to us on our [Discord community](https://discord.openreplay.com/) and ask our devs directly!
+If you have further questions about this topic, please reach out to us on our  [Slack community](https://slack.openreplay.com/) and ask our devs directly!
