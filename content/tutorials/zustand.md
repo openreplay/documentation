@@ -164,7 +164,7 @@ You can then iterate over the products normally:
 
 The above code iterates over the list of products and renders them on screen. Whenever you add another product to the store, it’ll be updated here as well.
 
-## Watchign the state on the replay
+## Sync the state with session replay
 
 To review the state changes during the replay, simply click on the new Zustand tab on the lower right corner:
 
