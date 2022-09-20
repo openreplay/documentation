@@ -76,4 +76,4 @@ You're all set now, OpenReplay should be accessible on your subdomain. You can c
 
 ## Troubleshooting
 
-If you encounter any issues, connect to our [Discord](https://discord.openreplay.com) and get help from our community.
+If you encounter any issues, connect to our  [Slack community](https://slack.openreplay.com/) and get help from our devs.
