@@ -1,10 +1,10 @@
 import * as React from "react";
-import {useLocation} from '@reach/router'
 
 const AnchorTag = ({ children: link, ...props }) => {
   //console.log("anchor tag:", props.href)
-  const location = useLocation()
-  let currentVersion = ""
+  //useLocation = (typeof useLocation === "function") ? useLocation : 
+  let currentVersion = "";
+  const location = ( (typeof window !== "undefined") ? window.location : {pathname: "/"})
   //if(typeof window != "undefined") {
   
   currentVersion = location.pathname.split("/")[1]
