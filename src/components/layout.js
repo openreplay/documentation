@@ -6,6 +6,7 @@ import mdxComponents from "./mdxComponents";
 import Sidebar from "./sidebar";
 import RightSidebar from "./rightSidebar";
 
+
 const Wrapper = styled('div')`
   display: flex;
   justify-content: space-between;
@@ -48,7 +49,9 @@ const Layout = ({ children, location }) => (
           <Sidebar location={location} />
         </LeftSideBarWidth>
         <Content>
-          <MaxWidth>{children}</MaxWidth>
+          <MaxWidth>
+            {children}
+          </MaxWidth>
         </Content>
         <RightSideBarWidth className={'hiddenMobile'}>
           <RightSidebar location={location} />

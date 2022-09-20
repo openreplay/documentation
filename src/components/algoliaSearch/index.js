@@ -6,6 +6,7 @@ import config from "../../../config.js";
 import {
   InstantSearch,
   connectAutoComplete,
+  RefinementList,
   PoweredBy,
   Configure,
   Highlight,
@@ -35,14 +36,22 @@ const useClickOutside = (ref, handler, events) => {
 }
 
 
-const Search = ({ className }) => (
-  <InstantSearch searchClient={searchClient} indexName="docs">
+const Search = ({ className }) => {
+	let currentVersion = "";
+	if(typeof window != "undefined") {
+		let version = window.location.pathname.split("/")[1]
+		currentVersion = version.match(/v[0-9]+.[0-9]+.[0-9]+/) ?  'version:"'+ version +'"': "version:_latest_"
+	}
+	return (
+  <InstantSearch searchClient={searchClient} indexName="multiVersionDocs">
   	<Configure
 		  hitsPerPage={5}
+		  filters={ currentVersion }
 		/>
     <CustomAutocomplete className={className} />
   </InstantSearch>
-);
+)}
+
 export default Search;
 
 const Autocomplete = ({ hits, currentRefinement, refine, className }) => {
@@ -65,7 +74,7 @@ const Autocomplete = ({ hits, currentRefinement, refine, className }) => {
 	    	}
 	    	<ScrollWrapper>
 			    { hits.map(hit => (
-		      	<ItemLink key={hit.objectID} to={hit.slug} onCLick={ () => setFocus(false) }>
+		      	<ItemLink key={hit.objectID} to={hit.slug} onClick={ () => setFocus(false) }>
 			      	<h4>
 			      		<Highlight hit={hit} attribute="title" />
 			      	</h4>

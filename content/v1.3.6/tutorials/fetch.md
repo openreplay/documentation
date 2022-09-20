@@ -1,0 +1,219 @@
+---
+title: "Sanitizing Private Data with the Fetch Plugin"
+metaTitle: "How to use the Fetch Plugin to Sanitize your user's data"
+metaDescription: "Capture the request data to understand the type of mistakes you're making on the front-end"
+---
+Sometimes errors in your client code aren't as evident as when you get a blank screen because none of your JavaScript code works.
+Sometimes the issue with your app is that given certain actions your user can take, you're incorrectly forming a request to the server.
+The client code works, you don't get any JS errors on the console, but your back-end doesn't really like what you're sending it.
+
+Using OpenReplay, you can capture the client-server communication as part of your standard session replay, and review it later. So let's take a look at how we can do that and what kind of benefit we can get from it.
+
+## A sample app
+For the purposes of this how-to, I've created a simple React application that makes use of the [Bored API](https://www.boredapi.com/). This is a very simple API that returns a random activity suggestion based on some parameters.
+So I created the "I'm bored App", which looks like this:
+
+![](https://i.imgur.com/ZCEOtiC.png)
+
+And you can find it live on Netlify [over here](https://venerable-tartufo-f87748.netlify.app), or if you'd like to check out the code to look at it in detail, it's fully available on [GitHub](https://github.com/deleteman/im-bored-app).
+
+This application is formed by 2 components, the `SearchForm` component which takes care of rendering those 2 fields and the button, as well as sending the actual request to the API.
+And the `Suggestion` component simply renders the suggestion inside a nice-looking box.
+
+I'm going to focus on the first one, since it's the only one sending requests using the `fetch` function. Let's take a quick look at the component to understand what's it doing.
+
+### The code of the SearchForm component
+
+This is not a complex component, but there is a section that is especially relevant for this particular use case, so let's take a quick look at it.
+
+```javascript 
+import { Container, Col, Form, Row, Button } from 'react-bootstrap';
+
+const SearchForm = ({setResult, fetcher}) => {
+const getSomething = async (evt) => {
+    evt.preventDefault()
+    let form = evt.target
+
+    const API_URL = "/api/activity?"
+    let getParams = {}
+    if(form.participants.value !== '') {
+      getParams.participants = form.participants.value
+    }
+
+    if(form.priceRange.value !== '') {
+      let prices = form.priceRange.value.split("_")
+      getParams.minprice = prices[0]
+      getParams.maxprice = prices[1]
+    }
+
+    let results = await fetcher(API_URL + new URLSearchParams(getParams), {
+        mode: 'no-cors'
+    })
+    setResult(await results.json())
+
+    return false
+  }
+
+    return (
+        <Container>
+        <Form onSubmit={getSomething}>
+          <Row>
+            <Col>
+          <Form.Group controlId='participants' >
+            <Form.Label>Participants</Form.Label>
+            <Form.Control type='text' name="totalParticipants" placeholder='Leave empty if you dont care...'></Form.Control>
+          </Form.Group>
+          </Col>
+            <Col>
+          <Form.Group controlId='priceRangeId'>
+            <Form.Label>Price range</Form.Label>
+            <Form.Select name="priceRange" >
+              <option value="" >Select one or leave empty if you dont care</option>
+              <option value="0.0">Free</option>
+              <option value="0.1_0.5">Cheap</option>
+              <option value="0.6_1.0">Expensive</option>
+            </Form.Select>
+          </Form.Group>
+          </Col>
+          </Row>
+          <Row className='m-3'>
+            <Col>
+            <Form.Group>
+              <Button variant="primary" type="submit">Get me something!</Button>
+            </Form.Group>
+            </Col>
+          </Row>
+        </Form>
+      </Container>
+    )
+}
+
+export default SearchForm
+```
+
+Notice the `getSomething` function, that's where most of the magic happens. The function gets called when the submit event of the form is triggered.
+When that happens, the function gets the synthetic event with the form linked inside the `target` property. We simply capture the values from each of the filters (the input field and the dropdown) and then we execute the request with the `fetch` function.
+Notice that the URL is not directly targeting the BoredAPI's endpoint. That's because, for the request to work and not get blocked due to CORS restrictions, I've configured a proxy on the backend to redirect all requests from `/api` to the actual API.
+
+Now that you've seen the code, let's take a look at what you'd get if you were to install OpenReplay's tracker without the fetch plugin.
+
+## Regular data capture with OpenReplay
+For this example, I'm going to be using the NPM version of the package, if you don't know how to do that, check out [the docs](https://docs.openreplay.com/installation/setup-or) and then get back here.
+
+![](https://i.imgur.com/vujstjy.png)
+
+This is the UI for the session replay without using the plugin. Notice how on the bottom half I've already selected the "Network" tab, but while it does show the requests being made, there are no details about them, even on the one I've clicked (the last one). This is not going to be good enough.
+So what can we do?
+Let's install and set up the fetch plugin.
+
+### Setting up OpenReplay's Fetch plugin
+
+Lucky for us, doing this is even easier than installing the main tracker.
+We're going to use the NPM version, so install it with the following command:
+
+```bash 
+npm i @openreplay/tracker-fetch
+```
+We can then use it by adding a single line of code to our `App.js` file. Keep in mind that my app is a SPA, if that is not the case, please review [the documentation](https://docs.openreplay.com/plugins/fetch) to understand how to set it up (it's easy I promise).
+And then, following the documentation, add the following line:
+
+```javascript 
+const fetch = tracker.use(trackerFetch({}))
+```
+We're going with the default options, which means the tracker will return a new version of the `fetch` function. You can now use it wherever you want. This gives you the freedom to only track specific requests instead of all of them. That can be handy if your app is complex enough and has multiple different requests.
+In our case that's not the case, so I'm passing the `fetch` function as a prop for the `SearchForm` component (go back to the code, you'll notice a prop called `fetcher`).
+That's all we need to do, now deploy the change, test the app, close the tab and wait a couple of minutes. The session should appear soon enough and you can hit the "play" button.
+
+## Inspecting the client-server communication
+
+For the purpose of the example, let's also look at a problem I started seeing after I published the application.
+
+Notice the warning box I get in this case:
+
+![](https://i.imgur.com/nOlRjO9.png)
+
+As the dev who coded this I know what to do to test it and understand where the bug is. However, as a user the error is not really telling me much, and I might not be able to communicate this in a way the dev team can understand. 
+So instead, as a user, I can simply complain to the company about their app not working, and you, as the developer responsible for the application can take a look at my session and inspect the request the client sent and the response from the server.
+
+![](https://i.imgur.com/nreH6rq.png)
+
+Look at the session replay UI now. With the addition of the fetch plugin on your client app, the new "Fetch" inspector is enabled. If you click it, you'll see all requests being made. And yes, this time if you click on one, you'll get the details you want.
+
+All we have to do now, is to find the moment where we get the error response and look at the requests being made. Chances are, you'll see the problem inside the request details. 
+For our case, the error says "Failed to query due to error in arguments", meaning that when we select the "Free" option on the dropdown, we're not sending a valid request. So let's take a look at its details.
+
+![](https://i.imgur.com/FAtZEgt.png)
+
+Can you see the issue? Let me help you:
+
+![](https://i.imgur.com/yX8TJpp.png)
+
+Yes, I'm sending an `undefined` as the value of the `maxprice` attribute. I totally missed that in my logic, and picked it up while inspecting the request.
+Granted, it's an easy fix now that I know where the problem is, but thanks to this process I would've been able to either raise a very detailed error report, or directly helped the developer identify and solve the problem without having to test myself and reproduce the issue. 
+
+## Putting privacy to the test
+
+Alright, let's take this example a bit further, let's pretend I also need my user's phone number for this request. I clearly don't, but just humor me for a minute.
+
+I'll add the field to the form, and I'll update the code to capture that value and send it as part of the request.
+
+The HTML for the form is just adding a new `Col` element like so:
+
+```HTML 
+<!-- previous code -->
+<Col>
+    <Form.Group controlId='phoneNumber'>
+        <Form.Label>Phone Number</Form.Label>
+        <Form.Control type='number' name="phoneNumber" placeholder='Enter your phone number here please'></Form.Control>
+    </Form.Group>
+</Col>
+<!-- rest of the code -->
+```
+
+And adding the contents of this field into the actual request only needs a single line of code:
+
+```javascript 
+getParams.phonenumber = form.phoneNumber.value
+```
+
+Now, what happens if we use this new code and capture a session with OpenReplay?
+Well, two things: 
+
+1. The actual replay you _watch_ will automatically sanitize the content of the phone number field and it will not be shown to anyone watching it.
+2. The request information captured by the plugin will, however, show the value.
+
+The following screenshot shows what I just describes:
+
+![](https://i.imgur.com/kKL47Rd.png)
+
+In the right section of the screen, you can see the full phone number. This happens because while the normal tracker can understand the phone number field to be a numeric field, it will not capture its input just in case the number represents personal information. But on the request side, we can't really make that assumption since the developer could've done anything with the data, or even the name of the parameter. 
+So the question then, is: can we protect our user's privacy with this plugin?
+
+And the answer, I'm happy to report, is: YES we can.
+
+### Sanitizing the request data
+
+If you go back to the start of this article, when I configured the plugin, you'll see that I used the default options. However, as part of those options you can specify a callback meant to sanitize data. This callback receives a single attribute with both, the request and the response object. You can then choose to edit them however you want, they will not affect the actual request but will change the way the data is displayed on the OpenReplay UI. 
+
+For example, let's say I want to change the "phonenumber" attribute and remove the numbers so we avoid leaking that information. This can be done like this:
+
+```javascript 
+const fetch = tracker.use(trackerFetch({
+  sanitiser: (data) => {
+    data.url = data.url.replace(/phonenumber=([0-9]+)/, "phonenumber=XXXXXX")
+    return data
+  }
+}))
+```
+
+As you can see, the change is simple, we replace only the numbers on this attribute so now the request looks like this in our UI:
+
+![](https://i.imgur.com/Ff15VU3.png)
+
+Now your user's data is secured once again. 
+
+## Do you have questions?
+
+If you'd like to check out the code to look at this example in detail, you can find it [here on GitHub](https://github.com/deleteman/im-bored-app).
+
+If you have any issues setting up the Fetch plugin or the Tracker itself, please reach out to us on our  [Slack community](https://slack.openreplay.com/) and ask our devs directly!

@@ -13,6 +13,7 @@ exports.createPages = ({ graphql, actions }) => {
             allMdx {
               edges {
                 node {
+                  fileAbsolutePath
                   fields {
                     id
                   }
@@ -33,9 +34,11 @@ exports.createPages = ({ graphql, actions }) => {
 
         // Create blog posts pages.
         result.data.allMdx.edges.forEach(({ node }) => {
+          //console.log(node)
           createPage({
             path: node.fields.slug ? node.fields.slug : "/",
             component: path.resolve("./src/templates/docs.js"),
+            fullPath: node.fileAbsolutePath,
             context: {
               id: node.fields.id
             }

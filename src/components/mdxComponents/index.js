@@ -1,7 +1,16 @@
 import React from "react";
 import CodeBlock from "./codeBlock";
-import AnchorTag from "./anchor";
+//import AnchorTag from "./anchor";
+import Loadable from 'react-loadable';
+import LoadingProvider from './loading';
+
 import '../styles.css';
+import Card from './card'
+
+const MyAnchor = Loadable({
+  loader: () => import("./anchor"),
+  loading: LoadingProvider
+})
 
 export default {
   h1: props => <h1 className='heading1' id={props.children.replace(/\s+/g, '').toLowerCase()} {...props} />,
@@ -13,7 +22,8 @@ export default {
   p: props => <p className='paragraph' {...props} />,
   pre: props => <pre className='pre' {...props} />,
   code: CodeBlock,
-  a: AnchorTag
+  a: MyAnchor,
+  Card,
   // TODO add `img`
   // TODO add `blockquote`
   // TODO add `ul`

@@ -7,9 +7,14 @@ import './styles.css';
 import config from '../../config.js';
 import Loadable from 'react-loadable';
 import LoadingProvider from './mdxComponents/loading';
+//const help = require('./images/help.svg');
 import Sidebar from "./sidebar";
+import { SyncDisabled } from 'styled-icons/material';
+import VersionSelector from './versionSelector'
 
-const help = require('./images/help.svg');
+
+/* eslint-disabled  import/first */
+
 const isSearchEnabled = config.header.search && config.header.search.enabled ? true : false;
 
 let searchIndices = [];
@@ -24,6 +29,11 @@ const LoadableComponent = Loadable({
   loader: () => import('./algoliaSearch/index'),
   loading: LoadingProvider,
 });
+
+const MyVersionComponent = Loadable({
+  loader: () => import("./versionSelector"),
+  loading: LoadingProvider
+})
 
 function myFunction() {
   var x = document.getElementById("navbar");
@@ -85,6 +95,7 @@ const Header = ({location}) => (
               <IndexLink to="/">
                 DOCS
               </IndexLink>
+              <MyVersionComponent/>
 
               <span onClick={myFunction} className={'navBarToggle'}>
                 <span className={'iconBar'}></span>
@@ -92,6 +103,7 @@ const Header = ({location}) => (
                 <span className={'iconBar'}></span>
               </span>
             </div>
+
             {isSearchEnabled ? (
               <div className={'searchWrapper hiddenMobile navBarUL'}>
                 <LoadableComponent collapse={true} indices={searchIndices} />
@@ -131,7 +143,7 @@ const IndexLink = styled(Link)`
   font-weight: 700;
   color: #777;
   margin-left: -10px;
-  margin-bottom: -20px;
+  margin-bottom: -4px;
 `;
 
 
