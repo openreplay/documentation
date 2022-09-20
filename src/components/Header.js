@@ -95,6 +95,7 @@ const Header = ({location}) => (
               <IndexLink to="/">
                 DOCS
               </IndexLink>
+              <MyVersionComponent/>
 
               <span onClick={myFunction} className={'navBarToggle'}>
                 <span className={'iconBar'}></span>
@@ -106,7 +107,6 @@ const Header = ({location}) => (
             {isSearchEnabled ? (
               <div className={'searchWrapper hiddenMobile navBarUL'}>
                 <LoadableComponent collapse={true} indices={searchIndices} />
-                <MyVersionComponent/>
               </div>
               ): null}
             <div id="navbar" className={'topnav'}>
@@ -143,7 +143,7 @@ const IndexLink = styled(Link)`
   font-weight: 700;
   color: #777;
   margin-left: -10px;
-  margin-bottom: -20px;
+  margin-bottom: -4px;
 `;
 
 
