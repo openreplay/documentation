@@ -112,6 +112,8 @@ replace({
 
 This plugin will run in the backend during the bundling process, making it possible for this to work. If you’d like to inspect the full content of this configuration file, you can [check it out here](https://github.com/deleteman/openreplay-svelte-example/blob/main/rollup.config.js).
 
+## Do you have questions?
+
 You can [check out this repository](https://github.com/deleteman/openreplay-svelte-example) for the **complete source code** of a working Svelte-based application with the Tracker.
 
 If you have any issues setting up the Tracker on your Svelte project, please contact us on our [Slack community](https://slack.openreplay.com/) and ask our devs directly!

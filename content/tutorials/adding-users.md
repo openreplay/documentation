@@ -31,6 +31,6 @@ Notice that the "team" is already created when you sign-up, so there is no need 
 **Note the SMTP warning**
 If you haven't yet configure the SMTP server for OpenReplay, your users will not get a notification email with the sign-up link. So if you still need to configure it, check out how to do it with [this link](https://docs.openreplay.com/configuration/configure-smtp).
 
----
+## Do you have questions?
 
 If you have any issues adding new users to your self-hosted installation, please contact us on our [Slack community](https://slack.openreplay.com/) and ask our devs directly!

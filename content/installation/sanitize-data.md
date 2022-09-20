@@ -38,11 +38,73 @@ Sanitized text, email and numbers are obscured or suppressed before sending the 
 
 ## Granular Level
 
-You can also sanitize your data at the code level for better granularity. This is useful for obscuring or ignoring DOM elements and input fields.
+You can also sanitize your data at the code level for better granularity. This is useful for obscuring or ignoring DOM elements and input fields. There are 2 HTML attributes you can instrument  or redact (remove its content):
+- `data-openreplay-obscured` to mask text content of `<input>` tags, `<img>` and other HTML elements (i.e. `<div>`) with the exception of `<svg>` and `<canvas>`.
 
-### Input Field
+```HTML
+<!--Obscuring input fields-->
+<form action="/action_page.php">
+  Name: <input type="text" name="fname" data-openreplay-obscured><br>
+  <input type="submit" value="Submit">
+</form>
+<!--Obscuring a div element-->
+<div style="background-color:lightblue" data-openreplay-obscured>
+  <h3>This is a sensitive information</h3>
+  <p>This is an important paragraph</p>
+  <img src="important_image.jpg">
+</div>
+```
 
-Using the `data-openreplay-obscured` (mask the value) or `data-openreplay-hidden` (completely ignore) HTML attributes on any input tag.
+- `data-openreplay-hidden` to redact the content of `<input>` tags, `<img>`, `<svg>` and other HTML elements (i.e. `<div>`) with the exception of `<canvas>`. The element's content (including its children components) is removed, but it's props and arguments are kept, like in this example:
+
+```HTML
+<div style="background-color:lightblue" data-openreplay-hidden>
+  <div>This is a sensitive information</div>
+  <svg>An important chart</svg>
+</div>
+```
+
+This will result in the following DOM being recorded by the tracker:
+
+```HTML
+<div style="background-color:lightblue" data-openreplay-hidden>
+</div>
+```
+
+- `domSanitizer: (node: Element) => SanitizeLevel` function to avoid having to instrument each HTML component that needs to be sanitized. `SanitizeLevel` can be `Plain` (0), `Bbscured` (1) or `Hidden` (2). This function is passed to the tracker's constructor. Below is an example of redacting all HTML elements having a specific CSS class name:
+
+```js
+// Import SanitizeLevel enum
+import Tracker, { SanitizeLevel } from "@openreplay/tracker";
+
+const tracker = new Tracker({
+  projectKey: PROJECT_KEY,
+  domSanitizer: (node: Element) => {
+    const elementClassNames = node.classList
+
+    if (elementClassNames.contains('to_be_redacted_class')) {
+      return SanitizeLevel.Hidden
+    }
+
+    if (node.id === 'sensitiveData') {
+      return SanitizeLevel.Obscured
+    }
+
+    return SanitizeLevel.Plain
+  }
+})
+tracker.start()
+```
+
+> **Note:** All sanitized elements are masked/redacted at the source (tracker) level so that sensitive data never reaches the OpenReplay instance.
+
+### (Deprecated Attributes)
+
+If you're on tracker `4.0.1` or prior, then use the below deprecated options to obscure or redact different HTML elements:
+
+#### Input Field
+
+Using the `data-openreplay-obscured` (mask the value) or `data-openreplay-hidden` (completely redact its content) HTML attributes on any input tag:
 
 ```HTML
 <form action="/action_page.php">
@@ -52,36 +114,37 @@ Using the `data-openreplay-obscured` (mask the value) or `data-openreplay-hidden
 </form>
 ```
 
-### UI Component
+#### UI Component
 
-Obscuring any UI component/part using the `data-openreplay-masked` HTML attribute (see example below).
+Obscuring any UI component/part using the `data-openreplay-masked` HTML attribute:
 
 ```HTML
 <div style="background-color:lightblue" data-openreplay-masked>
   <h3>This is a sensitive information</h3>
-  <p>This is an important paragraph.</p>
+  <p>This is an important paragraph</p>
 </div>
 ```
 
-Excluded DOM elements, as well as their children, will be sanitized at the tracker level and therefore won't be visible in the session replays. In the below example, we masked user events so they won't appear in our session recordings.
+Even if your excluded DOM elements contain `input` fields, these fields will not be sanitized. If you're looking to sanitize the content of these fields, either use the `data-openreplay-hidden` if you have access to the inputs, or the `data-openreplay-htmlmasked` attribute (see below) to remove the entire HTML element container (and children) from the recording.
 
-> **Note:** Even if your excluded DOM elements contain `input` fields, these fields will not be sanitized. If you're looking to sanitize the content of these fields, either use the `data-openreplay-hidden` if you have access to the inputs, or the `data-openreplay-htmlmasked` attribute (see below) to remove the entire HTML element container (and children) from the recording.
+#### Entire Containers
 
-![Obscured UI Components in Session Replay](../static/gdpr-2.png#center)
-
-### Entire Containers
-
-You can hide an entire piece of html using the `data-openreplay-htmlmasked` HTML attribute when you need to remove sensitive data like charts.
+You can redact an entire piece of the HTML using the `data-openreplay-htmlmasked` attribute when you need to remove sensitive data like for example charts:
 
 ```HTML
 <div style="background-color:lightblue" data-openreplay-htmlmasked>
-  <div> sensitive information </div>
-  <svg> important chart </svg>
+  <div>This is a sensitive information</div>
+  <svg>An important chart</svg>
 </div>
 ```
 
-This will result in the following DOM being recorded by the tracker (keep in mind that parent container's size should be constant):
+This will result in the following DOM being recorded by the tracker. Content (including children components) is removed, but the element's props and arguments are kept:
 
 ```HTML
-<div style="background-color:lightblue" data-openreplay-htmlmasked/>
+<div style="background-color:lightblue" data-openreplay-htmlmasked>
+</div>
 ```
+
+## Troubleshooting
+
+Having trouble sanitizing data? Please reach out to our [Slack](https://slack.openreplay.com) and get help from our community.

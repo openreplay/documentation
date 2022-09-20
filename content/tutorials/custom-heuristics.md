@@ -188,6 +188,6 @@ The heuristic is now available and the messages are sent as a Custom Event. To r
 
 In this simple process we have created a new detector. Of course, your algorithm can be more sophisticated and include a combination of different type of events.
 
-## Questions?
+## Do you have questions?
 
 If you encounter any issues, connect to our [Slack](https://slack.openreplay.com) and get help from our community.

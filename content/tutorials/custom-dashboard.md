@@ -18,6 +18,8 @@ Let's take a look at how users can do that.
 
 ## Creating a custom dashboard
 
+**Note:** If you want a quick tutorial showing you how to implement a dashboard with custom metrics, you can checkout [this YouTube video](https://www.youtube.com/watch?v=hxnONp79Mwc).
+
 Click on the Dashboards section on the main menu to get started.
 
 Then click on the "Create Dashboard" button that's staring at you right from the middle of the screen:
@@ -145,6 +147,8 @@ You can change the time range to:
 
 You can also keep adding metrics to the new dashboard using the "Add Metric" button on the top-left corner next to the title.
 
----
-
 You can create as many dashboards as you like; they can act as different views of your system and show you an integrated summary of what is happening. You can then use them to filter the replays and understand what is happening in your application.
+
+## Do you have questions?
+
+If you have any issues setting up a custom dashboard in your project, please reach out to us on our [Slack community](https://slack.openreplay.com/) and ask our devs directly!

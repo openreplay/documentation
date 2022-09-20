@@ -116,6 +116,7 @@ onMounted( () => {
 Make sure you call the tracker after the mounted event has been triggered. You can do this with the `onMounted` composable.
 
 After this, the tracker should start sending data to the platform once deployed.
+## Do you have questions?
 
 For the **full code** of a working Nuxt-based application, you can check out [this repository](https://github.com/deleteman/openreplay-nuxt-example).
 

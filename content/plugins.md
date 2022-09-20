@@ -15,6 +15,7 @@ Learn about the different plugins to capture your application's store, monitor q
 - [Pinia](/plugins/pinia): For capturing Pinia stores.
 - [MobX](/plugins/mobx): For capturing MobX stores.
 - [NgRx](/plugins/ngrx): For capturing NgRx actions.
+- [Zustand](/plugins/zustand): For capturing Zustand actions and state.
 
 ## Queries
 - [Fetch](/plugins/fetch): For tracking fetch requests and responses.

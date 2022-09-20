@@ -188,7 +188,7 @@ Key aspects of this code are:
 
 ![Sanitized data everywhere](images/sanitized.png)
 
----
+## Do you have questions?
 
 You can [check out this repository](https://github.com/deleteman/openreplay-graphql-example) for the **complete source code** of a working GraphQL-based application with the Tracker.
 

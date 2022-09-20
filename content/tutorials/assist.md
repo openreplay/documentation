@@ -181,6 +181,7 @@ The following screenshot shows me, having a live call with... well, me from two 
 
 ![](https://i.imgur.com/Ob7QTzH.png)
 
-## Conclusion
 
-The ability to see what your users are doing with your application is priceless for a team that is concerned about providing a great and flawless user experience. If on top of that, you add the super-power of having this ability live and being able to jump into a session and interact with your users without the need for any extra software, we're talking about the holy grail of support software.
+## Do you have questions?
+
+If you have any issues setting up the Assist plugin on your project, please contact us on our [Slack community](https://slack.openreplay.com/) and ask our devs directly!

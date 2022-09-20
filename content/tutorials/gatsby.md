@@ -52,7 +52,7 @@ The OpenReplay project key will then live inside a variable named `GATSBY_OPENRE
 
 Notice how the name is prefixed with `GATSBY_`  that will tell Gatsby to make sure the variable is available in front-end code as well. Otherwise, you won’t be able to read the value unless you’re executing Node.js code.
 
----
+## Do you have questions?
 
 You can [check out this repository](https://github.com/deleteman/openreplay-gatsby-example) for the **complete source code** of a working Gatsby-based application with the Tracker.
 
