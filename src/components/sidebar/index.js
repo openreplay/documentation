@@ -115,6 +115,9 @@ const SidebarLayout = ({location, bottomDivider = false }) => (
                 slug
                 title
               }
+              frontmatter {
+                minVersion
+              }
             }
           }
         }

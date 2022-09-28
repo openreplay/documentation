@@ -6,6 +6,7 @@ import LoadingProvider from './loading';
 
 import '../styles.css';
 import Card from './card'
+import IncompatibleVersionWarning from './incompatibleVersionWarning'
 
 const MyAnchor = Loadable({
   loader: () => import("./anchor"),
@@ -24,6 +25,7 @@ export default {
   code: CodeBlock,
   a: MyAnchor,
   Card,
+  IncompatibleVersionWarning,
   // TODO add `img`
   // TODO add `blockquote`
   // TODO add `ul`

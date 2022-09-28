@@ -9,8 +9,14 @@ import { ImportExportDimensions } from 'styled-icons/material';
 const calculateTreeData = (edges, currentVersion) => {
   let originalData = config.sidebar.ignoreIndex ? edges.filter(({node: {fields: {slug}}}) => slug !== '/') : edges;
   originalData = originalData.filter( edge => {
+    console.log(edge.node.fields)
     if(currentVersion.indexOf("v") == 0) { //we're looking for a specific version
-      return edge.node.fields.slug.indexOf(currentVersion) != -1
+      let minCompatibleVersion = edge.node.frontmatter.minVersion
+      let numCurrentVersion = +(currentVersion.replace("v", "").replace(/\./g, ""))
+      if(minCompatibleVersion !== null ){
+        minCompatibleVersion = +(minCompatibleVersion.replace(/\./g, ""))
+      }
+      return edge.node.fields.slug.indexOf(currentVersion) != -1 && minCompatibleVersion <= numCurrentVersion
     } else {
       return !edge.node.fields.slug.match(/\/v[0-9]+.[0-9]+.[0-9]+/)
     }
