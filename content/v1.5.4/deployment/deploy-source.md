@@ -36,6 +36,8 @@ cd openreplay/scripts/helm
 sudo IMAGE_TAG=<my_tag_number> PUSH=1 DOCKER_REPO=index.docker.io/<username> or <docker registry url> bash build_deploy.sh
 ```
 
+*Note* that the tag name can be any string you want, it'll be created on your Docker Registry and it'll be used to identify this particular version of the code (useful if you're also modifying the code).
+
 ## 3. Updates Images
 
 1. Create your container registry secret:
@@ -48,8 +50,9 @@ kubectl create secret -n app docker-registry my-registry-secret \
         --docker-email=no@email.local 
 ```
 
-2. To use the components you just built and pushed to your container registry, update each component's chart by editing the following variables in its `openreplay/scripts/helmcharts/openreplay/charts/<app>/values.yaml` file:
-- `repository`: should point to MY_CONTAINER_REGISTRY_URL/COMPONENT_NAME (give your username in case of docker hub, otherwise use the container registry url)
+2. To use the components you just built and pushed to your container registry, update the `vars.yaml` file, located inside the `openreplay/scripts/helmcharts` folder. Just add a section for each image you have on your docker registry with the following information:
+
+- `repository`: should point to MY_CONTAINER_REGISTRY_URL/COMPONENT_NAME (if you're using Docker Hub, use the `<username>/<component name>` format instead)
 - `pullPolicy`: set to "Always"
 - `tag`: the value of IMAGE_TAG used when building Backend and API
 - `imagePullSecrets`: the container registry secret
@@ -57,12 +60,13 @@ kubectl create secret -n app docker-registry my-registry-secret \
 Below is an example for the `alerts` service:
 
 ```yaml
+alerts:
   image:
     repository: rg.fr-par.scw.cloud/foss/alerts
     pullPolicy: Always
     tag: "v1.4.2"
   imagePullSecrets: 
-    - eyJodHRwczovL2luZGV4LJ0QUl6RTIifX0=
+    - name: my-registry-secret
 ```
 
 ### Install OpenReplay
@@ -119,15 +123,26 @@ cd openreplay/scripts/helmcharts && ./openreplay-cli -I
 
 ## 4. Build and deploy Frontend
 
-Finally, run the below comamnds to build and deploy the frontend from source:
+Finally, if you're also looking to build the front-end, you'll have to build the image with the following line:
 
 ```bash
 cd openreplay/frontend
-sudo bash build.sh
-cp -arl public frontend
-minio_pod=$(kubectl get po -n db -l app.kubernetes.io/name=minio -n db --output custom-columns=name:.metadata.name | tail -n+2)
-sudo kubectl -n db cp frontend $minio_pod:/data/
+IMAGE_TAG=<your tag> PUSH_IMAGE=1 DOCKER_REPO=myDockerHubID bash build.sh
 ```
+
+Once this is done, go back to the `scripts/helmcharts/vars.yaml` file and add a section specific for the front-end, it should look similar to the ones you added before for `alerts` and `chalice`:
+
+```yaml
+frontend:
+  image:
+    repository: <YOUR DOCKER REGISTRY>/frontend
+    pullPolicy: Always
+    tag: <YOUR TAG>
+  imagePullSecrets: 
+    - name: <YOUR SECRET>
+```
+
+With the new section added on the file, execute the `./openreplay-cli -I` command and your new front-end should be running.
 
 You're all set now, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 
