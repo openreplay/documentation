@@ -25,18 +25,33 @@ sudo chown $user /var/run/docker.sock
 git clone https://github.com/openreplay/openreplay
 ```
 
-## 2. Build Backend and API
+## 2. Build Backend services
 
 1. Login to your container registry using `docker login <registry_url>`. If you have a docker hub account, then simply run `docker login`.
 
-2. Build API and Backend components then push them to your container registry:
+2. Build the backend components then push them to your container registry:
 
 ```bash
-cd openreplay/scripts/helm
-sudo IMAGE_TAG=<my_tag_number> PUSH=1 DOCKER_REPO=index.docker.io/<username> or <docker registry url> bash build_deploy.sh
+cd openreplay/backend
+sudo IMAGE_TAG=<my_tag_number> PUSH_IMAGE=1 DOCKER_REPO=index.docker.io/<username> bash build.sh 
 ```
 
 *Note* that the tag name can be any string you want, it'll be created on your Docker Registry and it'll be used to identify this particular version of the code (useful if you're also modifying the code).
+
+If everything goes well, you should have, in your Docker registry, a list of images built from the source code you had, ready to be installed.
+The list of images is:
+
+- Storage
+- Sink
+- Integrations
+- HTTP
+- Heuristics
+- Ender
+- DB
+- Assets
+- Alerts
+- Chalice
+
 
 ## 3. Updates Images
 
@@ -50,12 +65,15 @@ kubectl create secret -n app docker-registry my-registry-secret \
         --docker-email=no@email.local 
 ```
 
-2. To use the components you just built and pushed to your container registry, update the `vars.yaml` file, located inside the `openreplay/scripts/helmcharts` folder. Just add a section for each image you have on your docker registry with the following information:
+2. To use the components you just built and pushed to your container registry, update the `vars.yaml` file, located inside the `openreplay/scripts/helmcharts` folder. 
+Just add a section for each image you have on your docker registry with the following information:
 
 - `repository`: should point to MY_CONTAINER_REGISTRY_URL/COMPONENT_NAME (if you're using Docker Hub, use the `<username>/<component name>` format instead)
 - `pullPolicy`: set to "Always"
 - `tag`: the value of IMAGE_TAG used when building Backend and API
 - `imagePullSecrets`: the container registry secret
+
+Note that any image you don't reference inside the `vars.yaml` file will be deployed and installed from the **official repository** of OpenReplay, which means you won't have the version built from your source code.
 
 Below is an example for the `alerts` service:
 
@@ -81,6 +99,8 @@ cd openreplay/scripts/helmcharts
 helm upgrade --install databases ./databases -n db --create-namespace --wait -f ./vars.yaml --atomic
 helm upgrade --install openreplay ./openreplay -n app --create-namespace --wait -f ./vars.yaml --atomic
 ```
+
+If you ever modify the source code of the back-end services or the DB service, you'll have to  go back to step 3 and then run the above commands once again.
 
 ### Configure TLS/SSL
 
@@ -142,7 +162,7 @@ frontend:
     - name: <YOUR SECRET>
 ```
 
-With the new section added on the file, execute the `./openreplay-cli -I` command and your new front-end should be running.
+With the new section added on the file, execute the `./openreplay-cli -I` (which is located inside the `scripts/helmcharts` folder) command and your new front-end should be running.
 
 You're all set now, OpenReplay should be accessible on your subdomain. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
 
