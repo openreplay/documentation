@@ -64,6 +64,8 @@ Notice that I also defined:
 - A message ID (112), this is a random number that’s not already in use (you can look at the other messages in the file) and that’s less than 200.
 - A message name, this is entirely up to you, just make sure it describes your message type.
 - A “method” field, that way we could potentially re-use the message for other methods in the future.
+- The types of the properties as "string" and "int", that's because our encoder will turn arrays and objects into strings.
+
 
 After this is done, you need to make sure the message is accessible from everywhere, so you’ll run 2 scripts inside this folder:
 
@@ -101,7 +103,6 @@ case 'j_query_get':
     }))
   break;
 ```
-
 Now, there are a few things we have to do to make this work:
 
 - We have to add the “jquery” list, to do so, we’ll modify the file `frontend/app/player/lists/index.js` and add “jquery” into the `entityNamesWithRed` array.
@@ -248,7 +249,7 @@ export default function($) {
 
 Essentially all I’m doing is replacing the `.get` method from JQuery by a custom one that actually uses `fetch` behind the curtain (this is totally optional, you could be using JQuery’s GET method as well). And after all requests are performed, the code sends a message using the  `app.send` method. The message is created with the `Messages.JQueryGET` method that was created for us by the Ruby script from before. 
 
-The attributes this message receives, are obviously, the ones we defined as the structure of the message itself during **Step 1.**
+The attributes this message receives, are obviously, the ones we defined as the structure of the message itself during **Step 1.** And most importantly, they're all mandatory, if you're having to deal with an empty value, then pass the empty array/object/string/whatever but **never skip the key**.
 
 ### Publishing the plugin
 
