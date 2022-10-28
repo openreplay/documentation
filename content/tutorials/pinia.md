@@ -8,6 +8,9 @@ Pinia is the replacement state management library for Vue projects. Where you us
 
 With our [Pinia plugin](/plugins/pinia), you can keep track of the state changes throughout the life cycle of your application.
 
+** Note **
+If you'd like to watch a video version of this tutorial, you have one available [here](https://youtu.be/0TE5dfzz4-c).
+
 ## Installing the plugin
 
 The plugin can easily be installed with the following command:

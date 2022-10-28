@@ -79,7 +79,7 @@ trackerVuex({
 
 ## Tutorial
 
-If you're looking for a practical example of how to use this plugin to capture state changes in your session replays, check out [our detailed tutorial over here](/tutorials/vuex).
+If you're looking for a practical example of how to use this plugin to capture state changes in your session replays, check out [our detailed tutorial over here](/tutorials/pinia).
 
 ## Troubleshooting
 
