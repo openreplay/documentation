@@ -6,9 +6,9 @@ metaDescription: "How to upgrade your instance to the latest OpenReplay version.
 
 Upgrading your OpenReplay deployment to the latest version requires updating both your backend (instance) and tracker.
 
-## Upgrade Backend (from v1.4.0 or higher)
+## Upgrade Backend
 
->**Note:** If your OpenReplay version is prior to `v1.4.0` then [read this first](/deployment/deprecated-versions) before continuing with the below instructions.
+>**Note:** [Read this first](/deployment/deprecated-versions) before continuing with the below instructions.
 
 1. Copy/backup the current openreplay folder to `_version-number` like below:
    

@@ -38,7 +38,10 @@ Sanitized text, email and numbers are obscured or suppressed before sending the 
 
 ## Granular Level
 
-You can also sanitize your data at the code level for better granularity. This is useful for obscuring or ignoring DOM elements and input fields. There are 2 HTML attributes you can instrument  or redact (remove its content):
+You can also sanitize your data at the code level for better granularity. This is useful for obscuring or ignoring DOM elements and input fields.
+
+### Using HTML attributes
+
 - `data-openreplay-obscured` to mask text content of `<input>` tags, `<img>` and other HTML elements (i.e. `<div>`) with the exception of `<svg>` and `<canvas>`.
 
 ```HTML
@@ -71,7 +74,9 @@ This will result in the following DOM being recorded by the tracker:
 </div>
 ```
 
-- `domSanitizer: (node: Element) => SanitizeLevel` function to avoid having to instrument each HTML component that needs to be sanitized. `SanitizeLevel` can be `Plain` (0), `Bbscured` (1) or `Hidden` (2). This function is passed to the tracker's constructor. Below is an example of redacting all HTML elements having a specific CSS class name:
+### Using the domSanitizer function
+
+- `domSanitizer: (node: Element) => SanitizeLevel` function to avoid having to instrument each HTML component that needs to be sanitized. `SanitizeLevel` can be `Plain` (0), `Obscured` (1) or `Hidden` (2). This function is passed to the tracker's constructor. Below is an example of redacting all HTML elements having a specific CSS class name:
 
 ```js
 // Import SanitizeLevel enum
