@@ -33,8 +33,12 @@ Upgrading your OpenReplay deployment to the latest version requires updating bot
   chmod +x ./yq
   ./yq '. *= load("old_vars.yaml")' vars.yaml > new_vars.yaml
   mv new_vars.yaml vars.yaml
+  
   # Cleanup depricated resource
   kubectl delete ing -n db minio-frontend
+  
+  # Setting proper permisson
+  /bin/bash -c '[[ -d /openreplay ]] && sudo chown -R 1001:1001 /openreplay'
   
   # Upgrade openreplay
   helm upgrade --install openreplay ./openreplay -n app --wait -f ./vars.yaml --atomic
