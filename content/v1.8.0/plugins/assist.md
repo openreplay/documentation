@@ -134,17 +134,4 @@ onCallStart: () => {
 
 ## Troubleshooting
 
-### Critical dependency: the request of a dependency is an expression
-
-If you're running tracker-assist `v3.5.14 or prior` and you're getting the below error when compiling, apply this [workaround](https://github.com/peers/peerjs/issues/630#issuecomment-910028230).
-
-```log
-Failed to compile.
-
-./node_modules/peerjs/dist/peerjs.min.js
-Critical dependency: the request of a dependency is an expression
-```
-
-### My issue is not listed
-
 Having trouble setting up this plugin? Please connect to our [Slack](https://slack.openreplay.com) and get help from our community.

@@ -22,7 +22,7 @@ The OpenReplay tracker supports logging 3 types of errors:
 All of the above can be reported using a single method:
 
 ```js
-tracker.handleError(err);
+tracker.handleError(error, metaObject); // metaObject is optional and is a flat object
 ```
 
 Let's review an example for each type of error:
@@ -37,7 +37,7 @@ try {
 }
 catch(err) {
     // application code that handles the error
-    tracker.handlerError(err);
+    tracker.handleError(error, metaObject); // metaObject is optional and is a flat object
 }
 ```
 ### Rejected Promises (PromiseRejectionEvent)
@@ -52,7 +52,7 @@ function myFunc() {
     })
     .catch(promiseRejectionErr => {
         // application code to handle the error
-        tracker.handleError(promiseRejectionErr);      
+        tracker.handleError(promiseRejectionErr, metaObject); // metaObject is optional and is a flat object     
     })
 }
 ```
@@ -71,6 +71,6 @@ document.getElementById("myImg").addEventListener("error", myFunction);
 
 function myFunction(errorEvent) {
   document.getElementById("demo").innerHTML = "The image could not be loaded.";
-  tracker.handleError(errorEvent);
+  tracker.handleError(errorEvent, { context: "demo" });
 }
 ```

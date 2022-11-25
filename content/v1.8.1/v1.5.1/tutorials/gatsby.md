@@ -1,0 +1,59 @@
+---
+title: "Using OpenReplay with Gatsby"
+metaTitle: "Adding the OpenReplay Tracker to your Gatsby application"
+metaDescription: "Learn how to get the tracker working on your Gatsby application"
+---
+
+Installing the OpenReplay tracker into a Gatsby-based project is relatively straightforward.
+
+![Sesion replay of a Gatsby site](images/gatsby-ss.png)
+
+Considering that Gatsby is using React underneath, all we have to do, is to add the tracker code inside the main page and call the `start` method using the `useEffect` hook. 
+
+Let’s take a look.
+
+## Why set up the Tracker on a static site?
+
+The lack of dynamic content inside your app doesn’t mean you don’t want to take advantage of some of the other features of OpenReplay.
+
+While you won’t be using the session replays to find bugs, you’ll be able to capture interesting metrics and create [your own custom dashboards](https://docs.openreplay.com/tutorials/custom-dashboard) around these metrics.
+
+You can use performance, web vitals and even resource-related metrics to get an overall idea of what the experience of your users is with your site.
+
+## Setting up the Tracker inside Gatsby
+
+Given a static Gatsby site and the entry point for it being the `index.tsx` file inside the `pages` folder, you’d want to add the following code to it:
+
+```jsx
+import Tracker from '@openreplay/tracker';
+const tracker = new Tracker({
+  projectKey: process.env.GATSBY_OPENREPLAY_PROJECT_KEY
+});
+
+const Index = ({data, location }) => {
+
+  React.useEffect(() => {
+    tracker.start();
+  }, [])
+
+   //the rest of your code here...
+}
+```
+
+The tracker gets instantiated when the page gets compiled (whether it’s SSR or client-side rendering), but the start method can only be called from the browser, so we need to make sure it gets called after the component is mounted (thus the `useEffect` hook here). The empty array as the second argument of the `useEffect` hook makes sure the callback gets executed only once.
+
+💡**A note for self-hosted users:** if you’re using the self-hosted version of OpenReplay, you’ll also have to specify the `ingestPoint`configuration property when instantiating the tracker. This property specifies the ingestion endpoint for the tracker’s data. Cloud users don’t need this, because by default, the tracker will know where the SaaS version of this endpoint is, but if you’re self-hosting it, you’ll need to specify it (it should be something like `https://openreplay.mydomain.com/ingest`)
+
+## Handling the ENV variable in Gatsby
+
+As a measure of security, we recommend not hardcoding the project key inside your code. That means you’ll have to export it as an ENV variable so that Gatsby read it.
+
+The OpenReplay project key will then live inside a variable named `GATSBY_OPENREPLAY_PROJECT_KEY`
+
+Notice how the name is prefixed with `GATSBY_`  that will tell Gatsby to make sure the variable is available in front-end code as well. Otherwise, you won’t be able to read the value unless you’re executing Node.js code.
+
+## Do you have questions?
+
+You can [check out this repository](https://github.com/deleteman/openreplay-gatsby-example) for the **complete source code** of a working Gatsby-based application with the Tracker.
+
+If you have any issues setting up the Tracker on your Gatsby project, please contact us on our [Slack community](https://slack.openreplay.com/) and ask our devs directly!

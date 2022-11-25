@@ -6,7 +6,7 @@ metaDescription: "How to upgrade your instance to the latest OpenReplay version.
 
 Upgrading your OpenReplay deployment to the latest version requires updating both your backend (instance) and tracker.
 
-## Upgrade Backend (from v1.4.0 or higher)
+## Upgrade Backend
 
 1. Copy/backup the current openreplay folder to `_version-number` like below:
    
@@ -48,10 +48,10 @@ Upgrading your OpenReplay deployment to the latest version requires updating bot
   cd openreplay/scripts/helmcharts && bash certmanager.sh
   ```
 
-5. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.8.1` to `v1.8.2` then update the `fromVersion` like below:
+5. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.8.1` to `v1.9.0` then update the `fromVersion` like below:
   
   ```yaml
-  fromVersion: "v1.8.2"
+  fromVersion: "v1.9.0"
   ```
  
 ## Upgrade Tracker
@@ -59,7 +59,8 @@ Upgrading your OpenReplay deployment to the latest version requires updating bot
 Ensure your tracker (and tracker-assist plugin if you do use the Assist plugin) is compatible with the new backend version by checking the below compatibility table:
 
 | Backend Version | Minimum Tracker Version | Minimum Assist Version (NPM) |
-|----------|-------------|
+|----------|-------------|-------------|
+| 1.9.0 | 4.1.9 | 4.1.3 |
 | 1.8.1 | 4.1.4 | 4.1.1 |
 | 1.8.0 | 4.0.1 | 4.0.1 |
 | 1.7.0 | 3.5.15 | 3.5.14 |
