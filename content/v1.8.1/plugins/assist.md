@@ -116,7 +116,7 @@ It's possible to customize every aspect of this widget via the below set of `ids
 |id | `or-assist` | Widget container |
 |class | `card`, `border-dark`, `shadow` and `drag-area` | Styles for the card's border and shadow |
 |id | `controls`  | Container for the calling part inside the widget |
-|class | `card-header` | Styles for card header of the call widget (the one showing “Call with <agent name>” next to a timer) |
+|class | `card-header` | Styles for card header of the call widget (the one showing the agent name next to a timer) |
 |id | `agent-name` | Container for agent's name |
 |id | `duration` | Container for timer |
 |id | `video-container` | User’s own video feed container |
