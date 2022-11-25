@@ -31,6 +31,7 @@ Upgrading your OpenReplay deployment to the latest version requires updating bot
   chmod +x ./yq
   ./yq '. *= load("old_vars.yaml")' vars.yaml > new_vars.yaml
   mv new_vars.yaml vars.yaml
+  sed -i 's/clickhouse:\s*$/clickhouse: \&clickhouse/' vars.yaml
   
   # Cleanup depricated resource
   kubectl delete ing -n db minio-frontend
