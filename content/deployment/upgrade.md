@@ -12,7 +12,7 @@ Upgrading your OpenReplay deployment to the latest version requires updating bot
    
   ```bash 
   mv openreplay openreplay_v1.8.1
-  ```
+  ```yq '(load("old_vars.yaml") | .. | select(tag != "!!map" and tag != "!!seq")) as $i ireduce(.; setpath($i | path; $i))' new_vars.yaml
 
 2. Clone the new OpenReplay version. In this example we're upgrading to the latest available version:
    
@@ -27,12 +27,10 @@ Upgrading your OpenReplay deployment to the latest version requires updating bot
 
   # Merge previous vars.yaml with current var.yaml (using yq for yaml parsing)
   cp ~/openreplay_v1.4.0/scripts/helmcharts/vars.yaml old_vars.yaml
-  wget https://github.com/mikefarah/yq/releases/download/v4.24.4/yq_linux_amd64 -O yq
+  wget https://github.com/mikefarah/yq/releases/download/v4.30.4/yq_linux_amd64 -O yq
   chmod +x ./yq
-  ./yq '. *= load("old_vars.yaml")' vars.yaml > new_vars.yaml
+  ./yq '(load("old_vars.yaml") | .. | select(tag != "!!map" and tag != "!!seq")) as $i ireduce(.; setpath($i | path; $i))' vars.yaml > new_vars.yaml
   mv new_vars.yaml vars.yaml
-  if sed --version &>/dev/null; then sed -i 's/clickhouse:\s*$/clickhouse: \&clickhouse/' vars.yaml; else; sed -i '' 's/clickhouse:\s*$/clickhouse: \&clickhouse/' vars.yaml;fi
-
   
   # Cleanup depricated resource
   kubectl delete ing -n db minio-frontend
