@@ -32,7 +32,7 @@ const flatten = arr =>
     ...rest,
   })
   })
-const settings = { attributesToSnippet: [`excerpt:20`], snippetEllipsisText: "…" }
+const settings = { attributesForFacetting: ['version'], attributesToSnippet: [`excerpt:20`], snippetEllipsisText: "…" }
 
 const indexName = config.header.search ? config.header.search.indexName : '';
 
