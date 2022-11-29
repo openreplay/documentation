@@ -54,15 +54,13 @@ OpenReplay tracker captures **same-domain** iFrames by default. However, it thro
 - Disable the entire functionality using the `captureIFrames` property as in the example below: 
 
 ```js
-//...
 const tracker = new OpenReplay({
       projectKey: PROJECT_KEY,
       captureIFrames: false
-
 });
 ```
 
-- Keep capturing iFrames (default behavior) by adding the `data-openreplay-capture` HTML attribute to the same-domain `<iframe>` tags only. This way, cross-origin iFrames won't be tracked by OpenReplay.
+- Keep capturing iFrames (default behavior) by adding the `data-openreplay-capture` HTML attribute to the same-domain `<iframe>` tags **only**. This way, cross-origin iFrames won't be tracked by OpenReplay.
 
 ## My problem is not listed
 
