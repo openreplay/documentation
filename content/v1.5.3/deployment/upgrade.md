@@ -26,13 +26,17 @@ Upgrading your OpenReplay deployment to the latest version requires updating bot
   cd openreplay/scripts/helmcharts
 
   # Merge previous vars.yaml with current var.yaml (using yq for yaml parsing)
-  cp ~/openreplay_v1.4.0/scripts/helmcharts/vars.yaml old_vars.yaml
-  wget https://github.com/mikefarah/yq/releases/download/v4.24.4/yq_linux_amd64 -O yq
+  cp ~/openreplay_v1.5.3/scripts/helmcharts/vars.yaml old_vars.yaml
+  wget https://github.com/mikefarah/yq/releases/download/v4.30.4/yq_linux_amd64 -O yq
   chmod +x ./yq
-  ./yq '. *= load("old_vars.yaml")' vars.yaml > new_vars.yaml
+  ./yq '(load("old_vars.yaml") | .. | select(tag != "!!map" and tag != "!!seq")) as $i ireduce(.; setpath($i | path; $i))' vars.yaml > new_vars.yaml
   mv new_vars.yaml vars.yaml
+  
   # Cleanup depricated resource
   kubectl delete ing -n db minio-frontend
+  
+  # Setting proper permisson
+  /bin/bash -c '[[ -d /openreplay ]] && sudo chown -R 1001:1001 /openreplay'
   
   # Upgrade openreplay
   helm upgrade --install openreplay ./openreplay -n app --wait -f ./vars.yaml --atomic
