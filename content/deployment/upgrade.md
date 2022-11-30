@@ -12,7 +12,7 @@ Upgrading your OpenReplay deployment to the latest version requires updating bot
    
   ```bash 
   mv openreplay openreplay_v1.8.1
-  ```yq '(load("old_vars.yaml") | .. | select(tag != "!!map" and tag != "!!seq")) as $i ireduce(.; setpath($i | path; $i))' new_vars.yaml
+  ```
 
 2. Clone the new OpenReplay version. In this example we're upgrading to the latest available version:
    
