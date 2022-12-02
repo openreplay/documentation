@@ -11,7 +11,7 @@ Upgrading your OpenReplay deployment to the latest version requires updating bot
 1. Copy/backup the current openreplay folder to `_version-number` like below:
    
   ```bash 
-  mv openreplay openreplay_v1.8.0
+  mv openreplay openreplay_v1.8.1
   ```
 
 2. Clone the new OpenReplay version. In this example we're upgrading to the latest available version:
@@ -48,7 +48,7 @@ Upgrading your OpenReplay deployment to the latest version requires updating bot
   cd openreplay/scripts/helmcharts && bash certmanager.sh
   ```
 
-5. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.8.0` to `v1.9.0` then update the `fromVersion` like below:
+5. Update `fromVersion` variable in `/openreplay/scripts/helmcharts/vars.yaml` to reflect the new version. As an example if you're moving from `v1.8.1` to `v1.9.0` then update the `fromVersion` like below:
   
   ```yaml
   fromVersion: "v1.9.0"
