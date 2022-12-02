@@ -32,6 +32,9 @@ Upgrading your OpenReplay deployment to the latest version requires updating bot
   ./yq '(load("old_vars.yaml") | .. | select(tag != "!!map" and tag != "!!seq")) as $i ireduce(.; setpath($i | path; $i))' vars.yaml > new_vars.yaml
   mv new_vars.yaml vars.yaml
   
+  # Upgrading tools
+  SKIP_K8S_INSTALL=1 SKIP_OR_INSTALL=1 UPGRADE_TOOLS=1 bash init.sh
+  
   # Cleanup depricated resource
   kubectl delete ing -n db minio-frontend
   
