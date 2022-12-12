@@ -8,7 +8,7 @@ Error reporting is very important for monitoring your app's stability, spotting 
 
 ![Errors Tab](../static/errors-tab.jpg#center)
 
-Additionally, logged errors will also appear in the session recording under the 'Exceptions' tab in DevTools:
+Additionally, logged errors will also appear in the session recording under the 'Console' tab in DevTools:
 
 ![Exceptions Tab](../static/exceptions-tab-in-recording.jpg#center)
 
@@ -29,7 +29,7 @@ Let's review an example for each type of error:
 
 ### Caught Exceptions (Error)
 
-By default, caught exceptions are not logged to the 'Errors' tab. In order to report an error, we can do as following:
+By default, caught exceptions are not logged to the 'Console' tab. In order to report an error, we can do as following:
 
 ```js
 try {
