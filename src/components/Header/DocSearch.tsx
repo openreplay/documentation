@@ -2,6 +2,7 @@ import { DocSearchModal, useDocSearchKeyboardEvents } from '@docsearch/react';
 import { createPortal } from 'preact/compat';
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import type { DocSearchTranslation } from '../../i18n/translation-checkers';
+import { getVersionFromURL, __LATEST__ } from '../../util';
 
 interface Props {
 	lang?: string;
@@ -12,6 +13,7 @@ export default function Search({ lang = 'en', labels }: Props) {
 	const [isOpen, setIsOpen] = useState(false);
 	const searchButtonRef = useRef(document.getElementById('docsearch-search-button'));
 	const [initialQuery, setInitialQuery] = useState<string>();
+	const [version, setVersion] = useState("")
 
 	const onOpen = useCallback(() => {
 		setIsOpen(true);
@@ -28,6 +30,11 @@ export default function Search({ lang = 'en', labels }: Props) {
 		},
 		[setIsOpen, setInitialQuery]
 	);
+
+	useEffect(() => {
+		let v = getVersionFromURL(window.location.href)
+		setVersion(v ? v : __LATEST__)
+	}, [])
 
 	useEffect(() => {
 		searchButtonRef.current?.addEventListener('click', onOpen);
@@ -49,21 +56,20 @@ export default function Search({ lang = 'en', labels }: Props) {
 			initialQuery={initialQuery}
 			initialScrollY={window.scrollY}
 			onClose={onClose}
-			indexName="astro"
-			appId="7AFBU8EPJU"
-			apiKey="4440670147c44d744fd8da35ff652518"
-			searchParameters={{ facetFilters: [[`lang:${lang}`]] }}
-			getMissingResultsUrl={({ query }) =>
-				`https://github.com/withastro/docs/issues/new?title=Missing+results+for+query+%22${encodeURIComponent(
-					query
-				)}%22`
-			}
+			indexName={import.meta.env.PUBLIC_ALGOLIA_INDEX}
+			appId={import.meta.env.PUBLIC_ALGOLIA_KEY}
+			apiKey={import.meta.env.PUBLIC_ALGOLIA_SECRET}
+			//searchParameters={{ filters: `version:${version}` }}
+			searchParameters={{ facetFilters: [[`version:${version}`]], facets:["*", "version"], attributesToRetrieve: ["title", "version", "slug", "hierarchy"] }}
+			//searchParameters={{ facetFilters: [[`lang:${lang}`]] }}
 			transformItems={(items) => {
 				return items.map((item) => {
 					// We transform the absolute URL into a relative URL to
 					// work better on localhost, preview URLS.
 					const a = document.createElement('a');
-					a.href = item.url;
+					a.href = "/" + item.slug;
+					item.type="lvl1"
+					item.title = ""
 					const hash = a.hash === '#overview' ? '' : a.hash;
 					return {
 						...item,

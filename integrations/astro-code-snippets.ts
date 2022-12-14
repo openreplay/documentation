@@ -4,7 +4,7 @@ import type { Plugin, Transformer } from 'unified';
 import type { BuildVisitor } from 'unist-util-visit/complex-types';
 import { visit } from 'unist-util-visit';
 
-const CodeSnippetTagname = 'AutoImportedCodeSnippet';
+const CodeSnippetTagname = 'CodeSnippet';
 const LanguageGroups = {
 	code: ['astro', 'cjs', 'htm', 'html', 'js', 'jsx', 'mjs', 'svelte', 'ts', 'tsx', 'vue'],
 	data: ['env', 'json', 'yaml', 'yml'],
@@ -53,7 +53,10 @@ declare module 'mdast' {
 }
 
 export function remarkCodeSnippets(): Plugin<[], Root> {
+	console.log("remark code snippet")
 	const visitor: BuildVisitor<Root, 'code'> = (code, index, parent) => {
+		//console.log("visiting node: ")
+		//console.log(code)
 		if (index === null || parent === null) return;
 
 		// Parse optional meta information after the opening code fence,
@@ -294,11 +297,13 @@ export function astroCodeSnippets(): AstroIntegration {
 		name: '@astrojs/code-snippets',
 		hooks: {
 			'astro:config:setup': ({ injectScript, updateConfig }) => {
-				updateConfig({
+				console.log("updating configuraiton")
+			/*	updateConfig({
 					markdown: {
 						remarkPlugins: [remarkCodeSnippets()],
 					},
 				});
+				*/
 
 				// Auto-import the Aside component and attach it to the global scope
 				injectScript(

@@ -6,7 +6,9 @@ import remarkDirective from 'remark-directive';
 import { visit } from 'unist-util-visit';
 import { remove } from 'unist-util-remove';
 
-const AsideTagname = 'AutoImportedAside';
+
+export const AsideTagname = 'Aside';
+
 
 /**
  * remark plugin that converts blocks delimited with `:::` into instances of
@@ -29,13 +31,15 @@ const AsideTagname = 'AutoImportedAside';
  * </Aside>
  * ```
  */
-function remarkAsides(): unified.Plugin<[], mdast.Root> {
+export function remarkAsides(): unified.Plugin<[], mdast.Root> {
 	const variants = new Set(['note', 'tip', 'caution', 'danger']);
 
+	
 	const transformer: unified.Transformer<mdast.Root> = (tree) => {
 		visit(tree, (node) => {
 			if (node.type !== 'containerDirective') return;
 			const type = node.name;
+			console.log("type: ", type)
 			if (!variants.has(type)) return;
 
 			// remark-directive converts a container’s “label” to a paragraph in
@@ -71,11 +75,12 @@ export function astroAsides(): AstroIntegration {
 		name: '@astrojs/asides',
 		hooks: {
 			'astro:config:setup': ({ injectScript, updateConfig }) => {
-				updateConfig({
+				/*updateConfig({
 					markdown: {
 						remarkPlugins: [remarkDirective, remarkAsides()],
 					},
 				});
+				*/
 
 				// Auto-import the Aside component and attach it to the global scope
 				injectScript(

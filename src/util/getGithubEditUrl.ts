@@ -8,12 +8,12 @@ export function getGithubEditUrl(Astro: Readonly<AstroGlobal>) {
 	const isFallback = !!Astro.params.fallback;
 	const currentPage = Astro.url.pathname;
 	const lang = getLanguageFromURL(currentPage);
-	const filePath = `src/pages${currentPage.replace(/\/$/, '')}.md`;
+	const filePath = `src/pages${currentPage.replace(/\/$/, '')}.mdx`;
 	const currentFile = isFallback ? filePath.replace(`/${lang}/`, '/en/') : filePath;
 	const githubEditUrl =
 		content.githubURL && (lang === 'en' || isFallback)
 			? `${content.githubURL}${content.hasREADME ? 'README.md' : ''}`
-			: `https://github.com/withastro/docs/blob/main/${currentFile}`;
+			: `https://github.com/openreplay/documentation/blob/main/${currentFile}`;
 
 	return githubEditUrl;
 }

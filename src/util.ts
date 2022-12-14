@@ -3,6 +3,14 @@ export function getLanguageFromURL(pathname: string) {
 	return langCodeMatch ? langCodeMatch[1] : 'en';
 }
 
+export const __LATEST__ = "_latest_"
+
+export function getVersionFromURL(pathname: string) {
+	const versionCodeMatch = pathname.match(/\/v([0-9].[0-9].[0-9])\//);
+	return versionCodeMatch ? versionCodeMatch[1] : '';
+
+}
+
 /** Remove \ and / from beginning of string */
 export function removeLeadingSlash(path: string) {
 	return path.replace(/^[/\\]+/, '');

@@ -7,15 +7,18 @@ import { getGithubEditUrl } from '../util/getGithubEditUrl';
 import { getNavLinks } from '../util/getNavLinks';
 import BaseLayout from './BaseLayout.astro';
 
+import  Aside from "../components/Aside.astro";
+
+
 const { content = {} } = Astro.props;
-const headings = content.astro?.headings;
+const headings = Astro.props.headings;
 const t = useTranslations(Astro);
 const { previous, next } = await getNavLinks(Astro);
 const githubEditUrl = getGithubEditUrl(Astro);
 ---
 
 <BaseLayout {...Astro.props}>
-	<RightSidebar slot="secondary-sidebar" content={content} githubEditUrl={githubEditUrl} />
+	<RightSidebar slot="secondary-sidebar" headings={headings} content={content} githubEditUrl={githubEditUrl} />
 	<PageContent {...{content, previous, next}}>
 		{
 			headings && (
@@ -38,3 +41,22 @@ const githubEditUrl = getGithubEditUrl(Astro);
 		<slot />
 	</PageContent>
 </BaseLayout>
+<script >
+import { getLanguageFromURL, getVersionFromURL } from "~/util";
+
+//code to update the links inside the documents to make sure they link to the right
+//version and language
+	let links = document.getElementsByTagName("a")
+
+	const version = getVersionFromURL(window.location.href)
+	const lang = getLanguageFromURL(window.location.href)
+	const host = import.meta.env.PUBLIC_SITE_URL ? import.meta.env.PUBLIC_SITE_URL : ""
+
+	for(let l of links){
+		if(l.href.indexOf(host) != -1) {
+			let uri = l.href.replace(host, "")
+			uri = uri.replace(`/${lang}`, "").replace(/\/v[0-9]+\.[0-9]+\.[0-9]+\//, "")
+			l.setAttribute("href", ["", lang, "v" + version, uri].join("/").replace("//", "/"))
+		}
+	}
+</script>
