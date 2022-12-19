@@ -1,18 +1,19 @@
 ---
-const VERSIONS = [
-    {title: "1.3.6", url: "/v1.3.6"},
-    {title: "1.4.0", url: "/v1.4.0"},
-    {title: "1.5.0", url: "/v1.5.0"},
-    {title: "1.5.1", url: "/v1.5.1"},
-    {title: "1.5.2", url: "/v1.5.2"},
-    {title: "1.5.3", url: "/v1.5.3"},
-    {title: "1.5.4", url: "/v1.5.4"},
-    {title: "1.6.0", url: "/v1.6.0"},
-    {title: "1.7.0", url: "/v1.7.0"},
-    {title: "1.8.0", url: "/v1.8.0"},
-    {title: "1.8.1", url: ""}
-]
+// const VERSIONS = [
+//     {title: "1.3.6", url: "/v1.3.6"},
+//     {title: "1.4.0", url: "/v1.4.0"},
+//     {title: "1.5.0", url: "/v1.5.0"},
+//     {title: "1.5.1", url: "/v1.5.1"},
+//     {title: "1.5.2", url: "/v1.5.2"},
+//     {title: "1.5.3", url: "/v1.5.3"},
+//     {title: "1.5.4", url: "/v1.5.4"},
+//     {title: "1.6.0", url: "/v1.6.0"},
+//     {title: "1.7.0", url: "/v1.7.0"},
+//     {title: "1.8.0", url: "/v1.8.0"},
+//     {title: "1.8.1", url: ""}
+// ]
 
+import { VERSIONS } from "~/config"
 
 ---
 <div class="container">
@@ -24,22 +25,35 @@ const VERSIONS = [
 </div>
 
 <script is:inline>
+
    let currentVersion = ""
 
 if(typeof window != "undefined") {
     currentVersion = window.location.pathname.split("/")[2]
 }
 
-if(currentVersion.indexOf("v") != 0) currentVersion = "";
+if(currentVersion && currentVersion.indexOf("v") != 0) currentVersion = "";
 
 function updateLocation(evt) {
     let selectedVersion = evt.target.value
+    let versionRegExp = /v[0-9]+.[0-9]+.[0-9]+/
+
+    console.log("selected version: ", selectedVersion
+    )
 
     let pathname = window.location.pathname.replace(/\/$/, "") //remove the trailing "/" if there is any
-    if(pathname.indexOf("/v") != -1) {
-        pathname = pathname.replace(/v[0-9].[0-9].[0-9]\//, "")
-    }
+
     let pathParts = pathname.split("/")
+
+    if(pathname.match(versionRegExp)) {
+//        pathname = pathname.replace(versionRegExp, "")
+        pathParts[2] = selectedVersion.replace("/", "")
+    } else {
+        pathParts = [pathParts[0], pathParts[1], selectedVersion.replace("/", ""), ...pathParts.slice(3)]
+    }
+
+    console.log("pathname: " ,pathname
+    )
 
     //when we're visiting the root of the default version, we ignore the "index" part
     //but if we're inside a specific version coming from the default version, we need to add it
@@ -51,17 +65,23 @@ function updateLocation(evt) {
         }   
     }
 
-    let currentLang = pathParts[1]
-    pathParts = pathParts.slice(2)
 
-    pathname = pathParts.join("/")
-    let newPath = `${window.location.protocol}//${window.location.host}/${currentLang}${selectedVersion}/${pathname}`;
+    console.log("pathparts: ", pathParts)
+    let newPath = `${window.location.protocol}//${window.location.host}${pathParts.join("/")}`
+
+    // let currentLang = pathParts[1]
+    // pathParts = pathParts.slice(3)
+    // console.log("pathparts: ", pathParts)
+
+    // console.log(selectedVersion)
+    // pathname = pathParts.join("/")
+    // let newPath = `${window.location.protocol}//${window.location.host}/${currentLang}${selectedVersion}/${pathname}`;
 
     window.location.href = newPath
 }
 
 function selectCurrentVersion(dropDown) {
-    if(currentVersion != "") {
+    if(typeof currentVersion != "undefined") {
         dropDown.querySelector("option[value*='" + currentVersion + "']").setAttribute("selected", true)
     } else {
         dropDown.querySelector("option[value='']").setAttribute("selected", true)

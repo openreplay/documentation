@@ -9,7 +9,7 @@
  */
 export default [
 	{ text: 'Start Here', header: true, type: 'learn', key: 'startHere' },
-	{ text: 'Introduction', slug: '/', key: 'introduction' },
+	{ text: 'Introduction', slug: '', key: 'introduction' },
 
 	{ text: 'Deployment', header: true, type: 'learn', slug: 'install/auto', key: 'deployment' },
 	{ text: 'Deploy to AWS', slug: 'deployment/deploy-aws', key: 'deploy-aws' },

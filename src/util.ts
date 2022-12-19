@@ -6,7 +6,7 @@ export function getLanguageFromURL(pathname: string) {
 export const __LATEST__ = "_latest_"
 
 export function getVersionFromURL(pathname: string) {
-	const versionCodeMatch = pathname.match(/\/v([0-9].[0-9].[0-9])\//);
+	const versionCodeMatch = pathname.match(/\/v([0-9]+.[0-9]+.[0-9]+)/);
 	return versionCodeMatch ? versionCodeMatch[1] : '';
 
 }

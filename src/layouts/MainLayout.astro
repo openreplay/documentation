@@ -48,15 +48,23 @@ import { getLanguageFromURL, getVersionFromURL } from "~/util";
 //version and language
 	let links = document.getElementsByTagName("a")
 
-	const version = getVersionFromURL(window.location.href)
+	let version = getVersionFromURL(window.location.href)
 	const lang = getLanguageFromURL(window.location.href)
 	const host = import.meta.env.PUBLIC_SITE_URL ? import.meta.env.PUBLIC_SITE_URL : ""
+	let urlParts = ["", lang]
 
+	if(version != "") {
+		version = "v" + version
+		urlParts.push(version)
+	}
 	for(let l of links){
 		if(l.href.indexOf(host) != -1) {
 			let uri = l.href.replace(host, "")
 			uri = uri.replace(`/${lang}`, "").replace(/\/v[0-9]+\.[0-9]+\.[0-9]+\//, "")
-			l.setAttribute("href", ["", lang, "v" + version, uri].join("/").replace("//", "/"))
+			urlParts.push(uri)
+			l.setAttribute("href", urlParts.join("/").replace("//", "/"))
+			urlParts.pop()
 		}
+	
 	}
 </script>
