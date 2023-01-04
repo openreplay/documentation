@@ -8,7 +8,7 @@ OpenReplay deployment is based on [Helm Charts](https://helm.sh) which makes it 
 
 ## Prerequisites
 
-All we need is Kubernetes **v1.18+**. OpenReplay **requires** `2 vCPUs, 8 GB of RAM, 50 GB of storage` to properly run, otherwise OpenReplay backend services won't simply start. These specs are enough for a moderate volume, but if you're expecting high traffic, you should scale from here.
+All we need is Kubernetes **v1.18+** and helm **3.10+**. OpenReplay **requires** `2 vCPUs, 8 GB of RAM, 50 GB of storage` to properly run, otherwise OpenReplay backend services won't simply start. These specs are enough for a moderate volume, but if you're expecting high traffic, you should scale from here.
 
 The deployment has been tested on the below platforms:
 - Local single-node Kube cluster
