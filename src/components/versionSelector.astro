@@ -38,22 +38,15 @@ function updateLocation(evt) {
     let selectedVersion = evt.target.value
     let versionRegExp = /v[0-9]+.[0-9]+.[0-9]+/
 
-    console.log("selected version: ", selectedVersion
-    )
-
     let pathname = window.location.pathname.replace(/\/$/, "") //remove the trailing "/" if there is any
 
     let pathParts = pathname.split("/")
 
     if(pathname.match(versionRegExp)) {
-//        pathname = pathname.replace(versionRegExp, "")
         pathParts[2] = selectedVersion.replace("/", "")
     } else {
         pathParts = [pathParts[0], pathParts[1], selectedVersion.replace("/", ""), ...pathParts.slice(3)]
     }
-
-    console.log("pathname: " ,pathname
-    )
 
     //when we're visiting the root of the default version, we ignore the "index" part
     //but if we're inside a specific version coming from the default version, we need to add it
@@ -65,23 +58,12 @@ function updateLocation(evt) {
         }   
     }
 
-
-    console.log("pathparts: ", pathParts)
     let newPath = `${window.location.protocol}//${window.location.host}${pathParts.join("/")}`
-
-    // let currentLang = pathParts[1]
-    // pathParts = pathParts.slice(3)
-    // console.log("pathparts: ", pathParts)
-
-    // console.log(selectedVersion)
-    // pathname = pathParts.join("/")
-    // let newPath = `${window.location.protocol}//${window.location.host}/${currentLang}${selectedVersion}/${pathname}`;
-
     window.location.href = newPath
 }
 
 function selectCurrentVersion(dropDown) {
-    if(typeof currentVersion != "undefined") {
+    if(typeof currentVersion != "undefined" && currentVersion != "") {
         dropDown.querySelector("option[value*='" + currentVersion + "']").setAttribute("selected", true)
     } else {
         dropDown.querySelector("option[value='']").setAttribute("selected", true)
