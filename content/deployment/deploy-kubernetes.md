@@ -8,7 +8,13 @@ OpenReplay deployment is based on [Helm Charts](https://helm.sh) which makes it 
 
 ## Prerequisites
 
-All we need is Kubernetes **v1.18+** and helm **3.10+**. OpenReplay **requires** `2 vCPUs, 8 GB of RAM, 50 GB of storage` to properly run, otherwise OpenReplay backend services won't simply start. These specs are enough for a moderate volume, but if you're expecting high traffic, you should scale from here.
+All we need is 
+
+ - Kubernetes **v1.18+**
+ - helm **3.10+**
+ - **RWX PVC** (for shared components, if cluster has more than one node). Make sure, you update the PVC name in vars.yaml for **sink,storage,chalice** components.
+
+OpenReplay **requires** `2 vCPUs, 8 GB of RAM, 50 GB of storage` to properly run, otherwise OpenReplay backend services won't simply start. These specs are enough for a moderate volume, but if you're expecting high traffic, you should scale from here.
 
 The deployment has been tested on the below platforms:
 - Local single-node Kube cluster
@@ -25,7 +31,11 @@ Connect to your cluster and clone the OpenReplay repository:
 git clone https://github.com/openreplay/openreplay.git
 ```
 
-Then, open the `vars.yaml` file with the command `vi openreplay/scripts/helmcharts/vars.yaml` then substitute:
+> If there are multiple nodes in the Kubernetes cluster,
+you'll have to create a RWX(for example efs, in case of AWS) PVC for the containers to share data.
+If it's the single node, we'll use hostVolume, which is default for community installation.
+
+Then, open the `vars.yaml` file with the command `vim openreplay/scripts/helmcharts/vars.yaml` then substitute:
 - `domainName`: this is where OpenReplay will be accessible (i.e. openreplay.mycompany.com)
 - `postgresqlPassword`: Postgres password (set it or generate a random one)
 - `accessKey`: required for the object storage service (use a randomly generated string)
