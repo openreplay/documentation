@@ -18,13 +18,13 @@ export default {
 	'rightSidebar.onThisPage': 'On this page',
 	'rightSidebar.overview': 'Overview',
 	'rightSidebar.community': 'Community',
-	'rightSidebar.joinDiscord': 'Join us on Discord',
-	'rightSidebar.readBlog': 'Read our blog posts',
-	'rightSidebar.openCollective': 'Our Open Collective',
+	'rightSidebar.joinSlack': 'Join Slack Community',
+	'rightSidebar.readBlog': 'Blog',
+	//'rightSidebar.openCollective': 'Our Open Collective',
 	'rightSidebar.contribute': 'Contribute',
 	'rightSidebar.editPage': 'Edit this page',
 	'rightSidebar.translatePage': 'Translate this page',
-	'rightSidebar.github': 'Astro Docs on GitHub',
+	'rightSidebar.github': 'Browse GitHub',
 	// Footer
 	'footer.privacyPolicy': 'Privacy Policy',
 	// `<ThemeToggleButton>` acessibility labels

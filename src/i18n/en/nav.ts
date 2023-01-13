@@ -8,10 +8,10 @@
  * - Link entries MUST include `slug` (which excludes the language code)
  */
 export default [
-	{ text: 'Start Here', header: true, type: 'learn', key: 'startHere' },
+	{ text: 'Start Here', header: true, type: 'learn', key: 'startHere', icon: 'start' },
 	{ text: 'Introduction', slug: 'getting-started', key: 'introduction' },
 
-	{ text: 'Deployment', header: true, type: 'learn', slug: 'install/auto', key: 'deployment' },
+	{ text: 'Deployment', header: true, type: 'learn', slug: 'install/auto', key: 'deployment', icon: 'deployment'},
 	{ text: 'Deploy to AWS', slug: 'deployment/deploy-aws', key: 'deploy-aws' },
 	{ text: 'Deploy to Azure', slug: 'deployment/deploy-azure', key: 'deploy-aws' },
 	{ text: 'Deploy to GCP', slug: 'deployment/deploy-gcp', key: 'deploy-aws' },
@@ -24,7 +24,7 @@ export default [
 	{ text: 'OpenReplay Administration', slug: 'deployment/openreplay-admin', key: 'deploy-aws' },
 	{ text: 'Upgrade Deployment', slug: 'deployment/upgrade', key: 'migrate' },
 
-	{ text: 'Installation', header: true, type: 'learn', key: 'installation' },
+	{ text: 'Installation', header: true, type: 'learn', key: 'installation', icon: 'installation' },
 	{ text: 'Custom Events', slug: 'installation/custom-events', key: 'blog-tutorial' },
 	{ text: 'Error reporting', slug: 'installation/error-reporting', key: 'blog-installation' },
 	{ text: 'Identify a User', slug: 'installation/identify-user', key: 'blog-installation' },
@@ -35,7 +35,7 @@ export default [
 	{ text: 'Setup OpenReplay', slug: 'installation/setup-or', key: 'blog-installation' },
 	{ text: 'Upload Source maps', slug: 'installation/upload-sourcemaps', key: 'blog-installation' },
 
-	{ text: 'Configuration', header: true, type: 'learn', key: 'configuration' },
+	{ text: 'Configuration', header: true, type: 'learn', key: 'configuration', icon: 'configure' },
 	{ text: 'Cleanup Storage', slug: 'configuration/cleanup-storage', key: 'concepts/why-astro' },
 	{ text: 'Configure SMTP', slug: 'configuration/configure-smtp', key: 'concepts/mpa-vs-spa' },
 	{ text: 'External Database (Postgres)', slug: 'configuration/external-db', key: 'concepts/islands' },
@@ -45,7 +45,7 @@ export default [
 	{ text: 'Single Sign-On (SSO)', slug: 'configuration/sso', key: 'concepts/islands' },
 
 	//tutorials
-	{ text: 'Tutorials', header: true, type: 'learn', key: 'tutorials' },
+	{ text: 'Tutorials', header: true, type: 'learn', key: 'tutorials', icon: 'tutorials' },
 	//about plugins
 	{ text: 'Plugins: Assist', slug: 'tutorials/assist', key: 'core-concepts/layouts' },
 	{ text: 'Plugins: Fetch', slug: 'tutorials/fetch', key: 'tutorials/layouts' },
@@ -75,7 +75,7 @@ export default [
 	{ text: 'Creating your first heuristic', slug: 'tutorials/custom-heuristics', key: 'tutorials/troubleshooting' },
 
 	//plugins
-	{ text: 'Plugins', header:true, type: 'learn', slug: 'guides/troubleshooting', key: 'guides/troubleshooting' },
+	{ text: 'Plugins', header:true, type: 'learn', slug: 'guides/troubleshooting', key: 'guides/troubleshooting', icon: 'plugins' },
 	{ text: 'Assist', slug: 'plugins/assist', key: 'plugins/troubleshooting' },
 	{ text: 'Axios', slug: 'plugins/axios', key: 'plugins/troubleshooting' },
 	{ text: 'Fetch', slug: 'plugins/fetch', key: 'plugins/troubleshooting' },
@@ -90,7 +90,7 @@ export default [
 
 
 	//API
-	{ text: 'API (BETA)', header:true,type: 'learn', slug: 'guides/troubleshooting', key: 'guides/troubleshooting' },
+	{ text: 'API (BETA)', header:true,type: 'learn', slug: 'guides/troubleshooting', key: 'guides/troubleshooting', icon: 'api' },
 	{ text: 'Assist', slug: 'api/assist', key: 'api/troubleshooting' },
 	{ text: 'Events', slug: 'api/events', key: 'api/troubleshooting' },
 	{ text: 'Jobs', slug: 'api/jobs', key: 'api/troubleshooting' },
@@ -99,7 +99,7 @@ export default [
 	{ text: 'Users', slug: 'api/users', key: 'api/troubleshooting' },
 
 	//integrations
-	{ text: 'Integrations', header:true,type: 'learn', slug: 'guides/troubleshooting', key: 'guides/troubleshooting' },
+	{ text: 'Integrations', header:true,type: 'learn', slug: 'guides/troubleshooting', key: 'guides/troubleshooting', icon: 'integration' },
 	{ text: 'Bugsnag', slug: 'integrations/bugsnag', key: 'integrations/troubleshooting' },
 	{ text: 'CloudWatch', slug: 'integrations/cloudwatch', key: 'integrations/troubleshooting' },
 	{ text: 'Datadog', slug: 'integrations/datadog', key: 'integrations/troubleshooting' },
@@ -116,7 +116,7 @@ export default [
 	{ text: 'SumoLogic', slug: 'integrations/sumo', key: 'integrations/troubleshooting' },
 
 	//troubleshooting
-	{ text: 'Troubleshooting', header:true,type: 'learn', slug: 'guides/troubleshooting', key: 'guides/troubleshooting' },
+	{ text: 'Troubleshooting', header:true,type: 'learn', slug: 'guides/troubleshooting', key: 'guides/troubleshooting', icon: 'troubleshoot' },
 	{ text: 'Clear Cache', slug: 'troubleshooting/cache', key: 'troubleshooting/' },
 	{ text: 'Content Security Policy (CSP)', slug: 'troubleshooting/csp', key: 'troubleshooting/' },
 	{ text: 'JS Errors', slug: 'troubleshooting/js-errors', key: 'troubleshooting/' },
@@ -126,7 +126,8 @@ export default [
 	{ text: 'Supported Browsers', slug: 'troubleshooting/supported-browsers', key: 'troubleshooting/' },
 
 	// structure
-	{ text: 'Structure', header:true,type: 'learn', slug: 'structure/troubleshooting', key: 'structure/troubleshooting' },
+	{ text: 'Structure', header:true,type: 'learn', slug: 'structure/troubleshooting', key: 'structure/troubleshooting', icon: 'structure' },
 	{ text: 'Exported Data', slug: 'structure/exported-data', key: 'structure/troubleshooting' },
+	
 	
 ] as const;
