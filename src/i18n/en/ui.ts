@@ -2,7 +2,7 @@ export default {
 	'a11y.skipLink': 'Skip to Content',
 	'navbar.a11yTitle': 'Top',
 	// Site settings
-	'site.title': 'Astro Documentation',
+	'site.title': 'OpenReplay Documentation',
 	'site.description': 'Build faster websites with less client-side Javascript.',
 	'site.og.imageSrc': '/default-og-image.png?v=1',
 	'site.og.imageAlt':
@@ -31,8 +31,8 @@ export default {
 	'themeToggle.useLight': 'Use light theme',
 	'themeToggle.useDark': 'Use dark theme',
 	// Used in previous/next page links at the bottom of pages
-	'articleNav.nextPage': 'Next Page',
-	'articleNav.prevPage': 'Back',
+	'articleNav.nextPage': 'Next',
+	'articleNav.prevPage': 'Previous',
 	// Used in `<Since>`: Added in: v0.24.0 [NEW]
 	'since.addedIn': 'Added in:',
 	'since.new': 'New',

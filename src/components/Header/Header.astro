@@ -18,33 +18,38 @@ const t = useTranslations(Astro);
 
 <header>
 	<SkipToContent />
-	<nav class="nav-wrapper" aria-label={t('navbar.a11yTitle')}>
-		<div dir="ltr" lang="en" class="logo flex">
-			<ul>
+	<nav class="nav-wrapper flex w-full max-w-screen-2xl mx-auto " aria-label={t('navbar.a11yTitle')}>
+		<div dir="ltr" lang="en" class="logo flex justify-start w-4/12">
+			<ul class="w-fit">
 				<li>
-					<a class="astro" href="https://www.openreplay.com/">
+					<a class="astro" href={`/${lang || 'en'}/getting-started/`}>
 						<ORLogo />
 						<span class="sr-only">OpenReplay</span>
-						
 					</a>
 				</li>
-				<li>
-					<a class="docs no-underline" href={`/${lang || 'en'}/getting-started/`}>
-						<span class="sr-only">Docs</span>
-						DOCS
-					</a>
-					<VersionSelector />
-				</li>
+				<li> <VersionSelector /></li>
 			</ul>
 		</div>
+
+		<div class="mx-auto w-7/12">
 		<Search {lang} labels={docsearchStrings} />
-		<ThemeToggleButton
-			client:visible
-			labels={{ useLight: t('themeToggle.useLight'), useDark: t('themeToggle.useDark') }}
-			isInsideHeader={true}
-		/>
-		{lang && <LanguageSelect lang={lang} client:idle />}
-		<SidebarToggle client:idle />
+		</div>
+		
+		<div class="flex justify-end nav-theme-toggle w-4/12 gap-1">
+			<div>
+				{lang && <LanguageSelect lang={lang} client:idle />}
+			</div>
+
+			<div>
+				<ThemeToggleButton
+				client:visible
+				labels={{ useLight: t('themeToggle.useLight'), useDark: t('themeToggle.useDark') }}
+				isInsideHeader={true}
+				/>
+			</div>
+			<SidebarToggle client:idle />
+		</div>
+
 	</nav>
 </header>
 
@@ -71,26 +76,20 @@ const t = useTranslations(Astro);
 	}
 
 	.nav-wrapper {
-		display: flex;
 		align-items: center;
-		justify-content: center;
+		justify-content: space-between;
 		gap: 0.75rem;
-		width: 100%;
-		padding-inline: var(--min-spacing-inline);
 	}
 
 	/* If the device is likely to show a scrollbar gutter, reserve space for it */
 	@media (hover: hover) {
-		.nav-wrapper {
-			max-width: calc(100vw - 1.1rem);
-		}
+
 	}
 
 	.logo {
 		display: flex;
 		justify-content: flex-start;
 		font-size: 1rem;
-		flex-grow: 1;
 		flex-shrink: 0;
 		font-weight: 600;
 		line-height: 1;

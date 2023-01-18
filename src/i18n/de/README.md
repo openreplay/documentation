@@ -1,6 +1,6 @@
 # Anleitung für deutsche Übersetzungen
 
-Hallo und herzlich willkommen! Wir freuen uns sehr, dass du dich dafür interessierst, bei der deutschen Übersetzung der Astro-Dokumentation mitzuwirken. 😊🚀
+Hallo und herzlich willkommen! Wir freuen uns sehr, dass du dich dafür interessierst, bei der deutschen Übersetzung der Astro-Dokumentation mitzuwirken. 😊 ▶️
 
 
 ## Zielsetzung dieser Anleitung

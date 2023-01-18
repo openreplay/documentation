@@ -14,22 +14,23 @@
 }
 
 /* Webkit */
-/* Make scrollbars transparent except for main page scrollbar. */
+/* Make scrollbars transparent except for main page scrollbar.
 ::-webkit-scrollbar,
 ::-webkit-scrollbar-track {
 	background-color: transparent;
-}
-body::-webkit-scrollbar,
+}*/
+
+/* body::-webkit-scrollbar,
 body::-webkit-scrollbar-track {
-	background: var(--theme-bg-gradient);
-}
+	background: transparent;
+} */
 
 ::-webkit-scrollbar-thumb {
 	background-color: rgba(151,151,151,.2);
 	border: 4px solid transparent;
 	background-clip: content-box;
 	border-radius: 10px;
-	visibility: hidden;
+	visibility: visible;
 }
 
 ::-webkit-scrollbar-thumb:active{
@@ -54,33 +55,23 @@ html {
 	Use a pseudo-element to add a gradient background that covers the entire viewport.
 	Using a regular fixed background does not work properly on mobile browsers like iOS Safari.
 */
-body::before {
-	content: '';
-	display: block;
-	position: fixed;
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	z-index: -999;
-	/*background: var(--theme-bg-gradient);*/
-}
+
 
 body {
 	color: var(--theme-text);
-	display: flex;
-	flex-direction: column;
 	min-height: 100vh;
 	font-family: var(--font-body);
 	font-size: 16px;
 	line-height: 1.5;
-	
+	overflow-x: hidden;
 }
 
 nav ul {
 	list-style: none;
 	padding: 0;
 }
+
+
 
 .content > section > * + *,
 .content > section > blockquote > * + *,
@@ -114,18 +105,13 @@ nav ul {
 :is(h1, h2, h3, h4, h5, h6),
 .content > section > .heading-wrapper {
 	margin-bottom: 1rem;
-	font-weight: bold;
+	font-weight: 600;
 	line-height: 1.3;
 }
 
 :is(h1, h2, h3, h4, h5, h6) + *,
 .content > section > .heading-wrapper + * {
 	margin-top: 0;
-}
-
-h1,
-h2 {
-	max-width: 40ch;
 }
 
 :is(h2):not(:first-child),
@@ -157,12 +143,18 @@ h2 {
 
 h1 {
 	font-size: 2.5rem; /* 40px */
-	font-weight: 700;
+	font-weight: 600;
+}
+
+.com-contribute ul, .com-contribute > div, .com-contribute li {
+	display: inline-block;
+	width: auto;
+	border-color: rgba(123,123,123,.2);;
 }
 
 @media (min-width: 37.75em) {
 	h1 {
-		font-size: 2rem; /* 48px */
+		font-size: 2rem /* 48px */
 	}
 }
 
@@ -246,7 +238,7 @@ p,
 
 p,
 .content ul {
-	color: var(--theme-text-light);
+	color: var(--theme-contrast);
 }
 
 small,
@@ -287,7 +279,7 @@ article > section nav {
 }
 
 article > section ::marker {
-	font-weight: bold;
+	font-weight: 600;
 	color: var(--theme-text-light);
 }
 
@@ -321,16 +313,21 @@ strong {
 /* Supporting Content */
 code {
 	--border-radius: 3px;
-	--padding-block: 0.2rem;
+	--padding-block: 0.05rem;
 	--padding-inline: 0.3rem;
 	font-family: var(--font-mono);
 	font-size: 0.85em;
 	color: var(--theme-code-inline-text);
-	background-color: var(--theme-body-bg);
 	padding: var(--padding-block) var(--padding-inline);
 	margin: calc(var(--padding-block) * -1) 0;
-	border-radius: var(--border-radius);
 	word-break: break-word;
+	border-radius: var(--border-radius);
+	
+}
+
+p code, li code{
+	background-color: var(--theme-body-bg);
+	border: thin solid rgba(123,123,123,.2);
 }
 
 .astro-code code{
@@ -367,8 +364,9 @@ pre {
 	overflow-y: hidden;
 	overflow-x: auto;
 	-webkit-text-size-adjust: none;
-	background-color: #000 !important;
 }
+
+
 
 .content kbd {
 	font-family: var(--font-body);
@@ -383,11 +381,12 @@ pre {
 
 .theme-dark .content kbd {
 	border-color: var(--theme-divider);
-	background-color: var(--theme-divider);
+	background-color: var(--theme-body-bg);
 }
 
 thead {
 	font-family: var(--font-body);
+	border-bottom: thin solid rgba(123,123,123,.2);
 }
 
 table {
@@ -400,10 +399,10 @@ table {
 
 /* Zebra striping */
 tbody tr:nth-of-type(odd) {
-	background: var(--theme-divider);
+	background: var(--theme-body-bg);
 }
 th {
-	font-weight: bold;
+	font-weight: 600;
 }
 td,
 th {
@@ -457,7 +456,7 @@ video {
 .content details summary {
 	margin: calc(-1 * var(--details-padding-block)) calc(-1 * var(--details-padding-inline));
 	padding: var(--details-padding-block) var(--details-padding-inline);
-	font-weight: bold;
+	font-weight: 600;
 	cursor: pointer;
 }
 
@@ -475,11 +474,6 @@ video {
 	border: var(--glow-border);
 	margin-left: 0;
 	margin-right: 0;
-}
-
-.flex {
-	display: flex;
-	align-items: center;
 }
 
 button {
@@ -512,6 +506,10 @@ h2.heading {
 	color: var(--theme-readable-grey);
 	text-decoration: none;
 	unicode-bidi: plaintext;
+}
+
+.header-link a:hover{
+	color: var(--theme-contrast);
 }
 
 .nav-group-title .icon-text-combo{
@@ -617,24 +615,17 @@ h2.heading {
 	white-space: normal;
 }
 
-.language-select{
-	display: none;
-}
 
 .theme-dark #logos .text{
 	color: #ffffff;
 	fill: #ffffff;
 }
 
-.logo .docs{
+.logo .docs, .theme-dark .logo .docs{
+	color: var(--theme-readable-grey); 
 	text-decoration: none;
-	color: #555;
-	font-size: 14px;
-    font-weight: 700;
-}
+	font-weight: 600;
 
-.theme-dark .logo .docs{
-	color: #999 ; 
 }
 
 .TabGroup{

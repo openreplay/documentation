@@ -8,7 +8,7 @@
  * - Link entries MUST include `slug` (which excludes the language code)
  */
 export default [
-	{ text: 'Start Here', header: true, type: 'learn', key: 'startHere', icon: 'start' },
+	{ text: 'Getting started', header: true, type: 'learn', key: 'startHere', icon: 'start' },
 	{ text: 'Introduction', slug: 'getting-started', key: 'introduction' },
 
 	{ text: 'Deployment', header: true, type: 'learn', slug: 'install/auto', key: 'deployment', icon: 'deployment'},
