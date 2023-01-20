@@ -65,7 +65,7 @@ export default defineConfig({
 
 
   
-  integrations: [preact({
+  integrations: [tailwind(), preact({
     compat: true
   }), sitemap(), mdx({
     remarkPlugins: [addDefaultLayout, remarkGFM, [remarkSmarty, {
