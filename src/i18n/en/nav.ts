@@ -10,6 +10,7 @@
 export default [
 	{ text: 'Getting started', header: true, type: 'learn', key: 'startHere', icon: 'start' },
 	{ text: 'Introduction', slug: 'getting-started', key: 'introduction' },
+	{ text: 'Layouts', slug: 'layout-elements', key: 'layouts' },
 
 	{ text: 'Deployment', header: true, type: 'learn', slug: 'install/auto', key: 'deployment', icon: 'deployment'},
 	{ text: 'Deploy to AWS', slug: 'deployment/deploy-aws', key: 'deploy-aws' },

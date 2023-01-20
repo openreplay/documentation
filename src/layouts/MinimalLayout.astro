@@ -1,0 +1,41 @@
+import PageContent from '../components/PageContent/PageContent.astro';
+import RightSidebar from '../components/RightSidebar/RightSidebar.astro';
+import TableOfContents from '../components/RightSidebar/TableOfContents';
+import { useTranslations } from '../i18n/util';
+import { getGithubEditUrl } from '../util/getGithubEditUrl';
+import { getNavLinks } from '../util/getNavLinks';
+import BaseLayout from './BaseLayout.astro';
+
+<MinimalLayout>
+
+
+
+</MinimalLayout>
+
+<script >
+    import { getLanguageFromURL, getVersionFromURL } from "~/util";
+    
+    //code to update the links inside the documents to make sure they link to the right
+    //version and language
+        let links = document.getElementsByTagName("a")
+    
+        let version = getVersionFromURL(window.location.href)
+        const lang = getLanguageFromURL(window.location.href)
+        const host = import.meta.env.PUBLIC_SITE_URL ? import.meta.env.PUBLIC_SITE_URL : ""
+        let urlParts = ["", lang]
+    
+        if(version != "") {
+            version = "v" + version
+            urlParts.push(version)
+        }
+        for(let l of links){
+            if(l.href.indexOf(host) != -1) {
+                let uri = l.href.replace(host, "")
+                uri = uri.replace(`/${lang}`, "").replace(/\/v[0-9]+\.[0-9]+\.[0-9]+\//, "")
+                urlParts.push(uri)
+                l.setAttribute("href", urlParts.join("/").replace("//", "/"))
+                urlParts.pop()
+            }
+        
+        }
+    </script>

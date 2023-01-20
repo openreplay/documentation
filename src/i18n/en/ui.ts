@@ -27,6 +27,7 @@ export default {
 	'rightSidebar.github': 'Browse GitHub',
 	// Footer
 	'footer.privacyPolicy': 'Privacy Policy',
+	'footer.terms': 'Terms',
 	// `<ThemeToggleButton>` acessibility labels
 	'themeToggle.useLight': 'Use light theme',
 	'themeToggle.useDark': 'Use dark theme',
