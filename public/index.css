@@ -10,26 +10,34 @@
 
 /* Firefox */
 * {
-	scrollbar-color: var(--theme-dim-light) transparent;
+	scrollbar-color: rgba(151,151,151,.2) transparent;
 }
 
 /* Webkit */
-/* Make scrollbars transparent except for main page scrollbar. */
+/* Make scrollbars transparent except for main page scrollbar.
 ::-webkit-scrollbar,
 ::-webkit-scrollbar-track {
 	background-color: transparent;
-}
-body::-webkit-scrollbar,
+}*/
+
+/* body::-webkit-scrollbar,
 body::-webkit-scrollbar-track {
-	background: var(--theme-bg-gradient);
-}
+	background: transparent;
+} */
 
 ::-webkit-scrollbar-thumb {
-	background-color: var(--theme-dim-light);
+	background-color: rgba(151,151,151,.2);
 	border: 4px solid transparent;
 	background-clip: content-box;
 	border-radius: 10px;
+	visibility: visible;
 }
+
+::-webkit-scrollbar-thumb:active{
+	visibility: visible;
+}
+
+
 
 @media (prefers-reduced-motion: no-preference) {
 	:root {
@@ -42,29 +50,17 @@ body::-webkit-scrollbar-track {
 	always has a background color matching our theme.
 */
 html {
-	background: var(--theme-bg-gradient-bottom);
+	background: var(--theme-body-bg);
 }
 
 /*
 	Use a pseudo-element to add a gradient background that covers the entire viewport.
 	Using a regular fixed background does not work properly on mobile browsers like iOS Safari.
 */
-body::before {
-	content: '';
-	display: block;
-	position: fixed;
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	z-index: -999;
-	background: var(--theme-bg-gradient);
-}
+
 
 body {
 	color: var(--theme-text);
-	display: flex;
-	flex-direction: column;
 	min-height: 100vh;
 	font-family: var(--font-body);
 	font-size: 16px;
@@ -75,6 +71,8 @@ nav ul {
 	list-style: none;
 	padding: 0;
 }
+
+
 
 .content > section > * + *,
 .content > section > blockquote > * + *,
@@ -104,11 +102,20 @@ nav ul {
 	padding-inline-start: 1.5em;
 }
 
+.bg-theme-contrast{
+	background-color: var(--theme-contrast);
+}
+
+.bg-theme-default{
+	background-color: var(--content-bg);
+}
+
+
 /* Typography */
 :is(h1, h2, h3, h4, h5, h6),
 .content > section > .heading-wrapper {
 	margin-bottom: 1rem;
-	font-weight: bold;
+	font-weight: 600;
 	line-height: 1.3;
 }
 
@@ -117,14 +124,9 @@ nav ul {
 	margin-top: 0;
 }
 
-h1,
-h2 {
-	max-width: 40ch;
-}
-
 :is(h2):not(:first-child),
 .heading-wrapper:not(:first-child):is(.level-h2) {
-	margin-top: 4rem;
+	margin-top: 2.5rem;
 }
 
 :is(h3, h4):not(:first-child),
@@ -143,7 +145,7 @@ h2 {
 }
 
 :is(h1, h2, h3, h4, h5) code {
-	--border-radius: 4px;
+	--border-radius: 0.375rem;
 	--padding-block: 0.1rem;
 	--padding-inline: 0.4rem;
 	font-weight: 400;
@@ -151,25 +153,46 @@ h2 {
 
 h1 {
 	font-size: 2.5rem; /* 40px */
-	font-weight: 900;
+	font-weight: 600;
 }
+
+.com-contribute{
+	left: .5rem;
+	border-top: var(--theme-border-color);
+}
+
+.com-contribute ul, .com-contribute > div, .com-contribute li {
+	display: inline-block;
+	width: fit-content;
+}
+
+.DocSearch-Commands-Key, .DocSearch-Modal{
+	box-shadow:none !important;
+	background:var(--theme-body-bg) !important;
+	border-color: transparent !important;
+}
+
+.DocSearch-Form, .DocSearch-Modal {
+	border: var(--theme-border);
+}
+
 
 @media (min-width: 37.75em) {
 	h1 {
-		font-size: 3rem; /* 48px */
+		font-size: 2rem /* 48px */
 	}
 }
 
 h2 {
-	font-size: 1.875rem; /* 30px */
+	font-size: 1.5rem; /* 30px */
 }
 
 h3 {
-	font-size: 1.5rem; /* 24px */
+	font-size: 1.3rem; /* 24px */
 }
 
 h4 {
-	font-size: 1.25rem; /* 20px */
+	font-size: 1.15rem; /* 20px */
 }
 
 h5 {
@@ -240,7 +263,7 @@ p,
 
 p,
 .content ul {
-	color: var(--theme-text-light);
+	color: var(--theme-contrast);
 }
 
 small,
@@ -249,10 +272,14 @@ small,
 }
 
 a {
-	color: var(--theme-accent-secondary);
+	color: var(--theme-accent-full);
 	text-underline-offset: 0.08em;
 	align-items: center;
 	gap: 0.5rem;
+}
+
+.theme-dark a{
+	color: var(--theme-accent-full);
 }
 
 article > section :is(ul, ol) > * + * {
@@ -277,7 +304,7 @@ article > section nav {
 }
 
 article > section ::marker {
-	font-weight: bold;
+	font-weight: 600;
 	color: var(--theme-text-light);
 }
 
@@ -310,17 +337,53 @@ strong {
 
 /* Supporting Content */
 code {
-	--border-radius: 3px;
-	--padding-block: 0.2rem;
+	--border-radius: 4px;
+	--padding-block: 0.05rem;
 	--padding-inline: 0.3rem;
 	font-family: var(--font-mono);
 	font-size: 0.85em;
 	color: var(--theme-code-inline-text);
-	background-color: var(--theme-code-inline-bg);
 	padding: var(--padding-block) var(--padding-inline);
 	margin: calc(var(--padding-block) * -1) 0;
-	border-radius: var(--border-radius);
 	word-break: break-word;
+	border-radius: var(--border-radius);
+	
+}
+
+p code, li code{
+	background-color: var(--theme-body-bg);
+	border: var(--theme-border);
+}
+
+ol{
+	counter-reset: item;
+	padding-left: 0 !important;
+}
+
+ol li{
+	display: block;
+	position: relative;
+	padding-left: 2rem;
+}
+
+ol li:before { 
+	position: absolute;
+    left: 0;
+	content: counter(item) " ";
+    counter-increment: item;
+    width: 1.5rem;
+    height: 1.5rem;
+	background-color: var(--theme-accent-opacity);
+    border-radius: 100%;
+    text-align: center;
+    vertical-align: bottom;
+    margin-right: 0.5rem;
+	display: inline-block;
+	font-size: 0.95rem;
+}
+
+.astro-code code{
+	background: transparent;
 }
 
 /*RTL Fix Code dir for inline code*/
@@ -339,6 +402,12 @@ code {
 	transform: rotateY(180deg);
 }
 
+
+table{
+	margin-left: calc(var(--padding-inline) * -1);
+	margin-right: calc(var(--padding-inline) * -1);
+}
+
 table,
 pre {
 	position: relative;
@@ -346,15 +415,19 @@ pre {
 	--padding-inline: 2rem;
 	padding: var(--padding-block) var(--padding-inline);
 	padding-inline-end: calc(var(--padding-inline) * 2);
-	margin-left: calc(var(--padding-inline) * -1);
-	margin-right: calc(var(--padding-inline) * -1);
 	font-family: var(--font-mono);
-
 	font-size: 0.85rem;
 	overflow-y: hidden;
 	overflow-x: auto;
 	-webkit-text-size-adjust: none;
 }
+
+pre{
+	--border-radius: 0.375rem;
+	border-radius: var(--border-radius);
+}
+
+
 
 .content kbd {
 	font-family: var(--font-body);
@@ -369,11 +442,12 @@ pre {
 
 .theme-dark .content kbd {
 	border-color: var(--theme-divider);
-	background-color: var(--theme-divider);
+	background-color: var(--theme-body-bg);
 }
 
 thead {
 	font-family: var(--font-body);
+	border-bottom: thin solid var(--theme-border-color);
 }
 
 table {
@@ -384,12 +458,16 @@ table {
 	line-height: 1.8;
 }
 
+.theme-border{
+	border: var(--theme-border);
+}
+
 /* Zebra striping */
 tbody tr:nth-of-type(odd) {
-	background: var(--theme-divider);
+	background: var(--theme-body-bg);
 }
 th {
-	font-weight: bold;
+	font-weight: 600;
 }
 td,
 th {
@@ -398,18 +476,19 @@ th {
 }
 
 blockquote code {
-	background-color: var(--theme-bg);
+	background-color: var(--theme-body-bg);
 }
 
 blockquote {
 	margin: 2rem 0 2rem 0;
 	padding: 1.25em 1.5rem;
-	border-inline-start: 8px solid var(--theme-divider);
-	background-color: var(--theme-bg-offset);
+	border-inline-start: 8px solid var(--theme-accent-full);
+	background-color: var(--theme-accent-opacity);
 	border-radius: 0 0.25rem 0.25rem 0;
 	line-height: 1.7;
 	/* Indicates the blockquote boundaries for forced colors users, transparent is changed to a solid color */
 	outline: 1px solid transparent;
+	border-radius: .25rem;
 }
 
 img,
@@ -442,7 +521,7 @@ video {
 .content details summary {
 	margin: calc(-1 * var(--details-padding-block)) calc(-1 * var(--details-padding-inline));
 	padding: var(--details-padding-block) var(--details-padding-inline);
-	font-weight: bold;
+	font-weight: 600;
 	cursor: pointer;
 }
 
@@ -462,11 +541,6 @@ video {
 	margin-right: 0;
 }
 
-.flex {
-	display: flex;
-	align-items: center;
-}
-
 button {
 	border: 0;
 	font-size: 1rem;
@@ -474,8 +548,9 @@ button {
 }
 
 h2.heading {
-	font-size: 1em;
+	font-size: var(--theme-text-sm);
 	font-weight: 600;
+	text-transform: uppercase;
 	margin-bottom: 0.5rem;
 	margin-top: 1.5rem;
 }
@@ -490,11 +565,32 @@ h2.heading {
 	gap: 0.5em;
 	width: 100%;
 	font: inherit;
+	font-size: var(--theme-text-sm);
 	padding: 0.4rem 0;
 	line-height: 1.3;
-	color: var(--theme-text-lighter);
+	color: var(--theme-readable-grey);
 	text-decoration: none;
 	unicode-bidi: plaintext;
+}
+
+.header-link a:hover{
+	color: var(--theme-contrast);
+}
+
+.com-contribute .header-link{
+	padding-inline-start: .5rem;
+	padding-inline-end: .5rem;
+	font-size: var(--theme-text-xs);
+}
+
+.nav-group-title .icon-text-combo{
+	display: flex;
+	align-items: center;
+	gap: .3rem;
+}
+
+a {
+	transform: translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
 @media (min-width: 50em) {
@@ -509,9 +605,12 @@ h2.heading {
 	border-inline-start-color: var(--theme-accent-secondary);
 }
 
-.header-link:hover a,
+.header-link:hover a:hover{
+	text-decoration: underline;
+}
+
 .header-link a:focus {
-	color: var(--theme-text);
+	color: var(--theme-accent-full);
 	text-decoration: underline;
 }
 .header-link svg {
@@ -530,24 +629,30 @@ h2.heading {
 }
 .header-link.depth-4 {
 	padding-inline-start: 3rem;
+	font-size: var(--theme-text-xs);
+}
+.header-link.depth-3 a, .header-link.depth-4 a{
+	font-size: var(--theme-text-xs);
 }
 
 /* Apply different TOC styling for wide viewports showing the right sidebar */
 @media (min-width: 72em) {
 	h2.heading {
-		padding-inline-start: calc(1rem + 4px);
+		padding-inline-start: 1rem;
 	}
 
 	.header-link {
-		border-inline-start: 4px solid var(--theme-divider);
+		width: 200px;
+		border-radius: 4px;
 	}
 }
 
 /* Highlight TOC header link matching the current scroll position */
 .current-header-link {
-	background-color: var(--theme-bg-accent);
 	/* Indicates the current heading for forced colors users in older browsers */
 	outline: 1px solid transparent;
+	font-weight: 600;
+	color: var(--theme-contrast);
 }
 
 @media (forced-colors: active) {
@@ -557,7 +662,7 @@ h2.heading {
 }
 
 .current-header-link a {
-	color: var(--theme-text);
+	color: var(--theme-accent-full);
 }
 
 /* Screenreader Only Text */
@@ -583,6 +688,23 @@ h2.heading {
 	overflow: visible;
 	clip: auto;
 	white-space: normal;
+}
+
+
+.theme-dark #logos .text{
+	color: #ffffff;
+	fill: #ffffff;
+}
+
+.logo .docs, .theme-dark .logo .docs{
+	color: var(--theme-readable-grey); 
+	text-decoration: none;
+	font-weight: 600;
+
+}
+
+.TabGroup{
+	display: none !important;
 }
 
 /*

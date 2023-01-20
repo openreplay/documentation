@@ -1,13 +1,19 @@
 ---
-import Footer from '../components/Footer/Footer.astro';
-import HeadCommon from '../components/HeadCommon.astro';
 import Header from '../components/Header/Header.astro';
+import HeadCommon from '../components/HeadCommon.astro';
 import HeadSEO from '../components/HeadSEO.astro';
 import LeftSidebar from '../components/LeftSidebar/LeftSidebar.astro';
+import Footer from '../components/Footer/Footer.astro';
 import { normalizeLangTag } from '../i18n/bcp-normalize';
 import { rtlLanguages } from '../i18n/languages';
 import { useTranslations } from '../i18n/util';
 import { getLanguageFromURL } from '../util';
+import '@fontsource/figtree';
+import "@fontsource/figtree/400.css";
+import "@fontsource/figtree/500.css";
+import "@fontsource/figtree/600.css";
+import "@fontsource/figtree/700.css";
+import { Tooltips } from 'astro-tooltips';
 
 const { content = {} } = Astro.props;
 const isFallback = !!Astro.params.fallback;
@@ -18,7 +24,7 @@ const bcpLang = normalizeLangTag(lang);
 const currentPage = url.pathname;
 const t = useTranslations(Astro);
 const formatTitle = (content: { title?: string }) =>
-	content.title ? `${content.title} 🚀 ${t('site.title')}` : t('site.title');
+	content.title ? `${content.title} ${t('site.title')}` : t('site.title');
 // Ensures the canonicalURL always has a trailing slash.
 const canonicalURL = new URL(Astro.url.pathname.replace(/([^/])$/, '$1/'), Astro.site);
 if (isFallback) canonicalURL.pathname = canonicalURL.pathname.replace(`/${lang}/`, '/en/');
@@ -29,30 +35,27 @@ if (isFallback) canonicalURL.pathname = canonicalURL.pathname.replace(`/${lang}/
 		<HeadCommon />
 		<HeadSEO {content} {canonicalURL} />
 		<title set:html={formatTitle(content)}></title>
+		<Tooltips interactive={true} />
 		<style>
-			.sidebar {
-				position: fixed;
+			/* .sidebar {
+				position: re;
 				top: 0;
 				bottom: 0;
 				padding: 0;
-			}
+			}*/
 			#left-sidebar {
 				display: none;
-				background: var(--theme-bg-gradient);
 				z-index: 10;
 				inset-inline-start: 0;
 			}
 			#right-sidebar {
-				display: none;
 				top: var(--theme-navbar-height);
 				inset-inline-end: 0;
-				width: var(--theme-right-sidebar-width);
 			}
 			#main-content {
 				display: flex;
 				flex-direction: column;
 				height: 100%;
-				min-width: 0;
 			}
 
 			/* Allow showing left sidebar as an overlay, but only while viewport stays narrow */
@@ -84,26 +87,15 @@ if (isFallback) canonicalURL.pathname = canonicalURL.pathname.replace(`/${lang}/
 			}
 
 			@media (min-width: 50em) {
-				.main-column {
-					margin-inline-start: var(--theme-left-sidebar-width);
-				}
 				#left-sidebar {
 					display: flex;
-					padding-inline-start: var(--min-spacing-inline);
-					padding-inline-end: 1rem;
-					top: var(--theme-navbar-height);
-					width: var(--theme-left-sidebar-width);
+					/* width: var(--theme-left-sidebar-width); */
 					background: transparent;
 				}
 			}
 
 			@media (min-width: 72em) {
-				.main-column {
-					margin-inline-end: var(--theme-right-sidebar-width);
-				}
-				#right-sidebar {
-					display: flex;
-				}
+			
 			}
 		</style>
 		<script is:inline>
@@ -128,18 +120,18 @@ if (isFallback) canonicalURL.pathname = canonicalURL.pathname.replace(`/${lang}/
 
 	<body>
 		<Header {currentPage} />
-		<main class="layout">
-			<aside id="left-sidebar" class="sidebar">
+		<main class="layout max-w-screen-2xl flex mx-auto">
+			<aside id="left-sidebar" class="w-2/12">
 				<slot name="primary-sidebar">
 					<LeftSidebar {currentPage} />
 				</slot>
 			</aside>
-			<aside id="right-sidebar" class="sidebar">
-				<slot name="secondary-sidebar" />
-			</aside>
-			<div id="main-content" class="main-column">
+			<div id="main-content" class="main-column w-7/12 mx-auto">
 				<slot />
 			</div>
+			<aside id="right-sidebar" class=" w-2/12">
+				<slot name="secondary-sidebar" />
+			</aside>
 		</main>
 		<div class="main-column">
 			<slot name="footer">

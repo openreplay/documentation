@@ -1,5 +1,6 @@
 ---
 import { getLanguageFromURL, getVersionFromURL, removeSubpageSegment } from '../../util';
+import MenuIcon from './MenuIcon';
 
 export interface Props {
 	type: TabType;
@@ -25,8 +26,11 @@ let urlVersion = (version) ? `v${version}/` : ""
 			<details open>
 				<summary class="nav-group-title">
 					<h2>
-						{section.text}
-						<svg
+						<span class="icon-text-combo">
+							<MenuIcon icon={section.icon} />
+							{section.text}
+						</span>
+						<svg class="chevron"
 							xmlns="http://www.w3.org/2000/svg"
 							viewBox="0 1 16 16"
 							width="16"
@@ -79,7 +83,7 @@ let urlVersion = (version) ? `v${version}/` : ""
 	@media (min-width: 50em) {
 		.nav-group {
 			display: none;
-			margin-bottom: 1.75rem;
+			margin-bottom: 1rem;
 		}
 	}
 	.nav-group.active {
@@ -95,25 +99,25 @@ let urlVersion = (version) ? `v${version}/` : ""
 		margin: 1px;
 		padding: 0.3rem 2rem;
 		font: inherit;
-		color: var(--theme-text-lighter);
+		color: var(--theme-readable-grey);
 		text-decoration: none;
 		display: block;
+		position: relative;
 
 		&:hover,
 		&:focus {
-			background-color: var(--theme-bg-hover);
+			color: inherit;
+			text-decoration: underline;
 		}
 
 		&[aria-current='page'],
 		&[data-current-parent='true'] {
-			color: var(--theme-text);
-			background-color: var(--theme-bg-accent);
-			font-weight: 500;
+			color: var(--theme-accent-full) !important;
+			font-weight: 600;
 			/* Indicates the current page for forced colors users in older browsers */
 			outline: 1px solid transparent;
-
 			&:focus {
-				outline: 2px solid;
+				outline: 2px solid transparent;
 			}
 		}
 
@@ -130,6 +134,20 @@ let urlVersion = (version) ? `v${version}/` : ""
 		.nav-link a {
 			padding: 0.2rem 1rem;
 		}
+
+		.nav-group-title{
+			border-radius: 0.25rem;
+		}
+
+		details[open] .nav-group-title{
+			background-color: var(--theme-accent-opacity);
+		}
+
+		details .nav-group-title:hover{
+			background-color: var(--theme-accent-opacity);
+		}
+
+		
 	}
 
 	:global(:root.theme-dark) .nav-link a[aria-current='page'],
@@ -142,6 +160,7 @@ let urlVersion = (version) ? `v${version}/` : ""
 		line-height: 1;
 		font-weight: bold;
 		color: var(--theme-text-light);
+		display: none;
 	}
 
 	details > summary {
@@ -153,7 +172,7 @@ let urlVersion = (version) ? `v${version}/` : ""
 		display: none;
 	}
 
-	details[open] > summary svg {
+	details[open] > summary svg.chevron {
 		transform: rotate(90deg);
 	}
 
@@ -165,6 +184,12 @@ let urlVersion = (version) ? `v${version}/` : ""
 		all: inherit;
 		margin: 0;
 		padding: 0;
+		display: flex;
+		justify-content: space-between;
+		font-size: var(--theme-text-sm);
+		align-items: center;
+		background-color: transparent;
+		text-transform: uppercase;
 	}
 
 	svg {

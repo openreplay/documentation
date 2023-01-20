@@ -1,6 +1,7 @@
+import mdx from '@astrojs/mdx';
+import tailwind from "@astrojs/tailwind";
 import preact from '@astrojs/preact';
 import { defineConfig } from 'astro/config';
-import mdx from '@astrojs/mdx';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutoLink from 'rehype-autolink-headings';
 import remarkGFM from 'remark-gfm';
@@ -47,6 +48,8 @@ const createSROnlyLabel = (text: string) => {
 // https://astro.build/config
 
 // https://astro.build/config
+
+// https://astro.build/config
 export default defineConfig({
   site: 'https://docs.openreplay.com/',
   legacy: {
@@ -55,18 +58,15 @@ export default defineConfig({
   markdown: {
     syntaxHighlight: 'shiki',
     shikiConfig: {
-      theme: {
-        name: 'Star gazer',
-        type: 'dark',
-        settings: tokens,
-        fg: foregroundPrimary,
-        bg: backgroundPrimary
-      }
+      theme: 'material-darker'
     },
     remarkPlugins: [remarkCodeSnippets()]
   },
-  integrations: [preact({
-    compat:true 
+
+
+  
+  integrations: [tailwind(), preact({
+    compat: true
   }), sitemap(), mdx({
     remarkPlugins: [addDefaultLayout, remarkGFM, [remarkSmarty, {
       dashes: false
@@ -96,5 +96,5 @@ export default defineConfig({
   //	astroAsides(),
   astroSpoilers()
   //	astroCodeSnippets()
-   ]
+  ]
 });
