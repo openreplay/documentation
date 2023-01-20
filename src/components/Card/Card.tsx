@@ -11,16 +11,16 @@ interface Props {
 function Card(props: Props) {
 	const { wrapperClass, title, description, moreLink, icon, iconClass = '' } = props;
 	return (
-		<div className="pointer-events-auto w-[21rem] rounded-lg bg-white p-5 text-[0.8125rem] leading-5 shadow-sm shadow-black/5 hover:bg-slate-50 ring-1 ring-slate-700/10">
+		<div className="pointer-events-auto w-[21rem] rounded-lg bg-theme-default p-5 leading-5 theme-border">
 			<div className="flex items-center mb-4">
 				{icon && <div className={"mr-2 " + iconClass}>{icons[icon]}</div>}
-				<div className="font-medium text-slate-900 text-lg">{title}</div>
+				<div className="font-medium  text-lg">{title}</div>
 			</div>
-			<div className="mt-1 text-slate-700">{description}</div>
-			{/* <div className="mt-6 font-medium text-slate-900">1200 users</div> */}
+			<div className="mt-1 ">{description}</div>
+			{/* <div className="mt-6 font-medium">1200 users</div> */}
 			{moreLink && (
 				<div className="mt-4">
-					<a className="justify-end text-sm" href={moreLink}>Learn More</a>
+					<a className="justify-end text-sm theme" href={moreLink}>Learn More</a>
 				</div>
 			)}
 		</div>
