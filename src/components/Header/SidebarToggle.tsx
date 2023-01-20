@@ -5,7 +5,7 @@ import './HeaderButton.css';
 import './SidebarToggle.css';
 
 const MenuToggle: FunctionalComponent = () => {
-	const [sidebarShown, setSidebarShown] = useState(false);
+	const [sidebarShown, setSidebarShown] = useState(true);
 
 	useEffect(() => {
 		const body = document.getElementsByTagName('body')[0];
