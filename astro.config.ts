@@ -20,6 +20,10 @@ import { backgroundPrimary, foregroundPrimary, tokens } from './syntax-highlight
 import { remarkCodeSnippets } from './integrations/astro-code-snippets';
 import { remarkAsides } from './integrations/astro-asides';
 import remarkDirective from 'remark-directive';
+import remarkCopy from 'remark-copy-linked-files'
+
+//import remarkCopyLinkedFiles from 'remark-copy-linked-files';
+
 function addDefaultLayout() {
   // All remark and rehype plugins return a separate function
   return function (tree, file) {
@@ -70,7 +74,11 @@ export default defineConfig({
   }), sitemap(), mdx({
     remarkPlugins: [addDefaultLayout, remarkGFM, [remarkSmarty, {
       dashes: false
-    }], remarkFallbackLang(), remarkDirective
+    }], remarkFallbackLang(), remarkDirective,
+[remarkCopy,{
+      destinationDir: 'public/images',
+      staticPath: 'images'
+    } ]
     // These are here because setting custom plugins disables the default plugins
     ],
 
