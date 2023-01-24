@@ -8,9 +8,9 @@
  * - Link entries MUST include `slug` (which excludes the language code)
  */
 export default [
-	{ text: 'Getting started', header: true, type: 'learn', key: 'startHere', icon: 'start' },
-	{ text: 'Introduction', slug: 'getting-started', key: 'introduction' },
-	{ text: 'Layouts', slug: 'layout-elements', key: 'layouts' },
+	//{ text: 'Getting started', header: true, type: 'learn', key: 'startHere', icon: 'start' },
+	//{ text: 'Introduction', slug: 'getting-started', key: 'introduction' },
+	//{ text: 'Layouts', slug: 'layout-elements', key: 'layouts' },
 
 	{ text: 'Deployment', header: true, type: 'learn', slug: 'install/auto', key: 'deployment', icon: 'deployment'},
 	{ text: 'Deploy to AWS', slug: 'deployment/deploy-aws', key: 'deploy-aws' },
@@ -30,8 +30,7 @@ export default [
 	{ text: 'Error reporting', slug: 'installation/error-reporting', key: 'blog-installation' },
 	{ text: 'Identify a User', slug: 'installation/identify-user', key: 'blog-installation' },
 	{ text: 'JavaScript SDK', slug: 'installation/javascript-sdk', key: 'blog-installation' }, 
-	{ text: 'Custom Events', slug: 'installation/custom-events', key: 'blog-installation' },
-	{ text: 'Metadata', slug: 'installation/matadata', key: 'blog-installation' },
+	{ text: 'Metadata', slug: 'installation/metadata', key: 'blog-installation' },
 	{ text: 'Sanitize Data', slug: 'installation/sanitize-data', key: 'blog-installation' },
 	{ text: 'Setup OpenReplay', slug: 'installation/setup-or', key: 'blog-installation' },
 	{ text: 'Upload Source maps', slug: 'installation/upload-sourcemaps', key: 'blog-installation' },
@@ -61,6 +60,7 @@ export default [
 	{ text: 'Feature: Adding users', slug: 'tutorials/adding-users', key: 'tutorials/-fetching' },
 	{ text: 'Feature: Issue types', slug: 'tutorials/issues', key: 'tutorials/' },
 	{ text: 'Feature: Custom events', slug: 'tutorials/custom-events', key: 'tutorials/' },
+	{ text: 'Feature: Metadata', slug: 'tutorials/metadata', key: 'tutorials/' },
 	{ text: 'Feature: Custom dashboards', slug: 'tutorials/custom-dashboard', key: 'tutorials/' },
 	{ text: 'Feature: Custom funnels', slug: 'tutorials/funnels', key: 'tutorials/' },
 	{ text: 'Feature: Custom Metrics - JS errors', slug: 'tutorials/js-errors-dashboard', key: 'tutorials/' },
@@ -125,6 +125,7 @@ export default [
 	{ text: 'Session Recording Issues', slug: 'troubleshooting/session-recordings', key: 'troubleshooting/' },
 	{ text: 'Sourcemaps issues', slug: 'troubleshooting/sourcemaps', key: 'troubleshooting/' },
 	{ text: 'Supported Browsers', slug: 'troubleshooting/supported-browsers', key: 'troubleshooting/' },
+	{ text: 'Infrastructure FAQ', slug: 'troubleshooting/infra', key: 'troubleshooting/' },
 
 	// structure
 	{ text: 'Structure', header:true,type: 'learn', slug: 'structure/troubleshooting', key: 'structure/troubleshooting', icon: 'structure' },

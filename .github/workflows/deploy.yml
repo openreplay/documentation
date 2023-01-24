@@ -1,0 +1,40 @@
+on:
+  push:
+    branches: [new-version]
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_CONTENT_ACCESS_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_CONTENT_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: eu-west-1
+  AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
+  AWS_CF_DISTRIBUTION_ID: ${{ secrets.AWS_CF_DISTRIBUTION_ID }}
+
+  PUBLIC_ALGOLIA_KEY: ${{ secrets.PUBLIC_ALGOLIA_KEY}}
+  PUBLIC_ALGOLIA_SECRET: ${{ secrets.PUBLIC_ALGOLIA_SECRET}}
+  PUBLIC_ALGOLIA_INDEX: ${{ secrets.PUBLIC_ALGOLIA_INDEX}}
+  ALGOLIA_ADMIN_SECRET: ${{ secrets.ALGOLIA_ADMIN_SECRET}}
+
+  PUBLIC_SITE_URL: ${{ secrets.PUBLIC_SITE_URL}}
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
+    env: 
+      NODE_OPTIONS: "--max_old_space_size=4096"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [14.x]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - run: npm install
+    - run: npm run build
+    - run: aws s3 sync ./dist/ s3://openreplay-documentation --acl public-read --exact-timestamps
+    - run: aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CF_DISTRIBUTION_ID}} --paths "/*"
+
