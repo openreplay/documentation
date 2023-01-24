@@ -5,6 +5,8 @@ import SidebarContent from './SidebarContent.astro';
 import SidebarToggleTabGroup from '../TabGroup/SidebarToggleTabGroup';
 import UIString from '../UIString.astro';
 import ThemeToggleButton from '../Header/ThemeToggleButton';
+import LanguageSelect from '../Header/LanguageSelect';
+import { getLanguageFromURL } from '../../util';
 
 export interface Props {
 	currentPage: string;
@@ -33,6 +35,8 @@ for (const section of sidebarSections) {
 		activeTab = section.type;
 	}
 }
+
+const lang = currentPage && getLanguageFromURL(currentPage);
 ---
 
 	<nav aria-label={t('leftSidebar.a11yTitle')}>
@@ -88,9 +92,15 @@ for (const section of sidebarSections) {
 					</a>
 				</div>
 			</div>
+			
 
 			<div class="pl-6 pt-3 pb-3">
 				<ThemeToggleButton client:visible labels={{ useLight: t('themeToggle.useLight'), useDark: t('themeToggle.useDark') }}/>
+
+				<div class="flex xl:hidden justify-end gap-1">
+					<div dir="ltr" lang="en">
+						{lang && <LanguageSelect lang={lang} client:idle />}
+				</div>
 			</div>
 		</div>
 	</nav>
