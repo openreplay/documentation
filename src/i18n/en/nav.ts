@@ -25,11 +25,12 @@ export default [
 	{ text: 'OpenReplay Administration', slug: 'deployment/openreplay-admin', key: 'deploy-aws' },
 	{ text: 'Upgrade Deployment', slug: 'deployment/upgrade', key: 'migrate' },
 
-	{ text: 'Installation', header: true, type: 'learn', key: 'installation', icon: 'installation' },
+	{ text: 'Installation', slug: '/installation', header: true, type: 'learn', key: 'installation', icon: 'installation' },
 	{ text: 'Custom Events', slug: 'installation/custom-events', key: 'blog-tutorial' },
 	{ text: 'Error reporting', slug: 'installation/error-reporting', key: 'blog-installation' },
 	{ text: 'Identify a User', slug: 'installation/identify-user', key: 'blog-installation' },
 	{ text: 'JavaScript SDK', slug: 'installation/javascript-sdk', key: 'blog-installation' }, 
+	{ text: 'SDK Network option', slug: 'installation/network-options', key: 'blog-installation' }, 
 	{ text: 'Metadata', slug: 'installation/metadata', key: 'blog-installation' },
 	{ text: 'Sanitize Data', slug: 'installation/sanitize-data', key: 'blog-installation' },
 	{ text: 'Setup OpenReplay', slug: 'installation/setup-or', key: 'blog-installation' },
@@ -71,6 +72,7 @@ export default [
 	{ text: 'Using OR with Svelte', slug: 'tutorials/svelte', key: 'tutorials/' },
 	{ text: 'Using OR with Angular', slug: 'tutorials/angular', key: 'tutorials/' },
 	{ text: 'Using OR with Gatsby', slug: 'tutorials/gatsby', key: 'tutorials/' },
+	{ text: 'Capture and Sanitize request data', slug: 'tutorials/capture-request', key: 'tutorials/' },
 	//extending OpenReplay
 	{ text: 'Creating your first plugin', slug: 'tutorials/build-plugins', key: 'tutorials/troubleshooting' },
 	{ text: 'Creating your first heuristic', slug: 'tutorials/custom-heuristics', key: 'tutorials/troubleshooting' },
