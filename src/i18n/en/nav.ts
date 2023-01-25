@@ -115,6 +115,7 @@ export default [
 	{ text: 'GitHub', slug: 'integrations/github', key: 'integrations/troubleshooting' },
 	{ text: 'Google Tag Manager', slug: 'integrations/google-tag-manager', key: 'integrations/troubleshooting' },
 	{ text: 'Jira Cloud', slug: 'integrations/jira', key: 'integrations/troubleshooting' },
+	{ text: 'MSTeams', slug: 'integrations/msteams', key: 'integrations/troubleshooting' },
 	{ text: 'NewRelic', slug: 'integrations/newrelic', key: 'integrations/troubleshooting' },
 	{ text: 'Rollbar', slug: 'integrations/rollbar', key: 'integrations/troubleshooting' },
 	{ text: 'Segment', slug: 'integrations/segment', key: 'integrations/troubleshooting' },

@@ -24,7 +24,7 @@ import OpenReplay from '@openreplay/tracker';
 const tracker = new OpenReplay({
   projectKey: PROJECT_KEY
 });
-tracker.start(); //  returns a promise with session info (sessionID, sessionToken, userUUID)
+tracker.start(); //  returns a promise with session info (sessionID, sessionHash, userUUID)
 ```
 
 Otherwise, if your web app is **Server-Side-Rendered (SSR)** (i.e. NextJS, NuxtJS) use the below snippet. Ensure `tracker.start()` is called once the app is started (in `useEffect` or `componentDidMount`).
@@ -38,7 +38,7 @@ const tracker = new OpenReplay({
 //...
 function MyApp() {
   useEffect(() => { // use componentDidMount in case of React Class Component
-    tracker.start(); //  returns a promise with session info (sessionID, sessionToken, userUUID)
+    tracker.start(); //  returns a promise with session info (sessionID, sessionHash, userUUID)
   }, [])
 }
 ```
@@ -54,7 +54,7 @@ const tracker = new OpenReplay({
 })
 
 export default (context) => {
-  tracker.start()  //  returns a promise with session info (sessionID, sessionToken, userUUID)
+  tracker.start()  //  returns a promise with session info (sessionID, sessionHash, userUUID)
   // context available, e.g. for setting metadata from the store
 }
 ```
@@ -112,3 +112,20 @@ Note that excluded data is obscured or suppressed before sending the data to Ope
 ### Security
 
 - `__DISABLE_SECURE_MODE?: boolean` For disabling secure connection (SSL) between tracker and backend. This should be used for **development purposes only**. Default: `false`.
+
+## Methods
+
+Below is the list of all supported methods:
+
+- `isActive(): boolean`: Return `true` if the tracker is active and the session's being recorded.
+- `start(startOpts?: Partial<StartOptions>): Promise<StartPromiseReturn>`: Starts the tracker (and the recording process) then returns a promise with session info (sessionID, sessionHash, userUUID).
+- `stop(): string | undefined`: Stops the tracker (and the recording process) and return the `sessionHash`.
+- `getSessionToken(): string | null | undefined`: (Deprecated) Return the session's token previously used to stitch sessions together before being replaced with [sessionHash](/troubleshooting/session-recordings#replaysarebrokenacrosssubdomains).
+- `getSessionID(): string | null | undefined`: Returns the ID of the session being recorded.
+- `getSessionURL(withCurrentTime?: boolean): string | undefined`: Returns the URL (to OpenReplay's dashboard) of the session being recorded, with the current time. This is helpful when integrating your stack with OpenReplay.
+- `setUserID(id: string): void`: Associate a session with a userID. See [how to identify users](/installation/identify-user) for more details.
+- `setUserAnonymousID(id: string): void`: Associate an anonymous userID with the session being recorded.
+- `setMetadata(key: string, value: string): void`: Provide additional information such as traits or segments using a list of key/value pairs. See [metadata](/installation/metadata) for more details. 
+- `event(key: string, payload?: any, issue?: boolean): void`: Report a functional event. See [custom events](/installation/custom-events#functionalevents) for more details.
+- `issue(key: string, payload?: any): void`: Report a technical event (issue). See [custom events](/installation/custom-events#technicalevents) for more details.
+- `handleError: (e: Error | ErrorEvent | PromiseRejectionEvent, metadata?: Record<string, any>) => void`: Manually report caught exceptions, rejected promises or error events. See [error reporting](/installation/error-reporting#manuallyloggingexceptions) for more details.

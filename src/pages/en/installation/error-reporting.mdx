@@ -6,11 +6,11 @@ metaDescription: "How error reporting works, what gets sent to the 'Errors' tab 
 
 Error reporting is very important for monitoring your app's stability, spotting regressions ahead of time and knowing which issues occur the most to your users. By default, any uncaught exception is logged under the 'Errors' tab:
 
-![Errors Tab](/static/errors-tab.jpg#center)
+![Errors Tab](../static/errors-tab.jpg#center)
 
-Additionally, logged errors will also appear in the session recording under the 'Exceptions' tab in DevTools:
+Additionally, logged errors will also appear in the session recording under the 'Console' tab in DevTools:
 
-![Exceptions Tab](/static/exceptions-tab-in-recording.jpg#center)
+![Exceptions Tab](../static/exceptions-tab-in-recording.jpg#center)
 
 ## Manually Logging Exceptions
 
@@ -22,14 +22,14 @@ The OpenReplay tracker supports logging 3 types of errors:
 All of the above can be reported using a single method:
 
 ```js
-tracker.handleError(err);
+tracker.handleError(error, metaObject); // metaObject is optional and is a flat object
 ```
 
 Let's review an example for each type of error:
 
 ### Caught Exceptions (Error)
 
-By default, caught exceptions are not logged to the 'Errors' tab. In order to report an error, we can do as following:
+By default, caught exceptions are not logged to the 'Console' tab. In order to report an error, we can do as following:
 
 ```js
 try {
@@ -37,7 +37,7 @@ try {
 }
 catch(err) {
     // application code that handles the error
-    tracker.handlerError(err);
+    tracker.handleError(error, metaObject); // metaObject is optional and is a flat object
 }
 ```
 ### Rejected Promises (PromiseRejectionEvent)
@@ -52,7 +52,7 @@ function myFunc() {
     })
     .catch(promiseRejectionErr => {
         // application code to handle the error
-        tracker.handleError(promiseRejectionErr);      
+        tracker.handleError(promiseRejectionErr, metaObject); // metaObject is optional and is a flat object     
     })
 }
 ```
@@ -71,6 +71,6 @@ document.getElementById("myImg").addEventListener("error", myFunction);
 
 function myFunction(errorEvent) {
   document.getElementById("demo").innerHTML = "The image could not be loaded.";
-  tracker.handleError(errorEvent);
+  tracker.handleError(errorEvent, { context: "demo" });
 }
 ```

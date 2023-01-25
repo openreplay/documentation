@@ -72,7 +72,9 @@ function MyApp() {
 }
 ```
 
-#### Options
+## Options
+
+The assist plugin supports the below options:
 
 ```js
 trackerAssist({
@@ -84,6 +86,12 @@ trackerAssist({
   onRemoteControlStart?: () => (()=>void | void);
 })
 ```
+
+### Widgets Customization
+
+The remote control as well as the call widgets, those seen by the end user, can be fully customized.
+
+#### Remote Control Widget
 
 ```js
 type ConfirmOptions = {
@@ -99,20 +107,45 @@ type ButtonOptions = HTMLButtonElement | string | {
 }
 ```
 
+#### Call Widget
+
+It's possible to customize every aspect of this widget via the below set of `ids` and `classes`. `Ids` serve as anchors for individual buttons/elements whereas `classes` can be used for group containers.
+
+| HTML Type | Name(s) | Description |
+|----------|-------------|-------------|
+|id | `or-assist` | Widget container |
+|class | `card`, `border-dark`, `shadow` and `drag-area` | Styles for the card's border and shadow |
+|id | `controls`  | Container for the calling part inside the widget |
+|class | `card-header` | Styles for card header of the call widget (the one showing the agent name next to a timer) |
+|id | `agent-name` | Container for agent's name |
+|id | `duration` | Container for timer |
+|id | `video-container` | User’s own video feed container |
+|id | `remote-stream` | Agent’s video feed |
+|class | `card-footer` | Container for buttons Mute, Video, End Call |
+|id | `audio-btn` | Mute button |
+|id | `video-btn` | Video button |
+|id | `end-call-btn` | End call button |
+|id | `remote-control-row` | Row for remote controls |
+|id | `end-control-btn` | Id for the end control button |
+
+### Callbacks
+
+Here is the list of all callbacks:
+
 - `callConfirm`: Customize the text and/or layout of the call request popup. 
 - `controlConfirm`: Customize the text and/or layout of the remote control request popup.
 - `config`: Contains any custom ICE/TURN server configuration. Defaults to `{ 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }], 'sdpSemantics': 'unified-plan' }`.
-- `onAgentConnect: () => (()=>void | void)`: This callback function is fired as soon as a live session starts. It can also return `onAgentDisconnect` which will be called when the session is disconnected. In case of an unstable connection, this may be called several times. Below is an example:
+- `onAgentConnect: () => (()=>void | void)`: This callback function is fired as soon as a live session starts and sends back the agent's details (email, name and query). It can also return `onAgentDisconnect` which will be called when the session is disconnected. In case of an unstable connection, this may be called several times. Below is an example:
 
 ```js
-onAgentConnect = () => {
+onAgentConnect = ({ email, name, query }) => {
   console.log("Live session started")
   const onAgentDisconnect =  () => console.log("Live session stopped")
   return onAgentDisconnect
 }
 ```
 
-- `onCallStart: () => (()=>void | void)`: This callback function is fired as soon as a call (webRTC) starts. It can also return `onCallEnd` which will be called when the call ends. In case of an unstable connection, this may be called several times. Below is an example:
+- `onCallStart: ({ email, name, query }) => (()=>void | void)`: This callback function is fired as soon as a call (webRTC) starts  and sends back the agent's details (email, name and query). It can also return `onCallEnd` which will be called when the call ends. In case of an unstable connection, this may be called several times. Below is an example:
 
 ```js
 onCallStart: () => {
@@ -122,10 +155,10 @@ onCallStart: () => {
 }
 ```
 
-- `onRemoteControlStart: () => (()=>void | void)`: This callback function is fired as soon as a remote control session starts. It can also return `onRemoteControlEnd` which will be called when the remote control permissions are revoked. Below is an example:
+- `onRemoteControlStart: ({ email, name, query }) => (()=>void | void)`: This callback function is fired as soon as a remote control session starts and sends back the agent's details (email, name and query). It can also return `onRemoteControlEnd` which will be called when the remote control permissions are revoked. Below is an example:
 
 ```js
-onCallStart: () => {
+onRemoteControlStart: () => {
   console.log("Remote control started")
   const onCallEnd = () => console.log("Remote control ended")
   return onCallEnd
@@ -133,18 +166,5 @@ onCallStart: () => {
 ```
 
 ## Troubleshooting
-
-### Critical dependency: the request of a dependency is an expression
-
-If you're running tracker-assist `v3.5.14 or prior` and you're getting the below error when compiling, apply this [workaround](https://github.com/peers/peerjs/issues/630#issuecomment-910028230).
-
-```log
-Failed to compile.
-
-./node_modules/peerjs/dist/peerjs.min.js
-Critical dependency: the request of a dependency is an expression
-```
-
-### My issue is not listed
 
 Having trouble setting up this plugin? Please connect to our [Slack](https://slack.openreplay.com) and get help from our community.
