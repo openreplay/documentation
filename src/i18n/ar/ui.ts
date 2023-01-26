@@ -15,10 +15,10 @@ export default UIDictionary({
 	'navbar.a11yTitle': 'الأعلى',
 	// Site settings
 	'site.title': 'Astro التوثيق',
-	'site.description': 'Build faster websites with less client-side Javascript.',
+	'site.description': 'Open-source session replay suite, built for developers.	',
 	'site.og.imageSrc': '/default-og-image.png?v=1',
 	'site.og.imageAlt':
-		'astro logo on a starry expanse of space, with a purple saturn-like planet floating in the right foreground',
+		'Open-source session replay suite, built for developers.',
 	// Left Sidebar
 	'leftSidebar.a11yTitle': 'الأساسي',
 	'leftSidebar.noTranslations': 'لم يتم العثور على أي ترجمة',

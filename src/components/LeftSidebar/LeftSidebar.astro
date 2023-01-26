@@ -7,10 +7,9 @@ import UIString from '../UIString.astro';
 import ThemeToggleButton from '../Header/ThemeToggleButton';
 import LanguageSelect from '../Header/LanguageSelect';
 import { getLanguageFromURL } from '../../util';
+import Search from '../Header/Search.astro';
 
-export interface Props {
-	currentPage: string;
-}
+export interface Props { currentPage: string;}
 
 const t = useTranslations(Astro);
 
@@ -36,8 +35,14 @@ for (const section of sidebarSections) {
 	}
 }
 
+const docsearchStrings = getDocSearchStrings(Astro);
 const lang = currentPage && getLanguageFromURL(currentPage);
+
 ---
+<div class="fixed nav-container">
+	<div class="block">
+		<Search {lang} labels={docsearchStrings} />
+	</div>
 
 	<nav aria-label={t('leftSidebar.a11yTitle')}>
 		<SidebarToggleTabGroup
@@ -108,6 +113,7 @@ const lang = currentPage && getLanguageFromURL(currentPage);
 		
 	</nav>
 
+</div>
 <script>
 	window.addEventListener('DOMContentLoaded', () => {
 		var target = document.querySelector('[data-current-parent="true"]');
@@ -116,13 +122,17 @@ const lang = currentPage && getLanguageFromURL(currentPage);
 </script>
 
 <style>
+	.nav-container{
+		width: inherit;
+	}
+
 	nav {
 		height: 100%;
+		width: inherit;
 		position: fixed;
 		font-size: var(--theme-text-sm);
 	}
 	.nav-groups {
-		padding-top: 1rem;
 		max-height: 100%;
 		overflow-x: visible;
 		overflow-y: auto;
