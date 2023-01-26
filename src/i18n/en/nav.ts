@@ -134,7 +134,7 @@ export default [
 	{ text: 'Session Recording Issues', slug: 'troubleshooting/session-recordings', key: 'troubleshooting/' },
 	{ text: 'Sourcemaps issues', slug: 'troubleshooting/sourcemaps', key: 'troubleshooting/' },
 	{ text: 'Supported Browsers', slug: 'troubleshooting/supported-browsers', key: 'troubleshooting/' },
-	{ text: 'Infrastructure FAQ', slug: 'troubleshooting/infra', key: 'troubleshooting/' },
+	{ text: 'Deployment issues', slug: 'troubleshooting/deployment-faq', key: 'troubleshooting/' },
 
 	// structure
 	{ text: 'Structure', header:true,type: 'learn', slug: 'structure/', key: 'structure/troubleshooting', icon: 'structure' },
