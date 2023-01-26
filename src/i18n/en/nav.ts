@@ -12,7 +12,8 @@ export default [
 	//{ text: 'Introduction', slug: 'getting-started', key: 'introduction' },
 	//{ text: 'Layouts', slug: 'layout-elements', key: 'layouts' },
 
-	{ text: 'Deployment', header: true, type: 'learn', slug: 'install/auto', key: 'deployment', icon: 'deployment'},
+	{ text: 'Deployment', header: true, type: 'learn', slug: 'deployment/', key: 'deployment', icon: 'deployment'},
+	{ text: 'Overview', slug: 'deployment', key: 'deploy-aws' },
 	{ text: 'Deploy to AWS', slug: 'deployment/deploy-aws', key: 'deploy-aws' },
 	{ text: 'Deploy to Azure', slug: 'deployment/deploy-azure', key: 'deploy-aws' },
 	{ text: 'Deploy to GCP', slug: 'deployment/deploy-gcp', key: 'deploy-aws' },
@@ -25,7 +26,8 @@ export default [
 	{ text: 'OpenReplay Administration', slug: 'deployment/openreplay-admin', key: 'deploy-aws' },
 	{ text: 'Upgrade Deployment', slug: 'deployment/upgrade', key: 'migrate' },
 
-	{ text: 'Installation', header: true, type: 'learn', key: 'installation', icon: 'installation' },
+	{ text: 'Installation', slug: 'installation/', header: true, type: 'learn', key: 'installation', icon: 'installation' },
+	{ text: 'Overview', slug: 'installation', key: 'blog-tutorial' },
 	{ text: 'Custom Events', slug: 'installation/custom-events', key: 'blog-tutorial' },
 	{ text: 'Error reporting', slug: 'installation/error-reporting', key: 'blog-installation' },
 	{ text: 'Identify a User', slug: 'installation/identify-user', key: 'blog-installation' },
@@ -35,7 +37,8 @@ export default [
 	{ text: 'Setup OpenReplay', slug: 'installation/setup-or', key: 'blog-installation' },
 	{ text: 'Upload Source maps', slug: 'installation/upload-sourcemaps', key: 'blog-installation' },
 
-	{ text: 'Configuration', header: true, type: 'learn', key: 'configuration', icon: 'configure' },
+	{ text: 'Configuration', slug: 'configuration/', header: true, type: 'learn', key: 'configuration', icon: 'configure' },
+	{ text: 'Overview', slug: 'configuration', key: 'concepts/why-astro' },
 	{ text: 'Cleanup Storage', slug: 'configuration/cleanup-storage', key: 'concepts/why-astro' },
 	{ text: 'Configure SMTP', slug: 'configuration/configure-smtp', key: 'concepts/mpa-vs-spa' },
 	{ text: 'External Database (Postgres)', slug: 'configuration/external-db', key: 'concepts/islands' },
@@ -45,8 +48,9 @@ export default [
 	{ text: 'Single Sign-On (SSO)', slug: 'configuration/sso', key: 'concepts/islands' },
 
 	//tutorials
-	{ text: 'Tutorials', header: true, type: 'learn', key: 'tutorials', icon: 'tutorials' },
+	{ text: 'Tutorials', slug: 'tutorials/', header: true, type: 'learn', key: 'tutorials', icon: 'tutorials' },
 	//about plugins
+	{ text: 'Overview', slug: 'tutorials', key: 'core-concepts/layouts' },
 	{ text: 'Plugins: Assist', slug: 'tutorials/assist', key: 'core-concepts/layouts' },
 	{ text: 'Plugins: Fetch', slug: 'tutorials/fetch', key: 'tutorials/layouts' },
 	{ text: 'Plugins: Axios', slug: 'tutorials/axios', key: 'tutorials/layouts' },
@@ -76,7 +80,8 @@ export default [
 	{ text: 'Creating your first heuristic', slug: 'tutorials/custom-heuristics', key: 'tutorials/troubleshooting' },
 
 	//plugins
-	{ text: 'Plugins', header:true, type: 'learn', slug: 'guides/troubleshooting', key: 'guides/troubleshooting', icon: 'plugins' },
+	{ text: 'Plugins', header:true, type: 'learn', slug: 'plugins/', key: 'guides/troubleshooting', icon: 'plugins' },
+	{ text: 'Overview', slug: 'plugins', key: 'plugins/troubleshooting' },
 	{ text: 'Assist', slug: 'plugins/assist', key: 'plugins/troubleshooting' },
 	{ text: 'Axios', slug: 'plugins/axios', key: 'plugins/troubleshooting' },
 	{ text: 'Fetch', slug: 'plugins/fetch', key: 'plugins/troubleshooting' },
@@ -91,7 +96,8 @@ export default [
 
 
 	//API
-	{ text: 'API (BETA)', header:true,type: 'learn', slug: 'guides/troubleshooting', key: 'guides/troubleshooting', icon: 'api' },
+	{ text: 'API (BETA)', header:true,type: 'learn', slug: 'api/', key: 'guides/troubleshooting', icon: 'api' },
+	{ text: 'Overview', slug: 'api', key: 'api/troubleshooting' },
 	{ text: 'Assist', slug: 'api/assist', key: 'api/troubleshooting' },
 	{ text: 'Events', slug: 'api/events', key: 'api/troubleshooting' },
 	{ text: 'Jobs', slug: 'api/jobs', key: 'api/troubleshooting' },
@@ -100,7 +106,8 @@ export default [
 	{ text: 'Users', slug: 'api/users', key: 'api/troubleshooting' },
 
 	//integrations
-	{ text: 'Integrations', header:true,type: 'learn', slug: 'guides/troubleshooting', key: 'guides/troubleshooting', icon: 'integration' },
+	{ text: 'Integrations', header:true,type: 'learn', slug: 'integrations/', key: 'guides/troubleshooting', icon: 'integration' },
+	{ text: 'Overview', slug: 'integrations', key: 'integrations/troubleshooting' },
 	{ text: 'Bugsnag', slug: 'integrations/bugsnag', key: 'integrations/troubleshooting' },
 	{ text: 'CloudWatch', slug: 'integrations/cloudwatch', key: 'integrations/troubleshooting' },
 	{ text: 'Datadog', slug: 'integrations/datadog', key: 'integrations/troubleshooting' },
@@ -108,6 +115,7 @@ export default [
 	{ text: 'GitHub', slug: 'integrations/github', key: 'integrations/troubleshooting' },
 	{ text: 'Google Tag Manager', slug: 'integrations/google-tag-manager', key: 'integrations/troubleshooting' },
 	{ text: 'Jira Cloud', slug: 'integrations/jira', key: 'integrations/troubleshooting' },
+	{ text: 'MSTeams', slug: 'integrations/msteams', key: 'integrations/troubleshooting' },
 	{ text: 'NewRelic', slug: 'integrations/newrelic', key: 'integrations/troubleshooting' },
 	{ text: 'Rollbar', slug: 'integrations/rollbar', key: 'integrations/troubleshooting' },
 	{ text: 'Segment', slug: 'integrations/segment', key: 'integrations/troubleshooting' },
@@ -117,7 +125,8 @@ export default [
 	{ text: 'SumoLogic', slug: 'integrations/sumo', key: 'integrations/troubleshooting' },
 
 	//troubleshooting
-	{ text: 'Troubleshooting', header:true,type: 'learn', slug: 'guides/troubleshooting', key: 'guides/troubleshooting', icon: 'troubleshoot' },
+	{ text: 'Troubleshooting', header:true,type: 'learn', slug: 'troubleshooting/', key: 'guides/troubleshooting', icon: 'troubleshoot' },
+	{ text: 'Overview', slug: 'troubleshooting', key: 'troubleshooting/' },
 	{ text: 'Clear Cache', slug: 'troubleshooting/cache', key: 'troubleshooting/' },
 	{ text: 'Content Security Policy (CSP)', slug: 'troubleshooting/csp', key: 'troubleshooting/' },
 	{ text: 'JS Errors', slug: 'troubleshooting/js-errors', key: 'troubleshooting/' },
@@ -125,10 +134,11 @@ export default [
 	{ text: 'Session Recording Issues', slug: 'troubleshooting/session-recordings', key: 'troubleshooting/' },
 	{ text: 'Sourcemaps issues', slug: 'troubleshooting/sourcemaps', key: 'troubleshooting/' },
 	{ text: 'Supported Browsers', slug: 'troubleshooting/supported-browsers', key: 'troubleshooting/' },
-	{ text: 'Infrastructure FAQ', slug: 'troubleshooting/infra', key: 'troubleshooting/' },
+	{ text: 'Deployment issues', slug: 'troubleshooting/deployment-faq', key: 'troubleshooting/' },
 
 	// structure
-	{ text: 'Structure', header:true,type: 'learn', slug: 'structure/troubleshooting', key: 'structure/troubleshooting', icon: 'structure' },
+	{ text: 'Structure', header:true,type: 'learn', slug: 'structure/', key: 'structure/troubleshooting', icon: 'structure' },
+	{ text: 'Overview', slug: 'structure', key: 'structure/troubleshooting' },
 	{ text: 'Exported Data', slug: 'structure/exported-data', key: 'structure/troubleshooting' },
 	
 	
