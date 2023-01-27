@@ -1,0 +1,51 @@
+---
+
+let {url, title, description, width} = Astro.props;
+
+function calculateCSSWidth(width: number) {
+    if(!width) {
+        return 1;
+    } else {
+        return width / 100;
+    }
+}
+
+function getIcon(title: string) {
+
+    const icon_code = title.toLowerCase().split(" ").join("_")
+    switch(icon_code) {
+        case 'assist':
+            return 'assist-icon.png'
+        break;
+    }
+}
+
+let classes = ["col-span-12", "card", "col-start-1"]
+//this is required so that purgeCSS won't remove the classes from the build
+let midClasses = {
+    6: "md:col-span-6",
+    4: "md:col-span-4"
+}
+const BIGGEST_CSS_WIDTH = 12;
+width = calculateCSSWidth(Number(width))
+if(width < 1) {
+    classes.push(midClasses[Math.round(BIGGEST_CSS_WIDTH * width)])
+}
+---
+
+
+<a class={classes.join(" ")} href={url}>
+    <div class="relative overflow-hidden text-left">
+        <img src="/docs/img/gradient-bg.png" class="absolute left-0 -top-64 w-[258px] duration-700 " />
+        <div class="relative flex flex-col  gap-6">
+            <div class="flex items-center gap-3">
+                <div class="shrink-0 theme-icon w-8 h-8 flex items-center justify-center rounded">
+                    <img class="w-5" src={"/docs/img/icons/menu/" + getIcon(title)} />
+                </div>
+                <h5 class="">{title}</h5>
+            </div>
+            <span class="text-sm  flex-grow">{description}</span>
+            <span class="justify-end text-sm">Learn more</span>
+        </div>
+    </div>
+</a>
