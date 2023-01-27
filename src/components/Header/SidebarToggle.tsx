@@ -30,7 +30,7 @@ const MenuToggle: FunctionalComponent = () => {
 	return (
 		<button
 			id="menu-toggle"
-			className="header-button"
+			className="header-button ml-4"
 			type="button"
 			aria-pressed={sidebarShown ? 'true' : 'false'}
 			onClick={() => setSidebarShown(!sidebarShown)}
