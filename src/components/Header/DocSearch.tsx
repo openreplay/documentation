@@ -63,7 +63,7 @@ export default function Search({ lang = 'en', labels }: Props) {
 			appId={import.meta.env.PUBLIC_ALGOLIA_KEY}
 			apiKey={import.meta.env.PUBLIC_ALGOLIA_SECRET}
 			//searchParameters={{ filters: `version:${version}` }}
-			searchParameters={{ facetFilters: [[`version:${version}`, `lang:${language}`]], facets:["*", "version", "lang"], attributesToRetrieve: ["title", "version", "slug", "hierarchy"] }}
+			searchParameters={{ facetFilters: [`version:${version}`,`lang:${language}` ], facets:["*", "version", "lang"], attributesToRetrieve: ["title", "version", "slug", "hierarchy"] }}
 			//searchParameters={{ facetFilters: [[`lang:${lang}`]] }}
 			transformItems={(items) => {
 				return items.map((item) => {

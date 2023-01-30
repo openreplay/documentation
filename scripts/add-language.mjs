@@ -286,7 +286,7 @@ export default DocSearchDictionary({
 });
 `,
 		},
-		{
+		/*{
 			getPath: (tag) => `../src/pages/${tag}/getting-started.md`,
 			getStub: () => `---
 layout: ~/layouts/MainLayout.astro
@@ -296,7 +296,7 @@ description: DESCRIPTION-TRANSLATION
 
 GETTING-STARTED-PAGE-TRANSLATION
 `,
-		},
+		},*/
 	];
 }
 
