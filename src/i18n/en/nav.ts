@@ -12,6 +12,8 @@ export default [
 	//{ text: 'Introduction', slug: 'getting-started', key: 'introduction' },
 	//{ text: 'Layouts', slug: 'layout-elements', key: 'layouts' },
 
+	{ text: 'Getting started', header: true, type: 'learn', slug: 'getting-started', key: 'deployment', icon: 'start'},
+
 	{ text: 'Deployment', header: true, type: 'learn', slug: 'deployment/', key: 'deployment', icon: 'deployment'},
 	{ text: 'Overview', slug: 'deployment', key: 'deploy-aws' },
 	{ text: 'Deploy to AWS', slug: 'deployment/deploy-aws', key: 'deploy-aws' },
@@ -26,14 +28,14 @@ export default [
 	{ text: 'OpenReplay Administration', slug: 'deployment/openreplay-admin', key: 'deploy-aws' },
 	{ text: 'Upgrade Deployment', slug: 'deployment/upgrade', key: 'migrate' },
 
-	{ text: 'Using OpenReplay with...', slug: 'using-or/', header: true, type: 'learn', key: 'installation', icon: 'installation' },
+	{ text: 'Tracker Setup', slug: 'using-or/', header: true, type: 'learn', key: 'installation', icon: 'installation' },
 	{ text: 'Overview', slug: 'using-or', key: 'tutorials/' },
-	{ text: '... Next.js', slug: 'using-or/next', key: 'using-or/' },
-	{ text: '... Nuxt', slug: 'using-or/nuxt', key: 'using-or/' },
-	{ text: '... Remix', slug: 'using-or/remix', key: 'using-or/' },
-	{ text: '... Svelte', slug: 'using-or/svelte', key: 'using-or/' },
-	{ text: '... Angular', slug: 'using-or/angular', key: 'using-or/' },
-	{ text: '... Gatsby', slug: 'using-or/gatsby', key: 'using-or/' },
+	{ text: 'Next.js', slug: 'using-or/next', key: 'using-or/' },
+	{ text: 'Nuxt', slug: 'using-or/nuxt', key: 'using-or/' },
+	{ text: 'Remix', slug: 'using-or/remix', key: 'using-or/' },
+	{ text: 'Svelte', slug: 'using-or/svelte', key: 'using-or/' },
+	{ text: 'Angular', slug: 'using-or/angular', key: 'using-or/' },
+	{ text: 'Gatsby', slug: 'using-or/gatsby', key: 'using-or/' },
 
 	{ text: 'Configuration', slug: 'configuration/', header: true, type: 'learn', key: 'configuration', icon: 'configure' },
 	{ text: 'Overview', slug: 'configuration', key: 'concepts/why-astro' },
@@ -51,7 +53,7 @@ export default [
 	{ text: 'Custom Events', slug: 'installation/custom-events', key: 'blog-tutorial' },
 	{ text: 'Error reporting', slug: 'installation/error-reporting', key: 'blog-installation' },
 	{ text: 'Identify a User', slug: 'installation/identify-user', key: 'blog-installation' },
-	{ text: 'JavaScript SDK', slug: 'installation/javascript-sdk', key: 'blog-installation' }, 
+	//{ text: 'JavaScript SDK', slug: 'installation/javascript-sdk', key: 'blog-installation' }, 
 	{ text: 'Metadata', slug: 'installation/metadata', key: 'blog-installation' },
 	{ text: 'Sanitize Data', slug: 'installation/sanitize-data', key: 'blog-installation' },
 	{ text: 'Setup OpenReplay', slug: 'installation/setup-or', key: 'blog-installation' },
@@ -144,7 +146,10 @@ export default [
 	{ text: 'Exported Data', slug: 'structure/exported-data', key: 'structure/troubleshooting' },
 	
 
+] as const;
 
+
+export const subMenus = [
 //API
 { text: 'API (BETA)', header:true,type: 'learn', slug: 'api/', key: 'guides/troubleshooting', icon: 'api' },
 { text: 'Overview', slug: 'api', key: 'api/troubleshooting' },
@@ -155,5 +160,19 @@ export default [
 { text: 'Sessions', slug: 'api/sessions', key: 'api/troubleshooting' },
 { text: 'Users', slug: 'api/users', key: 'api/troubleshooting' },
 
-		
-] as const;
+{ text: 'SDK', header:true,type: 'learn', slug: 'sdk/', key: 'guides/troubleshooting', icon: 'api' },
+{ text: 'Overview', slug: 'sdk', key: 'sdk' },
+{ text: 'Constructor', slug: 'api/assist', key: 'api/troubleshooting' },
+{ text: 'isActive', slug: 'api/events', key: 'api/troubleshooting' },
+{ text: 'start', slug: 'api/jobs', key: 'api/troubleshooting' },
+{ text: 'stop', slug: 'api/projects', key: 'api/troubleshooting' },
+{ text: 'getSessionToken', slug: 'api/sessions', key: 'api/troubleshooting' },
+{ text: 'getSessionID', slug: 'api/users', key: 'api/troubleshooting' },
+{ text: 'getSessionURL', slug: 'api/users', key: 'api/troubleshooting' },
+{ text: 'setUserID', slug: 'api/users', key: 'api/troubleshooting' },
+{ text: 'setUserAnonymousID', slug: 'api/users', key: 'api/troubleshooting' },
+{ text: 'setMetadata', slug: 'api/users', key: 'api/troubleshooting' },
+{ text: 'event', slug: 'api/users', key: 'api/troubleshooting' },
+{ text: 'issue', slug: 'api/users', key: 'api/troubleshooting' },
+{ text: 'handleError', slug: 'api/users', key: 'api/troubleshooting' },
+] 

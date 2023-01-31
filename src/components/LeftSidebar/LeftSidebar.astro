@@ -1,6 +1,6 @@
 ---
 import { removeLeadingSlash, removeTrailingSlash } from '../../util';
-import { getNav, useTranslations } from '../../i18n/util';
+import { getDocSearchStrings, getNav, useTranslations } from '../../i18n/util';
 import SidebarContent from './SidebarContent.astro';
 import SidebarToggleTabGroup from '../TabGroup/SidebarToggleTabGroup';
 import UIString from '../UIString.astro';
@@ -8,9 +8,34 @@ import ThemeToggleButton from '../Header/ThemeToggleButton';
 import LanguageSelect from '../Header/LanguageSelect';
 import { getLanguageFromURL } from '../../util';
 import Search from '../Header/Search.astro';
-import { getDocSearchStrings, useTranslations } from '../../i18n/util';
+import { globalAgent } from 'http';
+import { createDiffieHellmanGroup } from 'crypto';
+import { NavDict } from '~/i18n/translation-checkers';
 
 export interface Props { currentPage: string;}
+
+type MenuItem = {
+	text: string;
+	slug: string;
+	icon: string;
+}
+
+function getExtraNav(astro: AstroGlobal) {
+	const lang = getLanguageFromURL(astro.url.pathname) || "en";
+	let mod = import.meta.glob('../../i18n/**/*.ts', {eager: true})
+
+	let menuItems: MenuItemπ[] = []
+	for(let k in mod) {
+		if((k.indexOf(`/${lang}/`) != -1) && (k.indexOf('nav.ts') != -1)) {
+			(mod[k].subMenus as Array<MenuItem>).forEach( (m: MenuItem) => {
+				menuItems.push(m)
+				console.log(m)
+			})
+		}
+	}
+	return menuItems;
+
+}
 
 const t = useTranslations(Astro);
 
@@ -18,14 +43,20 @@ const { currentPage } = Astro.props as Props;
 const currentPageMatch = removeLeadingSlash(removeTrailingSlash(currentPage));
 
 // Group nav menu by sections to properly render.
-const sidebarSections = (await getNav(Astro)).reduce((collection, item) => {
-	if ('header' in item) {
-		collection.push({ ...item, children: [] });
-	} else {
-		collection[collection.length - 1].children.push(item);
-	}
-	return collection;
-}, [] as Parameters<typeof SidebarContent>[0]['sidebarSections']);
+//const sidebarSections = 
+function createMenuSections(elems: NavDict) {
+	return (elems).reduce((collection, item) => {
+		if ('header' in item) {
+			collection.push({ ...item, children: [] });
+		} else {
+			collection[collection.length - 1].children.push(item);
+		}
+		return collection;
+	}, [] as Parameters<typeof SidebarContent>[0]['sidebarSections']);
+}
+
+const sidebarSections = createMenuSections(await getNav(Astro))
+const subMenusSections = null; //createMenuSections(getExtraNav(Astro))
 
 const learnSections = sidebarSections.filter((section) => section.type === 'learn');
 const apiSections = sidebarSections.filter((section) => section.type === 'api');
@@ -38,6 +69,7 @@ for (const section of sidebarSections) {
 
 const docsearchStrings = getDocSearchStrings(Astro);
 const lang = currentPage && getLanguageFromURL(currentPage);
+getExtraNav(Astro)
 
 ---
 <div class="fixed nav-container">
@@ -110,6 +142,18 @@ const lang = currentPage && getLanguageFromURL(currentPage);
 				</div>
 			</li>
 		</ul>
+		{subMenusSections && (
+		<hr>
+		<ul class={`nav-groups`}>
+			<SidebarContent
+				type={'learn'}
+				defaultActiveTab={activeTab}
+				sidebarSections={subMenusSections}
+				{currentPageMatch}
+			/>
+		</ul>
+		)}
+			
 
 		
 	</nav>
