@@ -5,3 +5,5 @@ export default NavDictionary({
 	'getting-started': 'باشر البدأ',
 	'editor-setup': 'إعداد البيئة البرمجية',
 });
+
+export const subMenus = NavDictionary({}, "subMenus")

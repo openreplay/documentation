@@ -54,3 +54,5 @@ export default NavDictionary({
 	'reference/directives-reference': '範本指令',
 	'guides/publish-to-npm': 'NPM 套件格式',
 });
+
+export const subMenus = NavDictionary({}, "subMenus")

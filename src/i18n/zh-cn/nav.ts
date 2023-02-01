@@ -46,3 +46,6 @@ export default NavDictionary({
 	'guides/publish-to-npm': 'NPM 包格式',
 	'core-concepts/endpoints': 'API 端点',
 });
+
+
+export const subMenus = NavDictionary({}, "subMenus")
