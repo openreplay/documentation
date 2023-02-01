@@ -170,7 +170,7 @@ export const subMenus = [
 { text: 'Sessions', slug: 'api/sessions', key: 'api/troubleshooting' },
 { text: 'Users', slug: 'api/users', key: 'api/troubleshooting' },
 
- { text: 'SDK', header:true,type: 'learn', slug: 'sdk/', key: 'guides/troubleshooting', icon: 'api' },
+ { text: 'SDK', header:true,type: 'learn', slug: 'sdk/', key: 'guides/troubleshooting', icon: 'sdk' },
  { text: 'Overview', slug: 'sdk', key: 'sdk' },
  { text: 'Constructor', slug: 'sdk/constructor', key: 'api/troubleshooting' },
  { text: 'isActive', slug: 'sdk/is-active', key: 'api/troubleshooting' },
