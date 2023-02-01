@@ -28,7 +28,7 @@ export default [
 	{ text: 'OpenReplay Administration', slug: 'deployment/openreplay-admin', key: 'deploy-aws' },
 	{ text: 'Upgrade Deployment', slug: 'deployment/upgrade', key: 'migrate' },
 
-	{ text: 'Tracker Setup', slug: 'using-or/', header: true, type: 'learn', key: 'installation', icon: 'installation' },
+	{ text: 'Tracker Setup', slug: 'using-or/', header: true, type: 'learn', key: 'installation', icon: 'tracker-setup' },
 	{ text: 'Overview', slug: 'using-or', key: 'tutorials/' },
 	{ text: 'Next.js', slug: 'using-or/next', key: 'using-or/' },
 	{ text: 'Nuxt', slug: 'using-or/nuxt', key: 'using-or/' },
@@ -48,7 +48,7 @@ export default [
 	{ text: 'Single Sign-On (SSO)', slug: 'configuration/sso', key: 'concepts/islands' },
 
 
-	{ text: 'Features', slug: 'installation/', header: true, type: 'learn', key: 'installation', icon: 'installation' },
+	{ text: 'Features', slug: 'installation/', header: true, type: 'learn', key: 'installation', icon: 'features' },
 	{ text: 'Overview', slug: 'installation', key: 'blog-tutorial' },
 	{ text: 'Custom Events', slug: 'installation/custom-events', key: 'blog-tutorial' },
 	{ text: 'Error reporting', slug: 'installation/error-reporting', key: 'blog-installation' },
