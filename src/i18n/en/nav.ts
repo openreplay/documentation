@@ -12,8 +12,8 @@ export default [
 	//{ text: 'Introduction', slug: 'getting-started', key: 'introduction' },
 	//{ text: 'Layouts', slug: 'layout-elements', key: 'layouts' },
 
-	{ text: 'Home', header: true, type: 'learn', slug: 'home', key: 'home', icon: 'home'},
-	{ text: 'Getting started', header: true, type: 'learn', slug: 'getting-started', key: 'deployment', icon: 'start'},
+	{ text: 'Home', header: true, type: 'learn', slug: 'home', key: 'home', icon: 'home', hideChevron: true },
+	{ text: 'Getting started', header: true, type: 'learn', slug: 'getting-started', key: 'deployment', icon: 'start', hideChevron: true, extraCSSClasses: "pt-5 border-t"},
 
 	{ text: 'Deployment', header: true, type: 'learn', slug: 'deployment/', key: 'deployment', icon: 'deployment'},
 	{ text: 'Overview', slug: 'deployment', key: 'deploy-aws' },
@@ -171,7 +171,7 @@ export const subMenus = [
 { text: 'Sessions', slug: 'api/sessions', key: 'api/troubleshooting' },
 { text: 'Users', slug: 'api/users', key: 'api/troubleshooting' },
 
- { text: 'SDK', header:true,type: 'learn', slug: 'sdk/', key: 'guides/troubleshooting', icon: 'sdk' },
+ { text: 'JavaScript SDK', header:true,type: 'learn', slug: 'sdk/', key: 'guides/troubleshooting', icon: 'sdk' },
  { text: 'Overview', slug: 'sdk', key: 'sdk' },
  { text: 'Constructor', slug: 'sdk/constructor', key: 'api/troubleshooting' },
  { text: 'event', slug: 'sdk/event', key: 'sdk/troubleshooting' },
