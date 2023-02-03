@@ -2,7 +2,7 @@ import { DocSearchModal, useDocSearchKeyboardEvents } from '@docsearch/react';
 import { createPortal } from 'preact/compat';
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import type { DocSearchTranslation } from '../../i18n/translation-checkers';
-import { getVersionFromURL, __LATEST__ } from '../../util';
+import { getVersionFromURL, __LATEST__, getLanguageFromURL } from '../../util';
 
 interface Props {
 	lang?: string;
@@ -14,6 +14,7 @@ export default function Search({ lang = 'en', labels }: Props) {
 	const searchButtonRef = useRef(document.getElementById('docsearch-search-button'));
 	const [initialQuery, setInitialQuery] = useState<string>();
 	const [version, setVersion] = useState("")
+	const [language, setLanguage] = useState("")
 
 	const onOpen = useCallback(() => {
 		setIsOpen(true);
@@ -33,7 +34,9 @@ export default function Search({ lang = 'en', labels }: Props) {
 
 	useEffect(() => {
 		let v = getVersionFromURL(window.location.href)
+		let l = getLanguageFromURL(window.location.href)
 		setVersion(v ? v : __LATEST__)
+		setLanguage(l)
 	}, [])
 
 	useEffect(() => {
@@ -60,7 +63,7 @@ export default function Search({ lang = 'en', labels }: Props) {
 			appId={import.meta.env.PUBLIC_ALGOLIA_KEY}
 			apiKey={import.meta.env.PUBLIC_ALGOLIA_SECRET}
 			//searchParameters={{ filters: `version:${version}` }}
-			searchParameters={{ facetFilters: [[`version:${version}`]], facets:["*", "version"], attributesToRetrieve: ["title", "version", "slug", "hierarchy"] }}
+			searchParameters={{ facetFilters: [`version:${version}`,`lang:${language}` ], facets:["*", "version", "lang"], attributesToRetrieve: ["title", "version", "slug", "hierarchy"] }}
 			//searchParameters={{ facetFilters: [[`lang:${lang}`]] }}
 			transformItems={(items) => {
 				return items.map((item) => {

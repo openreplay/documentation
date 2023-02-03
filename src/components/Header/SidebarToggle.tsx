@@ -5,39 +5,40 @@ import './HeaderButton.css';
 import './SidebarToggle.css';
 
 const MenuToggle: FunctionalComponent = () => {
-	const [sidebarShown, setSidebarShown] = useState(true);
+	const [sidebarShown, setSidebarShown] = useState(false);
+
+	const openCurrentMenu = () => {
+		document.querySelectorAll('aside nav details').forEach((e) => {
+			e.removeAttribute('open');
+		});
+		document
+			.querySelector('details a[data-current-parent="true"]')
+			?.closest('details')
+			?.setAttribute('open', '');
+	}
 
 	useEffect(() => {
 		const body = document.getElementsByTagName('body')[0];
 		if (sidebarShown) {
 			body.classList.add('mobile-sidebar-toggle');
-			document.querySelectorAll('aside nav details').forEach((e) => {
-				e.removeAttribute('open');
-			});
-			document
-				.querySelector('details a[data-current-parent="true"]')
-				?.closest('details')
-				?.setAttribute('open', '');
 		} else {
 			body.classList.remove('mobile-sidebar-toggle');
-			document.querySelectorAll('aside nav details').forEach((e) => {
-				e.setAttribute('open', '');
-			});
 		}
+		openCurrentMenu();
 	}, [sidebarShown]);
 
 	return (
 		<button
 			id="menu-toggle"
-			className="header-button"
+			className="header-button ml-4"
 			type="button"
 			aria-pressed={sidebarShown ? 'true' : 'false'}
 			onClick={() => setSidebarShown(!sidebarShown)}
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
-				width="1em"
-				height="1em"
+				width="1.2rem"
+				height="1.2rem"
 				fill="none"
 				viewBox="0 0 24 24"
 				stroke="currentColor"

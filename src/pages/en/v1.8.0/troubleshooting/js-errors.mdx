@@ -47,6 +47,21 @@ Failed to compile.
 Critical dependency: the request of a dependency is an expression
 ```
 
+## Uncaught DOMException: Blocked a frame with origin "X" from accessing a cross-origin frame
+
+OpenReplay tracker captures **same-domain** iFrames by default. However, it throws an error when it tries to capture an iFrame that's NOT from the same-domain as your website. You can either:
+
+- Disable the entire functionality using the `captureIFrames` property as in the example below: 
+
+```js
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY,
+      captureIFrames: false
+});
+```
+
+- Keep capturing iFrames (default behavior) by adding the `data-openreplay-capture` HTML attribute to the same-domain `<iframe>` tags **only**. This way, cross-origin iFrames won't be tracked by OpenReplay.
+
 ## My problem is not listed
 
 If you encounter any errors that are not listed in this page, feel free to [raise an issue](https://github.com/openreplay/openreplay/issues/new/choose) or simply reach out to our [Slack](https://slack.openreplay.com) to get help from our community.

@@ -6,8 +6,13 @@ import grayMatter from "gray-matter";
 export function getVersionFromURL(pathname) {
 	const versionCodeMatch = pathname.match(/\/v([0-9].[0-9].[0-9])\//);
 	return versionCodeMatch ? versionCodeMatch[1] : '_latest_';
-
 }
+export function getLangFromURL(pathname) {
+	const langCodeMatch = pathname.split("/")
+	return langCodeMatch[0]
+}
+
+
 
 (async function () {
   // prepare the dirs
@@ -51,6 +56,7 @@ export function getVersionFromURL(pathname) {
       }
 
       indexedItem.version = getVersionFromURL(indexedItem.slug)
+      indexedItem.lang = getLangFromURL(indexedItem.slug)
       console.log("slug: ", indexedItem.slug)
       index.push(indexedItem);
       i++;

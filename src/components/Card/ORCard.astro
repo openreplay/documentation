@@ -1,0 +1,67 @@
+---
+
+let {url, title, description, width} = Astro.props;
+
+function calculateCSSWidth(width: number) {
+    if(!width) {
+        return 1;
+    } else {
+        return width / 100;
+    }
+}
+
+function getIcon(title: string) {
+
+    const icon_code = title.toLowerCase().split(" ").join("_")
+    switch(icon_code) {
+        case 'assist':
+            return 'icn-assist.svg'
+        break;
+        case 'axios':
+            return 'icn-axios.svg'
+        break;
+        case 'fetch':
+            return 'icn-fetch.svg'
+        break;
+        case 'graphql':
+            return 'icn-graphql.svg'
+        break;
+        case 'mobx':
+            return 'icn-mobx.svg'
+        break;
+        case 'redux':
+            return 'icn-redux.svg'
+        break;
+        case 'vuex':
+            return 'icn-vue-js.svg'
+        break;
+        
+    }
+}
+
+let classes = ["col-span-12", "card", "col-start-1"]
+//this is required so that purgeCSS won't remove the classes from the build
+let midClasses = {
+    6: "md:col-span-6",
+    4: "md:col-span-4"
+}
+const BIGGEST_CSS_WIDTH = 12;
+width = calculateCSSWidth(Number(width))
+if(width < 1) {
+    classes.push(midClasses[Math.round(BIGGEST_CSS_WIDTH * width)])
+}
+---
+
+
+<div class={classes.join(" ")}>
+        <div class="relative flex flex-col gap-6">
+            <div class="flex items-center gap-3">
+                <div class="shrink-0 theme-icon w-8 h-8 flex items-center justify-center rounded">
+                    <img class="p-0.5 border-0" src={"/landing-icons/" + getIcon(title)} />
+                </div>
+                <h4>{title}</h4>
+            </div>
+            <span class="text-base flex-grow">{description}</span>
+            <a class="justify-start w-fit" href={url}>Learn more</a>
+        </div>
+</div>

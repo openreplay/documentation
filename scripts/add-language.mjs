@@ -275,6 +275,8 @@ export default NavDictionary({
 	startHere: 'START-HERE-TRANSLATION',
 	'getting-started': 'GETTING-STARTED-TRANSLATION',
 });
+
+export const subMenus = NavDictionary({}, "subMenus);
 `,
 		},
 		{
@@ -284,9 +286,10 @@ export default NavDictionary({
 export default DocSearchDictionary({
 	button: 'SEARCH-TRANSLATION',
 });
+
 `,
 		},
-		{
+		/*{
 			getPath: (tag) => `../src/pages/${tag}/getting-started.md`,
 			getStub: () => `---
 layout: ~/layouts/MainLayout.astro
@@ -296,7 +299,7 @@ description: DESCRIPTION-TRANSLATION
 
 GETTING-STARTED-PAGE-TRANSLATION
 `,
-		},
+		},*/
 	];
 }
 

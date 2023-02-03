@@ -62,7 +62,7 @@ export default defineConfig({
   markdown: {
     syntaxHighlight: 'shiki',
     shikiConfig: {
-      theme: 'material-darker'
+      theme: 'slack-dark'
     },
     remarkPlugins: [remarkCodeSnippets()]
   },

@@ -18,30 +18,31 @@ const { type, defaultActiveTab, sidebarSections, currentPageMatch } = Astro.prop
 const lang = getLanguageFromURL(Astro.url.pathname);
 const version = getVersionFromURL(Astro.url.pathname);
 let urlVersion = (version) ? `v${version}/` : ""
+
+const categoryLinkPrefix = `/${lang}/${urlVersion}`
+const currentPageNoLangNoVer = currentPageMatch.replace(lang + "/", "").replace(urlVersion, "") + "/"
+//console.log(currentPageNoLangNoVer)
 ---
 
 {
 	sidebarSections.map((section) => (
-		<li class:list={['nav-group', type, defaultActiveTab === type && 'active']}>
-			<details open>
-				<summary class="nav-group-title">
+		<li class:list={['nav-group', type, defaultActiveTab === type && 'active', section.extraCSSClasses]} >
+			<details>
+				<summary class:list={["nav-group-title", (currentPageNoLangNoVer.indexOf(section.slug) == 0) && "active"]}>
 					<h2>
 						<span class="icon-text-combo">
 							<MenuIcon icon={section.icon} />
-							{section.text}
+							<a href={categoryLinkPrefix + section.slug}>
+								{section.text}
+								</a>
 						</span>
-						<svg class="chevron"
-							xmlns="http://www.w3.org/2000/svg"
-							viewBox="0 1 16 16"
-							width="16"
-							height="16"
-							aria-hidden="true"
-						>
-							<path
-								fill-rule="evenodd"
-								d="M6.22 3.22a.75.75 0 011.06 0l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 010-1.06z"
-							/>
-						</svg>
+						{
+							!section.hideChevron && (
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="chevron bi bi-chevron-right" viewBox="0 0 16 16">
+  <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+</svg>
+
+						)}
 					</h2>
 				</summary>
 				<ul>
@@ -75,6 +76,11 @@ let urlVersion = (version) ? `v${version}/` : ""
 		text-align: center;
 		display: block;
 	}
+
+	.nav-link a:hover {
+    background: rgba(85, 85, 85, 0.059);
+	}
+	
 	@media (max-width: 50em) {
 		.sm-hidden {
 			display: none !important;
@@ -90,11 +96,14 @@ let urlVersion = (version) ? `v${version}/` : ""
 		display: block;
 	}
 	.nav-group-title {
-		font-size: 1em;
-		font-weight: 600;
 		padding: 0.3rem 2rem;
+		font-size: 1em;
 	}
-
+	.nav-group-title a{
+		font-weight: 600;
+		color: var(--theme-readable-grey);
+		text-decoration: none;
+	}
 	.nav-link a {
 		margin: 1px;
 		padding: 0.3rem 2rem;
@@ -114,6 +123,7 @@ let urlVersion = (version) ? `v${version}/` : ""
 		&[data-current-parent='true'] {
 			color: var(--theme-accent-full) !important;
 			font-weight: 600;
+			background-color: rgba(85,85,85,0.059);
 			/* Indicates the current page for forced colors users in older browsers */
 			outline: 1px solid transparent;
 			&:focus {
@@ -131,23 +141,30 @@ let urlVersion = (version) ? `v${version}/` : ""
 
 	@media (min-width: 50em) {
 		.nav-group-title,
-		.nav-link a {
-			padding: 0.2rem 1rem;
-		}
-
 		.nav-group-title{
-			border-radius: 0.25rem;
+			border-radius: var(--theme-border-radius);
 		}
 
-		details[open] .nav-group-title{
+		/*details[open] .nav-group-title {
 			background-color: var(--theme-accent-opacity);
 		}
+		*/
+		.nav-group-title.active {
+			background-color: var(--theme-accent-opacity);
+		}
+
 
 		details .nav-group-title:hover{
 			background-color: var(--theme-accent-opacity);
 		}
 
 		
+	}
+
+	@media (min-width:64em) {
+		.nav-link a, .nav-group-title{
+			padding: 0.2rem .5rem;
+		}
 	}
 
 	:global(:root.theme-dark) .nav-link a[aria-current='page'],

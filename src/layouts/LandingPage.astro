@@ -1,0 +1,72 @@
+---
+import LandingContent from '../components/PageContent/LadingContent.astro'
+import { useTranslations } from '../i18n/util';
+import RightSidebar from '../components/RightSidebar/RightSidebar.astro';
+import TableOfContents from '../components/RightSidebar/TableOfContents';
+import { getGithubEditUrl } from '../util/getGithubEditUrl';
+import { getNavLinks } from '../util/getNavLinks';
+import LandingChild from './LandingChild.astro';
+
+import  Aside from "../components/Aside.astro";
+
+
+const { content = {} } = Astro.props;
+const headings = Astro.props.headings;
+const t = useTranslations(Astro);
+const { previous, next } = await getNavLinks(Astro);
+const githubEditUrl = getGithubEditUrl(Astro);
+
+import Modal from '../components/Modal.astro';
+---
+
+<LandingChild {...Astro.props}>
+	<RightSidebar slot="secondary-sidebar" headings={headings} content={content} githubEditUrl={githubEditUrl} />
+	<LandingContent {...{content, previous, next}}>
+		{
+			headings && (
+				<Fragment slot="before-article">
+					<nav>
+						<TableOfContents
+							client:media="(max-width: 72em)"
+							headings={headings}
+							labels={{
+								onThisPage: t('rightSidebar.onThisPage'),
+								overview: t('rightSidebar.overview'),
+							}}
+							isMobile={true}
+						/>
+					</nav>
+				</Fragment>
+			)
+		}
+		<Fragment slot="after-title"></Fragment> 
+		<slot />
+	</LandingContent >
+</LandingChild>
+<script >
+import { getLanguageFromURL, getVersionFromURL } from "~/util";
+
+//code to update the links inside the documents to make sure they link to the right
+//version and language
+	let links = document.getElementsByTagName("a")
+
+	let version = getVersionFromURL(window.location.href)
+	const lang = getLanguageFromURL(window.location.href)
+	const host = import.meta.env.PUBLIC_SITE_URL ? import.meta.env.PUBLIC_SITE_URL : ""
+	let urlParts = ["", lang]
+
+	if(version != "") {
+		version = "v" + version
+		urlParts.push(version)
+	}
+	for(let l of links){
+		if(l.href.indexOf(host) != -1) {
+			let uri = l.href.replace(host, "")
+			uri = uri.replace(`/${lang}`, "").replace(/\/v[0-9]+\.[0-9]+\.[0-9]+\//, "")
+			urlParts.push(uri)
+			l.setAttribute("href", urlParts.join("/").replace("//", "/"))
+			urlParts.pop()
+		}
+	
+	}
+</script>

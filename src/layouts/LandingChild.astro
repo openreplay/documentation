@@ -1,0 +1,136 @@
+---
+import Header from '../components/Header/Header.astro';
+import HeadCommon from '../components/HeadCommon.astro';
+import HeadSEO from '../components/HeadSEO.astro';
+import LeftSidebar from '../components/LeftSidebar/LeftSidebar.astro';
+import Footer from '../components/Footer/Footer.astro';
+import { normalizeLangTag } from '../i18n/bcp-normalize';
+import { rtlLanguages } from '../i18n/languages';
+import { useTranslations } from '../i18n/util';
+import { getLanguageFromURL } from '../util';
+import '@fontsource/figtree';
+import "@fontsource/figtree/400.css";
+import "@fontsource/figtree/500.css";
+import "@fontsource/figtree/600.css";
+import "@fontsource/figtree/700.css";
+import "@fontsource/fira-code";
+import "@fontsource/fira-code/400.css";
+import "@fontsource/fira-code/500.css";
+import { Tooltips } from 'astro-tooltips';
+
+const { content = {} } = Astro.props;
+const isFallback = !!Astro.params.fallback;
+const url = new URL(Astro.request.url);
+const lang = getLanguageFromURL(url.pathname);
+const direction = rtlLanguages.has(lang) ? 'rtl' : 'ltr';
+const bcpLang = normalizeLangTag(lang);
+const currentPage = url.pathname;
+const t = useTranslations(Astro);
+const formatTitle = (content: { title?: string }) =>
+	content.title ? `${content.title} ${t('site.title')}` : t('site.title');
+// Ensures the canonicalURL always has a trailing slash.
+const canonicalURL = new URL(Astro.url.pathname.replace(/([^/])$/, '$1/'), Astro.site);
+if (isFallback) canonicalURL.pathname = canonicalURL.pathname.replace(`/${lang}/`, '/en/');
+---
+
+<html dir={direction} lang={bcpLang} class="initial">
+	<head>
+		<HeadCommon />
+		<HeadSEO {content} {canonicalURL} />
+		<title set:html={formatTitle(content)}></title>
+		<Tooltips interactive={true} />
+		<style>
+			#left-sidebar {
+				display: none;
+				z-index: 10;
+				inset-inline-start: 0;
+			}
+			#right-sidebar {
+				top: var(--theme-navbar-height);
+				inset-inline-end: 0;
+			}
+			#main-content {
+				display: flex;
+				flex-direction: column;
+				height: 100%;
+			}
+
+			/* Allow showing left sidebar as an overlay, but only while viewport stays narrow */
+			@media not screen and (min-width: 64em) {
+				/* Make the left sidebar visible and fill the entire viewport below the navbar */
+				:global(.mobile-sidebar-toggle #left-sidebar) {
+					display: flex;
+					top: var(--theme-navbar-height);
+					inset-inline-end: 0;
+					position: relative;
+				}
+				/*
+					Try to prevent the rest of the page from scrolling,
+					and the main content from being visible below the overlay.
+
+					Unfortunately, iOS Safari doesn't currently play well with this
+					and will sometimes still scroll the page even though it shouldn't.
+
+					Once overscroll-behavior is properly supported, this should be fixed.
+				*/
+				:global(.mobile-sidebar-toggle) {
+					overflow-y: scroll;
+				}
+				:global(.mobile-sidebar-toggle .main-column) {
+					display: none !important;
+				}
+				:global(.mobile-sidebar-toggle #left-sidebar ul) {
+					overscroll-behavior: contain;
+				}
+			}
+
+			@media (min-width: 50em) {
+				
+			}
+
+			@media (min-width: 64em) {
+				#left-sidebar {
+					display: flex;
+					background: transparent;
+					margin-top: calc(var(--theme-navbar-height) + 3.5rem)
+				}
+				
+			}
+		</style>
+		<script is:inline>
+			// This code was migrated/copied from ThemToggleBotton to make the
+			// dark mode toggle instant, vs. hidden inside of a Preact useEffect() call.
+			const theme = (() => {
+				if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
+					return localStorage.getItem('theme');
+				}
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					return 'dark';
+				}
+				return 'light';
+			})();
+			if (theme === 'light') {
+				document.documentElement.classList.remove('theme-dark');
+			} else {
+				document.documentElement.classList.add('theme-dark');
+			}
+		</script>
+	</head>
+
+	<body class={content.baseClass || ""}>
+		<Header {currentPage} />
+		<main class="layout max-w-screen-2xl lg:flex mx-auto justify-between xl:px-2">
+			<aside id="left-sidebar" class="sidebar lg:w-72	 xl:w-1/5 relative">
+				<slot name="primary-sidebar">
+					<LeftSidebar {currentPage} />
+				</slot>
+			</aside>
+			<div id="main-content" class="main-column w-full lg:w-9/12 xl:w-7/12 mx-auto">
+				<slot />
+				<slot name="footer">
+					<Footer />
+				</slot>
+			</div>
+		</main>
+	</body>
+</html>

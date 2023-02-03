@@ -13,6 +13,9 @@ import "@fontsource/figtree/400.css";
 import "@fontsource/figtree/500.css";
 import "@fontsource/figtree/600.css";
 import "@fontsource/figtree/700.css";
+import "@fontsource/fira-code";
+import "@fontsource/fira-code/400.css";
+import "@fontsource/fira-code/500.css";
 import { Tooltips } from 'astro-tooltips';
 
 const { content = {} } = Astro.props;
@@ -37,12 +40,6 @@ if (isFallback) canonicalURL.pathname = canonicalURL.pathname.replace(`/${lang}/
 		<title set:html={formatTitle(content)}></title>
 		<Tooltips interactive={true} />
 		<style>
-			/* .sidebar {
-				position: re;
-				top: 0;
-				bottom: 0;
-				padding: 0;
-			}*/
 			#left-sidebar {
 				display: none;
 				z-index: 10;
@@ -59,12 +56,13 @@ if (isFallback) canonicalURL.pathname = canonicalURL.pathname.replace(`/${lang}/
 			}
 
 			/* Allow showing left sidebar as an overlay, but only while viewport stays narrow */
-			@media not screen and (min-width: 50em) {
+			@media not screen and (min-width: 64em) {
 				/* Make the left sidebar visible and fill the entire viewport below the navbar */
 				:global(.mobile-sidebar-toggle #left-sidebar) {
-					display: block;
+					display: flex;
 					top: var(--theme-navbar-height);
 					inset-inline-end: 0;
+					position: relative;
 				}
 				/*
 					Try to prevent the rest of the page from scrolling,
@@ -76,10 +74,10 @@ if (isFallback) canonicalURL.pathname = canonicalURL.pathname.replace(`/${lang}/
 					Once overscroll-behavior is properly supported, this should be fixed.
 				*/
 				:global(.mobile-sidebar-toggle) {
-					overflow: hidden;
+					overflow-y: scroll;
 				}
 				:global(.mobile-sidebar-toggle .main-column) {
-					visibility: hidden;
+					display: none !important;
 				}
 				:global(.mobile-sidebar-toggle #left-sidebar ul) {
 					overscroll-behavior: contain;
@@ -87,15 +85,16 @@ if (isFallback) canonicalURL.pathname = canonicalURL.pathname.replace(`/${lang}/
 			}
 
 			@media (min-width: 50em) {
-				#left-sidebar {
-					display: flex;
-					/* width: var(--theme-left-sidebar-width); */
-					background: transparent;
-				}
+				
 			}
 
-			@media (min-width: 72em) {
-			
+			@media (min-width: 64em) {
+				#left-sidebar {
+					display: flex;
+					background: transparent;
+					margin-top: calc(var(--theme-navbar-height) + 3.5rem)
+				}
+				
 			}
 		</style>
 		<script is:inline>
@@ -118,18 +117,18 @@ if (isFallback) canonicalURL.pathname = canonicalURL.pathname.replace(`/${lang}/
 		</script>
 	</head>
 
-	<body>
+	<body class={content.baseClass || ""}>
 		<Header {currentPage} />
-		<main class="layout max-w-screen-2xl flex mx-auto">
-			<aside id="left-sidebar" class="w-2/12">
+		<main class="layout max-w-screen-2xl lg:flex mx-auto justify-between xl:px-2">
+			<aside id="left-sidebar" class="sidebar lg:w-72	 xl:w-1/5 relative">
 				<slot name="primary-sidebar">
 					<LeftSidebar {currentPage} />
 				</slot>
 			</aside>
-			<div id="main-content" class="main-column w-7/12 mx-auto">
+			<div id="main-content" class="main-column w-full lg:w-9/12 xl:w-7/12 mx-auto">
 				<slot />
 			</div>
-			<aside id="right-sidebar" class=" w-2/12">
+			<aside id="right-sidebar" class="hidden xl:block xl:w-1/5">
 				<slot name="secondary-sidebar" />
 			</aside>
 		</main>

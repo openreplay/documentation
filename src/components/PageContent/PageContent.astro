@@ -30,14 +30,14 @@ const direction = rtlLanguages.has(lang) ? 'rtl' : 'ltr';
 		// so we must place fixed UI elements like the mobile TOC here.
 		Astro.slots.has('before-article') && (
 			<>
-				<div class="fixed-mobile-bar" dir={direction}>
-					<slot name="before-article" />
-				</div>
-				<div class="spacer" />
+			<div class="fixed-mobile-bar" dir={direction}>
+				<slot name="before-article" />
+			</div>
 			</>
 		)
 	}
 	<article id="article" class="content full">
+	
 		<section class="main-section">
 			<header>
 				<slot name="before-title" />
@@ -62,31 +62,47 @@ const direction = rtlLanguages.has(lang) ? 'rtl' : 'ltr';
 <style>
 	.fixed-mobile-bar {
 		display: block;
-		position: fixed;
+		position: sticky;
 		inset-inline: 0;
-		top: calc(var(--theme-navbar-height));
+		top: calc(var(--theme-navbar-height) - 4px);
 		z-index: 2;
+		margin-bottom: 3rem;
 	}
 
 	.spacer {
 		height: var(--theme-mobile-toc-height);
 	}
 
+	.content{
+			margin-top: var(--theme-navbar-height);
+		}
+
 	@media (min-width: 50em) {
 		.fixed-mobile-bar {
-			inset-inline-start: var(--theme-left-sidebar-width);
 			margin-top: 0;
+			/*inset-inline-start: var(--theme-left-sidebar-width);*/
 		}
 	}
 
-	@media (min-width: 72em) {
-		.fixed-mobile-bar {
-			display: none;
+	@media (min-width: 64em) {
+		.fixed-mobile-bar{
+			inset-inline-start: 17.4rem;
 		}
+		
 		.spacer {
 			height: 0;
 		}
 	}
+
+	@media (min-width: 80em){
+		.fixed-mobile-bar {
+			display: none;
+		}
+		.content{
+			margin-top: calc(var(--theme-navbar-height) + 3.5rem);
+		}
+	}
+
 
 	.content-title :global(.scope) {
 		font-weight: 300;
@@ -96,7 +112,7 @@ const direction = rtlLanguages.has(lang) ? 'rtl' : 'ltr';
 		padding-top: var(--doc-padding-block);
 		padding-bottom: var(--doc-padding-block);
 		padding-inline: var(--min-spacing-inline);
-		width: 100%;
+		/*width: 100%;*/
 		height: 100%;
 		min-width: calc(100% - 20rem);
 		max-width: 1024px;
@@ -104,11 +120,9 @@ const direction = rtlLanguages.has(lang) ? 'rtl' : 'ltr';
 		display: flex;
 		flex-direction: column;
 		overflow-x: hidden;
-		margin-top: calc(var(--theme-navbar-height) + 1rem);
 		background-color: var(--content-bg);
-		border-radius: 0.375rem;
+		border-radius: var(--theme-border-radius);
 		border: thin solid rgba(123,123,123,.2);
-		margin-left: .15rem;
 	}
 	.content > section {
 		margin-bottom: 4rem;
@@ -119,6 +133,7 @@ const direction = rtlLanguages.has(lang) ? 'rtl' : 'ltr';
 		width: auto;
 		gap: 1rem;
 		margin-bottom: 1.5rem;
+
 	}
 
 </style>

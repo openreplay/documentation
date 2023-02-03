@@ -45,3 +45,6 @@ export default NavDictionary({
 	'getting-started': 'Начало работы',
 	install: 'Установка',
 });
+
+
+export const subMenus = NavDictionary({}, "subMenus")
