@@ -13,9 +13,9 @@ export default [
 	//{ text: 'Layouts', slug: 'layout-elements', key: 'layouts' },
 
 	{ text: 'Home', header: true, type: 'learn', slug: 'home', key: 'home', icon: 'home', hideChevron: true },
-	{ text: 'Getting started', header: true, type: 'learn', slug: 'getting-started', key: 'deployment', icon: 'start', hideChevron: true, extraCSSClasses: "pt-5 border-t"},
+	{ text: 'Getting started', header: true, type: 'learn', slug: 'getting-started', key: 'deployment', icon: 'start', hideChevron: true},
 
-	{ text: 'Deployment', header: true, type: 'learn', slug: 'deployment/', key: 'deployment', icon: 'deployment'},
+	{ text: 'Deployment', header: true, type: 'learn', slug: 'deployment/', key: 'deployment', icon: 'deployment', extraCSSClasses: "pt-5 border-t"},
 	{ text: 'Overview', slug: 'deployment', key: 'deploy-aws' },
 	{ text: 'Deploy to AWS', slug: 'deployment/deploy-aws', key: 'deploy-aws' },
 	{ text: 'Deploy to Azure', slug: 'deployment/deploy-azure', key: 'deploy-aws' },
