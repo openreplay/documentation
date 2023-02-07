@@ -49,7 +49,7 @@ export default [
 	{ text: 'Single Sign-On (SSO)', slug: 'configuration/sso', key: 'concepts/islands' },
 
 
-	{ text: 'Features', slug: 'installation/', header: true, type: 'learn', key: 'installation', icon: 'features' },
+	{ text: 'How-tos', slug: 'installation/', header: true, type: 'learn', key: 'installation', icon: 'features' },
 	{ text: 'Overview', slug: 'installation', key: 'blog-tutorial' },
 	{ text: 'Custom Events', slug: 'installation/custom-events', key: 'blog-tutorial' },
 	{ text: 'Error reporting', slug: 'installation/error-reporting', key: 'blog-installation' },
@@ -57,7 +57,7 @@ export default [
 	//{ text: 'JavaScript SDK', slug: 'installation/javascript-sdk', key: 'blog-installation' }, 
 	{ text: 'Metadata', slug: 'installation/metadata', key: 'blog-installation' },
 	{ text: 'Sanitize Data', slug: 'installation/sanitize-data', key: 'blog-installation' },
-	{ text: 'Setup OpenReplay', slug: 'installation/setup-or', key: 'blog-installation' },
+	//{ text: 'Setup OpenReplay', slug: 'installation/setup-or', key: 'blog-installation' },
 	{ text: 'Upload Source maps', slug: 'installation/upload-sourcemaps', key: 'blog-installation' },
 
 	//plugins

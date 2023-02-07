@@ -30,7 +30,8 @@ readFile(__dirname + '/../public/search-index.json', (err, data) => {
                 version: page.version,
                 lang: page.lang,
                 excerpt: page.excerpt,
-                slug: page.slug
+                slug: page.slug,
+                body: page.body
             })
         })
         const chunkSize = 500;
