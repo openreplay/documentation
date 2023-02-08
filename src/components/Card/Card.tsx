@@ -20,7 +20,7 @@ function Card(props: Props) {
 			{/* <div className="mt-6 font-medium">1200 users</div> */}
 			{moreLink && (
 				<div className="mt-4">
-					<a className="justify-end text-sm theme" href={moreLink}>Learn More</a>
+					<a className="justify-end text-sm theme learn-more" href={moreLink}>Learn More</a>
 				</div>
 			)}
 		</div>
@@ -31,7 +31,7 @@ function Card(props: Props) {
 		// 			<h5 className="text-base text-scale-1200">{title}</h5>
 		// 		</div>
 		// 		<span className="text-sm text-scale-1100 flex-grow">{description}</span>
-		// 		{moreLink && <a className="justify-end text-sm">Learn More</a>}
+		// 		{moreLink && <a className="justify-end text-sm learn-more">Learn More</a>}
 		// 	</div>
 		// </div>
 	);
