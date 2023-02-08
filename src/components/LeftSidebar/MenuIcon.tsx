@@ -1,4 +1,5 @@
 import React from 'react';
+import { getSVGIcon } from '../../util/getIcons';
 
 const MenuIcon = (props) => {
   switch (props.icon) {
@@ -83,7 +84,7 @@ case 'structure':
   </svg>;  
 
     default:
-      return null;
+      return <div dangerouslySetInnerHTML={{__html: getSVGIcon(props.icon)}} />
   }
 }
 
