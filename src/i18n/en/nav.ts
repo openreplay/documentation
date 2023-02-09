@@ -175,7 +175,6 @@ export const subMenus = [
 
  { text: 'JavaScript SDK', header:true,type: 'learn', slug: 'sdk/', key: 'guides/troubleshooting', icon: 'sdk' },
  { text: 'Overview', slug: 'sdk', key: 'sdk' },
- { text: 'Installation', slug: 'sdk/installation', key: 'sdk' },
  { text: 'Initialization', slug: 'sdk/constructor', key: 'sdk' },
  { text: 'Methods', slug: 'sdk/methods', key: 'sdk' },
  { text: 'event', slug: 'sdk/event', key: 'sdk/troubleshooting' },
