@@ -11,7 +11,7 @@ Follow the below tutorials to get the most out of OpenReplay.
 Learn from the below tutorials using real-world use cases.
 
 ### Plugins
-
+- [Create your own plugins](/tutorials/build-plugins): Learn how to build your own custom plugins in your self-hosted OpenReplay instance.
 - [Assist](/tutorials/assist): Offer the best support and on-boarding exeprience for your end users though live session replay.
 - [Fetch Plugin](/tutorials/fetch): Learn how to set up and sanitize request information using the Fetch plugin.
 - [Axios Plugin](/tutorials/axios): Learn how to set up and sanitize request information using the Axios plugin.

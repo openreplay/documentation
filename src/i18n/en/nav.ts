@@ -31,6 +31,8 @@ export default [
 
 	{ text: 'Tracker Setup', slug: 'using-or/', header: true, type: 'learn', key: 'installation', icon: 'tracker-setup' },
 	{ text: 'Overview', slug: 'using-or', key: 'tutorials/' },
+	{ text: 'React', slug: 'using-or/next', key: 'using-or/' },
+	{ text: 'Vue', slug: 'using-or/next', key: 'using-or/' },
 	{ text: 'Next.js', slug: 'using-or/next', key: 'using-or/' },
 	{ text: 'Nuxt', slug: 'using-or/nuxt', key: 'using-or/' },
 	{ text: 'Remix', slug: 'using-or/remix', key: 'using-or/' },
@@ -173,7 +175,8 @@ export const subMenus = [
 
  { text: 'JavaScript SDK', header:true,type: 'learn', slug: 'sdk/', key: 'guides/troubleshooting', icon: 'sdk' },
  { text: 'Overview', slug: 'sdk', key: 'sdk' },
- { text: 'Constructor', slug: 'sdk/constructor', key: 'api/troubleshooting' },
+ { text: 'Initialization', slug: 'sdk/constructor', key: 'sdk' },
+ { text: 'Methods', slug: 'sdk/methods', key: 'sdk' },
  { text: 'event', slug: 'sdk/event', key: 'sdk/troubleshooting' },
  { text: 'getSessionToken', slug: 'sdk/get-session-token', key: 'sdk/troubleshooting' },
  { text: 'getSessionID', slug: 'sdk/get-session-id', key: 'sdk/troubleshooting' },
