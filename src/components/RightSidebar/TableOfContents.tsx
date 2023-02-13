@@ -105,7 +105,7 @@ const TableOfContents: FunctionalComponent<Props> = ({ headings = [], labels, is
 					{labels.onThisPage}
 				</h2>
 			</HeadingContainer>
-			<ul ref={toc}>
+			<ul ref={toc} class="mt-4">
 				{headings.map(({ depth, slug, text }) => (
 					<li
 						class={`header-link depth-${depth} ${
