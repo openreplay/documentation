@@ -44,12 +44,13 @@ export const { getStaticPaths, get } = OGImageRoute({
 
 	getImageOptions: async (_, mod) => {
 		const page = await mod();
+		console.log(page)
 		return {
 			title: page.frontmatter.title,
 			description: page.frontmatter.description,
 			dir: rtlLanguages.has(getLanguageFromURL(page.url)) ? 'rtl' : 'ltr',
 			logo: {
-				path: './src/docs-logo.png',
+				path: './public/default-og-image.png',
 				size: [400],
 			},
 			border: { color: [255, 93, 1], width: 20, side: 'inline-start' },

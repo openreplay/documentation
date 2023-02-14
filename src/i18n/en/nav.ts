@@ -31,6 +31,8 @@ export default [
 
 	{ text: 'Tracker Setup', slug: 'using-or/', header: true, type: 'learn', key: 'installation', icon: 'tracker-setup' },
 	{ text: 'Overview', slug: 'using-or', key: 'tutorials/' },
+	{ text: 'React', slug: 'using-or/next', key: 'using-or/' },
+	{ text: 'Vue', slug: 'using-or/next', key: 'using-or/' },
 	{ text: 'Next.js', slug: 'using-or/next', key: 'using-or/' },
 	{ text: 'Nuxt', slug: 'using-or/nuxt', key: 'using-or/' },
 	{ text: 'Remix', slug: 'using-or/remix', key: 'using-or/' },
@@ -38,7 +40,7 @@ export default [
 	{ text: 'Angular', slug: 'using-or/angular', key: 'using-or/' },
 	{ text: 'Gatsby', slug: 'using-or/gatsby', key: 'using-or/' },
 
-	{ text: 'Configuration', slug: 'configuration/', header: true, type: 'learn', key: 'configuration', icon: 'configure' },
+	{ text: 'Administration', slug: 'configuration/', header: true, type: 'learn', key: 'configuration', icon: 'configure' },
 	{ text: 'Overview', slug: 'configuration', key: 'concepts/why-astro' },
 	{ text: 'Cleanup Storage', slug: 'configuration/cleanup-storage', key: 'concepts/why-astro' },
 	{ text: 'Configure SMTP', slug: 'configuration/configure-smtp', key: 'concepts/mpa-vs-spa' },
@@ -49,17 +51,21 @@ export default [
 	{ text: 'Single Sign-On (SSO)', slug: 'configuration/sso', key: 'concepts/islands' },
 
 
-	{ text: 'Features', slug: 'installation/', header: true, type: 'learn', key: 'installation', icon: 'features' },
+	{ text: 'How-tos', slug: 'installation/', header: true, type: 'learn', key: 'installation', icon: 'features' },
 	{ text: 'Overview', slug: 'installation', key: 'blog-tutorial' },
+	{ text: 'Identify a User', slug: 'installation/identify-user', key: 'blog-installation' },
+	{ text: 'Add users to your team', slug: 'tutorials/adding-users', key: 'blog-installation' },
+	{ text: 'Metadata', slug: 'installation/metadata', key: 'blog-installation' },
 	{ text: 'Custom Events', slug: 'installation/custom-events', key: 'blog-tutorial' },
 	{ text: 'Error reporting', slug: 'installation/error-reporting', key: 'blog-installation' },
-	{ text: 'Identify a User', slug: 'installation/identify-user', key: 'blog-installation' },
+	{ text: 'Upload Source maps', slug: 'installation/upload-sourcemaps', key: 'blog-installation' },
+	{ text: 'Sanitize Data', slug: 'installation/sanitize-data', key: 'blog-installation' },
+	{ text: 'Custom Heuristics', slug: 'tutorials/custom-heuristics', key: 'blog-installation' },
+	{ text: 'OmniSearch', slug: 'tutorials/omnisearch', key: 'blog-installation' },
+	{ text: 'Custom Dashboards', slug: 'tutorials/custom-dashboard', key: 'blog-installation' },
 	{ text: 'Network options', slug: 'installation/network-options', key: 'blog-installation' },
 	//{ text: 'JavaScript SDK', slug: 'installation/javascript-sdk', key: 'blog-installation' }, 
-	{ text: 'Metadata', slug: 'installation/metadata', key: 'blog-installation' },
-	{ text: 'Sanitize Data', slug: 'installation/sanitize-data', key: 'blog-installation' },
-	{ text: 'Setup OpenReplay', slug: 'installation/setup-or', key: 'blog-installation' },
-	{ text: 'Upload Source maps', slug: 'installation/upload-sourcemaps', key: 'blog-installation' },
+	//{ text: 'Setup OpenReplay', slug: 'installation/setup-or', key: 'blog-installation' },
 
 	//plugins
 	{ text: 'Plugins', header:true, type: 'learn', slug: 'plugins/', key: 'guides/troubleshooting', icon: 'plugins' },
@@ -99,11 +105,11 @@ export default [
 	// { text: 'Feature: Custom Metrics - JS errors', slug: 'tutorials/js-errors-dashboard', key: 'tutorials/' },
 	// //integrations with frameworks (using openreplay with...)
 	// // { text: 'Using OR with Next.js', slug: 'tutorials/next', key: 'tutorials/' },
-	// // { text: 'Using OR with Nuxt', slug: 'tutorials/nuxt', key: 'tutorials/' },
-	// // { text: 'Using OR with Remix', slug: 'tutorials/remix', key: 'tutorials/' },
-	// // { text: 'Using OR with Svelte', slug: 'tutorials/svelte', key: 'tutorials/' },
-	// // { text: 'Using OR with Angular', slug: 'tutorials/angular', key: 'tutorials/' },
-	// // { text: 'Using OR with Gatsby', slug: 'tutorials/gatsby', key: 'tutorials/' },
+	// // { text: 'Using OR with Nuxt', slug: 'using-or/nuxt', key: 'tutorials/' },
+	// // { text: 'Using OR with Remix', slug: 'using-or/remix', key: 'tutorials/' },
+	// // { text: 'Using OR with Svelte', slug: 'using-or/svelte', key: 'tutorials/' },
+	// // { text: 'Using OR with Angular', slug: 'using-or/angular', key: 'tutorials/' },
+	// // { text: 'Using OR with Gatsby', slug: 'using-or/gatsby', key: 'tutorials/' },
 	// //extending OpenReplay
 	// { text: 'Creating your first plugin', slug: 'tutorials/build-plugins', key: 'tutorials/troubleshooting' },
 	// { text: 'Creating your first heuristic', slug: 'tutorials/custom-heuristics', key: 'tutorials/troubleshooting' },
@@ -174,7 +180,8 @@ export const subMenus = [
 
  { text: 'JavaScript SDK', header:true,type: 'learn', slug: 'sdk/', key: 'guides/troubleshooting', icon: 'sdk' },
  { text: 'Overview', slug: 'sdk', key: 'sdk' },
- { text: 'Constructor', slug: 'sdk/constructor', key: 'api/troubleshooting' },
+ { text: 'Initialization', slug: 'sdk/constructor', key: 'sdk' },
+ { text: 'Methods', slug: 'sdk/methods', key: 'sdk' },
  { text: 'event', slug: 'sdk/event', key: 'sdk/troubleshooting' },
  { text: 'getSessionToken', slug: 'sdk/get-session-token', key: 'sdk/troubleshooting' },
  { text: 'getSessionID', slug: 'sdk/get-session-id', key: 'sdk/troubleshooting' },

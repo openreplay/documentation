@@ -1,13 +1,64 @@
 ---
-title: "JavaScript SDK - Constructor"
-metaTitle: "JavaScript SDK - Constructor"
+title: "JavaScript SDK - Initializing the SDK"
+metaTitle: "JavaScript SDK - Initializing the SDK"
 metaDescription: "Configuration options for the tracker's constructor method"
 ---
 import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
 
+## Installation
+
+The following line will install the tracker and with it the SDK for you to take advantage of all tracker features.
+
+```bash
+npm i @openreplay/tracker
+```
+
+## Initialization
 When instantiating OpenReplay's tracker, there are several configuration options you can provide to customize many aspects of the recording and the recording experience.
 
-Example:
+You must set the `projectKey` option in the constructor. You can get this value from your OpenReplay dashboard under 'Preferences > Projects'.
+
+<Aside type="tip">
+  Note that if you have multiple projects, you need to be careful which project key you choose.
+</Aside>
+
+
+### Single Page Applications (SPA)
+If your website is a **Single Page Application (SPA)** use the below code:
+
+```js
+import OpenReplay from '@openreplay/tracker';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+tracker.start(); //  returns a promise with session info (sessionID, sessionHash, userUUID)
+```
+
+### Server-side Rendered (SSR)
+Otherwise, if your web app is **Server-Side-Rendered (SSR)** (i.e. NextJS, NuxtJS) use the below snippet. Ensure `tracker.start()` is called once the app is started (in `useEffect` or `componentDidMount`).
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+//...
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY,
+});
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start(); //  returns a promise with session info (sessionID, sessionHash, userUUID)
+  }, [])
+}
+```
+
+<Aside type="tip">
+If you're using a particular web framework, check out our [Tracker Setup section](/using-or) to know how to get started.
+</Aside>
+
+
+## Example
 
 ```js
 import OpenReplay from '@openreplay/tracker/cjs';
@@ -20,7 +71,7 @@ const tracker = new OpenReplay({
 });
 ```
 
-## Options
+## Initialization Options
 
 There are a set of options you can pass to the constructor. Only `projectKey` is required.
 
@@ -92,3 +143,8 @@ A separated network-related options object. See [Network Options](/installation/
     Note that when using `__DISABLE_SECURE_MODE` from your local workstation, you **might** see visual differences when watching the replay, like CSS styles not properly loading.
     For an optimal recording, your tests should be done from a publicly available URL.
 </Aside>
+
+## Methods
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+  <ORCard title="Get to know the methods" url="/sdk/methods" hideIcon={true} width="100"/>
+</div>
