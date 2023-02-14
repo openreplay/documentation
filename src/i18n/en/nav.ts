@@ -40,7 +40,7 @@ export default [
 	{ text: 'Angular', slug: 'using-or/angular', key: 'using-or/' },
 	{ text: 'Gatsby', slug: 'using-or/gatsby', key: 'using-or/' },
 
-	{ text: 'Configuration', slug: 'configuration/', header: true, type: 'learn', key: 'configuration', icon: 'configure' },
+	{ text: 'Administration', slug: 'configuration/', header: true, type: 'learn', key: 'configuration', icon: 'configure' },
 	{ text: 'Overview', slug: 'configuration', key: 'concepts/why-astro' },
 	{ text: 'Cleanup Storage', slug: 'configuration/cleanup-storage', key: 'concepts/why-astro' },
 	{ text: 'Configure SMTP', slug: 'configuration/configure-smtp', key: 'concepts/mpa-vs-spa' },
