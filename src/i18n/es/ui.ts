@@ -3,6 +3,7 @@ import { UIDictionary } from '../translation-checkers';
 export default UIDictionary({
 	'a11y.skipLink': 'Saltearse al contenido',
 	'navbar.a11yTitle': 'Superior',
+	'homepage.banner': 'Implemente, gestione y personalice OpenReplay a través de quickstarts, tutoriales y guías. Más información sobre nuestro SDK y referencias API',
 	// Aside component default labels
 	'aside.note': 'Nota',
 	'aside.tip': 'Sugerencia',
