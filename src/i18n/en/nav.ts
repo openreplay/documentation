@@ -31,6 +31,7 @@ export default [
 
 	{ text: 'Tracker Setup', slug: 'using-or/', header: true, type: 'learn', key: 'tracker-setup', icon: 'tracker-setup' },
 	{ text: 'Overview', slug: 'using-or', key: 'tutorials/' },
+	{ text: 'JS Snippet', slug: 'using-or/snippet', key: 'using-or/' },
 	{ text: 'React', slug: 'using-or/next', key: 'using-or/' },
 	{ text: 'Vue', slug: 'using-or/next', key: 'using-or/' },
 	{ text: 'Next.js', slug: 'using-or/next', key: 'using-or/' },
