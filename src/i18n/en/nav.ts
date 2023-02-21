@@ -13,26 +13,27 @@ export default [
 	//{ text: 'Layouts', slug: 'layout-elements', key: 'layouts' },
 
 	{ text: 'Home', header: true, type: 'learn', slug: 'home', key: 'home', icon: 'home', hideChevron: true },
-	{ text: 'Getting started', header: true, type: 'learn', slug: 'getting-started', key: 'deployment', icon: 'start', hideChevron: true},
+	{ text: 'Getting started', header: true, type: 'learn', slug: 'getting-started', key: 'getting-started', icon: 'start', hideChevron: true},
 
 	{ text: 'Deployment', header: true, type: 'learn', slug: 'deployment/', key: 'deployment', icon: 'deployment', extraCSSClasses: "pt-5 border-t"},
-	{ text: 'Overview', slug: 'deployment', key: 'deploy-aws' },
+	{ text: 'Overview', slug: 'deployment', key: 'deploy-overview' },
 	{ text: 'Deploy to AWS', slug: 'deployment/deploy-aws', key: 'deploy-aws' },
-	{ text: 'Deploy to Azure', slug: 'deployment/deploy-azure', key: 'deploy-aws' },
-	{ text: 'Deploy to GCP', slug: 'deployment/deploy-gcp', key: 'deploy-aws' },
-	{ text: 'Deploy to Digital Ocean', slug: 'deployment/deploy-digitalocean', key: 'deploy-aws' },
-	{ text: 'Deploy to Kubernetes', slug: 'deployment/deploy-kubernetes', key: 'deploy-aws' },
-	{ text: 'Deploy to OVHCloud', slug: 'deployment/deploy-ovhcloud', key: 'deploy-aws' },
-	{ text: 'Deploy to Scaleway', slug: 'deployment/deploy-scaleway', key: 'deploy-aws' },
-	{ text: 'Deploy from Source', slug: 'deployment/deploy-source', key: 'deploy-aws' },
-	{ text: 'Deploy to Ubuntu', slug: 'deployment/deploy-ubuntu', key: 'deploy-aws' },
-	{ text: 'OpenReplay Administration', slug: 'deployment/openreplay-admin', key: 'deploy-aws' },
+	{ text: 'Deploy to Azure', slug: 'deployment/deploy-azure', key: 'deploy-azure' },
+	{ text: 'Deploy to GCP', slug: 'deployment/deploy-gcp', key: 'deploy-gcp' },
+	{ text: 'Deploy to Digital Ocean', slug: 'deployment/deploy-digitalocean', key: 'deploy-do' },
+	{ text: 'Deploy to Kubernetes', slug: 'deployment/deploy-kubernetes', key: 'deploy-kub' },
+	{ text: 'Deploy to OVHCloud', slug: 'deployment/deploy-ovhcloud', key: 'deploy-ovh' },
+	{ text: 'Deploy to Scaleway', slug: 'deployment/deploy-scaleway', key: 'deploy-scaleway' },
+	{ text: 'Deploy from Source', slug: 'deployment/deploy-source', key: 'deploy-source' },
+	{ text: 'Deploy to Ubuntu', slug: 'deployment/deploy-ubuntu', key: 'deploy-ubuntu' },
+	{ text: 'OpenReplay Administration', slug: 'deployment/openreplay-admin', key: 'deploy-admin' },
 	{ text: 'Upgrade Deployment', slug: 'deployment/upgrade', key: 'migrate' },
 
-	{ text: 'Tracker Setup', slug: 'using-or/', header: true, type: 'learn', key: 'installation', icon: 'tracker-setup' },
+	{ text: 'Tracker Setup', slug: 'using-or/', header: true, type: 'learn', key: 'tracker-setup', icon: 'tracker-setup' },
 	{ text: 'Overview', slug: 'using-or', key: 'tutorials/' },
-	{ text: 'React', slug: 'using-or/next', key: 'using-or/' },
-	{ text: 'Vue', slug: 'using-or/next', key: 'using-or/' },
+	{ text: 'JS Snippet', slug: 'using-or/snippet', key: 'using-or/' },
+	{ text: 'React', slug: 'using-or/react', key: 'using-or/' },
+	{ text: 'Vue', slug: 'using-or/vue', key: 'using-or/' },
 	{ text: 'Next.js', slug: 'using-or/next', key: 'using-or/' },
 	{ text: 'Nuxt', slug: 'using-or/nuxt', key: 'using-or/' },
 	{ text: 'Remix', slug: 'using-or/remix', key: 'using-or/' },
@@ -40,7 +41,7 @@ export default [
 	{ text: 'Angular', slug: 'using-or/angular', key: 'using-or/' },
 	{ text: 'Gatsby', slug: 'using-or/gatsby', key: 'using-or/' },
 
-	{ text: 'Administration', slug: 'configuration/', header: true, type: 'learn', key: 'configuration', icon: 'configure' },
+	{ text: 'Administration', slug: 'configuration/', header: true, type: 'learn', key: 'admin', icon: 'configure' },
 	{ text: 'Overview', slug: 'configuration', key: 'concepts/why-astro' },
 	{ text: 'Cleanup Storage', slug: 'configuration/cleanup-storage', key: 'concepts/why-astro' },
 	{ text: 'Configure SMTP', slug: 'configuration/configure-smtp', key: 'concepts/mpa-vs-spa' },
@@ -51,7 +52,7 @@ export default [
 	{ text: 'Single Sign-On (SSO)', slug: 'configuration/sso', key: 'concepts/islands' },
 
 
-	{ text: 'How-tos', slug: 'installation/', header: true, type: 'learn', key: 'installation', icon: 'features' },
+	{ text: 'How-tos', slug: 'installation/', header: true, type: 'learn', key: 'how-tos', icon: 'features' },
 	{ text: 'Overview', slug: 'installation', key: 'blog-tutorial' },
 	{ text: 'Identify a User', slug: 'installation/identify-user', key: 'blog-installation' },
 	{ text: 'Add users to your team', slug: 'tutorials/adding-users', key: 'blog-installation' },
@@ -68,7 +69,7 @@ export default [
 	//{ text: 'Setup OpenReplay', slug: 'installation/setup-or', key: 'blog-installation' },
 
 	//plugins
-	{ text: 'Plugins', header:true, type: 'learn', slug: 'plugins/', key: 'guides/troubleshooting', icon: 'plugins' },
+	{ text: 'Plugins', header:true, type: 'learn', slug: 'plugins/', key: 'plugins', icon: 'plugins' },
 	{ text: 'Overview', slug: 'plugins', key: 'plugins/troubleshooting' },
 	{ text: 'Assist', slug: 'plugins/assist', key: 'plugins/troubleshooting' },
 	{ text: 'Axios', slug: 'plugins/axios', key: 'plugins/troubleshooting' },
@@ -82,43 +83,9 @@ export default [
 	{ text: 'Redux', slug: 'plugins/redux', key: 'plugins/troubleshooting' },
 	{ text: 'Zustand', slug: 'plugins/zustand', key: 'plugins/troubleshooting' },
 
-	// //tutorials
-	// { text: 'Tutorials', slug: 'tutorials/', header: true, type: 'learn', key: 'tutorials', icon: 'tutorials' },
-	// //about plugins
-	// { text: 'Overview', slug: 'tutorials', key: 'core-concepts/layouts' },
-	// { text: 'Plugins: Assist', slug: 'tutorials/assist', key: 'core-concepts/layouts' },
-	// { text: 'Plugins: Fetch', slug: 'tutorials/fetch', key: 'tutorials/layouts' },
-	// { text: 'Plugins: Axios', slug: 'tutorials/axios', key: 'tutorials/layouts' },
-	// { text: 'Plugins: Redux', slug: 'tutorials/redux', key: 'tutorials/layouts' },
-	// { text: 'Plugins: VueX', slug: 'tutorials/vuex', key: 'core-concepts/layouts' },
-	// { text: 'Plugins: Pinia', slug: 'tutorials/pinia', key: 'guides/imports' },
-	// { text: 'Plugins: GraphQL', slug: 'tutorials/graphql', key: 'guides/markdown-content' },
-	// { text: 'Plugins: Zustand', slug: 'tutorials/zustand', key: 'core-concepts/routing' },
-	// //features
-	// { text: 'Feature: Omnisearch', slug: 'tutorials/omnisearch', key: 'core-concepts/endpoints' },
-	// { text: 'Feature: Adding users', slug: 'tutorials/adding-users', key: 'tutorials/-fetching' },
-	// { text: 'Feature: Issue types', slug: 'tutorials/issues', key: 'tutorials/' },
-	// { text: 'Feature: Custom events', slug: 'tutorials/custom-events', key: 'tutorials/' },
-	// { text: 'Feature: Metadata', slug: 'tutorials/metadata', key: 'tutorials/' },
-	// { text: 'Feature: Custom dashboards', slug: 'tutorials/custom-dashboard', key: 'tutorials/' },
-	// { text: 'Feature: Custom funnels', slug: 'tutorials/funnels', key: 'tutorials/' },
-	// { text: 'Feature: Custom Metrics - JS errors', slug: 'tutorials/js-errors-dashboard', key: 'tutorials/' },
-	// //integrations with frameworks (using openreplay with...)
-	// // { text: 'Using OR with Next.js', slug: 'tutorials/next', key: 'tutorials/' },
-	// // { text: 'Using OR with Nuxt', slug: 'using-or/nuxt', key: 'tutorials/' },
-	// // { text: 'Using OR with Remix', slug: 'using-or/remix', key: 'tutorials/' },
-	// // { text: 'Using OR with Svelte', slug: 'using-or/svelte', key: 'tutorials/' },
-	// // { text: 'Using OR with Angular', slug: 'using-or/angular', key: 'tutorials/' },
-	// // { text: 'Using OR with Gatsby', slug: 'using-or/gatsby', key: 'tutorials/' },
-	// //extending OpenReplay
-	// { text: 'Creating your first plugin', slug: 'tutorials/build-plugins', key: 'tutorials/troubleshooting' },
-	// { text: 'Creating your first heuristic', slug: 'tutorials/custom-heuristics', key: 'tutorials/troubleshooting' },
-
-	
-
 	
 	//integrations
-	{ text: 'Integrations', header:true,type: 'learn', slug: 'integrations/', key: 'guides/troubleshooting', icon: 'integration' },
+	{ text: 'Integrations', header:true,type: 'learn', slug: 'integrations/', key: 'integrations', icon: 'integration' },
 	{ text: 'Overview', slug: 'integrations', key: 'integrations/troubleshooting' },
 	{ text: 'Bugsnag', slug: 'integrations/bugsnag', key: 'integrations/troubleshooting' },
 	{ text: 'CloudWatch', slug: 'integrations/cloudwatch', key: 'integrations/troubleshooting' },
@@ -137,7 +104,7 @@ export default [
 	{ text: 'SumoLogic', slug: 'integrations/sumo', key: 'integrations/troubleshooting' },
 
 	//troubleshooting
-	{ text: 'Troubleshooting', header:true,type: 'learn', slug: 'troubleshooting/', key: 'guides/troubleshooting', icon: 'troubleshoot' },
+	{ text: 'Troubleshooting', header:true,type: 'learn', slug: 'troubleshooting/', key: 'troubleshooting', icon: 'troubleshoot' },
 	{ text: 'Overview', slug: 'troubleshooting', key: 'troubleshooting/' },
 	{ text: 'Clear Cache', slug: 'troubleshooting/cache', key: 'troubleshooting/' },
 	{ text: 'Content Security Policy (CSP)', slug: 'troubleshooting/csp', key: 'troubleshooting/' },
@@ -149,20 +116,9 @@ export default [
 	{ text: 'Deployment issues', slug: 'troubleshooting/deployment-faq', key: 'troubleshooting/' },
 
 // structure
-	{ text: 'Exporting data', header:true,type: 'learn', slug: 'structure/', key: 'structure/troubleshooting', icon: 'structure' },
+	{ text: 'Exporting data', header:true,type: 'learn', slug: 'structure/', key: 'data-export', icon: 'structure' },
 	{ text: 'Overview', slug: 'structure', key: 'structure/troubleshooting' },
 	{ text: 'Exported Data', slug: 'structure/exported-data', key: 'structure/troubleshooting' },
-
-// 	{ text: 'API (BETA)', header:true,type: 'learn', slug: 'api/', key: 'guides/troubleshooting', icon: 'api' },
-// { text: 'Overview', slug: 'api', key: 'api/troubleshooting' },
-// { text: 'Assist', slug: 'api/assist', key: 'api/troubleshooting' },
-// { text: 'Events', slug: 'api/events', key: 'api/troubleshooting' },
-// { text: 'Jobs', slug: 'api/jobs', key: 'api/troubleshooting' },
-// { text: 'Projects', slug: 'api/projects', key: 'api/troubleshooting' },
-// { text: 'Sessions', slug: 'api/sessions', key: 'api/troubleshooting' },
-// { text: 'Users', slug: 'api/users', key: 'api/troubleshooting' },
-
-
 
 ] as const;
 

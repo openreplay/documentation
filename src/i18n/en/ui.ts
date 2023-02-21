@@ -1,6 +1,7 @@
 export default {
 	'a11y.skipLink': 'Skip to Content',
 	'navbar.a11yTitle': 'Top',
+	'homepage.banner': 'Deploy, manage and customize OpenReplay through quickstarts, tutorials, and guides. Learn more about our SDK and API references' ,
 	// Site settings
 	'site.title': 'OpenReplay Documentation',
 	'site.description': 'Open-source session replay suite, built for developers.',
