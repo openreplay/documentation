@@ -64,6 +64,7 @@ export default [
 	{ text: 'Custom Heuristics', slug: 'tutorials/custom-heuristics', key: 'blog-installation' },
 	{ text: 'OmniSearch', slug: 'tutorials/omnisearch', key: 'blog-installation' },
 	{ text: 'Custom Dashboards', slug: 'tutorials/custom-dashboard', key: 'blog-installation' },
+	{ text: 'Network options', slug: 'installation/network-options', key: 'blog-installation' },
 	//{ text: 'JavaScript SDK', slug: 'installation/javascript-sdk', key: 'blog-installation' }, 
 	//{ text: 'Setup OpenReplay', slug: 'installation/setup-or', key: 'blog-installation' },
 
@@ -148,4 +149,7 @@ export const subMenus = [
  { text: 'setMetadata', slug: 'sdk/set-metadata', key: 'sdk/troubleshooting' },
  { text: 'start', slug: 'sdk/start', key: 'sdk/troubleshooting' },
  { text: 'stop', slug: 'sdk/stop', key: 'sdk/troubleshooting' },
+ 
+
+ { text: 'OpenReplay CLI', header:true,type: 'learn', slug: 'cli/', key: 'guides/troubleshooting', icon: 'cli', hideChevron: true },
 ] 
