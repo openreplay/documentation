@@ -1,0 +1,85 @@
+---
+title: "Network options"
+metaTitle: "Network options"
+metaDescription: "Network options plugin for OpenReplay."
+---
+
+
+This page describes in details the `network` namespace of the OpenRplay javascript SDK [options](/sdk/constructor). It relates to capturing network requests such as `fetch` and `XHR`, including payloads if necesssary, and inspect them later on while replaying session recordings. This is very useful for understanding and fixing issues.
+
+
+## Network Options
+
+```js
+network?: {
+  failuresOnly: boolean;
+  sessionTokenHeader: string | boolean;
+  ignoreHeaders: Array<string> | boolean;
+  capturePayload: boolean;
+  sanitizer: (RequestResponseData) => RequestResponseData | null;
+}
+```
+
+- `failuresOnly`: Captures requests having 4xx-5xx HTTP status code. Default: `false`.
+- `sessionTokenHeader`: In case you have enabled some of our backend [integrations](/integrations) (i.e. Sentry), you can use this option to specify the header name (or activate default one 'X-OpenReplay-SessionToken' by putting option to `true`). This latter gets appended automatically to each fetch/XHR request to contain the OpenReplay sessionToken's value. Default: `false`.
+- `ignoreHeaders`: Helps define a list of headers you don't wish to capture. Set its value to `false` to capture all of them (`true` if none). Default: `['Cookie', 'Set-Cookie', 'Authorization']` so sensitive headers won't be captured.
+- `capturePayload`: store request/response body payloads. This might be quite useful for session analysis, but can become heavy on the network usage if your application extensively uses fetch/XHR requests. Default: `false`.
+- `sanitizer`: Sanitize sensitive data from fetch/XHR request/response or ignore request comletely. You can redact fields on the request object by modifying then returning it from the function (see examples below). Sanitization is applied **after** all the filtering and modifications induced by other options (that is, argument won't contain `body` payload if `capturePayload` was not explicitly set to `true`).
+
+```typescript
+interface RequestData {
+  body: BodyInit | null | undefined; // whatewer you've put in the init.body in fetch(url, init) or xhr.send(body)
+  headers: Record<string, string>;
+}
+
+interface ResponseData {
+  body: string | Object | null;  // Object if response is of JSON type
+  headers: Record<string, string>;
+}
+
+interface RequestResponseData {
+  readonly status: number;
+  readonly method: string;
+  url: string;
+  request: RequestData;
+  response: ResponseData;
+}
+
+sanitizer: (data: RequestResponseData) => { // sanitise the body or headers
+  if (data.url === "/auth") {
+    data.request.body = null
+  }
+
+  if (data.request.headers['x-auth-token']) { // can also use ignoreHeaders option instead
+    data.request.headers['x-auth-token'] = 'SANITISED';
+  }
+
+  // Sanitise response
+  if (data.status < 400 && data.response.body.token) {
+    data.response.body.token = "<TOKEN>"  
+  }
+
+  return data
+}
+
+// OR
+
+sanitizer: data => { // ignore requests that start with /secure
+  if (data.url.startsWith("/secure")) {
+    return null
+  }
+  return data
+}
+
+// OR
+
+sanitizer: data => { // sanitise request url: replace all numbers
+  data.url = data.url.replace(/\d/g, "*")
+  return data
+}
+```
+
+
+## Troubleshooting
+
+Having trouble configuring these options? Please connect to our [Slack](https://slack.openreplay.com) and get help from our community.
