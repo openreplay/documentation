@@ -52,7 +52,7 @@ import { getLanguageFromURL, getVersionFromURL } from "~/util";
 
 	let version = getVersionFromURL(window.location.href)
 	const lang = getLanguageFromURL(window.location.href)
-	const host = import.meta.env.PUBLIC_SITE_URL ? import.meta.env.PUBLIC_SITE_URL : ""
+	const host = import.meta.env.PUBLIC_SITE_URL || (window.location.protocol + "//" + window.location.host);
 	let urlParts = ["", lang]
 
 	if(version != "") {
@@ -60,24 +60,13 @@ import { getLanguageFromURL, getVersionFromURL } from "~/util";
 		urlParts.push(version)
 	}
 	for(let l of links){
-		if(l.href.indexOf(host) != -1) {
+		if(l.href.indexOf(host) != -1 && l.href.indexOf("/static/")===-1) {
 			let uri = l.href.replace(host, "")
 			uri = uri.replace(`/${lang}`, "").replace(/\/v[0-9]+\.[0-9]+\.[0-9]+\//, "")
 			urlParts.push(uri)
 			l.setAttribute("href", urlParts.join("/").replace("//", "/"))
 			urlParts.pop()
 		}
-	
 	}
 
-
-	let pageLinks = document.getElementsByTagName('a');
-
-	//capture links set to (http://external.com/?u=) and transforms them to be links that open in a new tab
-	Array.from(pageLinks).forEach( anchor => {
-		if(anchor.href.indexOf('http://external.com/?u') == 0) {
-			anchor.href = (anchor.href.split("?u=")[1])
-			anchor.setAttribute("target", "_blank")
-		}
-	})
 </script>
