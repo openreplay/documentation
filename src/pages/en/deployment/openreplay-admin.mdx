@@ -13,28 +13,35 @@ The CLI is helpful for managing basic aspects of your OpenReplay instance, thing
 Run the CLI with the `-h` option:
 
 ```bash
-cd openreplay/scripts/helmcharts
-./openreplay-cli -h
+openreplay-cli -h
 ```
 
 And see the list of all available options:
 
 ```shellsession
-___                   ____            _
-/ _ \ _ __   ___ _ __ |  _ \ ___ _ __ | | __ _ _   _
+
+  ___                   ____            _
+ / _ \ _ __   ___ _ __ |  _ \ ___ _ __ | | __ _ _   _
 | | | | '_ \ / _ \ '_ \| |_) / _ \ '_ \| |/ _` | | | |
 | |_| | |_) |  __/ | | |  _ <  __/ |_) | | (_| | |_| |
-\___/| .__/ \___|_| |_|_| \_\___| .__/|_|\__,_|\__, |
-    |_|                        |_|            |___/
-Usage: openreplay-cli [ -h | --help ]
-                [ -d | --status ]
-                [ -v | --verbose ]
-                [ -l | --logs SERVICE ]
-                [ -i | --legacy-install SERVICE ]
-                [ -I | --helm-install SERVICE ]
-                [ -s | --stop SERVICE|all ]
-                [ -S | --start SERVICE|all ]
-                [ -r | --restart SERVICE|all ]
+ \___/| .__/ \___|_| |_|_| \_\___| .__/|_|\__,_|\__, |
+      |_|                        |_|            |___/
+
+[INFO]
+  Usage: openreplay [ -h | --help ]
+                    [ -s | --status ]
+                    [ -u | --upgrade ]
+                    [ -U | --deprecated-upgrade /path/to/old_vars.yaml]
+                    [ -r | --restart ]
+                    [ -R | --Reload ]
+                    [ -p | --install-packages ]
+                    [ -l | --logs SERVICE ]
+         Services: alerts assets assist chalice
+                   db ender frontend heuristics
+                   http integrations nginx-controller
+                   peers sink sourcemapreader storage
+
+
 ```
 
 OpenReplay backend relies on the below components/services:
@@ -50,6 +57,20 @@ OpenReplay backend relies on the below components/services:
 | chalice | API for serving the frontend |
 | alerts | Sends notifications (email, slack, in-app, webhook) when a user set threshold is reached on any of the performance metrics |
 | integrations |  Pushes and pulls data from the supported third-party APIs (Sentry, Elastic, GitHub, Jira, etc.) |
+
+## Helpful Commands
+
+- Check the health status of the OpenReplay
+
+```sh
+openreplay -s
+```
+
+- Check logs of services
+
+```sh
+openreplay -l <service name>
+```
 
 ## Increase service capacity
 
@@ -71,7 +92,7 @@ http:
 Finally, reinstall the service for the new limits to take effect (your data won't be lost):
 
 ```bash
-cd openreplay/scripts/helmcharts && openreplay-cli -I
+cd openreplay/scripts/helmcharts && openreplay-cli -R
 ```
 
 ## Uninstall OpenReplay
@@ -79,9 +100,5 @@ cd openreplay/scripts/helmcharts && openreplay-cli -I
 Run the below commands to uninstall OpenReplay:
 
 ```bash
-helm uninstall openreplay -n app
-helm uninstall databases -n db
-
 sudo k3s-uninstall.sh
-sudo rm -rf /var/lib/rancher
 ```
