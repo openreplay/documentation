@@ -17,10 +17,29 @@ You can change the default lifecycle policy this way:
 1. Run `k9s -n db`
 2. Use the keyboard arrows to navigate the list and get to the `minio-*` container
 3. Press `s` to have shell access the Minio (object storage) container
-4. Run `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
-5. Run `mc ilm set --id mobs --expiry-days 14 minio/mobs` (i.e. automatically clean recordings 14 days after creation)
-6. Use `exit` to exit the Minio container
-7. Run `:quit` to exit the Kubernetes CLI
+4. Run export MINIO_ACCESS_KEY=<secretKey from /var/lib/openreplay/vars.yaml>
+5. Run export MINIO_SECRET_KEY=<secretKey from /var/lib/opereplay/vars.yaml>
+6. Run `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
+7. To automatically clean recordings 14 days after creation
+```bash
+export EXPIRATION_DAYS=14
+cat <<EOF > /tmp/lifecycle.json
+{
+    "Rules": [
+        {
+            "Expiration": {
+                "Days": $EXPIRATION_DAYS
+            },
+            "ID": "${bucket}",
+            "Status": "Enabled"
+        }
+    ]
+}
+EOF
+mc ilm import minio/mobs < /tmp/lifecycle.json
+```
+8. Use `exit` to exit the Minio container
+9. Run `:quit` to exit the Kubernetes CLI
 
 ## Manual cleanup
 
