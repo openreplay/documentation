@@ -3,6 +3,7 @@ title: "Cleanup Storage"
 metaTitle: "Cleanup Storage"
 metaDescription: "Delete recordings in bulk from database and cleanup your storage."
 ---
+import Aside from '~/components/Aside.astro'
 
 ## Recording storage
 
@@ -21,6 +22,7 @@ You can change the default lifecycle policy this way:
 5. Run `export MINIO_SECRET_KEY=<secretKey from /var/lib/opereplay/vars.yaml>`
 6. Run `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
 7. To automatically clean recordings 14 days after creation
+
 ```bash
 export EXPIRATION_DAYS=14
 cat <<EOF > /tmp/lifecycle.json
@@ -38,6 +40,7 @@ cat <<EOF > /tmp/lifecycle.json
 EOF
 mc ilm import minio/mobs < /tmp/lifecycle.json
 ```
+
 8. Use `exit` to exit the Minio container
 9. Run `:quit` to exit the Kubernetes CLI
 
@@ -47,7 +50,9 @@ mc ilm import minio/mobs < /tmp/lifecycle.json
 
 Use the below SQL query if you wish to cleanup data from your database (PostgreSQL). Replace the `epoch timestamp (milliseconds)` with the date from which to keep recordings. It's a cascade delete, so all recordings as well as their corresponding events will be removed from the database.
 
-> **Important:** This is done at your own risk, so be extremely careful when performing such actions in the database.
+<Aside type="note">
+**Important:** This is done at your own risk, so be extremely careful when performing such actions in the database.
+</Aside>
 
 ```plsql
 --- Cascade delete all sessions and their related events captured before Jan 1st, 2021
