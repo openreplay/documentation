@@ -12,10 +12,11 @@ class ORDynamicCode extends React.Component {
 	}
 
 	applyValueToAll(id, value) {
-		document.querySelectorAll(`[id=${id}]`).forEach(el => {
+		const elements = document.querySelectorAll(`[id=${id}]`);
+		for (const el of elements) {
 			el.value = value;
 			el.textContent = value;
-		});
+		}
 	}
 
 	handleChange = (event) => {
