@@ -3,18 +3,21 @@ title: "SSO"
 metaTitle: "SSO"
 metaDescription: "How to setup Single-Sign-On (SSO) via SAML2."
 ---
+import ORDynamicCode from '../../../components/Code/ORDynamicCode';
+export const initialValues={domain:"YOUR_DOMAIN",tenantKey:"TENANT_KEY"};
+export const ignoreValues={jumpcloud:"https://sso.jumpcloud.com"};
 
 Single-Sign-On (via SAML2) is available on OpenReplay Enterprise Edition only.
 
 ## Identity Provider (IDP) configuration
 
-In you Identity Provider's dashboard, create a new app called `openreplay` (you can use this <a href="https://docs.openreplay.com/static/OpenReplay.png" target="_blank">icon</a>), In the configuration page, make sure to set the following value (please make sure to replace `YOUR_DOMAIN` with the correct value, example `https://openreplay.mycompany.com`):
+In you Identity Provider's dashboard, create a new app called `openreplay` (you can use this <a href="https://docs.openreplay.com/static/OpenReplay.png" target="_blank">icon</a>), In the configuration page, make sure to set the following value (please make sure to replace <code>{initialValues.domain}</code> with the correct value, example `https://openreplay.mycompany.com`):
 
 | Variable | Value |
 |----------|-------------|
-| ACS URL (also called Single Sign On URL or Consumer URL) | `YOUR_DOMAIN/api/sso/saml2/acs/` |
-| Entity ID (also called Audience) | `YOUR_DOMAIN/api/sso/saml2/metadata/`|
-| Single Logout URL (also called SLO URL) | `YOUR_DOMAIN/api/sso/saml2/sls/` (optional) |
+| ACS URL (also called Single Sign On URL or Consumer URL) | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/</code> |
+| Entity ID (also called Audience) | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code> |
+| Single Logout URL (also called SLO URL) | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/sls/</code> (optional) |
 | Name ID (sometimes it is configurable in the 'Attribute Statements' or the 'Parameters' section) | `Email` or `EmailAddress` or `urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress`, depending on your Identity Provider |
 | SAML initiator | Set it to `Service Provider` (optional) |
 
@@ -22,7 +25,7 @@ In the 'Attribute Statements', or the 'Parameters' section, please make sure to 
 
 | Field | Value |
 |----------|-------------|
-| tenantKey | Its value can be found in the Dashboard, under 'Preferences' > 'Account' |
+| tenantKey | <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> its value can be found in the Dashboard, under 'Preferences' > 'Account' |
 | firstName | `user.firstName` |
 | lastName |  `user.lastName` |
 | internalId | Internal ID or `user.email` (the user's ID in your identity management system) (optional) |
@@ -39,7 +42,7 @@ To enable SSO, edit `openreplay/scripts/helmcharts/vars.yaml` and uncomment then
 |----------|-------------|
 | idp_entityId | The `entityId` of your identity provider, also referred to as `Issuer URL` |
 | idp_sso_url | The `singleSignOnService` of your identity provider, also referred to as `SAML 2.0 Endpoint (HTTP)` |
-| idp_x509cert | The `x509cert`, must be a one-line string, without line breaks. You can use the <a href="https://www.samltool.com/format_x509cert.php" target="_blank">FORMAT A X509 CERTIFICATE tool</a> to format your value |
+| idp_x509cert | The `x509cert`, must be a one-line string, without line breaks. You can use <a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">this tool</a> to format your value |
 | idp_name | The identity provider's name (optional) |
 | idp_sls_url | The `singleLogoutService` of your identity provider, also referred to as `SLO Endpoint (HTTP)` (optional) |
 
@@ -55,24 +58,24 @@ cd openreplay/scripts/helmcharts && ./openreplay-cli -I
 2. Press 'Create new app integration', then select SAML 2.0 and press 'Next'
 3. Set the 'App Name' to OpenReplay (you can upload this <a href="https://docs.openreplay.com/static/OpenReplay.png" target="_blank">icon</a>) for your application) then press 'Next'
 4. Set:
-    - **Single sign on URL** to `YOUR_DOMAIN/api/sso/saml2/acs/`
-    - **Audience URI (SP Entity ID)** to `YOUR_DOMAIN/api/sso/saml2/metadata/`
-    - **Name ID format** to `EmailAddress`
+ - **Single sign on URL** to <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/</code>
+ - **Audience URI (SP Entity ID)** to <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code>
+ - **Name ID format** to `EmailAddress`
 5. Define the below fields in 'Attribute Statements':
-    - **tenantKey**: format `Basic` and set the value to the one you got from OpenReplay dashboard under 'Preferences' > 'Account'
-    - **firstName**: format `Basic` and set the value to `user.firstName`
-    - **lastName**: format `Basic` and set the value to `user.lastName`
-    - **internalId**: format `Basic` and set the value to `user.email`
+ - **tenantKey**: format `Basic` and set the value to <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>, found in OpenReplay dashboard under 'Preferences' > 'Account'
+ - **firstName**: format `Basic` and set the value to `user.firstName`
+ - **lastName**: format `Basic` and set the value to `user.lastName`
+ - **internalId**: format `Basic` and set the value to `user.email`
 6. Define the below field in 'Group Attribute Statements':
-    - **role**: format `Basic` filter `Match Regex` value `.*` (or you can specify a different filter and regex according to your needs)
-    - **adminPrivileges**: format `Basic` filter `Match Regex` value `admin` (the current user will have `admin privileges` if he is part of the **admin** group)
+ - **role**: format `Basic` filter `Match Regex` value `.*` (or you can specify a different filter and regex according to your needs)
+ - **adminPrivileges**: format `Basic` filter `Match Regex` value `admin` (the current user will have `admin privileges` if he is part of the **admin** group)
 7. Press Next, Select 'I'm a software vendor. I'd like to integrate my app with Okta' then press 'Finish'
 8. In the Sign On tab, scroll down and press 'View Setup Instructions' to see you SAML2 configuration
 9. In your server, edit your `openreplay/scripts/helmcharts/vars.yaml`
 10. Under the `chalice` section, uncomment then set the following env variables:
    - **idp_entityId**: Identity Provider Issuer
    - **idp_sso_url**: Identity Provider Single Sign-On URL
-   - **idp_x509cert**: X.509 Certificate, must be a one-line string, without line breaks (ou can use the <a href="https://www.samltool.com/format_x509cert.php" target="_blank">FORMAT A X509 CERTIFICATE tool</a> to format your value)
+   - **idp_x509cert**: X.509 Certificate, must be a one-line string, without line breaks (you can use <a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">this tool</a> to format your value)
    - **idp_name**: Okta
 12. Finally, save your changes and reinstall the web server:
 
@@ -87,17 +90,17 @@ cd openreplay/scripts/helmcharts && ./openreplay-cli -I
 1. In the Google Admin console, go to 'Directory' > 'Users' > 'More options' > 'Manage custom attributes'.
 2. Click 'Add Custom Attribute'.
 3. Set the following fields:
-    - **Category**: 'OpenReplay'
-    - **Custom fields**:
-      - **Name**: 'role'
-      - **Info type**: 'Text'
-      - **Visibility**: 'Visible to user and admin'
-      - **No. of values**: 'Single-value'
-    - **Custom fields**:
-      - **Name**: 'adminPrivileges'
-      - **Info type**: 'Yes or No'
-      - **Visibility**: 'Visible to user and admin'
-      - **No. of values**: 'Single-value'
+ - **Category**: 'OpenReplay'
+ - **Custom fields**:
+- **Name**: 'role'
+- **Info type**: 'Text'
+- **Visibility**: 'Visible to user and admin'
+- **No. of values**: 'Single-value'
+ - **Custom fields**:
+- **Name**: 'adminPrivileges'
+- **Info type**: 'Yes or No'
+- **Visibility**: 'Visible to user and admin'
+- **No. of values**: 'Single-value'
 4. Click 'Add'
 5. To add values to the new custom attributes, go to 'Users'
 6. Select the desired user(s)
@@ -113,16 +116,16 @@ cd openreplay/scripts/helmcharts && ./openreplay-cli -I
 3. Set the 'App name' to OpenReplay (you can upload this <a href="https://docs.openreplay.com/static/OpenReplay.png" target="_blank">icon</a> for 'App icon'') then press 'Continue'
 4. Copy 'SSO URL', 'Entity ID' and 'Certificate' then click 'Continue' (we will use these values in step 11)
 5. Set:
-    - **ACS URL** to `YOUR_DOMAIN/api/sso/saml2/acs/TENANT_KEY/` (`TENANT_KEY` is found in OpenReplay dashboard under 'Preferences' > 'Account')
-    - **Entity ID** to `YOUR_DOMAIN/api/sso/saml2/metadata/`
-    - **Name ID format** to `Email`
-    - **Name ID** to `Basic information > Primary Email` 
+ - **ACS URL** to <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/>/</code> (<code>{initialValues.tenantKey}</code> is found in OpenReplay dashboard under 'Preferences' > 'Account')
+ - **Entity ID** to <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code>
+ - **Name ID format** to `Email`
+ - **Name ID** to `Basic information > Primary Email`
 6. Click 'Continue' then hit 'Add Mapping' to add the below attributes:
-    - `Basic information > First Name` -> **firstName**
-    - `Basic information > Last Name` -> **lastName**
-    - `Basic information > Primary Email` -> **internalId**
-    - `OpenReplay > role` -> **role**
-    - `OpenReplay > adminPrivileges` -> **adminPrivileges**
+ - `Basic information > First Name` -> **firstName**
+ - `Basic information > Last Name` -> **lastName**
+ - `Basic information > Primary Email` -> **internalId**
+ - `OpenReplay > role` -> **role**
+ - `OpenReplay > adminPrivileges` -> **adminPrivileges**
 7. Click 'Finish'
 8.  In the Google Admin Console, go to 'Apps' > 'Web and mobile apps' and select 'OpenReplay'
 9.  Click 'User access', select 'ON for everyone' then hit 'Save'
@@ -130,9 +133,9 @@ cd openreplay/scripts/helmcharts && ./openreplay-cli -I
 11. Under the `chalice > env` section, uncomment and set the following attributes using the values from step 4:
    - **idp_sso_url**: paste the value of 'SSO URL'
    - **idp_entityId**: paste the value of 'Entity ID'
-   - **idp_x509cert**: use the <a href="https://www.samltool.com/format_x509cert.php" target="_blank">FORMAT A X509 CERTIFICATE tool</a> to format the copied/downloaded certificate
+   - **idp_x509cert**: use <a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">this tool</a> to format the copied/downloaded certificate
    - **idp_name**: set the value to `G-Suite`
-   - **idp_tenantKey**: the `TENANT_KEY` value you got from the OpenReplay dashboard
+   - **idp_tenantKey**: <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> found in OpenReplay dashboard under 'Preferences' > 'Account'
 15. Finally, save your changes and reinstall the web server:
 
 ```bash
@@ -144,35 +147,35 @@ cd openreplay/scripts/helmcharts && ./openreplay-cli -I
 2. Press '+ Add New Application', then select 'Custom SAML App'
 3. Set the 'Display Label' to OpenReplay (you can upload this <a href="https://docs.openreplay.com/static/OpenReplay150x150.png" target="_blank">icon</a> for your application) then move to 'SSO' tab
 4. Set:
-		- **IdP Entity ID** to `openreplay/TENANT_KEY`
-		- **SP Entity ID** to `YOUR_DOMAIN/api/sso/saml2/metadata/`
-		- **ACS URL** to `YOUR_DOMAIN/api/sso/saml2/acs/`
-		- **SAMLSubject NameID** to `email`
-		- **SAMLSubject NameID Format:** to `urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress`
-		- **Signature Algorithm** to `RSA-SHA256`
-		- Check **Sign Assertion**
-		- **IDP URL** to end with `openreplay/TENANT_KEY` (this value cannot be changed later)
+- **IdP Entity ID** to <code>openreplay/<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>
+- **SP Entity ID** to <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code>
+- **ACS URL** to <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/</code>
+- **SAMLSubject NameID** to `email`
+- **SAMLSubject NameID Format:** to `urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress`
+- **Signature Algorithm** to `RSA-SHA256`
+- Check **Sign Assertion**
+- **IDP URL** to end with <code>openreplay/<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> (this value cannot be changed later)
 5. Define the below fields in 'USER ATTRIBUTE MAPPING' by pressing the 'add attribute' button:
-		- **firstName**: set the value to `firstname`
-		- **lastName**: set the value to `lastname`
-		- **internalId**: set the value to `email`
-		- **role**: optional, the user’s role in OpenReplay, if it is a constant value for all users, you should define it in the next step,
+- **firstName**: set the value to `firstname`
+- **lastName**: set the value to `lastname`
+- **internalId**: set the value to `email`
+- **role**: optional, the user’s role in OpenReplay, if it is a constant value for all users, you should define it in the next step,
 otherwise you have to add a new string-attribute to the JumpCloud's group, call it `OpenReplayRole` and set the value to the role's name, and then in the SSO configuration, select 'Custom User or Group Attribute' and set the value to `OpenReplayRole`.
-		- **adminPrivileges**: optional, if it is a constant value for all users, you should define it in the next step, otherwise you have to add a new boolean-attribute to the JumpCloud's group, call it `OpenReplayAdminPrivileges` and set the value to the role's name, and then in the SSO configuration, select 'Custom User or Group Attribute' and set the value to `OpenReplayAdminPrivileges`.
+- **adminPrivileges**: optional, if it is a constant value for all users, you should define it in the next step, otherwise you have to add a new boolean-attribute to the JumpCloud's group, call it `OpenReplayAdminPrivileges` and set the value to the role's name, and then in the SSO configuration, select 'Custom User or Group Attribute' and set the value to `OpenReplayAdminPrivileges`.
 6. Define the below fields in 'CONSTANT ATTRIBUTES' by pressing the 'add attribute' button:
-		- **tenantKey**: set the value to the one you got from OpenReplay dashboard under 'Preferences' > 'Account'
-		- **role**: optional, ignore if defined in the previous step, the user’s role in OpenReplay, should match role name already defined in OpenReplay (default = `member`)
-		- **adminPrivileges**: optional, ignore if defined in the previous step, set the value to `true` if you want to give new users admin privilege, `false` if not
-		(default = `false`)
+- **tenantKey**: set the value to <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>, found in OpenReplay dashboard under 'Preferences' > 'Account'
+- **role**: optional, ignore if defined in the previous step, the user’s role in OpenReplay, should match role name already defined in OpenReplay (default = `member`)
+- **adminPrivileges**: optional, ignore if defined in the previous step, set the value to `true` if you want to give new users admin privilege, `false` if not
+(default = `false`)
 7. At this stage, you can move to the 'User Groups' tab, and select the group of users that will have access to OpenReplay, or you can do it later
 8. Press 'activate' and 'continue' in the confirmation popup
-9. Press the new OpenReplay application icon, then on the left dropdown 'IDP Certificate Valid' choose 'Download certificate'  
+9. Press the new OpenReplay application icon, then on the left dropdown 'IDP Certificate Valid' choose 'Download certificate'
 9. In your server, edit your `openreplay/scripts/helmcharts/vars.yaml`
 10. Under the `chalice` section, uncomment then set the following env variables:
-		- **idp_entityId**: `openreplay/TENANT_KEY`
-		- **idp_sso_url**: `https://sso.jumpcloud.com/saml2/openreplay/TENANT_KEY`
-		- **idp_x509cert**: the downloaded certificate, must be a one-line string, without line breaks (ou can use the <a href="https://www.samltool.com/format_x509cert.php" target="_blank">FORMAT A X509 CERTIFICATE tool</a> to format your value)
-		- **idp_name**: JumpCloud
+- **idp_entityId**: <code>openreplay/<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>
+- **idp_sso_url**: <code>{ignoreValues.jumpcloud}/saml2/openreplay/<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>
+- **idp_x509cert**: the downloaded certificate, must be a one-line string, without line breaks (you can use <a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">this tool</a> to format your value)
+- **idp_name**: JumpCloud
 12. Finally, save your changes and reinstall the web server:
 ```bash
 cd openreplay/scripts/helmcharts && ./openreplay-cli -I
