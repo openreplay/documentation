@@ -3,10 +3,7 @@ title: "Network options"
 metaTitle: "Network options"
 metaDescription: "Network options plugin for OpenReplay."
 ---
-
-
-This page describes in details the `network` namespace of the OpenRplay javascript SDK [options](/sdk/constructor). It relates to capturing network requests such as `fetch` and `XHR`, including payloads if necesssary, and inspect them later on while replaying session recordings. This is very useful for understanding and fixing issues.
-
+This page describes the `network` namespace of the OpenRplay javascript SDK [options](/sdk/constructor). It relates to capturing network requests such as `fetch` and `XHR`, including payloads if necesssary, and inspect them later on while replaying session recordings. This is very useful for understanding and fixing issues.
 
 ## Network Options
 
@@ -54,7 +51,7 @@ sanitizer: (data: RequestResponseData) => { // sanitise the body or headers
     data.request.headers['x-auth-token'] = 'SANITISED';
   }
 
-  // Sanitise response
+  // Sanitize response
   if (data.status < 400 && data.response.body.token) {
     data.response.body.token = "<TOKEN>"  
   }
@@ -73,12 +70,48 @@ sanitizer: data => { // ignore requests that start with /secure
 
 // OR
 
-sanitizer: data => { // sanitise request url: replace all numbers
+sanitizer: data => { // sanitize request url: replace all numbers
   data.url = data.url.replace(/\d/g, "*")
   return data
 }
 ```
 
+## Examples
+
+Below are examples on how to use the `network` option. 
+
+### With NPM
+
+```js
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY,
+  network: {
+    capturePayload: true // Capture HTTP payload
+  }
+});
+```
+
+### With JavaScript snippet
+
+Note the `initOpts` variable/line to set the `network` option.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { 
+  projectKey: "GxPpaDARdn2345fgt321", 
+  network: { // Enable HTTP payload capture in the network option
+    capturePayload: true
+  } 
+};
+
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+```
 
 ## Troubleshooting
 
