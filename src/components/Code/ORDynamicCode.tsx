@@ -32,6 +32,7 @@ class ORDynamicCode extends React.Component {
 		if (el && el.value) {
 			this.setState({value: el.value});
 		}
+		// this.nameInput.focus();
 	}
 	handleBlur = (event) => {
 		event.stopPropagation();
@@ -61,7 +62,8 @@ class ORDynamicCode extends React.Component {
 		return (
 			this.state.clicked ?
 				<input id={this._target_id} onChange={this.handleChange}
-							 value={this.state.value} onKeyDown={this.handleKey} autoFocus onBlur={this.handleBlur}/> :
+							 value={this.state.value} onKeyDown={this.handleKey} autoFocus onBlur={this.handleBlur}
+							 ref={input => input && input.focus()}/> :
 				<code id={this._target_id} style={{padding: 0, border: "1px dashed"}} onDoubleClick={this.handleClick}
 							title="double click to change" data-tooltip-interactive="false">{this.state.value}</code>
 		);
