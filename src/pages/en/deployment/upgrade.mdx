@@ -14,12 +14,16 @@ Upgrading your OpenReplay deployment to the latest version requires updating bot
   mv openreplay openreplay_v1.9.0
   ```
 
-2. Update the CLI:
+2. Update the dependencies:
    
   ```bash
   # Update kubernetes deprecated apis
   helm plugin install https://github.com/helm/helm-mapkubeapis
   helm mapkubeapis -n app openreplay
+	
+  # Update Kubernetes
+  k3s-killall.sh
+  curl -sL https://get.k3s.io | sudo K3S_KUBECONFIG_MODE="644" INSTALL_K3S_VERSION='v1.25.6+k3s1' INSTALL_K3S_EXEC="--disable=traefik" sh -
 	
 	# Download the latest CLI
 	sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay ; sudo chmod +x /bin/openreplay
