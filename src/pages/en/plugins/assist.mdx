@@ -93,6 +93,9 @@ trackerAssist({
   onAgentConnect?: () => (()=>void | void);
   onCallStart?: () => (()=>void | void);
   onRemoteControlStart?: () => (()=>void | void);
+	onCallDeny?: () => any;
+	onRemoteControlDeny?: (agentInfo: Record<string, any>) => any'
+  onRecordingDeny?: (agentInfo: Record<string, any>) => any;
 })
 ```
 
@@ -169,8 +172,33 @@ onCallStart: () => {
 ```js
 onRemoteControlStart: () => {
   console.log("Remote control started")
-  const onCallEnd = () => console.log("Remote control ended")
-  return onCallEnd
+  const onControlEnd = () => console.log("Remote control ended")
+  return onControlEnd
+}
+```
+
+- `onCallDeny?: () => any;`: This callback function is fired when call was denied by a user during requesting phase.
+
+```js
+onCallDeny: () => {
+  console.log("Call denied")
+}
+```
+
+- `onRemoteControlDeny?: (agentInfo: Record<string, any>) => any;`: This callback function is fired when remote control session was denied by a user during requesting phase and sends back the agent's details (email, name and query).
+
+```js
+onRemoteControlDeny: ({ email, name, query }) => {
+  console.log("Remote control request denied for", email)
+}
+```
+
+- `onRecordingDeny?: (agentInfo: Record<string, any>) => any;`: This callback function is fired when recording session was denied by a user during requesting phase and sends back the agent's details (email, name and query).
+
+```js
+onRecordingDeny: ({ email, name, query }) => {
+  console.log("Recording session denied")
+ 
 }
 ```
 
