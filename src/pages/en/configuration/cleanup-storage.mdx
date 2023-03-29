@@ -46,46 +46,10 @@ mc ilm import minio/mobs < /tmp/lifecycle.json
 
 ## Manual cleanup
 
-### Database (PostgeSQL)
-
-Use the below SQL query if you wish to cleanup data from your database (PostgreSQL). Replace the `epoch timestamp (milliseconds)` with the date from which to keep recordings. It's a cascade delete, so all recordings as well as their corresponding events will be removed from the database.
-
-<Aside type="note">
-**Important:** This is done at your own risk, so be extremely careful when performing such actions in the database.
-</Aside>
-
-```plsql
---- Cascade delete all sessions and their related events captured before Jan 1st, 2021
-DELETE FROM public.sessions WHERE start_ts < extract(epoch from '2021-01-01'::date) * 1000;
+```bash
+# To clean data older than 14 days from postgres and minio(sessions are recorded)
+openreplay --cleanup 14
 ```
-
-#### How to connect to PostgreSQL
-
-Login to your OpenReplay instance, then:
-
-1. Run `k9s -n db`
-2. Use the keyboard arrows to navigate the list and get to the `postgresql-*` container
-3. Press `s` to have shell access the the Postgres container
-4. Run `PGPASSWORD=MY_PG_PASSWORD psql -U postgres` (replace `MY_PG_PASSWORD` with the value of the `postgresqlPassword` variable from `/var/lib/openreplay/vars.yaml` file)
-5. Execute your delete (or any other) query
-6. Type `exit` to exit the postgresql-client
-7. Use `exit` to exit the Postgres container
-8. Run `:quit` to exit the Kubernetes CLI
-
-
-### Recordings
- 
-#### Remove recordings
-
-If you ever need to free up some space, then login to your OpenReplay instance and follow the below steps:
-
-1. Run `k9s -n db`
-2. Use the keyboard arrows to navigate the list and get to the `minio-*` container
-3. Press `s` to have shell access the Minio (object storage) container
-4. Run `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
-5. Run `mc rm --recursive --dangerous --force --older-than 7d minio/mobs` (i.e. delete files that are older than 7 days)
-6. Use `exit` to exit the Minio container
-7. Run `:quit` to exit the Kubernetes CLI
 
 ## Have questions?
 If you have any questions about this process, feel free to reach out to us on our [Slack](https://slack.openreplay.com) channel.
