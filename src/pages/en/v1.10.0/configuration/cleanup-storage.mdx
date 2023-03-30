@@ -1,0 +1,91 @@
+---
+title: "Cleanup Storage"
+metaTitle: "Cleanup Storage"
+metaDescription: "Delete recordings in bulk from database and cleanup your storage."
+---
+import Aside from '~/components/Aside.astro'
+
+## Recording storage
+
+Each recording exists in the form of a file and an entry in the database. OpenReplay dumps what's necessary to replay a session (DOM mutations, mouse coordinates, console logs, network activity and much more) into a single file. These files are by default stored on your instance, so they make up most of its storage.
+
+Session metadata will be stored in the PostgreSQL database forever, but after 180 days the file containing the recording will be expired/deleted through a minio lifecycle policy.
+
+### Change default lifecycle policy
+
+You can change the default lifecycle policy this way:
+
+1. Run `k9s -n db`
+2. Use the keyboard arrows to navigate the list and get to the `minio-*` container
+3. Press `s` to have shell access the Minio (object storage) container
+4. Run `export MINIO_ACCESS_KEY=<secretKey from /var/lib/openreplay/vars.yaml>`
+5. Run `export MINIO_SECRET_KEY=<secretKey from /var/lib/opereplay/vars.yaml>`
+6. Run `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
+7. To automatically clean recordings 14 days after creation
+
+```bash
+export EXPIRATION_DAYS=14
+cat <<EOF > /tmp/lifecycle.json
+{
+    "Rules": [
+        {
+            "Expiration": {
+                "Days": $EXPIRATION_DAYS
+            },
+            "ID": "${bucket}",
+            "Status": "Enabled"
+        }
+    ]
+}
+EOF
+mc ilm import minio/mobs < /tmp/lifecycle.json
+```
+
+8. Use `exit` to exit the Minio container
+9. Run `:quit` to exit the Kubernetes CLI
+
+## Manual cleanup
+
+### Database (PostgeSQL)
+
+Use the below SQL query if you wish to cleanup data from your database (PostgreSQL). Replace the `epoch timestamp (milliseconds)` with the date from which to keep recordings. It's a cascade delete, so all recordings as well as their corresponding events will be removed from the database.
+
+<Aside type="note">
+**Important:** This is done at your own risk, so be extremely careful when performing such actions in the database.
+</Aside>
+
+```plsql
+--- Cascade delete all sessions and their related events captured before Jan 1st, 2021
+DELETE FROM public.sessions WHERE start_ts < extract(epoch from '2021-01-01'::date) * 1000;
+```
+
+#### How to connect to PostgreSQL
+
+Login to your OpenReplay instance, then:
+
+1. Run `k9s -n db`
+2. Use the keyboard arrows to navigate the list and get to the `postgresql-*` container
+3. Press `s` to have shell access the the Postgres container
+4. Run `PGPASSWORD=MY_PG_PASSWORD psql -U postgres` (replace `MY_PG_PASSWORD` with the value of the `postgresqlPassword` variable from `/var/lib/openreplay/vars.yaml` file)
+5. Execute your delete (or any other) query
+6. Type `exit` to exit the postgresql-client
+7. Use `exit` to exit the Postgres container
+8. Run `:quit` to exit the Kubernetes CLI
+
+
+### Recordings
+ 
+#### Remove recordings
+
+If you ever need to free up some space, then login to your OpenReplay instance and follow the below steps:
+
+1. Run `k9s -n db`
+2. Use the keyboard arrows to navigate the list and get to the `minio-*` container
+3. Press `s` to have shell access the Minio (object storage) container
+4. Run `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
+5. Run `mc rm --recursive --dangerous --force --older-than 7d minio/mobs` (i.e. delete files that are older than 7 days)
+6. Use `exit` to exit the Minio container
+7. Run `:quit` to exit the Kubernetes CLI
+
+## Have questions?
+If you have any questions about this process, feel free to reach out to us on our [Slack](https://slack.openreplay.com) channel.
