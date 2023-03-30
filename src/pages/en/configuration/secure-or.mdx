@@ -10,7 +10,7 @@ If you're bringing your own certificate, create an SSL secret using the followin
 
 > **Note:** If you don't have a certificate, generate one, that auto-renews, for your subdomain (the one provided during installation) using Let's Encrypt. Simply connect to OpenReplay instance, run `cd openreplay/scripts/helmcharts && bash certmanager.sh` and follow the steps.
 
-If you wish to enable http to https redirection (recommended), then uncomment the below block, under the `ingress-nginx` section, in `/var/lib/openreplay/vars.yaml`:
+If you wish to enable http to https redirection (recommended) edit the configuration using `openreplay -e`, then uncomment the below block, under the `ingress-nginx` section:
    
 ```yaml
 ingress-nginx: &ingress-nginx
@@ -31,11 +31,7 @@ ingress-nginx: &ingress-nginx
         https: 443
 ```
 
-Finally reinstall NGINX:
-
-```bash
- openreplay -R
-```
+Save and exit using `:wq` for the service to reload.
 
 ## Set reCaptcha
 
@@ -78,7 +74,7 @@ worker-src ‘self’ blob: https://openreplay.mycompany.com https://*.openrepla
 
 To apply your CSP to NGINX, connect to your OpenReplay instance and follow the below steps:
 
-1. Open `/var/lib/openreplay/vars.yaml` and add your CSP in the `frontend` block. Make sure to update 
+1. Run `openreplay -e` and add your CSP in the `frontend` block. Make sure to update 
 
 ```yaml
 frontend:
@@ -89,15 +85,11 @@ frontend:
 
 > **Note:** Make sure to replace `https://openreplay.mycompany.com` occurences in the above CSP with your OpenReplay domain name. The value should be the same as `DOMAIN_NAME` in `/var/lib/openreplay/vars.yaml` file. 
 
-2. Reinstall NGINX to apply your newly added CSP:
-
-```bash
- openreplay -R
-```
+2. Save and exit using `:wq` to apply your newly added CSP
 
 ## Enabling CORS
 
-Cross-domain requests are allowed, by default, from all origins (`Access-Control-Allow-Origin: *`). If you wish to restrict recordings from few domains only, then open `/var/lib/openreplay/vars.yaml` and update the `http` block as below:
+Cross-domain requests are allowed, by default, from all origins (`Access-Control-Allow-Origin: *`). If you wish to restrict recordings from few domains only, then run `openreplay -e` and update the `http` block as below:
 
 ```yaml
 http:
@@ -107,10 +99,7 @@ http:
       nginx.ingress.kubernetes.io/cors-allow-origin: "https://origin-site1.com:443, http://origin-site2.com"
 ```
 
-Then, reinstall NGINX:
+Then save and exit using `:wq` to apply your newly added CSP.
 
-```bash
-openreplay -R
-```
 ## Have questions?
 If you have any questions about this process, feel free to reach out to us on our [Slack](https://slack.openreplay.com) channel.

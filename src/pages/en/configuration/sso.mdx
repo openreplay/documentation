@@ -36,7 +36,7 @@ You should now have all the required values for the next step/section.
 
 ## SSO (SAML2) configuration
 
-To enable SSO, edit `/var/lib/openreplay/vars.yaml` and uncomment then update the below env variables in `chalice` section:
+To enable SSO, run `openreplay -e` and uncomment then update the below env variables in `chalice` section:
 
 | Variable | Description |
 |----------|-------------|
@@ -47,11 +47,7 @@ To enable SSO, edit `/var/lib/openreplay/vars.yaml` and uncomment then update th
 | idp_sls_url | The `singleLogoutService` of your identity provider, also referred to as `SLO Endpoint (HTTP)` (optional) |
 | enforce_SSO | If set to `true`, all connexions with username and password will be blocked (optional, default=`false`) |
 
-Then, reinstall the web server for the changes to take effect:
-
-```bash
- openreplay -R
-```
+Then, save and quit using `:wq` for the changes to take effect:
 
 ## OpenReplay certificate
 
@@ -61,14 +57,11 @@ This is optional, starting from v1.10.0, you can add a x509 certificate for extr
 ```bash
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout openreplay-sso.key -out openreplay-sso.crt
 ```
-2. In your server, edit your `/var/lib/openreplay/vars.yaml`
+2. In your server, run `openreplay -e`
 3. Under the `chalice` section, add the following env variables:
    - **sp_crt**: must be a one-line string, without line breaks of the generated 'openreplay-sso.crt' file (you can use <a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">this tool</a> to format your value)
    - **sp_key**: must be a one-line string, without line breaks of the generated 'openreplay-sso.key' file
-4. Save your changes and reinstall the web server:
-```bash
- openreplay -R
-```
+4. Save and quit using `:wq` for the changes to take effect
 5. Add the generated 'openreplay-sso.crt' file to your Identity Provider's application configuration
 
 ## Example using Okta
@@ -90,17 +83,13 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout openreplay-sso.key -
     - **adminPrivileges**: format `Basic` filter `Match Regex` value `admin` (the current user will have `admin privileges` if he is part of the **admin** group)
 7. Press Next, Select 'I'm a software vendor. I'd like to integrate my app with Okta' then press 'Finish'
 8. In the Sign On tab, scroll down and press 'View Setup Instructions' to see you SAML2 configuration
-9. In your server, edit your `/var/lib/openreplay/vars.yaml`
+9. In your server, run `openrepaly -e`
 10. Under the `chalice` section, uncomment then set the following env variables:
    - **idp_entityId**: Identity Provider Issuer
    - **idp_sso_url**: Identity Provider Single Sign-On URL
    - **idp_x509cert**: X.509 Certificate, must be a one-line string, without line breaks (you can use <a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">this tool</a> to format your value)
    - **idp_name**: Okta
-12. Finally, save your changes and reinstall the web server:
-
-```bash
- openreplay -R
-```
+12. Finally, save and quit using `:wq` for the changes to take effect.
 
 ## Example using Google Workspace (formerly G Suite)
 
@@ -148,18 +137,14 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout openreplay-sso.key -
 7. Click 'Finish'
 8.  In the Google Admin Console, go to 'Apps' > 'Web and mobile apps' and select 'OpenReplay'
 9.  Click 'User access', select 'ON for everyone' then hit 'Save'
-10. In your server, go to `openreplay/scripts/helmcharts` and edit `vars.yaml`
+10. In your server, run `openreplay -e`
 11. Under the `chalice > env` section, uncomment and set the following attributes using the values from step 4:
    - **idp_sso_url**: paste the value of 'SSO URL'
    - **idp_entityId**: paste the value of 'Entity ID'
    - **idp_x509cert**: use <a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">this tool</a> to format the copied/downloaded certificate
    - **idp_name**: set the value to `G-Suite`
    - **idp_tenantKey**: <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> found in OpenReplay dashboard under 'Preferences' > 'Account'
-15. Finally, save your changes and reinstall the web server:
-
-```bash
- openreplay -R
-```
+15. Finally, save and quit using `:wq` for the changes to take effect.
 
 ## Example using JumpCloud
 1. Login to your JumpCloud administration dashboard and in the left menu, go to 'SSO'
@@ -190,16 +175,13 @@ otherwise you have to add a new string-attribute to the JumpCloud's group, call 
 7. At this stage, you can move to the 'User Groups' tab, and select the group of users that will have access to OpenReplay, or you can do it later
 8. Press 'activate' and 'continue' in the confirmation popup
 9. Press the new OpenReplay application icon, then on the left dropdown 'IDP Certificate Valid' choose 'Download certificate'  
-9. In your server, edit your `/var/lib/openreplay/vars.yaml`
+9. In your server, run `openreplay -e`
 10. Under the `chalice` section, uncomment then set the following env variables:
 		- **idp_entityId**: <code>openreplay/<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>
 		- **idp_sso_url**: <code>{ignoreValues.jumpcloud}/saml2/openreplay/<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>
 		- **idp_x509cert**: the downloaded certificate, must be a one-line string, without line breaks (you can use <a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">this tool</a> to format your value)
 		- **idp_name**: JumpCloud
-12. Finally, save your changes and reinstall the web server:
-```bash
-openreplay -R
-```
+12. Finally, save and quit using `:wq` for the changes to take effect.
 
 ## Have questions?
 If you have any questions about this process, feel free to reach out to us on our [Slack](https://slack.openreplay.com) channel.
