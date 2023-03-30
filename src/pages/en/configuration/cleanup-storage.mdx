@@ -5,15 +5,38 @@ metaDescription: "Delete recordings in bulk from database and cleanup your stora
 ---
 import Aside from '~/components/Aside.astro'
 
-## Recording storage
+Each recording exists in the form of a file and an entry in the database. OpenReplay dumps what's necessary to replay a session (DOM mutations, mouse coordinates, console logs, network activity and much more) into a single file. These files are by default stored on your instance, so they make up most of its storage. Session metadata will be stored in the PostgreSQL database forever, but after 180 days the file containing the recording will be expired/deleted through a minio lifecycle policy.
 
-Each recording exists in the form of a file and an entry in the database. OpenReplay dumps what's necessary to replay a session (DOM mutations, mouse coordinates, console logs, network activity and much more) into a single file. These files are by default stored on your instance, so they make up most of its storage.
+There are 2 ways for cleaning up storage in your OpenReplay instance: automated (CLI) and manual.
 
-Session metadata will be stored in the PostgreSQL database forever, but after 180 days the file containing the recording will be expired/deleted through a minio lifecycle policy.
+## Data cleanup (CLI)
 
-### Change default lifecycle policy
+This process is fully automated through our CLI. Simply run the below command to clean up your storage by removing data from both Postgres (where events are stored) and minio (where recordings are stored):
 
-You can change the default lifecycle policy this way:
+```bash
+# To clean data older than 14 days
+openreplay --cleanup 14
+```
+
+## Data cleanup (Manual)
+
+Data can be removed from both the database (where events are stored) and minio (where recordings are stored).
+
+### Recordings cleanup
+
+If you ever need to free up some space, then login to your OpenReplay instance and follow the below steps:
+
+1. Run `k9s -n db`
+2. Use the keyboard arrows to navigate the list and get to the `minio-*` container
+3. Press `s` to have shell access the Minio (object storage) container
+4. Run `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
+5. Run `mc rm --recursive --dangerous --force --older-than 7d minio/mobs` (i.e. delete files that are older than 7 days)
+6. Use `exit` to exit the Minio container
+7. Run `:quit` to exit the Kubernetes CLI
+
+#### Change default lifecycle policy
+
+If you're using minio (vanilla installation), you can change the default lifecycle policy this way:
 
 1. Run `k9s -n db`
 2. Use the keyboard arrows to navigate the list and get to the `minio-*` container
@@ -44,18 +67,13 @@ mc ilm import minio/mobs < /tmp/lifecycle.json
 8. Use `exit` to exit the Minio container
 9. Run `:quit` to exit the Kubernetes CLI
 
-## Manual cleanup database (PostgeSQL)
+### Database cleanup (PostgeSQL)
 
-```bash
-# To clean data older than 14 days from postgres and minio(sessions are recorded)
-openreplay --cleanup 14
-```
+Depending on your usage, data can be removed from various tables and in different ways. 
 
-Or you can manually cleanup your data by following the next sections.
+#### Connect to PostgreSQL
 
-### How to connect to PostgreSQL
-
-Login to your OpenReplay instance, then:
+Connect to your OpenReplay instance, then:
 
 1. Run `k9s -n db`
 2. Use the keyboard arrows to navigate the list and get to the `postgresql-*` container
@@ -66,9 +84,9 @@ Login to your OpenReplay instance, then:
 7. Use `exit` to exit the Postgres container
 8. Run `:quit` to exit the Kubernetes CLI
 
-### Tables size:
+#### Check tables size
 
-To check the tables size, you can run the following query
+To check the tables size, you can run the following query:
 
 ```sql
 SELECT nspname AS "name_space",
@@ -85,7 +103,7 @@ ORDER BY pg_total_relation_size(C.oid) DESC
 LIMIT 20;
 ```
 
-### Cleanup specific events
+#### Delete specific events
 
 We noticed that most of OpenReplay users, after checking the results of the previous section, decided to remove specific events instead of cleaning sessions (especially `events.resources` and `events_common.requests`),
 to discard all event-data you can run any one of the following queries, but keep in mind this will affect cards values, click-maps, events list and other features 
@@ -103,7 +121,6 @@ TRUNCATE TABLE events_common.requests;
 
 -- the next table will affect click-maps and events list of session's replay
 TRUNCATE TABLE events.clicks;
-
 TRUNCATE TABLE events.errors;
 TRUNCATE TABLE events.graphql;
 TRUNCATE TABLE events.inputs;
@@ -114,7 +131,7 @@ TRUNCATE TABLE events_common.customs;
 TRUNCATE TABLE events_common.issues;
 ```
 
-### Cleanup specific sessions by time
+#### Delete specific sessions by time
 
 If you want to clean all sessions, skip to [the next part](#cleanup-all-sessions) as it is faster and releases storage space instantly.
 
@@ -129,13 +146,7 @@ Use the below SQL query if you wish to cleanup data from your database (PostgreS
 DELETE FROM public.sessions WHERE start_ts < extract(epoch from '2021-01-01'::date) * 1000;
 ```
 
-For OpenReplay Enterprise Edition:
-
-```sql
---- Cascade delete all sessions and their related events captured before Jan 1st, 2021
-DELETE FROM public.sessions WHERE start_ts < extract(epoch from '2021-01-01'::date) * 1000 AND session_id NOT IN (SELECT session_id FROM user_favorite_sessions);
-```
-PS: after running the previous query, the database will not release the storage space immediately, as it will schedule a cleaning for later, to manually force it to release storage, you can run the following queries:
+After running the previous query, the database will not release the storage space immediately, as it will schedule a cleaning for later, to manually force it to release storage, you can run the following queries:
 
 <Aside type="note">
 	These queries will lock each table so it will not be available, and it might take hours to finish
@@ -160,7 +171,8 @@ VACUUM FULL events.inputs;
 VACUUM FULL events.clicks;
 ```
 
-### Cleanup all sessions
+#### Delete all sessions
+
 Use the below SQL query if you wish to cleanup all sessions data from your database (PostgreSQL). It's a cascade delete, so all recordings as well as their corresponding events will be removed from the database.
 
 <Aside type="caution">
@@ -176,20 +188,6 @@ TRUNCATE TABLE public.errors CASCADE;
 TRUNCATE TABLE public.issues CASCADE;
 TRUNCATE TABLE public.autocomplete;
 ```
-
-## Manual cleanup recordings
-
-### Remove recordings
-
-If you ever need to free up some space, then login to your OpenReplay instance and follow the below steps:
-
-1. Run `k9s -n db`
-2. Use the keyboard arrows to navigate the list and get to the `minio-*` container
-3. Press `s` to have shell access the Minio (object storage) container
-4. Run `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
-5. Run `mc rm --recursive --dangerous --force --older-than 7d minio/mobs` (i.e. delete files that are older than 7 days)
-6. Use `exit` to exit the Minio container
-7. Run `:quit` to exit the Kubernetes CLI
 
 ## Have questions?
 If you have any questions about this process, feel free to reach out to us on our [Slack](https://slack.openreplay.com) channel.
