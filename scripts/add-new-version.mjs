@@ -198,7 +198,7 @@ async function copyNewVersion(vnumber, basePath = "") {
 }
 
 function validateNewVersion(v) {
-    if(!v.match(/[0-9]+\.[0-9]+\.[0-9]+\./)) {
+    if(!v.match(/[0-9]+\.[0-9]+\.[0-9]+/)) {
         throw new Error("Invalid new version format, it needs to be: <major>.<minor>.<patch>")
     }
 }
