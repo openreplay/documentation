@@ -20,8 +20,13 @@ network?: {
 - `failuresOnly`: Captures requests having 4xx-5xx HTTP status code. Default: `false`.
 - `sessionTokenHeader`: In case you have enabled some of our backend [integrations](/integrations) (i.e. Sentry), you can use this option to specify the header name (or activate default one 'X-OpenReplay-SessionToken' by putting option to `true`). This latter gets appended automatically to each fetch/XHR request to contain the OpenReplay sessionToken's value. Default: `false`.
 - `ignoreHeaders`: Helps define a list of headers you don't wish to capture. Set its value to `false` to capture all of them (`true` if none). Default: `['Cookie', 'Set-Cookie', 'Authorization']` so sensitive headers won't be captured.
-- `capturePayload`: store request/response body payloads. This might be quite useful for session analysis, but can become heavy on the network usage if your application extensively uses fetch/XHR requests. Default: `false`.
-- `sanitizer`: Sanitize sensitive data from fetch/XHR request/response or ignore request comletely. You can redact fields on the request object by modifying then returning it from the function (see examples below). Sanitization is applied **after** all the filtering and modifications induced by other options (that is, argument won't contain `body` payload if `capturePayload` was not explicitly set to `true`).
+- `capturePayload`: Stores request/response body payloads. This might be quite useful for troubleshooting purposes, but can become heavy on the network usage if your application extensively uses Fetch/XHR requests. Default: `false`.
+
+<Aside type="caution">
+	Capturing HTTP payloads may log highly sensitive (i.e. passwords) or private information that your application may be sending/receiving in Fetch/XHR requests/responses, so make sure you sanitize that data using the `sanitizer` option below.
+</Aside>
+
+- `sanitizer`: Sanitize sensitive data from Fetch/XHR request/response or ignore request comletely. You can redact fields on the request object by modifying then returning it from the function (see examples below). Sanitization is applied **after** all the filtering and modifications induced by other options (that is, argument won't contain `body` payload if `capturePayload` was not explicitly set to `true`).
 
 ```typescript
 interface RequestData {
