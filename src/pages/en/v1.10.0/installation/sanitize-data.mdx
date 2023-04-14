@@ -3,18 +3,21 @@ title: "Sanitize Data"
 metaTitle: "Sanitize Data"
 metaDescription: "How to sanitize data and ensure privacy for your users."
 ---
+import Aside from '~/components/Aside.astro'
+
+## Sanitize Replay Data
 
 You can sanitize what OpenReplay captures at both a global and/or granular level. Any obscured or ignored data will not be captured at the source. In other words, that data will never leave the user's browser.
 
-We are constantly improving our privacy related features, so let us know if you need something that which we don't yet support.
+<Aside type="tip">
+If you'd like to watch a quick tutorial on how to sanitize data in your replays, use [this YouTube video](https://youtu.be/22-UCoocy6s), otherwise keep reading for more details.
+</Aside>
 
-If you'd like to watch a quick tutorial on how to sanitize data, use [this YouTube video](https://youtu.be/22-UCoocy6s), otherwise keep reading for more details.
-
-## Global Level
+### Global Level
 
 Data can be sanitized at the tracker level, when setting up OpenReplay.
 
-### I'm using OpenReplay Script
+#### I'm using OpenReplay Script
 
 ![Project Configuration in OpenReplay](/static/gdpr-1.png#center)
 
@@ -25,7 +28,7 @@ Data can be sanitized at the tracker level, when setting up OpenReplay.
 - **Do not record email addresses**: By default, all emails contained in text elements are obscured and won't appear in the replays. You can disable that by unticking the box.
 3) Changing data recording options impacts the code snippet. Make sure to copy/paste the updated script in your web app.
 
-### I'm using OpenReplay NPM
+#### I'm using OpenReplay NPM
 
 There are a set of privacy related options you can pass to the constructor:
 - `obscureTextEmails?: boolean` Obscure emails in text elements. Emails will be converted to a random chain of asterisks. Default: true.
@@ -36,11 +39,11 @@ There are a set of privacy related options you can pass to the constructor:
 
 Sanitized text, email and numbers are obscured or suppressed before sending the data to OpenReplay servers. Therefore, changes applied to the above options cannot be retroactive and will only apply to newly collected data.
 
-## Granular Level
+### Granular Level
 
 You can also sanitize your data at the code level for better granularity. This is useful for obscuring or ignoring DOM elements and input fields.
 
-### Using HTML attributes
+#### Using HTML attributes
 
 - `data-openreplay-obscured` to mask text content of `<input>` tags, `<img>` and other HTML elements (i.e. `<div>`) with the exception of `<svg>` and `<canvas>`.
 
@@ -74,7 +77,7 @@ This will result in the following DOM being recorded by the tracker:
 </div>
 ```
 
-### Using the domSanitizer function
+#### Using the domSanitizer function
 
 - `domSanitizer: (node: Element) => SanitizeLevel` function to avoid having to instrument each HTML component that needs to be sanitized. `SanitizeLevel` can be `Plain` (0), `Obscured` (1) or `Hidden` (2). This function is passed to the tracker's constructor. Below is an example of redacting all HTML elements having a specific CSS class name:
 
@@ -103,6 +106,48 @@ tracker.start()
 
 > **Note:** All sanitized elements are masked/redacted at the source (tracker) level so that sensitive data never reaches the OpenReplay instance.
 
+## Sanitize DevTools Data
+
+You can use the OpenReplay SDK to sanitize the network data and application' state. 
+
+### Network
+
+Capturing requests/responses may log highly sensitive or private information that your application may be sending/receiving. Make sure to properly redact your network data.
+
+#### Fetch/XHR
+
+Use the `sanitizer` option to redact sensitive data from Fetch/XHR request/response. See the [network options](/installation/network-options#options) for more details. 
+
+Also, check this step-by-step tutorial on how to [capture and sanitize network requests](/tutorials/capture-request).
+
+#### GraphQL
+
+To sanitize GraphQL data, you need to clone the key variables and the results from the operation before calling the tracker. See how to [sanitize recorded data in GraphQL](/tutorials/graphql/#sanitizing-the-recorded-data) for more details.
+
+### State Management
+
+Scrub sensitive data from your frontend state store using the OpenReplay SDK.
+
+#### Redux
+
+Use the `actionFilter`, `actionTransformer` and `stateTransformer` options to redact sensitive actions and sub-trees from your store. See the [redux plugin documentation](/plugins/redux/#options) for more details. 
+
+#### VueX
+
+Use the `filter`, `transformer` and `mutationTransformer` options to redact sensitive mutations and sub-trees from your store. See the [vuex plugin documentation](/plugins/vuex/#options) for more details. 
+
+#### Zustand
+
+Use the `filter`, `transformer` and `mutationTransformer` options to redact sensitive mutations and sub-trees from your store. See the [zustand plugin documentation](/plugins/zustand/#options) for more details. 
+
+#### Pinia
+
+Use the `filter`, `transformer` and `mutationTransformer` options to redact sensitive mutations and sub-trees from your store. See the [pinia plugin documentation](/plugins/pinia/#options) for more details. 
+
+#### NgRx
+
+Use the `actionFilter`, `actionTransformer` and `stateTransformer` options to redact sensitive actions and sub-trees from your store. See the [ngrx plugin documentation](/plugins/ngrx/#options) for more details. 
+
 ## Have questions?
 
-Having trouble sanitizing data? Please reach out to our [Slack](https://slack.openreplay.com) and get help from our community.
+We are constantly improving our privacy related features, so let us know if you need something that we don't support yet. If you're having trouble sanitizing your data, please reach out to our [Slack](https://slack.openreplay.com) and get help from our community.
