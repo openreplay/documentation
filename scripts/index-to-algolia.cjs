@@ -10,7 +10,6 @@ console.log(process.env)
 const client = algoliasearch(process.env.PUBLIC_ALGOLIA_KEY, process.env.ALGOLIA_ADMIN_SECRET);
 const index = client.initIndex(process.env.PUBLIC_ALGOLIA_INDEX);
 
-
 readFile(__dirname + '/../public/search-index.json', (err, data) => {
     if(err) {
         console.error("Error reading JSON index file: ")
@@ -46,11 +45,7 @@ readFile(__dirname + '/../public/search-index.json', (err, data) => {
                 console.log(err.transporterStackTrace)
             })
         }    
-            
-            
-
         console.log("Process done")
-
     } catch (e) {
         console.error("Error parsing index JSON data")
         console.error(e)

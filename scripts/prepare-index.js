@@ -1,69 +1,56 @@
-import path from "path";
-import { promises as fs } from "fs";
-import { globby } from "globby";
-import grayMatter from "gray-matter";
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import matter from 'gray-matter';
 
-export function getVersionFromURL(pathname) {
-	const versionCodeMatch = pathname.match(/\/v([0-9].[0-9].[0-9])\//);
-	return versionCodeMatch ? versionCodeMatch[1] : '_latest_';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const sourceDir = path.join(__dirname, '..', 'src', 'pages');
+
+function readFilesRecursively(directory) {
+	const files = [];
+	const entries = fs.readdirSync(directory, { withFileTypes: true });
+
+	entries.forEach((entry) => {
+		if (entry.isDirectory()) {
+			files.push(...readFilesRecursively(path.join(directory, entry.name)));
+		} else if (entry.isFile() && entry.name.endsWith('.mdx')) {
+			files.push(path.join(directory, entry.name));
+		}
+	});
+
+	return files;
 }
-export function getLangFromURL(pathname) {
-	const langCodeMatch = pathname.split("/")
-	return langCodeMatch[0]
-}
 
+const inputPaths = readFilesRecursively(sourceDir);
+const indexData = inputPaths.map((filePath) => {
+	const pathParts = path.relative(sourceDir, filePath).split(path.sep);
+	const language = pathParts[0];
+	const version = pathParts[1].startsWith('v') ? pathParts[1] : '_latest_';
+	// const section = pathParts[2];
 
+	const fileContent = fs.readFileSync(filePath, 'utf-8');
+	const {
+		data: { title, excerpt, tags },
+		content,
+	} = matter(fileContent);
 
-(async function () {
-  // prepare the dirs
-  const srcDir = path.join(process.cwd(), "src");
-  const publicDir = path.join(process.cwd(), "public");
-  const contentDir = path.join(srcDir, "pages");
-  const contentFilePattern = path.join(contentDir, "**", "*.mdx");
-  console.log(contentFilePattern)
-  const indexFile = path.join(publicDir, "search-index.json");
-  const getSlugFromPathname = (pathname) => {
-    let parts = pathname.split("/")
-    let initSlice = parts.findIndex( p => p == "pages")
+	const slug = path
+		.relative(sourceDir, filePath)
+		.replace(/\\/g, '/')
+		.replace(/\.mdx$/, '');
 
-    let slug = parts.slice(initSlice + 1)
-    return slug.join("/").replace(".mdx", "")
-  }
+	return {
+		slug,
+		category: 'documentation',
+		title: title,
+		excerpt: excerpt,
+		tags: tags,
+		body: content,
+		version,
+		lang: language,
+	};
+});
 
-    //path.basename(pathname, path.extname(pathname));
-
-  const contentFilePaths = await globby([contentFilePattern]);
-  console.log(contentFilePaths)
-
-  if (contentFilePaths.length) {
-    const files = contentFilePaths.map(
-      async (filePath) => await fs.readFile(filePath, "utf8")
-    );
-    const index = [];
-    let i = 0;
-    for await (let file of files) {
-      const {
-        data: { title, excerpt, tags },
-        content,
-      } = grayMatter(file);
-      let indexedItem = {
-        slug: getSlugFromPathname(contentFilePaths[i]),
-        category: "documentation",
-        title,
-        excerpt,
-        tags,
-        body: content,
-      }
-
-      indexedItem.version = getVersionFromURL(indexedItem.slug)
-      indexedItem.lang = getLangFromURL(indexedItem.slug)
-      console.log("slug: ", indexedItem.slug)
-      index.push(indexedItem);
-      i++;
-    }
-    await fs.writeFile(indexFile, JSON.stringify(index));
-    console.log(
-      `Indexed ${index.length} documents from ${contentDir} to ${indexFile}`
-    );
-  }
-})();
+// fs.writeFileSync('public/search-index.json', JSON.stringify(indexData, null, 2));
+fs.writeFileSync('public/search-index.json', JSON.stringify(indexData));
