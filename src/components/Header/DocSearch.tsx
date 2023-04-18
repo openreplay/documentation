@@ -13,8 +13,8 @@ export default function Search({ lang = 'en', labels }: Props) {
 	const [isOpen, setIsOpen] = useState(false);
 	const searchButtonRef = useRef(document.getElementById('docsearch-search-button'));
 	const [initialQuery, setInitialQuery] = useState<string>();
-	const [version, setVersion] = useState("")
-	const [language, setLanguage] = useState("")
+	const [version, setVersion] = useState('');
+	const [language, setLanguage] = useState('');
 
 	const onOpen = useCallback(() => {
 		setIsOpen(true);
@@ -33,11 +33,12 @@ export default function Search({ lang = 'en', labels }: Props) {
 	);
 
 	useEffect(() => {
-		let v = getVersionFromURL(window.location.href)
-		let l = getLanguageFromURL(window.location.href)
-		setVersion(v ? v : __LATEST__)
-		setLanguage(l)
-	}, [])
+		let v = getVersionFromURL(window.location.href);
+		let l = getLanguageFromURL(window.location.href);
+		// console.log('v', v)
+		setVersion(v ? 'v' + v : __LATEST__);
+		setLanguage(l);
+	}, []);
 
 	useEffect(() => {
 		searchButtonRef.current?.addEventListener('click', onOpen);
@@ -54,6 +55,20 @@ export default function Search({ lang = 'en', labels }: Props) {
 
 	if (!isOpen) return null;
 
+	function CustomHit(props) {
+		console.log('props', props)
+		return (
+		  <div className="border p-2">
+			<a href={props.hit.url}>
+				<h2 className="font-medium text-lg">{props.hit.title}</h2>
+			</a>
+			<p className="">{props.hit.body}</p>
+			<p>{props.hit.version}</p>
+			{/* <a href={props.hit.url}>Read More</a> */}
+		  </div>
+		);
+	  }
+
 	return createPortal(
 		<DocSearchModal
 			initialQuery={initialQuery}
@@ -63,10 +78,13 @@ export default function Search({ lang = 'en', labels }: Props) {
 			appId={import.meta.env.PUBLIC_ALGOLIA_KEY}
 			apiKey={import.meta.env.PUBLIC_ALGOLIA_SECRET}
 			//searchParameters={{ filters: `version:${version}` }}
-			searchParameters={{ facetFilters: [`version:${version}`,`lang:${language}` ], facets:["*", "version", "lang"], attributesToRetrieve: ["title", "version", "slug", "hierarchy"] }}
-			//searchParameters={{ facetFilters: [[`lang:${lang}`]] }}
+			searchParameters={{ facetFilters: [`version:${version}`,`lang:${language}` ], facets:["*", "version", "lang"], attributesToRetrieve: ["title", "version", "slug", "hierarchy", "body", "excerpt"] }}
+			// searchParameters={{ facetFilters: [[`lang:${lang}`]] }}
+			// searchParameters={{ facetFilters: [`lang:${lang}`, `version:${version}`] }}
+			// hitComponent={CustomHit}
 			transformItems={(items) => {
 				return items.map((item) => {
+					// console.log('item', item);
 					// We transform the absolute URL into a relative URL to
 					// work better on localhost, preview URLS.
 					const a = document.createElement('a');

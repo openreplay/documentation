@@ -1,4 +1,5 @@
 ---
+import { useLayoutEffect } from 'react';
 import { getLanguageFromURL, getVersionFromURL, removeSubpageSegment } from '../../util';
 import MenuIcon from './MenuIcon';
 
@@ -17,60 +18,111 @@ type TabType = 'learn' | 'api';
 const { type, defaultActiveTab, sidebarSections, currentPageMatch } = Astro.props as Props;
 const lang = getLanguageFromURL(Astro.url.pathname);
 const version = getVersionFromURL(Astro.url.pathname);
-let urlVersion = (version) ? `v${version}/` : ""
+let urlVersion = version ? `v${version}/` : '';
 
-const categoryLinkPrefix = `/${lang}/${urlVersion}`
-const currentPageNoLangNoVer = currentPageMatch.replace(lang + "/", "").replace(urlVersion, "") + "/"
+const categoryLinkPrefix = `/${lang}/${urlVersion}`;
+const currentPageNoLangNoVer =
+	currentPageMatch.replace(lang + '/', '').replace(urlVersion, '') + '/';
+
 //console.log(currentPageNoLangNoVer)
 ---
 
 {
 	sidebarSections.map((section) => (
-		<li class:list={['nav-group', type, defaultActiveTab === type && 'active', section.extraCSSClasses]} >
-			<details>
-				<summary class:list={["nav-group-title", "flex", "justify-between", "items-center", (currentPageNoLangNoVer.indexOf(section.slug) == 0) && "active"]}>
-					<a href={categoryLinkPrefix + section.slug} class="flex-1"> 
-						<h2 class="hover:no-underline">
-						<span class="icon-text-combo">
-							<MenuIcon icon={section.icon} />
-								<span class="pt-0.5">{section.text}</span>
-							
-						</span>
-						</h2>
-					</a>
-						{
-							!section.hideChevron && (
-						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="chevron bi bi-chevron-right" viewBox="0 0 16 16">
-  <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
-</svg>
-
-						)}
-					
-				</summary>
-				<ul>
+		// (removeSubpageSegment(currentPageMatch).endsWith(removeSubpageSegment(slug)) && 'active')
+		<li class:list={['menu-item', currentPageNoLangNoVer.indexOf(section.slug) == 0 && 'active']}>
+			<a
+				href={categoryLinkPrefix + section.slug}
+				class:list={[
+					'nav-group-title flex items-center justify-between uppercase font-bold',
+					currentPageNoLangNoVer.indexOf(section.slug) == 0 && 'active',
+				]}
+				style={{ display: 'flex' }}
+			>
+				<div class="flex items-center">
+					<MenuIcon icon={section.icon} />
+					<span class="ml-2">{section.text}</span>
+				</div>
+				<div>
+					{!section.hideChevron && (
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							fill="currentColor"
+							class="chevron bi bi-chevron-right"
+							viewBox="0 0 16 16"
+						>
+							<path
+								fill-rule="evenodd"
+								d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"
+							/>
+						</svg>
+					)}
+				</div>
+			</a>
+			{section.children && section.children.length ? (
+				<ul class="submenu">
 					{section.children.map(({ slug, text, isFallback }) => (
-						<li class="nav-link">
+						<li>
 							<a
 								href={`${Astro.site?.pathname}${lang}/${urlVersion}${slug}/`}
-								aria-current={`${currentPageMatch.endsWith(slug) ? 'page' : 'false'}`}
-								data-current-parent={`${
-									removeSubpageSegment(currentPageMatch).endsWith(removeSubpageSegment(slug))
-										? 'true'
-										: 'false'
-								}`}
+								class:list={[currentPageNoLangNoVer.slice(0, -1) == slug && 'active']}
 							>
 								<Fragment set:html={text} /> {isFallback && <sup class="fallback">EN</sup>}
 							</a>
 						</li>
 					))}
 				</ul>
-			</details>
+			) : null}
 		</li>
 	))
 }
 
+<!-- <script>
+	const menuItems = document.querySelectorAll('.menu-item');
+	menuItems.forEach((menuItem) => {
+		const link = menuItem.querySelector('a');
+		const submenu = menuItem.querySelector('.submenu');
+
+		// link.addEventListener('click', (event) => {
+		// 	// event.preventDefault();
+		// 	menuItem.classList.toggle('active');
+		// });
+	});
+</script> -->
 <style lang="scss">
-	
+	.menu-item a {
+		color: var(--theme-readable-grey);
+		border-radius: 4px;
+	}
+	.menu-item .submenu {
+		display: none;
+		margin-left: 26px;
+	}
+
+	.menu-item a {
+		padding: 0.5rem;
+		display: block;
+		margin: 0.5rem 0;
+	}
+	.menu-item .submenu li:hover {
+		background: var(--theme-gray-opacity);
+		border-radius: var(--theme-border-radius);
+	}
+
+	.menu-item .menu-item.active > a {
+		background-color: var(--theme-accent-opacity);
+	}
+	.submenu a.active {
+		background-color: #eee;
+		color: var(--theme-accent-full);
+	}
+
+	.menu-item.active .submenu {
+		display: block;
+	}
+
 	.nav-group {
 		margin-bottom: 1rem;
 	}
@@ -81,10 +133,10 @@ const currentPageNoLangNoVer = currentPageMatch.replace(lang + "/", "").replace(
 	}
 
 	.nav-link a:hover {
-    background: var(--theme-gray-opacity);
-	border-radius: var(--theme-border-radius);
+		background: var(--theme-gray-opacity);
+		border-radius: var(--theme-border-radius);
 	}
-	
+
 	@media (max-width: 50em) {
 		.sm-hidden {
 			display: none !important;
@@ -103,7 +155,7 @@ const currentPageNoLangNoVer = currentPageMatch.replace(lang + "/", "").replace(
 		padding: 0.3rem 2rem;
 		font-size: 1em;
 	}
-	.nav-group-title a{
+	.nav-group-title a {
 		font-weight: 600;
 		color: var(--theme-readable-grey);
 		text-decoration: none;
@@ -146,7 +198,7 @@ const currentPageNoLangNoVer = currentPageMatch.replace(lang + "/", "").replace(
 
 	@media (min-width: 50em) {
 		.nav-group-title,
-		.nav-group-title{
+		.nav-group-title {
 			border-radius: var(--theme-border-radius);
 		}
 
@@ -158,17 +210,15 @@ const currentPageNoLangNoVer = currentPageMatch.replace(lang + "/", "").replace(
 			background-color: var(--theme-accent-opacity);
 		}
 
-
-		details .nav-group-title:hover{
+		details .nav-group-title:hover {
 			background-color: var(--theme-accent-opacity);
 		}
-
-		
 	}
 
-	@media (min-width:64em) {
-		.nav-link a, .nav-group-title{
-			padding: 0.2rem .5rem;
+	@media (min-width: 64em) {
+		.nav-link a,
+		.nav-group-title {
+			padding: 0.2rem 0.5rem;
 		}
 	}
 
