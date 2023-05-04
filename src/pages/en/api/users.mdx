@@ -105,3 +105,28 @@ curl -X DELETE \
   }
 }
 ```
+
+### Change the replay-file delete time ? 
+
+The sessions deletion will be done on 2 parts, removing the sessions from the database when the delete-job is executed at midnight of the next day, and removing the replay file from storage after 30 days.
+In case you want to delete the replay files in a different date, you can follow these instructions:
+
+
+If you're using minio (vanilla installation), you can change the default lifecycle policy this way:
+
+1. In your server, run `openreplay -e`
+2. Under the `chalice` section, define a new env variable called **SCH_DELETE_DAYS** with a value equal to the number of days you want to keep the replay file before delete (greater or equal to 0)
+3. Save and quit using `:wq`
+1. Run `k9s -n db`
+2. Use the keyboard arrows to navigate the list and get to the `minio-*` container
+3. Press `s` to have shell access the Minio (object storage) container
+6. Run `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
+7. To delete replay files 14 days after the delete-job execution
+
+```bash
+export EXPIRATION_DAYS=14
+mc ilm add --expiry-days $EXPIRATION_DAYS --tags "to_delete_in_days=${EXPIRATION_DAYS}" minio/mobs
+```
+
+8. Use `exit` to exit the Minio container
+9. Run `:quit` to exit the Kubernetes CLI
