@@ -41,24 +41,36 @@ If you're using minio (vanilla installation), you can change the default lifecyc
 1. Run `k9s -n db`
 2. Use the keyboard arrows to navigate the list and get to the `minio-*` container
 3. Press `s` to have shell access the Minio (object storage) container
-4. Run `export MINIO_ACCESS_KEY=<secretKey from /var/lib/openreplay/vars.yaml>`
-5. Run `export MINIO_SECRET_KEY=<secretKey from /var/lib/opereplay/vars.yaml>`
 6. Run `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
 7. To automatically clean recordings 14 days after creation
 
 ```bash
 export EXPIRATION_DAYS=14
+export DELETE_JOB_DAYS=$((EXPIRATION_DAYS>30 ? 30 : EXPIRATION_DAYS))
 cat <<EOF > /tmp/lifecycle.json
 {
-    "Rules": [
-        {
-            "Expiration": {
-                "Days": $EXPIRATION_DAYS
-            },
-            "ID": "Delete old mob files",
-            "Status": "Enabled"
+  "Rules": [
+    {
+      "Expiration": {
+        "Days": $EXPIRATION_DAYS
+      },
+      "ID": "Delete old mob files",
+      "Status": "Enabled"
+    },
+    {
+      "Expiration": {
+        "Days": $DELETE_JOB_DAYS
+      },
+      "ID": "Delete flagged mob files after ${DELETE_JOB_DAYS} days",
+      "Filter": {
+        "Tag": {
+          "Key": "to_delete_in_days",
+          "Value": "${DELETE_JOB_DAYS}"
         }
-    ]
+      },
+      "Status": "Enabled"
+    }
+  ]
 }
 EOF
 mc ilm import minio/mobs < /tmp/lifecycle.json
