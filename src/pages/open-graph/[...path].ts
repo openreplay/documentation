@@ -86,23 +86,23 @@ export const { getStaticPaths, get } = OGImageRoute({
 				},
 			},
 			fonts: [
-				'https://api.fontsource.org/v1/fonts/work-sans/latin-400-normal.ttf',
-				'https://api.fontsource.org/v1/fonts/work-sans/latin-800-normal.ttf',
+				'https://static.openreplay.com/fonts/work-sans/WorkSans-Regular.ttf',
+				'https://static.openreplay.com/fonts/work-sans/WorkSans-ExtraBold.ttf',
 
-				'https://api.fontsource.org/v1/fonts/noto-sans/cyrillic-400-normal.ttf',
-				'https://api.fontsource.org/v1/fonts/noto-sans/cyrillic-900-normal.ttf',
+				'https://static.openreplay.com/fonts/noto-sans/NotoSans-Regular.ttf',
+				'https://static.openreplay.com/fonts/noto-sans/NotoSans-Black.ttf',
 
-				'https://api.fontsource.org/v1/fonts/noto-sans-sc/chinese-simplified-400-normal.ttf',
-				'https://api.fontsource.org/v1/fonts/noto-sans-sc/chinese-simplified-900-normal.ttf',
+				'https://static.openreplay.com/fonts/noto-sans-sc/NotoSansSC-Regular.ttf',
+				'https://static.openreplay.com/fonts/noto-sans-sc/NotoSansSC-Black.ttf',
 
-				'https://api.fontsource.org/v1/fonts/noto-sans-tc/chinese-traditional-400-normal.ttf',
-				'https://api.fontsource.org/v1/fonts/noto-sans-tc/chinese-traditional-900-normal.ttf',
+				'https://static.openreplay.com/fonts/noto-sans-tc/NotoSansTC-Regular.ttf',
+				'https://static.openreplay.com/fonts/noto-sans-tc/NotoSansTC-Black.ttf',
 
-				'https://api.fontsource.org/v1/fonts/noto-sans-jp/japanese-400-normal.ttf',
-				'https://api.fontsource.org/v1/fonts/noto-sans-jp/japanese-900-normal.ttf',
+				'https://static.openreplay.com/fonts/noto-sans-jp/NotoSansJP-Regular.ttf',
+				'https://static.openreplay.com/fonts/noto-sans-jp/NotoSansJP-Black.ttf',
 
-				'https://api.fontsource.org/v1/fonts/noto-sans-arabic/arabic-400-normal.ttf',
-				'https://api.fontsource.org/v1/fonts/noto-sans-arabic/arabic-800-normal.ttf',
+				'https://static.openreplay.com/fonts/noto-sans-arabic/NotoSansArabic-Regular.ttf',
+				'https://static.openreplay.com/fonts/noto-sans-arabic/NotoSansArabic-ExtraBold.ttf',
 			],
 		};
 	},
