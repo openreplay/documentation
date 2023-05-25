@@ -19,7 +19,7 @@ Initialize the `@openreplay/tracker` package as usual and load the plugin into i
 Then use returned value to track MobX obervables.
 
 ```js
-import { observable } from 'mobx';
+import { observable, observe } from 'mobx';
 import Tracker from '@openreplay/tracker';
 import trackerMobX from '@openreplay/tracker-mobx';
 
@@ -27,9 +27,13 @@ const tracker = new Tracker({
   projectKey: YOUR_PROJECT_KEY,
 });
 
-tracker.plugin(trackerMobX({ ...options }));
+// this instance can be exported and used for multiple stores
+const mobxObserver = tracker.use(trackerMobX({ ...options }));
 
 const myArray = observable(['foo', 'bar', 42]);
+
+observe(myArray, mobxObserver)
+
 myArray.push("Hello world"); // This mutation will be tracked
 ```
 
@@ -38,14 +42,21 @@ myArray.push("Hello world"); // This mutation will be tracked
 You can customize the middleware behavior to sanitize your data.
 
 ```js
+interface Options {
+    predicate?: (observeEvent: { type: string; name: string; object: any; debugObjectName: string }) => boolean;
+    sanitize?: (resultAction: { state: any; type: string; property: string }) => { state: any; type: string; property: string };
+    update?: boolean;
+    add?: boolean;
+    delete?: boolean;
+}
+
 trackerMobX({
-  predicate: (ev: any) => boolean,
-  action: boolean,
-  reaction: boolean,
-  transaction: boolean,
-  compute: boolean,
+  predicate: () => true,
+  sanitize: (event) => event
 })
 ```
+
+Where predicate can be used to dynamically turn off capturing and sanitize can be used to modify the payload before sending it to backend. Most of the actions fall into update type, refer to mobx documentation for more details about add and delete (mostly for Maps)
 
 ## Have questions?
 
