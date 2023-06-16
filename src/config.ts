@@ -36,6 +36,10 @@ export const VERSIONS = [
 	},
 	{
 		title: '1.12.0',
+		url: '/v1.12.0',
+	},
+	{
+		title: '1.13.0',
 		url: '',
 	},
 ];
