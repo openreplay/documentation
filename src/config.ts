@@ -31,11 +31,11 @@ export const VERSIONS = [
 		url: '/v1.6.0',
 	},
 	{
-		title: '1.5.4',
-		url: '/v1.5.4',
+		title: '1.12.0',
+		url: '/v1.12.0',
 	},
 	{
-		title: '1.12.0',
+		title: 'v1.13.0',
 		url: '',
 	},
 ];
