@@ -41,7 +41,7 @@ Note that the script will generate the new version for all active languages.
 To run the script:
 
 ```
-node scripts/add-new-version.mjs v<major>.<minor>.<patch>
+node scripts/add-new-version.mjs <major>.<minor>.<patch>
 ```
 
 
