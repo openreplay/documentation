@@ -1,0 +1,158 @@
+---
+Заголовок: "Assist"
+MetaTitle: "Assist"
+MetaDescription: "Как найти все активные сессии для определенного проекта".
+---
+
+## Получение активных сессий
+
+Доступно только для Enterprise Edition (EE).
+
+Возвращает список активных сессий для определенного проекта.
+
+### Метод
+
+`GET`
+
+### URL
+
+`/api/v1/:projectKey/assist/sessions`
+
+### Параметры
+
+| Имя | Тип | Описание |
+|----------|-------------|-------------|
+| projectKey | строка | ID проекта, который вы отслеживаете (обязательно) |
+
+### Заголовки запроса
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`: Ключ можно найти в «Настройках»> «Аккаунт»> «Organization API Key».
+
+### Коды статуса
+
+`200`: Ответ отправлен в теле в формате JSON
+
+### Пример запроса
+
+
+```shell
+curl -X GET \
+  https://openreplay.example.com/api/v1/aYYaFHiagqdXKEmVlmvJ/assist/sessions \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+
+### Пример ответа
+
+
+```json
+{
+  "data": {
+    "total": 1,
+    "sessions": [
+      {
+        "pageTitle": "OpenReplay Blog",
+        "sessionID": "6975518573799938",
+        "metadata": {},
+        "userID": "",
+        "userUUID": "8998545b-553c-4f41-a39d-d7cba7fac2d1",
+        "projectKey": "aYYaFHiagqdXKEmVlmvJ",
+        "revID": "",
+        "timestamp": 1656437966459,
+        "trackerVersion": "3.5.11",
+        "isSnippet": true,
+        "userOs": "Mac OS",
+        "userBrowser": "Chrome",
+        "userBrowserVersion": "103.0.0.0",
+        "userDevice": null,
+        "userDeviceType": "desktop",
+        "userCountry": "FR",
+        "active": false,
+        "live": true,
+        "projectId": 3
+      }
+    ]
+  }
+}
+```
+
+
+## Поиск активных сессий
+
+Поиск в списке активных сессий для определенного проекта.
+
+### Метод
+
+`POST`
+
+### URL
+
+`/api/v1/:projectKey/assist/sessions`
+
+### Параметры
+
+| Имя | Тип | Описание |
+|----------|-------------|-------------|
+| projectKey | строка | ID проекта, который вы отслеживаете (обязательно) |
+
+### Полезная нагрузка
+
+| Имя    | Тип            | Описание                                                 |
+|---------|-----------------|------------------------------------------------------|
+| sort    | строка          | Атрибут сортировки (по умолчанию: timestamp)               |
+| order   | строка          | Порядок сортировки, может быть «DESC» или «ASC» (по умолчанию: DESC) |
+| page    | целое число         | Номер страницы для постраничной навигации (по умолчанию: 1)           |
+| limit   | целое число         | Количество сессий на страницу (по умолчанию: 200)        |
+| filters | массив фильтров | Список фильтров, смотрите следующую таблицу (по умолчанию: [])   |
+
+Объект фильтра:
+
+| Имя     | Тип                              | Описание                                                                        |
+|----------|-----------------------------------|------------------------------------------------------------------------------------|
+| value    | массив нечувствительных к регистру строк | Список значений (по умолчанию: [])                                                    |
+| type     | нечувствительная к регистру строка           | Атрибут фильтра (обязательно)                                                    |
+| source   | нечувствительная к регистру строка           | Имя атрибута метаданных для type = metadata (по умолчанию: "") |
+| operator | чувствительная к регистру строка           | Оператор для каждого значения, может быть «contains» или «is» (по умолчанию: «contains») |
+
+Поиск будет искать активные сессии, у которых есть имя атрибута, содержащее данный «type», и значение, содержащее 1 из данных «value».
+
+PS: если «values = []»; поиск будет искать активные сессии, у которых есть данный атрибут.
+
+Например, если вы ищете сессии, которые имеют определенные метаданные (любое значение):
+
+```json
+{"value": [], "type": "METADATA", "source": "myMeta"}
+```
+
+
+### Заголов
+```shell
+curl -X POST \
+  https://openreplay.example.com/api/v1/aYYaFHiagqdXKEmVlmvJ/assist/sessions \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+  --data-raw '{
+    "filters": [
+        {
+            "value": [
+                "trial", "free"
+            ],
+            "type": "METADATA",
+            "source": "plan",
+            "operator": "is"
+        },
+        {
+            "value": [
+                "openreplay"
+            ],
+            "type": "USERID",
+            "operator": "contains"
+        }
+    ],
+    "sort": "timestamp",
+    "order": "DESC",
+    "limit": 10,
+    "page": 1
+   }'
+```

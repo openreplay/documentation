@@ -1,0 +1,88 @@
+---
+title: "Использование плагина GraphQL"
+metaTitle: "Использование плагина GraphQL для захвата и очистки информации о операциях"
+metaDescription: "Узнайте, как настроить плагин GraphQL в вашем приложении React"
+---
+Если вы используете GraphQL в качестве языка запросов для ваших API из приложения, то плагин [GraphQL](https://docs.openreplay.com/plugins/graphql) поможет вам отслеживать и мутации, и запросы, отправленные на сервер GraphQL.
+
+В этом учебнике мы будем использовать клиент Apollo Boost, но пока вы используете клиент, который позволяет вам настроить некоторое промежуточное ПО, вы сможете использовать плагин в вашем коде.
+
+Если вы хотите следовать за нами, вы можете [проверить этот репозиторий](https://github.com/deleteman/openreplay-graphql-example), который содержит и сервер GraphQL, и клиентское приложение.
+
+## Сначала настройка Трекера
+
+Прежде чем устанавливать плагин GraphQL, вам нужно будет установить Трекер. Если вы уже знаете, как это сделать, перейдите к следующему разделу, иначе продолжайте читать.
+
+Мы сохраним этот код в отдельном модуле, который будет экспортировать две функции: `init` и `start`.
+
+Первая функция будет создавать трекер и настраивать все плагины; вторая будет вызывать только метод `start`.
+
+
+```jsx
+import OpenReplay from '@openreplay/tracker';
+
+let _tracker = null;
+
+export function init({plugins}) {
+
+    _tracker = new OpenReplay({
+        projectKey: process.env.OPENREPLAY_PROJECT_KEY
+    });
+
+    
+    let pluginResults = {}
+    if(plugins) {
+        Object.keys(plugins).forEach( pk => {
+            pluginResults[pk] = _tracker.use(plugins[pk]())
+        })
+    }
+    return pluginResults
+}
+
+export function start() {
+    return _tracker.start()
+}
+```
+
+
+Интересная часть о функции init, это то, что она возвращает объект, состоящий из всех возвращаемых значений плагина. Некоторые из наших плагинов вернут функцию, которую вы должны будете использовать позже (как в случае плагина GraphQL). Этот подход позволяет инициализировать трекер со всеми плагинами одновременно, а затем использовать возвращаемые значения, когда вы хотите.
+
+## Использование плагина
+
+После установки плагина с помощью npm i @openreplay/tracker-graphql используйте следующий код для вызова функции init, которую мы только что определили:
+
+
+```jsx
+import trackerGraphQL from '@openreplay/tracker-graphql';
+import {init} from './tracker/index'
+
+const {graphqlTracker} = init({
+  plugins: { 
+    graphqlTracker: trackerGraphQL
+  }
+})
+```
+
+
+Ключ `graphqlTracker`, используемый здесь, может быть любым, что вы хотите. Пока ключ, используемый в разделе `plugins`, совпадает с тем, который вы извлекаете из результатов функции `init`, все будет хорошо.
+
+## Настройка плагина с помощью клиента Apollo
+
+Для этого учебника мы будем использовать библиотек
+```jsx
+const trackerApolloLink = new ApolloLink((operation, forward) => {
+
+  const operationDefinition = operation.query.definitions[0];
+  let {operationName, variables} = operation
+  const {kind, operation: op} = operationDefinition
+  const opKind = kind === 'OperationDefinition' ? op : 'unknown?'
+
+  let results = forward(operation).map((result) => {
+    return graphqlTracker(opKind, operationName, variables, result);
+  });
+  if(results.length === 0) { //if there are no results, then we've not tracked anything so far...
+    graphqlTracker(opKind, operationName, variables, {});
+  }
+  return results
+});
+```

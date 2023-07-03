@@ -1,0 +1,128 @@
+---
+title: "Пользователи"
+metaTitle: "Пользователи"
+metaDescription: "Как управлять и контролировать данные пользователей."
+---
+import Aside from '~/components/Aside.astro'
+
+## Получить статистику пользователя
+
+Получите некоторые высокоуровневые статистики и детали о конкретном пользователе, который был идентифицирован с помощью функции JavaScript `tracker.setUserID`. Этот конечный пункт возвращает вещи, такие как `firstSeen`, `lastSeen` и `numberSessions`.
+
+### Метод
+`GET`
+
+### URL
+`/api/v1/:projectKey/users/:userId`
+
+### Параметры
+
+| Имя | Тип | Описание |
+|----------|-------------|-------------|
+| projectKey | string | ID проекта, который вы отслеживаете (обязательно) |
+| userId | string | ID вашего пользователя, установленный с помощью `tracker.setUserID` (обязательно) |
+
+### Заголовки запроса
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`: Ключ можно найти в «Настройках»> «Аккаунт»> «Ключ API организации».
+
+### Коды статуса
+
+`200`: Ответ отправлен в теле в формате JSON
+
+### Пример запроса
+
+
+```shell
+curl -X GET \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+
+### Пример ответа
+
+
+```json
+{
+  "data": {
+    "userId": "mickael@openreplay.com",
+    "sessionCount": 3,
+    "lastSeen": 1623689478617,
+    "firstSeen": 1623440822825
+  }
+}
+```
+
+
+## Удалить пользователя
+
+Удалите пользователя (идентифицированного с помощью функции JavaScript `tracker.setUserID`) и все его данные, захваченные OpenReplay. Это запускает фоновую одноразовую работу для удаления всех данных, связанных с пользователем, включая сеансы, события, метаданные, пользовательские события и записи. Вызов возвращает `jobID`, который вы можете использовать позже для [проверки](/api/jobs#getjobdetails) статуса удаления.
+
+Это пригодится для обработки запросов GDPR, которые вы можете получить от ваших конечных пользователей.
+
+<Aside type="note">
+	Работа удаления удалит максимум 1000 случайных сеансов, связанных с указанным пользователем.
+</Aside>
+
+### Метод
+`DELETE`
+
+### URL
+`/api/v1/:projectKey/users/:userId`
+
+### Параметры
+
+| Имя | Тип | Описание |
+|----------|-------------|-------------|
+| projectKey | string | ID проекта, который вы отслеживаете (обязательно) |
+| userId | string | ID вашего пользователя, установленный с помощью `tracker.setUserID` (обязательно) |
+
+### Заголовки запроса
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`: Ключ можно найти в «Настройках»> «Аккаунт»> «Ключ API организации».
+
+### Коды статуса
+
+`200`: Ответ отправлен в теле в формате JSON
+
+### Пример запроса
+
+
+```shell
+curl -X DELETE \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/users/mickael@example.com \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+
+### Пример ответа
+
+
+```json
+{
+  "data": {
+    "jobId": 22345,
+    "description": "Delete user sessions of userId = mickael@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@openreplay.com",
+    "createdAt": 1623912962910,
+    "updatedAt": 1623912962910,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+
+### Изменить время удаления файла записи?
+
+Работа удаления является двухэтапной процедурой: во-первых, сеансы и их каскад
+```bash
+export EXPIRATION_DAYS=14
+mc ilm add --expiry-days $EXPIRATION_DAYS --tags "to_delete_in_days=${EXPIRATION_DAYS}" minio/mobs
+```

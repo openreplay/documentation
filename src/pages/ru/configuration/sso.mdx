@@ -1,0 +1,36 @@
+Заголовок: "SSO"
+MetaTitle: "SSO"
+MetaDescription: "Как настроить единый вход (SSO) через SAML2."
+Импорт ORDynamicCode из «../../../components/Code/ORDynamicCode»;
+Экспортируйте начальные значения = {domain: "YOUR_DOMAIN", tenantKey: "TENANT_KEY"};
+Экспортируйте игнорируемые значения = {jumpcloud: "https://sso.jumpcloud.com"};
+
+Единый вход (через SAML2) доступен только в OpenReplay Enterprise Edition.
+
+## Конфигурация идентификатора поставщика (IDP)
+
+В панели управления вашего идентификатора поставщика создайте новое приложение с именем «openreplay» (вы можете использовать этот <a href="https://docs.openreplay.com/static/OpenReplay.png" target="_blank">иконку</a>), На странице конфигурации убедитесь, что установлены следующие значения (убедитесь, что заменили <code>{initialValues.domain}</code> правильным значением, например `https://openreplay.mycompany.com`):
+
+| Переменная | Значение |
+|----------|-------------|
+| ACS URL (также называется URL единого входа или URL потребителя) | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/</code> |
+| Entity ID (также называется аудитория) | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code> |
+| URL единого выхода (также называется SLO URL) | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/sls/</code> (опционально) |
+| Name ID (иногда он настраивается в разделе «Утверждения атрибутов» или «Параметры») | `Email` или `EmailAddress` или `urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress`, в зависимости от вашего идентификатора поставщика |
+| Инициатор SAML | Установите его в «Поставщик услуг» (опционально) |
+
+В разделе «Утверждения атрибутов» или «Параметры» убедитесь, что определены следующие поля:
+
+| Поле | Значение |
+|----------|-------------|
+| tenantKey | <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> его значение можно найти в панели управления в разделе «Настройки»> «Аккаунт» |
+| firstName | `user.firstName` |
+| lastName |  `user.lastName` |
+| internalId | Внутренний идентификатор или `user.email` (идентификатор пользователя в вашей системе управления идентификацией) (опционально) |
+| role | Роль пользователя, в зависимости от вашего идентификатора поставщика, это может быть `user.role` или `group` и т. д. (опционально, по умолчанию = `member`) |
+| adminPrivileges | Если у пользователя есть привилегии администратора или нет, если это поле содержит любое значение, отличное от «false», оно будет рассматриваться как «true». (опционально, по умолчанию = `false`) |
+
+Теперь у вас должны быть все необходимые значения для следующего шага / ра
+```bash
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout openreplay-sso.key -out openreplay-sso.crt
+```

@@ -1,0 +1,96 @@
+---
+Заголовок: «Redux»
+MetaTitle: «Redux»
+MetaDescription: «Плагин Redux для OpenReplay»
+---
+Импортируйте компонент Aside из «~/components/Aside.astro».
+
+Этот плагин позволяет захватывать действия/состояния Redux и просматривать их позже при воспроизведении записей сеансов. Это очень полезно для понимания и устранения проблем.
+
+<Aside type="tip">
+  У нас также есть подробное руководство по использованию плагина Redux для захвата состояния вашего приложения при использовании этой библиотеки, вы можете проверить его [здесь](/tutorials/redux).
+</Aside>
+
+## Установка
+
+
+```bash
+npm i @openreplay/tracker-redux --save
+```
+
+
+## Использование
+
+Инициализируйте трекер, а затем поместите сгенерированное промежуточное ПО в цепочку Redux.
+
+### Если ваш сайт является одностраничным приложением (SPA)
+
+
+```js
+import { applyMiddleware, createStore } from 'redux';
+import OpenReplay from '@openreplay/tracker';
+import trackerRedux from '@openreplay/tracker-redux';
+
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+tracker.start();
+const openReplayMiddleware = tracker.use(trackerRedux(<options>)); // check list of available options below
+
+//...
+const store = createStore(
+  reducer,
+  applyMiddleware(openReplayMiddleware) 
+);
+```
+
+
+### Если ваше веб-приложение отрисовывается на стороне сервера (SSR)
+
+Следуйте приведенному ниже примеру, если ваше приложение SSR. Убедитесь, что вызов `tracker.start()` происходит один раз после запуска приложения (в `useEffect` или `componentDidMount`).
+
+
+```js
+import { applyMiddleware, createStore } from 'redux';
+import OpenReplay from '@openreplay/tracker/cjs';
+import trackerRedux from '@openreplay/tracker-redux/cjs';
+
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+const openReplayMiddleware = tracker.use(trackerRedux(<options>)); // check list of available options below
+
+
+const store = createStore( // You can define/use it anywhere in response handlers
+  reducer,
+  applyMiddleware(openReplayMiddleware)
+);
+
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, []);
+  //... Use store here
+}
+
+```
+
+
+## Опции
+
+Вы можете настроить поведение промежуточного ПО с помощью опций для санитаризации ваших данных.
+
+
+```js
+trackerRedux({
+  actionFilter: action => action.type !== 'DRAW', // only actions which pass this test will be recorded
+  actionTransformer: action => action.type === 'LOGIN' ? null : action,
+  actionType: action => action.type // action type for search, that's the default one
+  stateTransformer: state => {
+    const { jwt, ..._state } = state;
+    return _state;
+  },
+})
+```
+

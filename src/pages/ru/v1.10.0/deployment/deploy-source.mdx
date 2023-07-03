@@ -1,0 +1,89 @@
+---
+Заголовок: «Развертывание из исходного кода»
+MetaTitle: «Развертывание из исходного кода»
+MetaDescription: «Шаг за шагом руководство по развертыванию OpenReplay из исходного кода»
+Макет: ~/layouts/MainLayout.astro
+I18nReady: true
+---
+
+OpenReplay можно развернуть из исходного кода. Его основные компоненты (Backend, API и Frontend) должны быть собраны и отправлены в ваш собственный реестр контейнеров перед установкой.
+
+Минимальные требования для машины, на которой запущен OpenReplay, составляют `2 виртуальных процессора, 8 ГБ оперативной памяти, 50 ГБ памяти`, иначе службы OpenReplay просто не запустятся. Этого должно быть достаточно для низкого / умеренного объема. Если вы ожидаете высокой нагрузки, вы должны масштабировать отсюда.
+
+## 1. Предварительные требования
+
+1. Установите Docker:
+
+
+```bash
+sudo apt update
+sudo apt install docker.io -y
+user=`whoami`
+sudo chown $user /var/run/docker.sock
+```
+
+
+2. Клонируйте репозиторий OpenReplay:
+
+
+```bash
+git clone https://github.com/openreplay/openreplay
+```
+
+
+## 2. Сборка служб Backend
+
+1. Войдите в свой реестр контейнеров, используя `docker login <registry_url>`. Если у вас есть аккаунт Docker Hub, просто запустите `docker login`.
+
+2. Соберите компоненты бэкэнда, а затем отправьте их в свой реестр контейнеров:
+
+
+```bash
+cd openreplay/backend
+sudo IMAGE_TAG=<my_tag_number> PUSH_IMAGE=1 DOCKER_REPO=index.docker.io/<username> bash build.sh 
+```
+
+
+*Примечание*: имя тега может быть любой строкой, которую вы хотите, она будет создана в вашем реестре Docker и будет использоваться для идентификации этой конкретной версии кода (это полезно, если вы также модифицируете код).
+
+Если все пройдет хорошо, в вашем реестре Docker должен быть список изображений, собранных из исходного кода, который вы имели, готовых к установке.
+Список изображений выглядит следующим образом:
+
+- Хранилище
+- Раковина
+- Интеграции
+- HTTP
+- Геристики
+- Ender
+- DB
+- Активы
+- Оповещения
+- Chalice
+
+## 3. Обновление изображений
+
+1. Создайте свой секретный реестр контейнеров:
+
+
+```bash
+kubectl create secret -n app docker-registry my-registry-secret \
+        --docker-server=MY_CONTAINER_REGISTRY_URL \ # not required if docker hub
+        --docker-username=MY_CONTAINER_REGISTRY_USERNAME \
+        --docker-password=MY_CONTAINER_REGISTRY_PASSWORD \
+        --docker-email=no@email.local 
+```
+
+
+2. Чтобы использовать компоненты, которые вы только что собрали и отправили в свой реестр контейнеров, обновите файл `vars.yaml`, расположенный в папке `openreplay/scripts/helmcharts`.
+Просто добавьте раздел для каждого изображения, которое вы имеете в своем реестре Docker, со следующей информацией:
+
+- `репозиторий`: должен указывать на MY_CONTAINER_REGISTRY_URL/COMPONENT_NAME (если вы используете Docker Hub, используйте формат `<username>/<component name
+```yaml
+alerts:
+  image:
+    repository: rg.fr-par.scw.cloud/foss/alerts
+    pullPolicy: Always
+    tag: "v1.4.2"
+  imagePullSecrets: 
+    - name: my-registry-secret
+```

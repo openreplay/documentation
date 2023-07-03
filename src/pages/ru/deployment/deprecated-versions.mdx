@@ -1,0 +1,76 @@
+Заголовок: «Устаревшие версии»
+metaTitle: «Устаревшие версии»
+metaDescription: «Версии до v1.4.0 устарели.»
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+
+Если вы хотите обновить свою инстанцию OpenReplay до последней версии, убедитесь, что вы используете версию не ниже `v1.4.0`. В противном случае вы используете устаревшую версию и должны сначала обновить до `v1.4.0`, прежде чем перейти на любую более позднюю версию (v1.8.0+).
+
+## Обновление бэкэнда (с v1.3.6 или ранее) до v1.4.0
+
+Сначала убедитесь, что вы находитесь на `v1.3.6` или ранее. Если это уже так, проигнорируйте нижеприведенные команды и перейдите к шагу 1). Если нет, обновите свою установку OpenReplay до `v1.3.6`:
+
+
+```bash 
+# Copy/backup the current openreplay folder to _version-number
+mv openreplay openreplay_v1.3.5
+git clone https://github.com/openreplay/openreplay -b v1.3.6
+cd openreplay/scripts/helm
+# bash upgrade.sh <old openreplay path>
+bash upgrade.sh ~/openreplay_v1.3.5
+```
+
+
+Как только вы будете на `v1.3.6`, продолжайте следующими шагами:
+
+1. Скопируйте/сохраните текущую папку openreplay в `_version-number` следующим образом:
+
+
+```bash 
+  mv openreplay openreplay_v1.3.6
+  ```
+
+
+2. Клонируйте новую версию OpenReplay. В этом примере мы обновляем до v1.4.0:
+
+
+```bash 
+  git clone https://github.com/openreplay/openreplay -b v1.4.0
+  ```
+
+
+3. Запустите нижеприведенный скрипт для автоматического обновления вашего `vars.yaml` до нового формата:
+
+
+```bash
+  cd openreplay/scripts/helmcharts
+  ansible localhost -m template -a "src=vars_template.yaml dest=vars.yaml" -e @~/openreplay_v1.3.6/scripts/helm/vars.yaml
+  ```
+
+
+4. Обновите OpenReplay:
+
+
+```bash
+  cd openreplay/scripts/helmcharts
+  helm ls -n app | tail -n +2 | awk '{print $1}' | xargs -I{} helm uninstall {} -n app
+  helm uninstall nginx-ingress -n nginx-ingress
+  helm upgrade --install openreplay ./openreplay -n app -f vars.yaml --atomic --set forceMigration=true
+  ```
+
+
+5. Если вы не используете балансировщик нагрузки и генерировали свой сертификат SSL с помощью скрипта `certmanager.sh`:
+
+
+```
+  cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh
+  ```
+
+
+6. Обновите переменную `fromVersion` в `/openreplay/scripts/helmcharts/vars.yaml`, чтобы отразить новую версию. Например, если вы переходите от `v1.3.6` до `v1.4.0`, обновите `fromVersion` следующим образом:
+
+
+```yaml
+  fromVersion: "v1.4.0"
+  ```
+

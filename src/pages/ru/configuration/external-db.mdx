@@ -1,0 +1,49 @@
+---
+Заголовок: «Внешняя база данных (Postgres)»
+MetaTitle: «Внешняя база данных (Postgres)»
+MetaDescription: «Как изменить место назначения базы данных по умолчанию в OpenReplay и использовать внешнюю базу данных».
+---
+
+Наш сервис баз данных Postgres по умолчанию устанавливается вместе с OpenReplay и запускается в отдельном контейнере на вашем экземпляре для более низкой стоимости развертывания. Если вы ищете большей масштабируемости или проще операций, вы все еще можете использовать внешний Postgres (т. е. AWS RDS или GCP Cloud SQL).
+
+## Экспорт существующей схемы и данных
+
+> **Примечание:** Если вы начинаете с чистого листа и еще не установили OpenReplay, то просто продолжайте установку и игнорируйте следующие шаги.
+
+Теперь локальная схема и записанные данные должны быть экспортированы во внешний Postgres:
+
+1. Сначала сделайте резервную копию локальной базы данных:
+
+
+```bash
+kubectl exec -n db postgresql-postgresql-0 -- bash -c 'PGPASSWORD=<postgresPassword from vars.yaml> pg_dumpall -U postgres '"  > ~/path/to/dump.sql
+```
+
+
+2. Установите клиент Postgres на ваш экземпляр OpenReplay и убедитесь, что у него есть доступ к внешней базе данных:
+
+
+```bash
+sudo apt install postgresql-client
+```
+
+
+3. Восстановите резервную копию в новый внешний Postgres:
+
+
+```bash
+PGPASSWORD=PG_PASSWORD psql -U PG_USERNAME -h [RDS_URL} -d postgres < /path/to/dump.sql
+```
+
+
+4. Наконец, обновите все переменные «postgres» в «openreplay -e» и укажите их на внешнюю базу данных:
+
+
+```yaml
+  postgresqlPassword: "changeMePassword"
+  postgresqlHost: "postgresql.db.svc.cluster.local"
+  postgresqlPort: "5432"
+  postgresqlUser: "postgres"
+  postgresqlDatabase: "postgres"
+```
+

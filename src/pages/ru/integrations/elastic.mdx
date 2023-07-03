@@ -1,0 +1,116 @@
+---
+Заголовок: «Elastic»
+MetaTitle: «Интеграция Elasticsearch»
+MetaDescription: «Как интегрировать Elasticsearch с OpenReplay и просматривать ошибки бэкэнда вместе с записями сеансов»
+---
+
+Как интегрировать Elasticsearch с OpenReplay и просматривать ошибки бэкэнда вместе с записями сеансов.
+
+## 1. Создайте новый ключ API
+
+Если вы используете панель Kibana:
+1. Войдите в свою панель Kibana.
+2. Перейдите в Dev *Tools > Console*.
+3. Скопируйте следующий код консоли в свою консоль и запустите его.
+
+Если вы используете команды CURL:
+1. Выполните следующую команду cURL в своем терминале.
+
+**Примечание:** по умолчанию эта интеграция будет искать журналы в любом индексе, соответствующем шаблону `*log*`, если у вас есть определенный индекс для журналов, который не соответствует этому шаблону, пожалуйста, измените имя индекса в строке 12 в следующей команде. Если вы хотите указать более 1 индекса, вы можете разделить имена с помощью `,`.
+
+
+```shell
+POST /_security/api_key
+{
+  "name": "openreplay-api-key",
+  "role_descriptors": {
+    "openreplay-role": {
+      "cluster": [
+        "all"
+      ],
+      "index": [
+        {
+          "names": [
+            "*log*"
+          ],
+          "privileges": [
+            "read"
+          ]
+        }
+      ]
+    }
+  }
+}
+```
+
+
+Если вы использовали любой из предыдущих методов для генерации ключа API, вы получите результат, как в следующем:
+
+
+```json
+{
+  "id" : "eQWAIG0Bo0VqB8HXFH9-",
+  "name" : "openreplay-api-key",
+  "api_key" : "dZ5ycVRJTU-5UW_RYfi1_w"
+}
+```
+
+
+Убедитесь, что скопировали `id` и `api_key`, потому что мы их нуждаемся для нашей интеграции. Для получения дополнительной информации о создании ключа API, пожалуйста, обратитесь к этой документации (https://www.elastic.co/guide/en/elasticsearch/reference/master/security-api-create-api-key.html).
+
+## 2. Включите Elasticsearch в OpenReplay
+
+Вставьте ваш адрес `host`, `port`, `id` и `api_key` в панель OpenReplay в разделе «Настройки > Интеграция».
+Если вы изменили индекс при генерации `api_key`, укажите имя в `indexes`.
+
+![Интеграция Elasticsearch в OpenReplay](/static/elastic-1.png#center)
+
+## 3. Распространите openReplaySessionToken
+
+Для связывания события Elasticsearch с записанным сеансом пользователя необходимо распространить уникальный токен из вашего фронтэнда в ваш бэкэнд при каждом запросе, который вы хотите отслеживать. Это можно сделать с помощью пользовательского HTTP-заголовка. В приведенном ниже примере мы используем функцию `fetch` для отправки этого заголовка.
+
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+
+Для того, чтобы OpenReplay связал запись журнала Elasticsearch с записанным сеансом пользователя, необходимо распространить уникальный токен в качестве части каждой ошибки бэкэнда, ко
+```python
+import sys
+import traceback
+#...
+old_tb = traceback.print_exception
+old_f = sys.stdout
+old_e = sys.stderr
+OPENREPLAY_SESSION_TOKEN = None
+
+class F:
+    def write(self, x):
+        if OPENREPLAY_SESSION_TOKEN is not None and x != '\n':
+            old_f.write(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] {x}")
+        else:
+            old_f.write(x)
+
+    def flush(self):
+        pass
+
+def tb_print_exception(etype, value, tb, limit=None, file=None, chain=True):
+    if OPENREPLAY_SESSION_TOKEN is not None:
+        value = type(value)(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] " + str(value))
+    old_tb(etype, value, tb, limit, file, chain)
+
+traceback.print_exception = tb_print_exception
+
+sys.stderr = F()
+```

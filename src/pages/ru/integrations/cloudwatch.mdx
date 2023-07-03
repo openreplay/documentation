@@ -1,0 +1,84 @@
+---
+Заголовок: "CloudWatch"
+MetaTitle: "Интеграция CloudWatch"
+MetaDescription: "Как интегрировать CloudWatch с OpenReplay и просматривать ошибки бэкенда вместе с реплеями сессий."
+---
+
+Как интегрировать CloudWatch с OpenReplay и просматривать ошибки бэкенда вместе с реплеями сессий.
+
+## 1. Создание учетной записи службы
+
+1. Войдите в свою учетную запись [AWS] (https //console.aws.amazon.com).
+2. Перейдите на панель [IAM] (https://console.aws.amazon.com/iam/home).
+3. Нажмите на *Пользователи*.
+4. Нажмите на кнопку *Добавить пользователя*.
+5. Установите имя "openreplay_cw".
+6. В типе доступа выберите *Программный доступ*.
+7. Нажмите кнопку *Далее: Разрешения*.
+8. Выберите *Прикрепить существующие политики непосредственно*.
+9. В списке разрешений выберите *CloudWatchReadOnlyAccess*.
+10. Нажмите кнопку *Далее: Теги*.
+11. Нажмите кнопку *Далее: Обзор*.
+12. Нажмите кнопку *Создать пользователя*.
+13. Скопируйте `Access key ID` и `Secret access key`.
+
+## 2. Включение CloudWatch в OpenReplay
+
+Вставьте свой `Access key ID` и `Secret access key` в панель OpenReplay в разделе «Настройки> Интеграция», выберите регион и выберите группу журналов, которую вы хотите отслеживать из списка выпадающего списка.
+
+![Интеграция CloudWatch в OpenReplay] (/static/cloudwatch-1.jpg#center)
+
+## 3. Распространение openReplaySessionToken
+
+Чтобы связать событие CloudWatch с записанной пользовательской сессией, должен быть распространен уникальный токен из вашего фронтенда на ваш бэкенд при каждом запросе, который вы хотите отслеживать. Это можно сделать с помощью пользовательского заголовка HTTP. В приведенном ниже примере мы используем функцию `fetch`, чтобы отправить этот заголовок.
+
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // use window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+
+Для того, чтобы OpenReplay связал запись журнала Cloudwatch с записанной пользовательской сессией, должен быть распространен уникальный токен во время каждой ошибки бэкенда, которую вы хотите отслеживать.
+
+Ниже приведен пример на Python с использованием Monkey Patching.
+
+
+```python
+import sys
+import traceback
+#...
+old_tb = traceback.print_exception
+old_f = sys.stdout
+old_e = sys.stderr
+OPENREPLAY_SESSION_TOKEN = None
+
+class F:
+    def write(self, x):
+        if OPENREPLAY_SESSION_TOKEN is not None and x != '\n':
+            old_f.write(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] {x}")
+        else:
+            old_f.write(x)
+
+    def flush(self):
+        pass
+
+def tb_print_exception(etype, value, tb, limit=None, file=None, chain=True):
+    if OPENREPLAY_SESSION_TOKEN is not None:
+        value = type(value)(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] " + str(value))
+    old_tb(etype, value, tb, limit, file, chain)
+
+traceback.print_exception = tb_print_exception
+
+sys.stderr = F()
+```
+

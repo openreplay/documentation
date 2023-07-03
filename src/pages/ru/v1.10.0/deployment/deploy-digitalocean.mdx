@@ -1,0 +1,58 @@
+Заголовок: «Развертывание на Digital Ocean»
+Мета-заголовок: «Развертывание на Digital Ocean»
+Мета-описание: «Шаг за шагом инструкция по развертыванию OpenReplay на Digital Ocean»
+Расположение: ~/layouts/MainLayout.astro
+i18nReady: true
+
+Стек OpenReplay можно установить на одну машину (droplet) и Digital Ocean является идеальным кандидатом. Вот как это сделать.
+
+## Создание droplet
+
+1. Создайте новый проект (если вы этого еще не сделали), затем перейдите в него и нажмите «Создать» droplet
+2. Выберите образ *Ubuntu Server 20.04 LTS*
+4. Выберите «Shared CPU» и выберите план `Regular Intel | 4 CPUs | 8GB`. Это минимальные требования, иначе службы фонового сервиса OpenReplay просто не запустятся. Этого достаточно для умеренного объема, но если вы ожидаете большой трафик, вы должны будете масштабировать отсюда.
+5. Нажмите «Новый SSH-ключ» в «Аутентификации» и следуйте инструкциям для генерации ключа
+6. Дайте вашей машине имя, затем нажмите «Создать droplet»
+
+## Развертывание OpenReplay
+
+1. Убедитесь, что ваш droplet `активен`, затем подключитесь к нему:
+
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem ## wherever you've saved the SSH key
+INSTANCE_IP=REPLACE_WITH_DROPLET_PUBLIC_IP
+chmod 400 $SSH_KEY
+ssh -i $SSH_KEY root@$INSTANCE_IP
+```
+
+
+2. Установите OpenReplay, указав домен, на котором он будет работать (например, DOMAIN_NAME = openreplay.mycompany.com):
+
+
+```bash
+git clone https://github.com/openreplay/openreplay.git
+cd openreplay/scripts/helmcharts
+DOMAIN_NAME=openreplay.mycompany.com bash init.sh
+```
+
+
+## Настройка TLS / SSL
+
+OpenReplay имеет дело с чувствительными данными пользователей и поэтому требуется HTTPS для работы. Это обязательно, иначе трекер просто не начнет запись. То же самое и для панели управления, без HTTPS вы не сможете повторно воспроизводить сеансы пользователей.
+
+Вам потребуется поэтому сгенерировать (или привести) свой собственный SSL-сертификат.
+
+1. Сначала перейдите в «Управление»> «Сетевое подключение»> «Домены» (или в другой поставщик услуг DNS) и создайте «A Record». Используйте домен, который вы ранее указали во время шага установки, и укажите его на droplet, используя его публичный IP-адрес (можно найти в вкладке Droplets).
+
+2. Если вы приводите свой собственный сертификат, создайте секрет SSL, используя следующую команду: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
+
+> **Примечание:** Если у вас нет сертификата, генерируйте его, который автоматически обновляется, для вашего поддомена (того, который был указан во время установки) с помощью Let's Encrypt. Просто подклю
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```

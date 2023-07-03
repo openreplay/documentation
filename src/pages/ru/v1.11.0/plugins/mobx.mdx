@@ -1,0 +1,62 @@
+---
+Заголовок: "MobX"
+MetaTitle: "MobX"
+MetaDescription: "Плагин MobX для OpenReplay."
+---
+
+Этот плагин позволяет захватывать изменения `MobX` и просматривать их позже при воспроизведении записей сеансов. Это полезно для понимания и устранения проблем.
+
+## Установка
+
+
+```bash
+npm i @openreplay/tracker-mobx
+```
+
+
+## Использование
+
+Инициализируйте пакет `@openreplay/tracker` как обычно и загрузите плагин в него.
+Затем используйте возвращенное значение для отслеживания наблюдаемых MobX.
+
+
+```js
+import { observable, observe } from 'mobx';
+import Tracker from '@openreplay/tracker';
+import trackerMobX from '@openreplay/tracker-mobx';
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+// this instance can be exported and used for multiple stores
+const mobxObserver = tracker.use(trackerMobX({ ...options }));
+
+const myArray = observable(['foo', 'bar', 42]);
+
+observe(myArray, mobxObserver)
+
+myArray.push("Hello world"); // This mutation will be tracked
+```
+
+
+## Опции
+
+Вы можете настроить поведение посредника для санитаризации ваших данных.
+
+
+```js
+interface Options {
+    predicate?: (observeEvent: { type: string; name: string; object: any; debugObjectName: string }) => boolean;
+    sanitize?: (resultAction: { state: any; type: string; property: string }) => { state: any; type: string; property: string };
+    update?: boolean;
+    add?: boolean;
+    delete?: boolean;
+}
+
+trackerMobX({
+  predicate: () => true,
+  sanitize: (event) => event
+})
+```
+

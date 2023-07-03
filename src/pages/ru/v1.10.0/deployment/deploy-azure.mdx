@@ -1,0 +1,64 @@
+---
+title: "Развертывание в Azure"
+metaTitle: "Развертывание в Azure"
+metaDescription: "Шаг за шагом руководство по развертыванию OpenReplay в Azure."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="Смотрите, как развернуть OpenReplay в вашей инфраструктуре Azure"
+  description="Если вы не любите читать, вы можете следовать этому видеоуроку, показывающему, как развернуть OpenReplay в Azure"
+  videoURL="https://www.youtube.com/watch?v=bkVw32UKf7Q"
+  />
+
+OpenReplay stack может быть установлен на одну машину, и Microsoft Azure является идеальным кандидатом. Вот как это сделать.
+
+## Запуск виртуальной машины
+
+1. Войдите в свой портал
+2. Нажмите «Виртуальная машина», если она доступна на главном экране. В противном случае нажмите «Создать ресурс»> «Вычисления»> «Виртуальная машина»
+3. На странице «Виртуальная машина» нажмите «Добавить», если вы не автоматически не перенаправлены на страницу создания
+4. Выберите *Ubuntu Server 20.04 LTS* для «Образа»
+4. Выберите спецификации виртуальной машины. **Минимальные** ресурсы - `2 vCPU, 8 ГБ ОЗУ, 50 ГБ хранилища`, иначе службы бэкенда OpenReplay просто не запустятся. Минимальные характеристики достаточны для низкого / умеренного объема. Если вы ожидаете высокой нагрузки, вы должны масштабировать отсюда.
+5. Включите порты HTTP (80), HTTPS (443) и SSH (22) и запишите `имя пользователя`
+6. Нажмите «Просмотр + создание»
+
+## Развертывание OpenReplay
+
+1. Убедитесь, что ваша виртуальная машина `Запущена`, а затем подключитесь к ней:
+
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem ## only if you've previously created an SSH key
+chmod 400 $SSH_KEY
+INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
+ssh <username>@$INSTANCE_IP ## or ssh -i $SSH_KEY <username>@$INSTANCE_IP if you have a key
+```
+
+
+2. Установите OpenReplay, указав домен, на котором он будет работать (например, DOMAIN_NAME = openreplay.mycompany.com):
+
+
+```bash
+git clone https://github.com/openreplay/openreplay.git
+cd openreplay/scripts/helmcharts
+DOMAIN_NAME=openreplay.mycompany.com bash init.sh
+```
+
+
+## Настройка TLS / SSL
+
+OpenReplay имеет дело с конфиденциальными данными пользователей и поэтому требуется HTTPS для работы. Это обязательно, иначе трекер просто не начнет запись. То же самое касается панели управления: без HTTPS вы не сможете повторить сеансы пользователей.
+
+Вам потребуется поэтому сгенерировать (или привести) свой собственный SSL-сертификат.
+
+1. Сначала перейдите в Azure DNS (или в другой провайдер услуг DNS) и создайте «A Record». Используйте домен, который вы ранее указали во время шага установки, и укажите его для виртуальной машины с помощью ее публичного IP-адреса.
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```

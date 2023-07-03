@@ -1,0 +1,55 @@
+---
+Заголовок: «Stackdriver»
+MetaTitle: «Интеграция Stackdriver»
+MetaDescription: «Как интегрировать Stackdriver с OpenReplay и просматривать ошибки бэкенда вместе с записями сессий»
+---
+
+Как интегрировать Stackdriver с OpenReplay и просматривать ошибки бэкенда вместе с записями сессий.
+
+## 1. Создание учетной записи службы Google Cloud
+
+1. В консоли GCP перейдите на страницу [Create Service Account Key](https://console.cloud.google.com/apis/credentials/serviceaccountkey?_ga=2.65088365.-270704106.1563504222).
+2. В списке служб выберите *New Service Account*.
+3. В поле имени службы введите «openreplay-stackdriver».
+4. В списке ролей добавьте *Logging > Logs Viewer* и *Stackdriver > Stackdriver Accounts Viewer*.
+5. Нажмите *Create*, чтобы загрузить файл JSON, содержащий ваш ключ.
+
+## 2. Включение Stackdriver в OpenReplay
+
+Вставьте ваш `Log Name` и учетные данные `openreplay-stackdriver` в панель управления OpenReplay в разделе «Настройки > Интеграция».
+
+![Интеграция Stackdriver в OpenReplay](/static/stackdriver-1.png#center)
+
+## 3. Распространение openReplaySessionToken
+
+Для связывания события Stackdriver с записанной пользовательской сессией необходимо передать уникальный токен из вашего фронтенда в ваш бэкенд при каждом запросе, который вы хотите отслеживать. Это можно сделать с помощью пользовательского заголовка HTTP. В приведенном ниже примере мы используем функцию `fetch` для отправки этого заголовка.
+
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+
+Для того, чтобы OpenReplay связал запись журнала Stackdriver с записанной пользовательской сессией, необходимо передать уникальный токен в качестве `метки` для каждой ошибки бэкенда, которую вы хотите отслеживать.
+
+Ниже приведен пример в API Python Stackdriver.
+
+
+```python
+google_logger.log_text("A LOG ENTRY", severity='ERROR', labels={"openReplaySessionToken": OPENREPLAY_SESSION_TOKEN})
+
+#or
+
+google_logger.log_struct({"message": "A LOG ENTRY"}, severity='ERROR', labels={"openReplaySessionToken": OPENREPLAY_SESSION_TOKEN})
+```
+

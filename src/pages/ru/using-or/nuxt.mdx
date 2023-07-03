@@ -1,0 +1,83 @@
+Заголовок: «Использование OpenReplay с Nuxt»
+MetaTitle: «Добавление трекера OpenReplay в ваше приложение Nuxt.js»
+MetaDescription: «Узнайте, как заставить работать трекер в вашем приложении Nuxt»
+
+Получение трекера для работы в приложении Nuxt довольно просто.
+
+## Добавление кода отслеживания
+
+Хотя вы можете получить версию кода для копирования и вставки непосредственно из платформы при создании нового проекта, этот код слишком прост и может не соответствовать лучшим практикам, ожидаемым вашей командой или компанией.
+
+Поэтому вместо этого вы можете попробовать модульно организовать предоставленный код, как показано ниже:
+
+
+```jsx
+import Tracker from '@openreplay/tracker';
+import {v4 as uuidV4} from 'uuid'
+
+function defaultGetUserId() {
+   return uuidV4() 
+}
+
+export function startTracker(config) {
+
+    console.log("Starting tracker...")
+
+    const getUserId = (config?.userIdEnabled && config?.getUserId) ? config.getUserId : defaultGetUserId
+    let userId = null;
+
+    const trackerConfig = {
+        projectKey: config?.projectKey
+    }
+
+    const tracker = new Tracker(trackerConfig);
+
+    if(config?.userIdEnabled) {
+        userId = getUserId()
+        tracker.setUserID(userId)
+    }
+
+    tracker.start();
+    return {
+        tracker,
+        userId
+    }
+}
+```
+
+
+Эта функция обеспечивает инициализацию Трекера и вызов метода «start», который запускает все процессы.
+
+Эта функция также принимает объект «конфигурации», который вы можете расширить для будущих функций. Этот пример показывает вам, как включить, при желании, возможность уникально идентифицировать пользователей. Вы можете использовать идентификатор UUID по умолчанию, который будет уникальным для каждого пользователя при каждом посещении страницы. Вы также можете предоставить функцию пользовательского идентификатора пользователя «getUserId» в качестве части конфигурации.
+
+С помощью вашей пользовательской функции вы можете предоставить идентификатор клиента вашего магазина, адрес электронной почты пользователя или любую информацию, которая уникально идентифицирует пользователя в вашем приложении. Таким образом, вы можете отслеживать их сеансы воспроизведения в течение времени в случае, если у них есть особая проблема, которую другие не докладывают.
+
+В этом примере ожидается, что ключ проекта, который вы можете получить из пользовательского интерфейса OpenReplay, будет передан внутри объекта «config» по ключу «projectKey».
+
+## Написание плагина только для клиента
+
+Чтобы использовать функцию «startTracker», вам нужно будет создать плагин только для клиента в каталоге «plugins» вашего проекта Nuxt.
+
+Убедитесь, что вы добавили суффикс «.client» к
+```jsx
+import {startTracker} from '../utils/tracker'
+
+export default defineNuxtPlugin( (nuxtApp) => {
+    
+    return {
+        provide: {
+            startTracking: () => {
+                let config = useRuntimeConfig().public
+                
+                let {userId} = startTracker({
+                    userIdEnabled: true,
+                    projectKey: config.openreplayProjectKey
+                })
+                //Optional if you need it
+                let uid = useUserId()
+                uid.value = userId
+            }
+        }
+    }
+})
+```

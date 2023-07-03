@@ -1,0 +1,56 @@
+Заголовок: «NewRelic»
+MetaTitle: «Интеграция NewRelic»
+MetaDescription: «Как интегрировать NewRelic с OpenReplay и просматривать ошибки бэкэнда вместе с записями сессий.»
+
+## Как интегрировать NewRelic с OpenReplay и просматривать ошибки бэкэнда вместе с записями сессий.
+
+## 1. Создание ключа запроса
+
+1. Войдите в свою учетную запись [NewRelic](https://newrelic.com).
+2. В верхнем левом углу выберите панель *INSIGHTS*.
+3. В панели *INSIGHTS* перейдите к «Управление данными», а затем выберите *API Keys*.
+4. Нажмите на кнопку *+* в разделе *Query Keys*.
+
+![NewRelic API Keys](/static/newrelic-1.png#center)
+
+5. В поле «Примечания» введите `openreplay`.
+6. Скопируйте `Account ID` и `Key`.
+7. Нажмите на кнопку *Сохранить примечания*.
+
+![NewRelic Query Key](/static/newrelic-2.png#center)
+
+## 2. Включение NewRelic в OpenReplay
+
+Вставьте ваш `Application ID` и `Key` в панель управления OpenReplay в разделе «Настройки > Интеграция».
+
+![NewRelic Integration in OpenReplay](/static/newrelic-3.jpg#center)
+
+## 3. Распространение openReplaySessionToken
+
+Для связывания события NewRelic с записанной сессией пользователя необходимо передавать уникальный токен из вашего фронтенда в ваш бэкэнд при каждом запросе, который вы хотите отслеживать. Это можно сделать с помощью функции пользовательского HTTP-заголовка. В приведенном ниже примере мы используем функцию `fetch` для отправки этого заголовка.
+
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+
+Для того, чтобы OpenReplay связал запись журнала NewRelic с записанной сессией пользователя, необходимо передавать уникальный токен в качестве `custom_parameter` для каждой ошибки бэкэнда, которую вы хотите отслеживать.
+
+Ниже приведен пример в API Python NewRelic.
+
+
+```python
+newrelic.agent.add_custom_parameter("openReplaySessionToken", OPENREPLAY_SESSION_TOKEN)
+```
+

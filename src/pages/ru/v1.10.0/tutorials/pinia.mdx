@@ -1,0 +1,79 @@
+Заголовок: «Отслеживание изменений состояния с помощью плагина Pinia»
+Мета-заголовок: «Отслеживание изменений состояния с помощью плагина Pinia»
+Мета-описание: «Отслеживайте изменения состояния при использовании Pinia с помощью плагина Pinia»
+Минимальная версия: «1.6.0»
+
+Импортируйте Aside из «~/components/Aside.astro» и YoutubeVideo из «~/components/YoutubeVideo.astro».
+
+<YoutubeVideo title="Watch how to track state with Pinia"
+  description="If you don't like reading, you can follow this video tutorial showing you how to track the state of your Vue apps when you use Pinia"
+  videoURL="https://youtu.be/0TE5dfzz4-c"
+/>
+
+Pinia - это библиотека управления состоянием для проектов Vue, которая заменяет VueX. С помощью нашего плагина [Pinia](/plugins/pinia) вы можете отслеживать изменения состояния в течение всего жизненного цикла вашего приложения.
+
+## Установка плагина
+
+Плагин можно легко установить с помощью следующей команды:
+
+
+```jsx
+npm i @openreplay/tracker-vuex
+```
+
+
+## Использование плагина изнутри вашего приложения Vue
+
+Для этого примера мы будем использовать пример приложения Vue, чтобы показать, как вы можете добавлять и взаимодействовать с этим плагином внутри реального приложения.
+
+**Примечание**: полный исходный код этого примера находится в этом репозитории GitHub [GitHub repo](https://github.com/deleteman/openreplay-vue-pinia-example), проверьте его, если вам нужны более подробные сведения.
+
+После установки плагина мы изменим файл `main.js`, добавив импортирующее объявление ниже:
+
+
+```jsx
+import trackerVuex from '@openreplay/tracker-vuex/cjs';
+```
+
+
+Затем мы будем использовать функцию `startTracker`, чтобы создать трекер и использовать плагин одновременно.
+
+Результат вызова этой функции будет объектом, содержащим результаты использования метода `use` с плагином.
+
+**Обратите внимание**, как имя деструктуризованного свойства совпадает со значением свойства `name`. Пока вы сохраняете эти два значения одинаковыми, все в порядке.
+
+
+```jsx
+const {piniaPlugin} = startTracker({
+    projectKey: "<your project key>",
+    plugins: [{
+        name: 'piniaPlugin',
+        fn: trackerVuex
+    }]
+})
+```
+
+
+Следующее, что нужно сделать, - это создать именованный объект обертки, который мы будем использовать для настройки плагина на нужном нам хранилище позже.
+
+
+```jsx
+const piniaStoreWrapper = piniaPlugin("products")
+saveStore(piniaStoreWrapper)
+```
+
+
+Объект `piniaStoreWrapper` позже должен быть использован с хранилищем, которое мы решили отслеживать. Однако хранилище еще не создано на этом этапе, поэтому мы сохраним его с помощью функции `saveStore`.
+
+### Вспомогательные ф
+```jsx
+let storeWrapper = null;
+
+export function saveStore(s) {
+    storeWrapper = s;
+}
+
+export function getStore(store) {
+    return storeWrapper;
+}
+```

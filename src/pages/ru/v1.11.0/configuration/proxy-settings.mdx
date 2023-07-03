@@ -1,0 +1,37 @@
+---
+Заголовок: «Настройки прокси»
+MetaTitle: «Настройки прокси»
+MetaDescription: «Настройки для запуска OpenReplay за прокси, такими как NGINX или Apache2»
+---
+
+Если вы запускаете OpenReplay за прокси, настройте конфигурацию так, чтобы она выглядела как нижеуказанные настройки.
+
+## Настройки NGINX
+
+Убедитесь, что ваш прокси отправляет заголовки `X-Forwarded-For` и `X-Forwarded-Proto`. Для работы OpenReplay также должен быть включен SSL. Остальная часть конфигурации должна выглядеть следующим образом:
+
+
+```nginx
+location / {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        proxy_pass http://1.2.3.4; # replace with OpenReplay instance IP
+    }
+```
+
+
+## Настройки Apache2
+
+Убедитесь, что модули `proxy`, `proxy_http` и `proxy_html` включены. Для работы OpenReplay также должен быть настроен SSL. Остальные настройки должны быть похожи на следующие:
+
+
+```apacheconf
+<VirtualHost *:443>
+    ProxyPass / http://1.2.3.4 <!-- replace with instance IP -->
+    RequestHeader set X-Forwarded-Proto expr=%{REQUEST_SCHEME}
+    # SSL + other config here
+</VirtualHost>
+```
+

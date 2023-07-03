@@ -1,0 +1,74 @@
+---
+Заголовок: «Развертывание в Kubernetes»
+MetaTitle: «Развертывание в Kubernetes»
+MetaDescription: «Шаг за шагом руководство по развертыванию OpenReplay в Kubernetes»
+---
+
+Развертывание OpenReplay основано на [Helm Charts](https://helm.sh), что делает его полностью совместимым с Kubernetes. Мы пакуем PostgreSQL и Redis, которые необходимы для OpenReplay. Вот как это сделать.
+
+## Предварительные требования
+
+Для развертывания OpenReplay в Kubernetes необходимо:
+- Kubernetes **v1.18+**
+- helm **3.10+**
+- **RWX PVC** (для общих компонентов, если кластер состоит из более чем одного узла). Убедитесь, что вы раскомментировали нижеприведенный блок в `/var/lib/openreplay/vars.yaml` и обновили имя PVC для компонентов **sink, storage** и **chalice**:
+
+
+```yaml
+# In case of multiple nodes in the kubernetes cluster,
+# You'll have to create an RWX PVC for shared components.
+# If it's a single node, we'll use hostVolume, which is the default for the community/oss edition.
+pvcRWXName: "hostPath"
+```
+
+
+OpenReplay также **требует** `2 виртуальных процессора, 8 ГБ ОЗУ, 50 ГБ памяти` для правильной работы, в противном случае службы фонового режима OpenReplay просто не запустятся. Эти спецификации достаточны для умеренного объема, но если вы ожидаете большой трафик, вы должны будете масштабировать отсюда.
+
+Развертывание было протестировано на следующих платформах:
+- Локальный одноузловый кластер Kube
+- Google Kubernetes Engine (GKE)
+- Amazon Elastic Kubernetes Service (EKS)
+- Microsoft Azure Kubernetes Service (AKS)
+- Scaleway Elements Kubernetes (Kapsule)
+
+## Развернуть OpenReplay
+
+Подключитесь к вашему кластеру и клонируйте репозиторий OpenReplay:
+
+
+```bash
+git clone https://github.com/openreplay/openreplay.git
+cd openreplay/scripts/helmcharts
+```
+
+
+> Если в кластере Kubernetes несколько узлов,
+вам нужно будет создать RWX (например, efs в случае AWS) PVC для того, чтобы контейнеры могли обмениваться данными.
+Если это один узел, мы будем использовать hostVolume, который по умолчанию для установки сообщества.
+
+Затем откройте файл `vars.yaml` командой `vim vars.yaml`, затем замените:
+- `domainName`: это то, где будет доступен OpenReplay (т. е. openreplay.mycompany.com)
+- `postgresqlPassword`: пароль Postgres (установите его или сгенерируйте случайный)
+- `accessKey`: требуется для службы хранения объектов (используйте случайно сгенерированную строку)
+- `secretKey`: требуется для службы хранения объектов (используйте случайно сгенерированную строку)
+- `jwt_secret`: требуется для API (используйте случайно сгенерированную строку)
+
+Убедитесь, что у вас установлен [helm](https://helm.sh/docs/intro/install/) и настройте OpenReplay:
+
+
+```bash
+cd openreplay/scripts/helmcharts
+helm upgrade --install databases ./databases -n db --create-namespace --wait -f ./vars.yaml --atomic
+helm upgrade --install openreplay ./openreplay -n app --create-namespace --wait -f ./vars.yaml --atomic
+```
+
+
+## Настройка TLS / SSL
+
+OpenReplay имеет дело с чувствительными данными пользователей и поэтому треб
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      use-forwarded-headers: true
+```

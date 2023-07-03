@@ -1,0 +1,45 @@
+---
+Название: "Обновление деплоя"
+MetaTitle: "Обновление деплоя"
+MetaDescription: "Как обновить ваш экземпляр до последней версии OpenReplay."
+---
+
+Обновление вашего развертывания OpenReplay до последней версии требует обновления как вашего бэкэнда (экземпляра), так и трекера.
+
+## Обновление бэкэнда
+
+1. Скопируйте/сохраните текущую папку openreplay в `_version-number` подобно ниже:
+  
+  
+```bash 
+  mv openreplay openreplay_v1.11.0
+  ```
+
+
+2. Обновите зависимости:
+  
+
+```bash
+# Update kubernetes deprecated apis
+helm plugin install https://github.com/helm/helm-mapkubeapis
+helm mapkubeapis -n app openreplay
+	
+# Update Kubernetes
+k3s-killall.sh
+curl -sL https://get.k3s.io | sudo K3S_KUBECONFIG_MODE="644" INSTALL_K3S_VERSION='v1.25.6+k3s1' INSTALL_K3S_EXEC="--disable=traefik" sh -
+	
+# Restart kube cluster
+sudo systemctl restart k3s.service
+	
+# Download the latest CLI
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay ; sudo chmod +x /bin/openreplay
+```
+
+
+3. Обновите OpenReplay:
+
+
+```bash
+RELEASE_UPGRADE=1 openreplay --upgrade
+```
+

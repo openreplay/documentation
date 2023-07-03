@@ -1,0 +1,60 @@
+Заголовок: «Rollbar»
+MetaTitle: «Интеграция Rollbar»
+MetaDescription: «Как интегрировать Rollbar с OpenReplay и просматривать ошибки бэкенда вместе с записями сеансов»
+
+Как интегрировать Rollbar с OpenReplay и просматривать ошибки бэкенда вместе с записями сеансов.
+
+## 1. Создание токенов доступа к проекту
+
+1. Войдите в свою учетную запись [Rollbar](https://rollbar.com).
+2. Выберите проект из выпадающего списка (в верхнем левом углу).
+3. Перейдите в раздел *Настройки > Проект* Токены доступа.
+4. Нажмите на кнопку *Создать новые токены доступа*.
+
+![Rollbar Project Access Tokens](/static/rollbar-1.png#center)
+
+5. В Области выберите `чтение`; в имени поставьте `openreplay`; и оставьте *Ограничение скорости* по умолчанию.
+6. Скопируйте ваш новый токен.
+
+![Rollbar Active Token](/static/rollbar-2.png#center)
+
+## 2. Включение Rollbar в OpenReplay
+
+Вставьте свой токен доступа в панель инструментов OpenReplay под «Настройки > Интеграция».
+
+![Rollbar Integration in OpenReplay](/static/rollbar-3.png#center)
+
+
+## 3. Распространение openReplaySessionToken
+
+Для связывания события Rollbar с записанным сеансом пользователя необходимо передавать уникальный токен из вашего фронтенда в ваш бэкенд при каждом запросе, который вы хотите отслеживать. Это можно сделать с помощью функции пользовательского HTTP-заголовка. В приведенном ниже примере мы используем функцию `fetch` для отправки этого заголовка.
+
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+
+Для того, чтобы OpenReplay связал запись в журнале Rollbar с записанным сеансом пользователя, необходимо передавать уникальный токен в качестве `extra_data` для каждой ошибки бэкенда, которую вы хотите отслеживать.
+
+Ниже приведен пример в API Python Rollbar.
+
+
+```python
+rollbar.report_message("A LOG ENTRY", level='error', extra_data={"openReplaySessionToken": OPENREPLAY_SESSION_TOKEN})
+
+# or if you are catching the exceptions
+
+rollbar.report_exc_info(sys.exc_info(), level='error', extra_data={"openReplaySessionToken": str(OPENREPLAY_SESSION_TOKEN)})
+```
+

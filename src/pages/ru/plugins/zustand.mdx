@@ -1,0 +1,94 @@
+---
+Заголовок: «Zustand»
+MetaTitle: «Zustand»
+MetaDescription: «Плагин Zustand для OpenReplay»
+---
+Импортируйте компонент Aside из «~/components/Aside.astro».
+
+Этот плагин позволяет захватывать изменения/состояние «Zustand» и просматривать их позже при воспроизведении записей сеансов. Это очень полезно для понимания и устранения проблем.
+
+<Aside type="tip">
+У нас также есть подробное руководство по использованию плагина Zustand для захвата состояния вашего приложения при использовании этой библиотеки, вы можете проверить его [здесь](/tutorials/zustand).
+</Aside>
+
+## Установка
+
+
+```bash
+npm i @openreplay/tracker-zustand
+```
+
+
+## Использование
+
+Инициализируйте пакет «@openreplay/tracker», как обычно, и загрузите плагин в него. Вызовите плагин и установите имя хранилища, это вернет экземпляр трекера с именем, который вы можете вызвать с вашим образцом хранилища в качестве аргумента для включения отслеживания этого хранилища.
+
+### Если ваш сайт является одностраничным приложением (SPA)
+
+
+```js
+import Tracker from '@openreplay/tracker';
+import trackerZustand from '@openreplay/tracker-zustand';
+```
+
+
+### Если ваше веб-приложение отрисовывается на стороне сервера (SSR)
+
+
+```js
+import Tracker from '@openreplay/tracker/cjs';
+import trackerZustand from '@openreplay/tracker-zustand/cjs';
+```
+
+
+### Отслеживание хранилища Zustand
+
+
+```js
+import create from "zustand";
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+const zustandPlugin = tracker.use(trackerZustand())
+// name is optional, randomly generated 
+// string if its undefined
+const bearStoreLogger = zustandPlugin('bear_store')
+
+
+const useBearStore = create(
+  bearStoreLogger((set: any) => ({
+    bears: 0,
+    increasePopulation: () => set((state: any) => ({ bears: state.bears + 1 })),
+    removeAllBears: () => set({ bears: 0 }),
+  }))
+)
+```
+
+
+## Опции
+
+Вы можете настроить поведение плагина с помощью опций для санитаризации ваших данных. Они похожи на стандартные опции плагина «createLogger».
+
+
+```js
+trackerZustand({
+  filter (mutation, state) {
+    // returns `true` if a mutation should be logged
+    // `mutation` is a `{ type, payload }`
+    return mutation.type !== "aBlacklistedMutation";
+  },
+  transformer (state) {
+    // transforms the state before logging it.
+    // for example return only a specific sub-tree
+    return state.subTree;
+  },
+  mutationTransformer (mutation) {
+    // mutations are logged in the format of `{ type, payload }`
+    // we can format it any way we want.
+    return mutation.type;
+  },
+})
+```
+

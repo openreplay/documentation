@@ -1,0 +1,79 @@
+---
+Заголовок: «SumoLogic»
+MetaTitle: «Интеграция SumoLogic»
+MetaDescription: «Как интегрировать SumoLogic с OpenReplay и просматривать ошибки бэкенда вместе с записями сессий.»
+---
+
+Как интегрировать SumoLogic с OpenReplay и просматривать ошибки бэкенда вместе с записями сессий.
+
+## 1. Создайте новый Access ID и Access Key
+
+1. Войдите в свою учетную запись [SumoLogic](https://service.eu.sumologic.com/ui/#/login).
+2. Перейдите на страницу [Access Keys](https://service.eu.sumologic.com/ui/#/security/access-keys).
+3. Нажмите на *+ Add Access Key*.
+4. В имени введите «openreplay» и нажмите на *Create Key*.
+5. Скопируйте новый `Access ID` и `Access Key`, потому что мы их будем использовать для нашей интеграции.
+6. Нажмите на *Done*.
+
+Для получения дополнительной информации о создании Access ID и Access Key обратитесь к этой [документации](https://help.sumologic.com/Manage/Security/Access-Keys).
+
+## 2. Включите SumoLogic в OpenReplay
+
+Вставьте ваш `Access ID` и `Access Key` в панель управления OpenReplay в разделе «Настройки > Интеграция».
+
+![Интеграция SumoLogic в OpenReplay](/static/sumo-1.png#center)
+
+## 3. Распространите openReplaySessionToken
+
+Для связи события SumoLogic с записанной пользовательской сессией необходимо распространить уникальный токен из вашего фронтенда на ваш бэкенд при каждом запросе, который вы хотите отслеживать. Это можно сделать с помощью пользовательского HTTP-заголовка. В приведенном ниже примере мы используем функцию `fetch`, чтобы отправить этот заголовок.
+
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+
+Для того, чтобы OpenReplay связала сообщение SumoLogic с записанной пользовательской сессией, необходимо распространить уникальный токен в каждой ошибке бэкенда, которую вы хотите отслеживать.
+
+Ниже приведен пример на Python с использованием Monkey Patching.
+
+
+```python
+import sys
+import traceback
+#...
+old_tb = traceback.print_exception
+old_f = sys.stdout
+old_e = sys.stderr
+OPENREPLAY_SESSION_TOKEN = None
+
+class F:
+    def write(self, x):
+        if OPENREPLAY_SESSION_TOKEN is not None and x != '\n':
+            old_f.write(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] {x}")
+        else:
+            old_f.write(x)
+
+    def flush(self):
+        pass
+
+def tb_print_exception(etype, value, tb, limit=None, file=None, chain=True):
+    if OPENREPLAY_SESSION_TOKEN is not None:
+        value = type(value)(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] " + str(value))
+    old_tb(etype, value, tb, limit, file, chain)
+
+traceback.print_exception = tb_print_exception
+
+sys.stderr = F()
+```
+

@@ -1,0 +1,69 @@
+---
+Заголовок: «Ошибки JS»
+MetaTitle: «Ошибки JS»
+MetaDescription: «Все виды ошибок JavaScript»
+---
+
+В этом разделе перечислены наиболее часто встречаемые ошибки JavaScript и отчеты нашего сообщества.
+
+## Ошибка ссылки: Navigator не определен
+
+Иногда эта ошибка возникает, когда вы пытаетесь импортировать плагины `tracker-assist` или `tracker-fetch`, это происходит потому, что node пытается создать страницу без API `window` в окружении.
+
+Исправление довольно простое. Все, что вам нужно сделать, это изменить обычный импорт плагина, вызывающего проблемы:
+
+
+```js
+import trackerAssist from '@openreplay/tracker-assist/cjs';
+```
+
+
+На динамический импорт внутри `componendDidMount` или `useEffect` альтернативы:
+
+
+```js
+import Tracker, { Options } from "@openreplay/tracker";
+const tracker = new Tracker({ /* your options */ });
+
+class TrackerComponent extends React.Component {
+
+  componentDidMount = () => {
+    import(‘@openreplay/tracker-assist/cjs’).then(({ default: trackerAssist }) => {
+      tracker.start(/* your options */)
+      tracker.use(trackerAssist(/* your assist options */))
+    })
+   }
+
+ /* Other code */
+```
+
+
+Таким образом, все плагины, зависящие от API window, будут импортированы при рендеринге компонента.
+
+## Критическая зависимость: запрос зависимости является выражением
+
+Это может произойти со старыми версиями плагина `tracker-assist`. Вы должны применить это [решение] (https://github.com/peers/peerjs/issues/630#issuecomment-910028230), если вы столкнетесь с ошибкой ниже при компиляции:
+
+
+```log
+Failed to compile.
+
+./node_modules/peerjs/dist/peerjs.min.js
+Critical dependency: the request of a dependency is an expression
+```
+
+
+## Непойманное исключение DOM: Заблокирован фрейм с источником «X» для доступа к фрейму кросс-оригинала
+
+OpenReplay tracker захватывает **одно-доменные** iFrames по умолчанию. Однако он выдает ошибку, когда пытается захватить iFrame, который НЕ из того же домена, что и ваш сайт. Вы можете либо:
+
+- Отключить всю функциональность, используя свойство `captureIFrames` как в примере ниже:
+
+
+```js
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY,
+      captureIFrames: false
+});
+```
+

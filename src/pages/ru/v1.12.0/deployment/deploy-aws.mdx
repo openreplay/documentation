@@ -1,0 +1,64 @@
+---
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+title: "Развертывание на AWS"
+metaTitle: "Развертывание на AWS"
+metaDescription: "Шаг за шагом руководство по развертыванию OpenReplay на Amazon AWS."
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="Смотрите, как развернуть OpenReplay в вашей инфраструктуре AWS"
+  description="Если вы не любите читать, вы можете следовать этому видеоуроку, показывающему, как развернуть OpenReplay в AWS"
+  videoURL="https://www.youtube.com/watch?v=0-02jJyL4_A"
+  />
+
+OpenReplay stack может быть установлен на одном компьютере, и AWS EC2 является идеальным кандидатом.
+
+## Запуск экземпляра EC2
+
+1. Перейдите в панель управления EC2 AWS
+2. «Запустить новый экземпляр»
+3. Выберите свой AMI. Для этого руководства мы будем использовать *Ubuntu Server 20.04 LTS*
+4. Выберите тип экземпляра. Минимальные характеристики - `2 vCPUs, 8 GB of RAM, 50 GB of storage`, иначе службы фонового обслуживания OpenReplay просто не запустятся. Поэтому мы рекомендуем **по крайней мере** `t3.large` (или эквивалент), что достаточно для низкого / умеренного объема. Если вы ожидаете высокой нагрузки, вы должны масштабировать отсюда.
+5. Настройка подробностей экземпляра: настройте параметры сети / подсети, если это необходимо, или просто оставьте значения по умолчанию
+6. Добавить хранилище: установите размер в 50 ГБ (General Purpose SSD (gp2))
+7. Добавить метки: настройте параметры или оставьте значения по умолчанию
+8. Группы безопасности: сохраните существующее правило SSH и добавьте еще 2 для HTTP (80) и HTTPS (443) (источник: 0.0.0.0/0)
+9. Нажмите «Просмотр и запуск»
+10. Создайте / загрузите ключ SSH, затем нажмите «Запустить экземпляры»
+
+## Развертывание OpenReplay
+
+1. Убедитесь, что ваш экземпляр `Running`, затем подключитесь к нему:
+
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem #! wherever you've saved the SSH key
+INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
+chmod 400 $SSH_KEY
+ssh -i $SSH_KEY ubuntu@$INSTANCE_IP
+```
+
+
+2. Установите OpenReplay, указав домен, на котором он будет работать (например, DOMAIN_NAME = openreplay.mycompany.com):
+
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+
+## Настройка TLS / SSL
+
+OpenReplay имеет дело с конфиденциальными данными пользователей и поэтому требуется HTTPS для работы. Это обязательно, иначе трекер просто не начнет запись. То же самое касается панели управления, без HTTPS вы не сможете повторить сеансы пользователей.
+
+Самый простой способ обработки SSL в AWS - это настройка балансировщика нагрузки (ELB) и запуск OpenReplay позади него.
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      use-forwarded-headers: true
+```

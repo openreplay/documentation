@@ -1,0 +1,180 @@
+Заголовок: «Работы»
+MetaTitle: «Работы»
+MetaDescription: «Как управлять удалением данных пользователей»
+
+## Список всех работ
+
+Получите все работы, включая завершенные или отмененные.
+
+### Метод
+`GET`
+
+### URL
+`/api/v1/:projectKey/jobs`
+
+### Заголовки запроса
+
+`Авторизация: {ВАШ КЛЮЧ ОРГАНИЗАЦИИ API}`: Ключ можно найти в «Настройках»> «Аккаунт»> «Ключ API организации».
+
+### Коды статуса
+
+`200`: Ответ отправлен в теле в формате JSON
+
+### Пример запроса
+
+
+```shell
+curl -X GET \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/jobs \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+
+### Пример ответа
+
+
+```json
+{
+  "data": [
+    {
+      "jobId": 3451,
+      "description": "Delete user sessions of userId = shekar@example.com",
+      "status": "scheduled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "mehdi@openreplay.com",
+      "createdAt": 1623912955277,
+      "updatedAt": 1623912955277,
+      "startAt": 1623954600000,
+      "errors": null
+    },
+    {
+      "jobId": 3452,
+      "description": "Delete user sessions of userId = shekar@example.com",
+      "status": "cancelled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "mehdi@openreplay.com",
+      "createdAt": 1623912962910,
+      "updatedAt": 1623913015276,
+      "startAt": 1623954600000,
+      "errors": null
+    }
+  ]
+}
+```
+
+
+## Получить детали работы
+
+Верните статус работы и другие детали, такие как `createdAt`, `referenceId` и `errors`.
+
+### Метод
+`GET`
+
+### URL
+`/api/v1/:projectKey/jobs/:jobId`
+
+### Параметры
+
+| Имя | Тип | Описание |
+|----------|-------------|-------------|
+| jobId | строка | ID, возвращаемый вызовом удаления пользователя (обязательно) |
+
+### Заголовки запроса
+
+`Авторизация: {ВАШ КЛЮЧ ОРГАНИЗАЦИИ API}`: Ключ можно найти в «Настройках»> «Аккаунт»> «Ключ API организации».
+
+### Коды статуса
+
+`200`: Ответ отправлен в теле в формате JSON
+
+### Пример запроса
+
+
+```shell
+curl -X GET \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/jobs/3451\
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+
+### Пример ответа
+
+
+```json
+{
+  "data": {
+    "jobId": 3451,
+    "description": "Delete user sessions of userId = shekar@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@openreplay.com",
+    "createdAt": 1623912955277,
+    "updatedAt": 1623912955277,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+
+## Отменить работу
+
+Отмените работу, если она еще не началась или все еще в процессе.
+
+### Метод
+`DELETE`
+
+### URL
+`/api/v1/:projectKey/jobs/:jobId`
+
+### Параметры
+
+| Имя | Тип | Описание |
+|----------|-------------|-------------|
+| jobId | строка | ID, возвращаемый вызовом удаления пользователя (обязательно) |
+
+### Заголовки запроса
+
+`Авторизация: {ВАШ КЛЮЧ ОРГАНИЗАЦИИ API}`: Ключ можно найти в «Настройках»> «Аккаунт»> «Ключ API организации».
+
+### Коды статуса
+
+`200`: Ответ отправлен в теле в формате JSON
+`501`: Возвращается, если работу нельзя отменить
+
+### Пример запроса
+
+
+```shell
+curl -X DELETE \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/jobs/3452 \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+
+### Пример ответа
+
+
+```json
+{
+  "data": {
+    "jobId": 3452,
+    "description": "Delete user sessions of userId = shekar@example.com",
+    "status": "cancelled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@openreplay.com",
+    "createdAt": 1623912962910,
+    "updatedAt": 1623913015276,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+

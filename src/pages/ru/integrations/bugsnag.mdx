@@ -1,0 +1,54 @@
+---
+Заголовок: "Bugsnag"
+MetaTitle: "Интеграция Bugsnag"
+MetaDescription: "Как интегрировать Bugsnag с OpenReplay и видеть ошибки бэкенда вместе с реплеями сессий."
+---
+
+Как интегрировать Bugsnag с OpenReplay и видеть ошибки бэкенда вместе с записями сессий.
+
+## 1. Создайте авторизационный токен
+
+1. Войдите в свою учетную запись [Bugsnag](https://app.bugsnag.com).
+2. Перейдите в *Настройки> Мой аккаунт> Личные авторизационные токены*.
+3. Нажмите на кнопку *Generate new token +*.
+4. В описании поставьте `openreplay`.
+5. Нажмите кнопку *Generate*.
+6. Скопируйте токен, а затем нажмите кнопку *Done*.
+
+![Bugsnag Personal Auth Tokens](/static/bugsnag-1.jpg#center)
+
+## 2. Включите Bugsnag в OpenReplay
+
+Вставьте ваш `Авторизационный токен` в панель управления OpenReplay в разделе «Настройки> Интеграция» и выберите проект, который вы хотите отслеживать из списка выпадающего меню.
+
+![Bugsnag Integration in OpenReplay](/static/bugsnag-2.jpg#center)
+
+## 3. Распространите openReplaySessionToken
+
+Чтобы связать событие Bugsnag с записанной пользовательской сессией, необходимо передать уникальный токен из вашего фронтенда в ваш бэкенд при каждом запросе, который вы хотите отслеживать. Это можно сделать с помощью пользовательского заголовка HTTP. В приведенном ниже примере мы используем функцию `fetch` для отправки этого заголовка.
+
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // use window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+
+Для того, чтобы OpenReplay связал запись журнала Bugsnag с записанной пользовательской сессией, уникальный токен должен быть передан как `meta_data> special_info` для каждой ошибки бэкенда, которую вы хотите отслеживать.
+
+Ниже приведен пример в API Python Bugsnag.
+
+
+```python
+bugsnag.notify(EXCEPTION_OBJECT,  meta_data={"special_info":{"openReplaySessionToken": OPENREPLAY_SESSION_TOKEN}})
+```
+

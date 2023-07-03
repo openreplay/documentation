@@ -1,0 +1,43 @@
+Заголовок: «Загрузка исходных карт»
+MetaTitle: «Загрузка исходных карт»
+MetaDescription: «Загрузите исходные карты в OpenReplay».
+
+OpenReplay поддерживает деминификацию JavaScript с помощью исходных карт. Загрузив их в OpenReplay, вы сможете видеть контекст исходного кода, полученный из стек-трейсов, в исходном виде, что очень полезно для отладки сжатого кода (UglifyJS) или транспилированного кода (TypeScript, ES6).
+
+## Настройка
+
+Установите модуль NPM sourcemap-uploader:
+
+
+```bash
+npm i -g @openreplay/sourcemap-uploader
+```
+
+
+## Предварительные требования
+
+Убедитесь, что ваша сборка производит отдельные файлы исходных карт (.map). Например, если вы используете webpack, ваша конфигурация должна включать в себя опцию `devtool`:
+
+
+```js
+{ devtool: ‘source-map’ }
+```
+
+
+## Загрузка исходных карт в OpenReplay
+
+Затем вам необходимо настроить процесс сборки для создания различных исходных файлов. Исходные карты можно загрузить для **одного файла**:
+
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY file -m ./dist/index.js.map -u https://myapp.com/index.js
+```
+
+
+Или **каталога**, включающего много файлов. В этом случае URL должен соответствовать (точный путь) корню, из которого вы загружаете JS-файлы из каталога. Другими словами, если у вас есть ваш `app-42.js` вместе с `app-42.js.map` в папке `./build` и вы хотите загрузить его в ваш экземпляр OpenReplay, чтобы он был доступен по ссылке `https://myapp.com/static/app-42.js`, то команда должна быть примерно такой:
+
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY dir -m ./build -u https://myapp.com/static
+```
+

@@ -1,0 +1,66 @@
+---
+title: "Развертывание на OVHcloud"
+metaTitle: "Развертывание на OVHcloud"
+metaDescription: "Руководство по шагам для развертывания OpenReplay на OVHcloud (Выделенный сервер, VPS, виртуальная машина Private Cloud или экземпляр Public Cloud)."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+Стек OpenReplay может быть установлен на одну машину, а OVHcloud Dedicated server, VPS, виртуальная машина Private Cloud или экземпляр Public Cloud - идеальный кандидат. Вот как это сделать.
+
+## Закажите свой сервер или запустите свой экземпляр
+
+Вы можете использовать любой из следующих продуктов OVHcloud для развертывания OpenReplay:
+
+- Выделенный сервер
+- VPS
+- Private Cloud (внутри виртуальной машины)
+- Экземпляр Public Cloud
+
+Предварительные требования:
+
+- Выберите *Ubuntu Server 20.04 Focal Fossa* в качестве операционной системы.
+- Минимальные требования для машины, на которой запущен OpenReplay, составляют `2 vCPUs, 8 GB ОЗУ, 50 GB памяти`, иначе службы фонового уровня OpenReplay просто не запустятся. Этого должно быть достаточно для низкого / умеренного объема. Если вы ожидаете высокой нагрузки, вы должны будете масштабировать отсюда.
+- Общедоступный IP-адрес, указывающий на ваш сервер / экземпляр.
+
+## Развертывание OpenReplay
+
+1. Убедитесь, что ваш сервер / экземпляр запущен, а затем подключитесь к нему через SSH от имени root
+
+2. Установите OpenReplay, указав домен, на котором он будет работать (например, DOMAIN_NAME = openreplay.mycompany.com):
+
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+
+Стоит упомянуть, что наш `ingress-nginx` запускается по умолчанию на портах `80 | 443`, но это может быть легко изменено, при необходимости, в `vars.yaml`:
+
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+
+4. Наконец, переустановите OpenReplay NGINX:
+
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+```bash
+openreplay -R
+```
