@@ -13,11 +13,37 @@ But once you understand how they work and how to structure your client-only code
 
 While you can get a copy&paste version of the code directly from the platform when you create a new project, that code is too barebone and might not follow the best practices expected by your team or company.
 
-So instead, you can create a Context Provider that allows all components wrapped by it, to start the tracking process:
+### Tracker component
+
+This method provides minimalistic approach where we inject the tracker into the app as a component, which will load the library dynamically.
+
+```jsx
+[...]
+
+function TrackerComponent() {
+const [tracker, setTracker] = React.useState(null);
+
+  React.useEffect(() => {
+    (async function () {
+      const Tracker = await import("@openreplay/tracker");
+      const openRelayTracker = new Tracker.default({
+        projectKey: PROJECT_KEY,
+        __DISABLE_SECURE_MODE: true,
+      });
+
+      setTracker(openRelayTracker);
+    })();
+  }, []);
+[...]
+```
+
+
+### Tracker Context
+
+this method lets you create a context, which in turn makes it easier to control the tracker state and call its various API.
 
 ```jsx
 import { createContext } from "react"
-import Tracker from '@openreplay/tracker';
 import {v4 as uuidV4} from 'uuid'
 import { useReducer } from "react"
 
@@ -27,7 +53,9 @@ function defaultGetUserId() {
    return uuidV4() 
 }
 
-function newTracker(config) {
+async function newTracker(config) {
+    // we use dynamic import to make sure that tracker is started inside browser env
+    const Tracker = await import("@openreplay/tracker");
     const getUserId = (config?.userIdEnabled && config?.getUserId) ? config.getUserId : defaultGetUserId
     let userId = null;
 
@@ -36,7 +64,7 @@ function newTracker(config) {
     }
 
     const tracker = new Tracker(trackerConfig);
-
+    
     if(config?.userIdEnabled) {
         userId = getUserId()
         tracker.setUserID(userId)
