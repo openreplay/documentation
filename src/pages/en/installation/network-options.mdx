@@ -18,11 +18,15 @@ network?: {
   sanitizer: (RequestResponseData) => RequestResponseData | null;
   captureInIframes: boolean;
   axiosInstances: AxiosInstance[];
+  useProxy?: boolean;
+	tokenUrlMatcher?: (url: string) => boolean;
 }
 ```
 
+- `useProxy`: Switches tracker from patching window.fetch/window.XMLRequest to using proxy objects (will be the default method in future updates). Default: `false`.
 - `failuresOnly`: Captures requests having 4xx-5xx HTTP status code. Default: `false`.
 - `sessionTokenHeader`: In case you have enabled some of our backend [integrations](/integrations) (i.e. Sentry), you can use this option to specify the header name (or activate default one 'X-OpenReplay-SessionToken' by putting option to `true`). This latter gets appended automatically to each fetch/XHR request to contain the OpenReplay sessionToken's value. Default: `false`.
+- `tokenUrlMatcher`: Gets current tracker request's url and returns `boolean`. If present, `sessionTokenHeader` will only be applied when this function returns `true`. Default: `undefined`.
 - `ignoreHeaders`: Helps define a list of headers you don't wish to capture. Set its value to `false` to capture all of them (`true` if none). Default: `['Cookie', 'Set-Cookie', 'Authorization']` so sensitive headers won't be captured.
 - `capturePayload`: Stores request/response body payloads. This might be quite useful for troubleshooting purposes, but can become heavy on the network usage if your application extensively uses Fetch/XHR requests. Default: `false`.
 
