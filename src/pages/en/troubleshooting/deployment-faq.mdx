@@ -4,23 +4,41 @@ metaTitle: "Deployment FAQ"
 metaDescription: "Deployment related Frequently Asked Question (FAQ)"
 ---
 
+## Installation
+
+1. `Error: release openreplay failed, and has been uninstalled due to atomic being set`
+
+    a. This might be because of failed helm installation. To debug, follow the below steps:
+
+        ```bash
+        openreplay -s
+
+        # If you see any failed pods, check the log. it should shed some light.
+        openreplay -l <pod name>
+
+        # If there is no pods in running/error/crashloop status, then check the status of pod using following command
+        kubectl describe po -n app -n db <pod name>
+        ```
+
 ## Signup is not working
 
 1. Health check shows SSL check failed:
   
    a. If you've a self-signed certificate, you can use the following command to fix it:
-        
-        ```bash
-        openreplay -e
 
-        # Add following line to skip the SSL health check
-        chalice:
-          env:
-            ...
-            ...
-            # append the following line under env section
-            SKIP_H_SSL: true
-        ```
+       ```bash
+       openreplay -e
+
+       # Add following line to skip the SSL health check
+       chalice:
+         env:
+           ...
+           ...
+           # append the following line under env section
+           SKIP_H_SSL: true
+       ```
+
+    save and quit the config file using `:wq`
     
 
 ## My installation suddenly stopped working
