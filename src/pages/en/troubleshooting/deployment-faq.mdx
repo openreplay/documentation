@@ -4,15 +4,32 @@ metaTitle: "Deployment FAQ"
 metaDescription: "Deployment related Frequently Asked Question (FAQ)"
 ---
 
+## Signup is not working
+
+1. Health check shows SSL check failed:
+  
+   a. If you've a self-signed certificate, you can use the following command to fix it:
+        
+        ```bash
+        openreplay -e
+
+        # Add following line to skip the SSL health check
+        chalice:
+          env:
+            ...
+            ...
+            # append the following line under env section
+            SKIP_H_SSL: true
+        ```
+    
+
 ## My installation suddenly stopped working
    
 There might be multiple reasons for that. Here's how you can debug the situation:
 
-1. Check the disk usage in the OpenReplay VM. If it's more than 80%, the services won't run.
+1. Check the status of Installation, using `openreplay -s`
 
-```bash  
-df -h
-```
+    a. Check the disk usage section. If it's more than 80%, the services won't run.
 
 ## Upgrade failed without any particular error
    
@@ -31,7 +48,7 @@ helm rollback -n app openreplay
 kubectl get pods -n app --field-selector="status.phase!=Succeeded,status.phase!=Running" -o custom-columns="POD:metadata.name"
         
 # Check for the err logs
-stern -n app `pod name from above`
+openreplay -l `pod name from above`
  ```
 
 ## Have questions?
