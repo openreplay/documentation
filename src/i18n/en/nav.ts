@@ -40,6 +40,7 @@ export default [
 	{ text: 'Svelte', slug: 'using-or/svelte', key: 'using-or/' },
 	{ text: 'Angular', slug: 'using-or/angular', key: 'using-or/' },
 	{ text: 'Gatsby', slug: 'using-or/gatsby', key: 'using-or/' },
+	{ text: 'iOS (beta)', slug: 'using-or/ios', key: 'using-or/' },
 
 	{ text: 'Administration', slug: 'configuration/', header: true, type: 'learn', key: 'admin', icon: 'configure' },
 	{ text: 'Overview', slug: 'configuration', key: 'concepts/why-astro' },
@@ -149,6 +150,17 @@ export const subMenus = [
  { text: 'setMetadata', slug: 'sdk/set-metadata', key: 'sdk/troubleshooting' },
  { text: 'start', slug: 'sdk/start', key: 'sdk/troubleshooting' },
  { text: 'stop', slug: 'sdk/stop', key: 'sdk/troubleshooting' },
+
+ { text: 'iOS SDK (beta)', header:true,type: 'learn', slug: 'ios-sdk/', key: 'ios-sdk', icon: 'sdk' },
+ { text: 'Initialization', slug: 'ios-sdk/init', key: 'ios-sdk/init' },
+{ text: 'Start', slug: 'ios-sdk/start', key: 'ios-sdk/start' },
+{ text: 'Capturing Inputs', slug: 'ios-sdk/inputs', key: 'ios-sdk/inputs' },
+{ text: 'Events', slug: 'ios-sdk/event', key: 'ios-sdk/event' },
+{ text: 'Analytics', slug: 'ios-sdk/analytics', key: 'ios-sdk/analytics' },
+{ text: 'Sanitazation', slug: 'ios-sdk/sanitazation', key: 'ios-sdk/sanitazation' },
+{ text: 'setUserID', slug: 'ios-sdk/set-user-id', key: 'ios-sdk/setuserid' },
+{ text: 'setMetadata', slug: 'ios-sdk/set-metadata', key: 'ios-sdk/metadata' },
+{ text: 'userAnonymousId', slug: 'ios-sdk/user-anonymous-id', key: 'ios-sdk/anonid' },
  
 
  { text: 'OpenReplay CLI', header:true,type: 'learn', slug: 'cli/', key: 'guides/troubleshooting', icon: 'cli', hideChevron: true },
