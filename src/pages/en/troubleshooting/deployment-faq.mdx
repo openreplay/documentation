@@ -4,15 +4,50 @@ metaTitle: "Deployment FAQ"
 metaDescription: "Deployment related Frequently Asked Question (FAQ)"
 ---
 
+## Installation
+
+1. `Error: release openreplay failed, and has been uninstalled due to atomic being set`
+
+    a. This might be because of failed helm installation. To debug, follow the below steps:
+
+        ```bash
+        openreplay -s
+
+        # If you see any failed pods, check the log. it should shed some light.
+        openreplay -l <pod name>
+
+        # If there is no pods in running/error/crashloop status, then check the status of pod using following command
+        kubectl describe po -n app -n db <pod name>
+        ```
+
+## Signup is not working
+
+1. Health check shows SSL check failed:
+  
+   a. If you've a self-signed certificate, you can use the following command to fix it:
+
+       ```bash
+       openreplay -e
+
+       # Add following line to skip the SSL health check
+       chalice:
+         env:
+           ...
+           ...
+           # append the following line under env section
+           SKIP_H_SSL: true
+       ```
+
+    save and quit the config file using `:wq`
+    
+
 ## My installation suddenly stopped working
    
 There might be multiple reasons for that. Here's how you can debug the situation:
 
-1. Check the disk usage in the OpenReplay VM. If it's more than 80%, the services won't run.
+1. Check the status of Installation, using `openreplay -s`
 
-```bash  
-df -h
-```
+    a. Check the disk usage section. If it's more than 80%, the services won't run.
 
 ## Upgrade failed without any particular error
    
@@ -31,8 +66,16 @@ helm rollback -n app openreplay
 kubectl get pods -n app --field-selector="status.phase!=Succeeded,status.phase!=Running" -o custom-columns="POD:metadata.name"
         
 # Check for the err logs
-stern -n app `pod name from above`
+openreplay -l `pod name from above`
  ```
+
+## Self-Hosted Errors
+
+1. `openreplay -s` or `kubectl get po` throws error `error: You must be logged in to the server (Unauthorized)`
+
+  k3s might have regenerated the client certificate for logging onto the cluster, but kubectl hadn't picked this up.
+	Copy the new config with `cp /etc/rancher/k3s/k3s.yaml ~/.kube/config` and you're good to go.
+
 
 ## Have questions?
 If you have any questions about this process, feel free to reach out to us on our [Slack](https://slack.openreplay.com) channel.
