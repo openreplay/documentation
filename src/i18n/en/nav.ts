@@ -61,11 +61,12 @@ export default [
 	{ text: 'Custom Events', slug: 'installation/custom-events', key: 'blog-tutorial' },
 	{ text: 'Error reporting', slug: 'installation/error-reporting', key: 'blog-installation' },
 	{ text: 'Upload Source maps', slug: 'installation/upload-sourcemaps', key: 'blog-installation' },
-	{ text: 'Sanitize Data', slug: 'installation/sanitize-data', key: 'blog-installation' },
+	{ text: 'Sanitize Data (web)', slug: 'installation/sanitize-data', key: 'blog-installation' },
+	{ text: 'Sanitize Data (iOS)', slug: 'installation/sanitize-data-ios', key: 'blog-installation' },
 	{ text: 'Custom Heuristics', slug: 'tutorials/custom-heuristics', key: 'blog-installation' },
 	{ text: 'OmniSearch', slug: 'tutorials/omnisearch', key: 'blog-installation' },
 	{ text: 'Custom Dashboards', slug: 'tutorials/custom-dashboard', key: 'blog-installation' },
-	{ text: 'Network options', slug: 'installation/network-options', key: 'blog-installation' },
+	{ text: 'Network options (web)', slug: 'installation/network-options', key: 'blog-installation' },
 	//{ text: 'JavaScript SDK', slug: 'installation/javascript-sdk', key: 'blog-installation' }, 
 	//{ text: 'Setup OpenReplay', slug: 'installation/setup-or', key: 'blog-installation' },
 
@@ -151,7 +152,7 @@ export const subMenus = [
  { text: 'start', slug: 'sdk/start', key: 'sdk/troubleshooting' },
  { text: 'stop', slug: 'sdk/stop', key: 'sdk/troubleshooting' },
 
- { text: 'iOS SDK (beta)', header:true,type: 'learn', slug: 'ios-sdk/', key: 'ios-sdk', icon: 'sdk' },
+ { text: 'iOS SDK (beta)', header:true,type: 'learn', slug: 'ios-sdk/', key: 'ios-sdk', icon: 'ios_app' },
  { text: 'Initialization', slug: 'ios-sdk/init', key: 'ios-sdk' },
  { text: 'Modules', slug: 'ios-sdk/modules', key: 'ios-sdk' },
  { text: 'Start', slug: 'ios-sdk/start', key: 'ios-sdk/start' },
