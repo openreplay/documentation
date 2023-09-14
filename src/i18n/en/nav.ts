@@ -111,9 +111,9 @@ export default [
 	{ text: 'JS Errors', slug: 'troubleshooting/js-errors', key: 'troubleshooting/' },
 	{ text: 'Localhost Testing', slug: 'troubleshooting/localhost', key: 'troubleshooting/' },
 	{ text: 'Session Recording Issues', slug: 'troubleshooting/session-recordings', key: 'troubleshooting/' },
-	{ text: 'Sourcemaps issues', slug: 'troubleshooting/sourcemaps', key: 'troubleshooting/' },
+	{ text: 'Sourcemaps Issues', slug: 'troubleshooting/sourcemaps', key: 'troubleshooting/' },
 	{ text: 'Supported Browsers', slug: 'troubleshooting/supported-browsers', key: 'troubleshooting/' },
-	{ text: 'Deployment issues', slug: 'troubleshooting/deployment-faq', key: 'troubleshooting/' },
+	{ text: 'Deployment Issues', slug: 'troubleshooting/deployment-faq', key: 'troubleshooting/' },
 
 // structure
 	{ text: 'Exporting data', header:true,type: 'learn', slug: 'structure/', key: 'data-export', icon: 'structure' },
