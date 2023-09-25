@@ -73,6 +73,29 @@ openreplay -l `pod name from above`
 
 `openreplay -s` or `kubectl get po` throws error `error: You must be logged in to the server (Unauthorized)`. k3s might have regenerated the client certificate for logging onto the cluster, but kubectl hadn't picked this up. Copy the new config with `cp /etc/rancher/k3s/k3s.yaml ~/.kube/config` and you're good to go.
 
+## Databases
+
+### Postgres doesn't clean data even after pg-cleanup
+
+Postgres clean up is handled by PG. Means, we'll delete data before the specified date, and PG will mark that data for deletion. PG deletes the data in a process called AutoVacuum, and it's triggering logic is internal. So we don't have the ETA for data cleanup from disk. If you want to see what tables you've data, and truncate the table if you can afford data loss, for example the table `requests` which have the data related to network requests, and if you don't have data there, you can't search sessions with request URLs.
+
+To check the table size
+
+```sql
+SELECT nspname AS "name_space",
+       relname AS "relation",
+       pg_size_pretty(
+               pg_total_relation_size(C.oid)
+           )   AS "total_size"
+FROM pg_class C
+         LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+WHERE nspname NOT IN ('pg_catalog','information_schema')
+  AND C.relkind <> 'i'
+  AND nspname !~ '^pg_toast'
+ORDER BY pg_total_relation_size(C.oid) DESC
+LIMIT 20;
+```
+ 
 
 ## Have questions?
 
