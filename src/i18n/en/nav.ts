@@ -67,7 +67,7 @@ export default [
 	{ text: 'OmniSearch', slug: 'tutorials/omnisearch', key: 'blog-installation' },
 	{ text: 'Custom Dashboards', slug: 'tutorials/custom-dashboard', key: 'blog-installation' },
 	{ text: 'Network options (web)', slug: 'installation/network-options', key: 'blog-installation' },
-	//{ text: 'JavaScript SDK', slug: 'installation/javascript-sdk', key: 'blog-installation' }, 
+	//{ text: 'JavaScript SDK', slug: 'installation/javascript-sdk', key: 'blog-installation' },
 	//{ text: 'Setup OpenReplay', slug: 'installation/setup-or', key: 'blog-installation' },
 
 	//plugins
@@ -85,7 +85,7 @@ export default [
 	{ text: 'Redux', slug: 'plugins/redux', key: 'plugins/troubleshooting' },
 	{ text: 'Zustand', slug: 'plugins/zustand', key: 'plugins/troubleshooting' },
 
-	
+
 	//integrations
 	{ text: 'Integrations', header:true,type: 'learn', slug: 'integrations/', key: 'integrations', icon: 'integration' },
 	{ text: 'Overview', slug: 'integrations', key: 'integrations/troubleshooting' },
@@ -164,7 +164,19 @@ export const subMenus = [
  { text: 'setUserID', slug: 'ios-sdk/set-user-id', key: 'ios-sdk/setuserid' },
  { text: 'setMetadata', slug: 'ios-sdk/set-metadata', key: 'ios-sdk/metadata' },
  { text: 'userAnonymousId', slug: 'ios-sdk/user-anonymous-id', key: 'ios-sdk/anonid' },
- 
+
+ { text: 'React-Native SDK (beta)', header:true,type: 'learn', slug: 'rn-sdk/', key: 'rn-sdk', icon: 'sdk' },
+ { text: 'Initialization', slug: 'rn-sdk/init', key: 'rn-sdk' },
+ { text: 'Modules', slug: 'rn-sdk/modules', key: 'rn-sdk' },
+ { text: 'startSession', slug: 'rn-sdk/start', key: 'rn-sdk/start' },
+ { text: 'Capturing Inputs', slug: 'rn-sdk/inputs', key: 'rn-sdk/inputs' },
+//  { text: 'Network', slug: 'ios-sdk/network', key: 'ios-sdk/network' },
+ { text: 'Events', slug: 'rn-sdk/event', key: 'rn-sdk/event' },
+ { text: 'Analytics', slug: 'rn-sdk/analytics', key: 'rn-sdk/analytics' },
+ { text: 'Sanitazation', slug: 'rn-sdk/sanitazation', key: 'rn-sdk/sanitazation' },
+ { text: 'setUserID', slug: 'rn-sdk/set-user-id', key: 'ios-sdk/setuserid' },
+ { text: 'setMetadata', slug: 'rn-sdk/set-metadata', key: 'ios-sdk/metadata' },
+//  { text: 'userAnonymousId', slug: 'ios-sdk/user-anonymous-id', key: 'ios-sdk/anonid' },
 
  { text: 'OpenReplay CLI', header:true,type: 'learn', slug: 'cli/', key: 'guides/troubleshooting', icon: 'cli', hideChevron: true },
-] 
+]
