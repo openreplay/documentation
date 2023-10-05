@@ -4,7 +4,35 @@ metaTitle: "Proxy Settings"
 metaDescription: "Settings for running OpenReplay behind a proxy like NGINX or Apache2."
 ---
 
-If you're running OpenReplay behind a proxy, adapt your config so it looks like the below settings.
+
+## Hosting OpenReplay with other applications using reverse proxy
+
+When OR is running in a machine, it'll use port 80/443 to expose the application. But when you're using reverse proxy, OR can be configured to use another port to access the application.
+
+For that you can follow the steps below:
+
+1. Edit OR config file
+```bash
+openreplay -e
+```
+
+2. Go to nginx config section
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+	...
+	...
+    service:
+      externalTrafficPolicy: "Local"
+      ports:
+        http: 880   # Change this port for http
+        https: 8443 # Change this port for https
+```
+3. Save and exit the config using `:wq` and OpenReplay will reload the configuration.
+
+
+## Your reverse can be configured referring the following section.
 
 ## NGINX settings
 
@@ -16,7 +44,7 @@ location / {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header Host $http_host;
         proxy_redirect off;
-        proxy_pass http://1.2.3.4; # replace with OpenReplay instance IP
+        proxy_pass http://1.2.3.4:880; # replace with OpenReplay instance IP
     }
 ```
 
@@ -26,7 +54,7 @@ Ensure `proxy`, `proxy_http` and `proxy_html` modules are enabled. SSL too shoul
 
 ```apacheconf
 <VirtualHost *:443>
-    ProxyPass / http://1.2.3.4 <!-- replace with instance IP -->
+    ProxyPass / http://1.2.3.4:880 <!-- replace with instance IP -->
     RequestHeader set X-Forwarded-Proto expr=%{REQUEST_SCHEME}
     # SSL + other config here
 </VirtualHost>
