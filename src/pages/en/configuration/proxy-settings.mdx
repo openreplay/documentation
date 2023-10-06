@@ -7,16 +7,15 @@ metaDescription: "Settings for running OpenReplay behind a proxy like NGINX or A
 
 ## Hosting OpenReplay with other applications using reverse proxy
 
-When OR is running in a machine, it'll use port 80/443 to expose the application. But when you're using reverse proxy, OR can be configured to use another port to access the application.
+When OpenReplay is running in a machine, it'll use port 80/443 to expose the application. But when you're using a reverse proxy, OpenReplay can be configured to use another port to access the application. Below are the steps on how to do that:
 
-For that you can follow the steps below:
+1. Edit config file:
 
-1. Edit OR config file
 ```bash
 openreplay -e
 ```
 
-2. Go to nginx config section
+2. Change the nginx config section:
 
 ```yaml
 ingress-nginx: &ingress-nginx
@@ -29,12 +28,11 @@ ingress-nginx: &ingress-nginx
         http: 880   # Change this port for http
         https: 8443 # Change this port for https
 ```
-3. Save and exit the config using `:wq` and OpenReplay will reload the configuration.
+3. Save and exit the config using `:wq` so OpenReplay can reload the configuration.
 
+Your reverse proxy can then be configured. Refer to the below sections to do so.
 
-## Your reverse can be configured referring the following section.
-
-## NGINX settings
+### NGINX settings
 
 Make sure your proxy is sending the `X-Forwarded-For` and `X-Forwarded-Proto` headers. SSL must also be enabled for OpenReplay to work. The rest of the config should look like this:
 
@@ -48,7 +46,7 @@ location / {
     }
 ```
 
-## Apache2 settings
+### Apache2 settings
 
 Ensure `proxy`, `proxy_http` and `proxy_html` modules are enabled. SSL too should be configured, the rest of the settings should be similar to this:
 
@@ -73,4 +71,5 @@ In case you're protecting your OpenReplay instance with a proxy, ensure the belo
 | /static/openreplay.js | JavaScript code that loads OpenReplay |
 
 ## Have questions?
+
 If you have any questions about this process, feel free to reach out to us on our [Slack](https://slack.openreplay.com) channel.
