@@ -9,6 +9,28 @@ Installing the OpenReplay tracker into a Svelte-based project is relatively stra
 
 The key to making it work will be the use of context, which, while it sounds similar to how we do it with Next.js, the implementation will be different.
 
+## SvelteKit and SSR Behavior
+
+As our tracker requires browser context to run, you mightn need to adjust the "Creating the tracker context" example like shown below to ensure that its imported and created inside client side:
+
+```jsx
+<script>
+  import { onMount } from 'svelte';
+
+  onMount(async () => {
+    if (process.browser) {
+      const Tracker = await import('@openreplay/tracker');
+      const tracker = new Tracker({
+	      projectKey: "", // pKey
+	      ingestPoint: "ingestPoint",
+      })
+      
+      tracker.start()
+    }
+  })
+</script>
+```
+
 ## Sample repo
 
 If you’d like to review the complete code for this project, check out [the repo we’ll be using throughout this tutorial](https://github.com/deleteman/openreplay-svelte-example).
