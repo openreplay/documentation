@@ -33,9 +33,5 @@ export const VERSIONS = [
 	{
 		title: '1.8.1',
 		url: '/v1.8.1',
-	},
-	{
-		title: '1.8.0',
-		url: '/v1.8.0',
 	}
 ];
