@@ -2,6 +2,24 @@
 export function getSVGIcon(title: string) {
     const name = title.toLowerCase().split(" ").join("_")
     switch(name) {
+			   case 'ios_app':
+            case 'react-native_ios_app':
+					 return (
+						 `
+						 <svg width="116" height="116" viewBox="0 0 116 116" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<g clip-path="url(#clip0_3227_92124)">
+							<path d="M96 0H20C8.9543 0 0 8.9543 0 20V96C0 107.046 8.9543 116 20 116H96C107.046 116 116 107.046 116 96V20C116 8.9543 107.046 0 96 0Z" fill="white"/>
+							<path d="M18.8711 44.9141C16.4648 44.9141 14.6055 43.0273 14.6055 40.7578C14.6055 38.4883 16.4648 36.6016 18.8711 36.6016C21.2773 36.6016 23.1367 38.4883 23.1367 40.7578C23.1367 43.0273 21.2773 44.9141 18.8711 44.9141ZM14.8789 78V48.6875H22.8633V78H14.8789Z" fill="black"/>
+							<path d="M46.707 78.6836C34.9766 78.6836 27.6758 70.8359 27.6758 58.2852V58.2305C27.6758 45.6797 35.0312 37.8594 46.707 37.8594C58.4102 37.8594 65.7383 45.707 65.7383 58.2305V58.2852C65.7383 70.8359 58.4375 78.6836 46.707 78.6836ZM46.707 71.6836C53.2695 71.6836 57.3164 66.4609 57.3164 58.2852V58.2305C57.3164 50 53.1875 44.8594 46.707 44.8594C40.2539 44.8594 36.0977 49.9727 36.0977 58.2305V58.2852C36.0977 66.543 40.2266 71.6836 46.707 71.6836Z" fill="black"/>
+							<path d="M85.4805 78.6836C76.1016 78.6836 70.0586 74.3906 69.5938 67.1172L69.5664 66.6797H77.3594L77.4141 66.9805C77.9336 70.043 81.1875 71.957 85.6992 71.957C90.2656 71.957 93.1367 69.9609 93.1367 66.9531V66.9258C93.1367 64.2461 91.1953 62.9062 86.3008 61.8945L82.1445 61.0742C74.3516 59.5156 70.4141 55.7969 70.4141 49.8633V49.8359C70.4141 42.6172 76.7031 37.8594 85.4531 37.8594C94.5859 37.8594 100.191 42.4258 100.574 49.3438L100.602 49.8633H92.8086L92.7812 49.5352C92.3711 46.4453 89.5273 44.5586 85.4531 44.5586C81.2148 44.5859 78.6719 46.5273 78.6719 49.3438V49.3711C78.6719 51.8594 80.6953 53.3086 85.2344 54.2109L89.418 55.0586C97.6758 56.6992 101.395 60.0625 101.395 66.2695V66.2969C101.395 73.8711 95.4336 78.6836 85.4805 78.6836Z" fill="black"/>
+							</g>
+							<defs>
+							<clipPath id="clip0_3227_92124">
+							<rect width="116" height="116" rx="58" fill="white"/>
+							</clipPath>
+							</defs>
+						</svg>
+						 `)
          case 'js_snippet':
             return (`
             <svg width="800px" height="800px" viewBox="0 0 256 256" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" preserveAspectRatio="xMidYMid">
@@ -25,7 +43,7 @@ export function getSVGIcon(title: string) {
              return (`
              <img class="h-7 w-7" src="/landing-icons/icon-openreplay.png" alt="${title}" />
              `)
- 
+
 
           case 'elasticsearch':
              return (`
@@ -47,8 +65,8 @@ export function getSVGIcon(title: string) {
              return (`
              <img class="h-7 w-7" src="/landing-icons/icon-datadog.svg" alt="DataDog" />
              `)
- 
- 
+
+
           case 'react':
              return (`
              <img class="h-7 w-7" src="/landing-icons/icon-react.svg" alt="React" />
@@ -57,7 +75,7 @@ export function getSVGIcon(title: string) {
              return (`
              <img class="h-7 w-7" src="/landing-icons/icon-vue.svg" alt="VueJS" />
              `)
- 
+
          case 'sumo_logic':
              return (`
              <img class="h-7 w-7" src="/landing-icons/icon-sumo.svg" alt="Sumo Logic" />
@@ -74,7 +92,7 @@ export function getSVGIcon(title: string) {
              return (`
              <img class="h-7 w-7" src="/landing-icons/icon-google-cloud.svg" alt="StackDriver" />
              `)
- 
+
          case 'jira':
              return (`
              <img class="h-7 w-7" src="/landing-icons/icon-jira.svg" alt="Jira" />
@@ -87,7 +105,7 @@ export function getSVGIcon(title: string) {
              return (`
              <img class="h-7 w-7" src="/landing-icons/icon-github.svg" alt="Github" />
              `)
- 
+
           case 'aws':
           return (`
           <svg width="116" height="116" viewBox="0 0 116 116" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -96,10 +114,10 @@ export function getSVGIcon(title: string) {
 <path fill-rule="evenodd" clip-rule="evenodd" d="M102.059 77.1111C90.1281 85.9232 72.7941 90.6012 57.8897 90.6012C37.0018 90.6012 18.1809 82.877 3.96546 70.0397C2.84128 69.0243 3.85667 67.6463 5.19842 68.4441C20.5743 77.365 39.5402 82.7683 59.1589 82.7683C72.3952 82.7683 86.9369 80.0122 100.318 74.3551C102.313 73.4485 104.018 75.6606 102.059 77.1111Z" fill="#FF9900"/>
 <path fill-rule="evenodd" clip-rule="evenodd" d="M107.027 71.454C105.504 69.4957 96.9462 70.5111 93.066 70.9825C91.9055 71.1276 91.7242 70.1122 92.7759 69.3507C99.5935 64.5639 110.799 65.9419 112.104 67.5375C113.41 69.1693 111.742 80.3748 105.359 85.7419C104.38 86.5759 103.437 86.1408 103.872 85.0529C105.323 81.4628 108.551 73.3759 107.027 71.454Z" fill="#FF9900"/>
 </svg>
-          
+
              `)
           break;
-          
+
           case 'azure':
           return (`<svg viewBox="0 0 28 21" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                       <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -115,7 +133,7 @@ export function getSVGIcon(title: string) {
                       </g>
                    </svg>`)
           break;
-       
+
           case 'kubernetes':
           return (`<svg viewBox="0 0 89 85" fill="none" xmlns="http://www.w3.org/2000/svg">
           <g clip-path="url(#clip0_1_161)">
@@ -130,7 +148,7 @@ export function getSVGIcon(title: string) {
           </svg>
           `)
           break;
-          
+
           case 'gcp':
           return (`
  <svg viewBox="0 0 98 79" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -139,11 +157,11 @@ export function getSVGIcon(title: string) {
  <path d="M27.4074 78.0621H48.5037V61.1733H27.4074C25.9044 61.1729 24.419 60.8496 23.0519 60.2251L20.0889 61.1436L11.5852 69.5881L10.8445 72.551C15.6132 76.1519 21.432 78.0881 27.4074 78.0621V78.0621Z" fill="#34A853"/>
  <path d="M27.4074 23.2768C21.6913 23.3109 16.1286 25.1295 11.4963 28.4786C6.86394 31.8276 3.39326 36.5399 1.56901 41.9571C-0.255244 47.3744 -0.341967 53.2262 1.32095 58.6951C2.98387 64.1641 6.31338 68.9771 10.8445 72.462L23.0815 60.2249C21.5264 59.5224 20.165 58.453 19.1141 57.1086C18.0632 55.7642 17.3541 54.1849 17.0477 52.5062C16.7413 50.8275 16.8468 49.0996 17.355 47.4706C17.8633 45.8416 18.7592 44.3603 19.9658 43.1537C21.1724 41.947 22.6537 41.0512 24.2827 40.5429C25.9117 40.0347 27.6396 39.9292 29.3183 40.2356C30.997 40.542 32.5763 41.251 33.9207 42.302C35.2651 43.3529 36.3345 44.7143 37.0371 46.2694L49.2741 34.0323C46.7056 30.6746 43.3953 27.9565 39.6019 26.0906C35.8085 24.2248 31.6349 23.2617 27.4074 23.2768V23.2768Z" fill="#FBBC05"/>
  </svg>
- 
+
                     `
                     )
           break;
-          
+
           case 'digital_ocean':
              return (`<svg viewBox="0 0 28 23" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                        <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -161,21 +179,21 @@ export function getSVGIcon(title: string) {
                        </g>
                     </svg>`)
              break;
-             
+
              case 'ubuntu':
              return (`<svg viewBox="0 0 58 56" fill="none" xmlns="http://www.w3.org/2000/svg">
              <path fill-rule="evenodd" clip-rule="evenodd" d="M50.6 8.61C50.6 13.0946 46.9645 16.73 42.48 16.73C37.9954 16.73 34.36 13.0946 34.36 8.61C34.36 4.12545 37.9954 0.490002 42.48 0.490002C46.9645 0.490002 50.6 4.12545 50.6 8.61ZM16.3318 50.0691C11.8226 47.0606 8.33721 42.7494 6.34 37.71C8.77526 38.204 11.305 37.8952 13.55 36.83C14.873 39.4538 16.7684 41.747 19.0964 43.5401C21.4244 45.3333 24.1254 46.5806 27 47.19C27.6667 47.33 28.3633 47.45 29.09 47.55C29.1204 50.095 29.9963 52.5576 31.58 54.55C26.16 54.6407 20.8411 53.0776 16.3318 50.0691ZM40.65 55.47C45.1346 55.47 48.77 51.8345 48.77 47.35C48.77 42.8654 45.1346 39.23 40.65 39.23C36.1655 39.23 32.53 42.8654 32.53 47.35C32.53 51.8345 36.1655 55.47 40.65 55.47ZM51.9 44.56C51.2883 42.0943 49.8828 39.8982 47.9 38.31C49.7534 35.3563 50.791 31.9642 50.9069 28.479C51.0228 24.9939 50.213 21.5403 48.56 18.47C50.6856 17.1814 52.335 15.2372 53.26 12.93C56.4459 17.6544 58.033 23.2759 57.7883 28.9689C57.5435 34.662 55.4797 40.1265 51.9 44.56ZM8.68001 14.85C9.48658 14.8485 10.2911 14.9323 11.08 15.1C12.4169 15.3894 13.6928 15.9106 14.85 16.64C16.6374 14.037 19.0234 11.901 21.8075 10.4115C24.5917 8.92192 27.6927 8.12238 30.85 8.08C30.8733 7.44187 30.9469 6.80657 31.07 6.18C31.4582 4.38989 32.2595 2.71533 33.41 1.29C28.2924 0.876927 23.1634 1.93706 18.6289 4.34518C14.0944 6.75331 10.3438 10.4088 7.82001 14.88C8.11001 14.86 8.39001 14.85 8.68001 14.85ZM16.78 26.41C16.78 30.8946 13.1446 34.53 8.66001 34.53C4.17546 34.53 0.540009 30.8946 0.540009 26.41C0.540009 21.9254 4.17546 18.29 8.66001 18.29C13.1446 18.29 16.78 21.9254 16.78 26.41Z" fill="#EA6618"/>
              </svg>
              `)
              break;
-             
+
              case 'ovhcloud':
              return (`<svg class="deploy-ovh" viewBox="0 0 20 12" fill="var(--theme-contrast-full)" xmlns="http://www.w3.org/2000/svg">
                                   <path fill-rule="evenodd" clip-rule="evenodd" d="M18.6284 0.681223C20.6459 4.29694 20.2529 8.77729 17.6852 12H12.2092L13.8861 9.0393H11.659L14.2791 4.42795H16.5062L18.6284 0.681223ZM7.83368 12H2.27909C-0.367193 8.77729 -0.734005 4.27074 1.30966 0.655022L4.92538 6.91703L8.90791 0H14.7769L7.83368 12Z" fill="#394EFF"></path>
                                </svg>
              `)
              break;
-             
+
              case 'scaleway':
              return (`<svg viewBox="0 0 44 51" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                                   <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -186,7 +204,7 @@ export function getSVGIcon(title: string) {
                                </svg>
              `)
              break;
- 
+
              case 'digitalocean':
              return (`<svg viewBox="0 0 23 23" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                                   <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -205,7 +223,7 @@ export function getSVGIcon(title: string) {
                                </svg>
              `)
              break;
- 
+
              case 'digital-ocean':
              return (`<svg viewBox="0 0 23 23" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                                   <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -224,7 +242,7 @@ export function getSVGIcon(title: string) {
                                </svg>
              `)
              break;
- 
+
              case 'angular':
              return (`
              <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -232,10 +250,10 @@ export function getSVGIcon(title: string) {
              <path d="M50 5.24591V15.1813V15.1366V60.4725V94.7541L85.311 75.1966L91.6661 20.1043L50 5.24591Z" fill="#C3002F"/>
              <path d="M50.0001 15.1366L23.9532 73.5407H33.6648L38.9011 60.4725H61.0096L66.2458 73.5407H75.9575L50.0001 15.1366ZM57.6083 52.4167H42.3919L50.0001 34.1123L57.6083 52.4167Z" fill="white"/>
              </svg>
- 
+
                 `)
              break;
- 
+
              case 'svelte':
              return (`<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <g clip-path="url(#clip0_1_234)">
@@ -255,7 +273,7 @@ export function getSVGIcon(title: string) {
                 </svg>
                 `)
              break;
- 
+
              case 'nuxt':
              return (`<svg viewBox="0 0 98 72" fill="none" xmlns="http://www.w3.org/2000/svg">
              <g clip-path="url(#clip0_1_215)">
@@ -269,21 +287,21 @@ export function getSVGIcon(title: string) {
              </svg>
                 `)
              break;
- 
+
              case 'gatsby':
              return (`<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
              <path d="M50 3.94525C24.6699 3.94525 3.94525 24.6699 3.94525 50C3.94525 75.3301 24.6699 96.0547 50 96.0547C75.3301 96.0547 96.0547 75.3301 96.0547 50C96.0547 24.6699 75.3301 3.94525 50 3.94525ZM24.3409 75.6591C17.4327 68.7509 13.8141 59.5399 13.8141 50.6579L49.671 86.1859C40.4601 85.8569 31.2491 82.5673 24.3409 75.6591ZM57.8951 85.199L14.801 42.1049C18.4196 25.9857 32.8939 13.8141 50 13.8141C62.1716 13.8141 72.6984 19.7354 79.2777 28.6174L74.3432 32.8939C68.7509 25.3278 59.8689 20.3934 50 20.3934C37.1705 20.3934 26.3147 28.6174 22.0382 40.1311L59.8689 77.9618C69.4088 74.6722 76.6459 66.4481 78.9487 56.5792H63.1585V50H86.1859C86.1859 67.106 74.0143 81.5804 57.8951 85.199Z" fill="#7026B9"/>
              </svg>
                 `)
              break;
- 
+
              case 'remix':
              return (`<svg viewBox="0 0 100 100" fill="var(--theme-accent-contrast)" xmlns="http://www.w3.org/2000/svg">
              <path fill-rule="evenodd" clip-rule="evenodd" d="M85.502 94.6511C85.502 89.4327 85.502 84.6517 84.707 74.4527C83.724 64.2066 78.3854 59.0133 69.2539 57.1887C80.0714 55.7851 88.0789 47.3636 88.0789 34.4507C88.0789 17.1866 76.6995 6.37903 53.8002 6.37903H11.3206V24.3712H49.5856C59.7006 24.3712 64.7581 28.7091 64.7581 35.8674C64.7581 44.0082 59.7006 47.0829 49.5856 47.0829H11.3206V65.4698H41.3671H48.4617C56.4694 65.4698 60.8245 67.7155 61.5269 77.8213C62.0584 84.7241 61.9918 88.142 61.9278 91.4202L61.9278 91.4206C61.9072 92.4748 61.8869 93.5147 61.8869 94.6511H85.502ZM11.3206 80.9443V94.6511H41.3661V85.8787C41.3661 84.0355 40.4606 80.9443 36.2898 80.9443H11.3206Z" fill="black"/>
              </svg>
                 `)
              break;
- 
+
              case 'nextjs':
              return (`<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
              <rect x="5" y="5" width="90" height="90" rx="45" fill="white" fill-opacity="0.5"/>
@@ -297,27 +315,27 @@ export function getSVGIcon(title: string) {
              </svg>`)
 
              break;
-            
+
              case 'know_the_methods':
                return(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-2-circle" viewBox="0 0 16 16">
                <path d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8Zm15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0ZM6.646 6.24v.07H5.375v-.064c0-1.213.879-2.402 2.637-2.402 1.582 0 2.613.949 2.613 2.215 0 1.002-.6 1.667-1.287 2.43l-.096.107-1.974 2.22v.077h3.498V12H5.422v-.832l2.97-3.293c.434-.475.903-1.008.903-1.705 0-.744-.557-1.236-1.313-1.236-.843 0-1.336.615-1.336 1.306Z"/>
              </svg>`)
-             
+
              break;
 
              case 'explore_our_sdk':
                return(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-seam" viewBox="0 0 16 16">
                <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2l-2.218-.887zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"></path>
              </svg>`)
-             
+
              break;
 
 
 
-             default: 
+             default:
                return (`
                   <img class="h-7 w-7" src="/landing-icons/icon-${name}.svg" alt="${title}" />
                   `)
- 
+
     }
  }

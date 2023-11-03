@@ -40,6 +40,7 @@ export default [
 	{ text: 'Svelte', slug: 'using-or/svelte', key: 'using-or/' },
 	{ text: 'Angular', slug: 'using-or/angular', key: 'using-or/' },
 	{ text: 'Gatsby', slug: 'using-or/gatsby', key: 'using-or/' },
+	{ text: 'iOS (beta)', slug: 'ios-sdk/init', key: 'using-or/' },
 
 	{ text: 'Administration', slug: 'configuration/', header: true, type: 'learn', key: 'admin', icon: 'configure' },
 	{ text: 'Overview', slug: 'configuration', key: 'concepts/why-astro' },
@@ -60,12 +61,13 @@ export default [
 	{ text: 'Custom Events', slug: 'installation/custom-events', key: 'blog-tutorial' },
 	{ text: 'Error reporting', slug: 'installation/error-reporting', key: 'blog-installation' },
 	{ text: 'Upload Source maps', slug: 'installation/upload-sourcemaps', key: 'blog-installation' },
-	{ text: 'Sanitize Data', slug: 'installation/sanitize-data', key: 'blog-installation' },
+	{ text: 'Sanitize Data (web)', slug: 'installation/sanitize-data', key: 'blog-installation' },
+	{ text: 'Sanitize Data (iOS)', slug: 'installation/sanitize-data-ios', key: 'blog-installation' },
 	{ text: 'Custom Heuristics', slug: 'tutorials/custom-heuristics', key: 'blog-installation' },
 	{ text: 'OmniSearch', slug: 'tutorials/omnisearch', key: 'blog-installation' },
 	{ text: 'Custom Dashboards', slug: 'tutorials/custom-dashboard', key: 'blog-installation' },
-	{ text: 'Network options', slug: 'installation/network-options', key: 'blog-installation' },
-	//{ text: 'JavaScript SDK', slug: 'installation/javascript-sdk', key: 'blog-installation' }, 
+	{ text: 'Network options (web)', slug: 'installation/network-options', key: 'blog-installation' },
+	//{ text: 'JavaScript SDK', slug: 'installation/javascript-sdk', key: 'blog-installation' },
 	//{ text: 'Setup OpenReplay', slug: 'installation/setup-or', key: 'blog-installation' },
 
 	//plugins
@@ -83,7 +85,7 @@ export default [
 	{ text: 'Redux', slug: 'plugins/redux', key: 'plugins/troubleshooting' },
 	{ text: 'Zustand', slug: 'plugins/zustand', key: 'plugins/troubleshooting' },
 
-	
+
 	//integrations
 	{ text: 'Integrations', header:true,type: 'learn', slug: 'integrations/', key: 'integrations', icon: 'integration' },
 	{ text: 'Overview', slug: 'integrations', key: 'integrations/troubleshooting' },
@@ -156,7 +158,32 @@ export const subMenus = [
  { text: 'clearPersistFlag', slug: 'sdk/clear-persist-flag', key: 'sdk/troubleshooting' },
  { text: 'start', slug: 'sdk/start', key: 'sdk/troubleshooting' },
  { text: 'stop', slug: 'sdk/stop', key: 'sdk/troubleshooting' },
- 
+
+ { text: 'iOS SDK (beta)', header:true,type: 'learn', slug: 'ios-sdk/', key: 'ios-sdk', icon: 'ios_app' },
+ { text: 'Initialization', slug: 'ios-sdk/init', key: 'ios-sdk' },
+ { text: 'Modules', slug: 'ios-sdk/modules', key: 'ios-sdk' },
+ { text: 'Start', slug: 'ios-sdk/start', key: 'ios-sdk/start' },
+ { text: 'Capturing Inputs', slug: 'ios-sdk/inputs', key: 'ios-sdk/inputs' },
+ { text: 'Network', slug: 'ios-sdk/network', key: 'ios-sdk/network' },
+ { text: 'Events', slug: 'ios-sdk/event', key: 'ios-sdk/event' },
+ { text: 'Analytics', slug: 'ios-sdk/analytics', key: 'ios-sdk/analytics' },
+ { text: 'Sanitazation', slug: 'ios-sdk/sanitazation', key: 'ios-sdk/sanitazation' },
+ { text: 'setUserID', slug: 'ios-sdk/set-user-id', key: 'ios-sdk/setuserid' },
+ { text: 'setMetadata', slug: 'ios-sdk/set-metadata', key: 'ios-sdk/metadata' },
+ { text: 'userAnonymousId', slug: 'ios-sdk/user-anonymous-id', key: 'ios-sdk/anonid' },
+
+ { text: 'React-Native SDK (beta)', header:true,type: 'learn', slug: 'rn-sdk/', key: 'rn-sdk', icon: 'sdk' },
+ { text: 'Initialization', slug: 'rn-sdk/init', key: 'rn-sdk' },
+ { text: 'Modules', slug: 'rn-sdk/modules', key: 'rn-sdk' },
+ { text: 'startSession', slug: 'rn-sdk/start', key: 'rn-sdk/start' },
+ { text: 'Capturing Inputs', slug: 'rn-sdk/inputs', key: 'rn-sdk/inputs' },
+//  { text: 'Network', slug: 'ios-sdk/network', key: 'ios-sdk/network' },
+ { text: 'Events', slug: 'rn-sdk/event', key: 'rn-sdk/event' },
+ { text: 'Analytics', slug: 'rn-sdk/analytics', key: 'rn-sdk/analytics' },
+ { text: 'Sanitazation', slug: 'rn-sdk/sanitazation', key: 'rn-sdk/sanitazation' },
+ { text: 'setUserID', slug: 'rn-sdk/set-user-id', key: 'ios-sdk/setuserid' },
+ { text: 'setMetadata', slug: 'rn-sdk/set-metadata', key: 'ios-sdk/metadata' },
+//  { text: 'userAnonymousId', slug: 'ios-sdk/user-anonymous-id', key: 'ios-sdk/anonid' },
 
  { text: 'OpenReplay CLI', header:true,type: 'learn', slug: 'cli/', key: 'guides/troubleshooting', icon: 'cli', hideChevron: true },
-] 
+]
