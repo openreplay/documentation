@@ -40,7 +40,8 @@ export default [
 	{ text: 'Svelte', slug: 'using-or/svelte', key: 'using-or/' },
 	{ text: 'Angular', slug: 'using-or/angular', key: 'using-or/' },
 	{ text: 'Gatsby', slug: 'using-or/gatsby', key: 'using-or/' },
-	{ text: 'iOS App (beta)', slug: 'ios-sdk/init', key: 'using-or/' },
+	{ text: 'iOS (beta)', slug: 'ios-sdk/init', key: 'using-or/' },
+	{ text: 'React-Native (iOS)', slug: 'rn-sdk/init', key: 'using-or/' },
 
 	{ text: 'Administration', slug: 'configuration/', header: true, type: 'learn', key: 'admin', icon: 'configure' },
 	{ text: 'Overview', slug: 'configuration', key: 'concepts/why-astro' },
