@@ -22,6 +22,7 @@ export default [
 	{ text: 'Deploy to GCP', slug: 'deployment/deploy-gcp', key: 'deploy-gcp' },
 	{ text: 'Deploy to Digital Ocean', slug: 'deployment/deploy-digitalocean', key: 'deploy-do' },
 	{ text: 'Deploy to Kubernetes', slug: 'deployment/deploy-kubernetes', key: 'deploy-kub' },
+	{ text: 'Deploy to Docker', slug: 'deployment/deploy-docker', key: 'deploy-docker' },
 	{ text: 'Deploy to OVHCloud', slug: 'deployment/deploy-ovhcloud', key: 'deploy-ovh' },
 	{ text: 'Deploy to Scaleway', slug: 'deployment/deploy-scaleway', key: 'deploy-scaleway' },
 	{ text: 'Deploy from Source', slug: 'deployment/deploy-source', key: 'deploy-source' },
@@ -128,7 +129,7 @@ export default [
 
 export const subMenus = [
 //API
-{ text: 'API (BETA)', header:true,type: 'learn', slug: 'api/', key: 'guides/troubleshooting', icon: 'api' },
+{ text: 'API', header:true,type: 'learn', slug: 'api/', key: 'guides/troubleshooting', icon: 'api' },
 { text: 'Overview', slug: 'api', key: 'api/troubleshooting' },
 { text: 'Assist', slug: 'api/assist', key: 'api/troubleshooting' },
 { text: 'Events', slug: 'api/events', key: 'api/troubleshooting' },
