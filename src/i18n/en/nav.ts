@@ -42,7 +42,7 @@ export default [
 	{ text: 'Angular', slug: 'using-or/angular', key: 'using-or/' },
 	{ text: 'Gatsby', slug: 'using-or/gatsby', key: 'using-or/' },
 	{ text: 'iOS (beta)', slug: 'ios-sdk/init', key: 'using-or/' },
-	{ text: 'React-Native (iOS)', slug: 'rn-sdk/init', key: 'using-or/' },
+	{ text: 'React Native', slug: 'rn-sdk/init', key: 'using-or/' },
 
 	{ text: 'Administration', slug: 'configuration/', header: true, type: 'learn', key: 'admin', icon: 'configure' },
 	{ text: 'Overview', slug: 'configuration', key: 'concepts/why-astro' },
@@ -174,7 +174,7 @@ export const subMenus = [
  { text: 'setMetadata', slug: 'ios-sdk/set-metadata', key: 'ios-sdk/metadata' },
  { text: 'userAnonymousId', slug: 'ios-sdk/user-anonymous-id', key: 'ios-sdk/anonid' },
 
- { text: 'React-Native SDK (beta)', header:true,type: 'learn', slug: 'rn-sdk/', key: 'rn-sdk', icon: 'react-native_ios_app' },
+ { text: 'React Native SDK (beta)', header:true,type: 'learn', slug: 'rn-sdk/', key: 'rn-sdk', icon: 'react-native_ios_app' },
  { text: 'Initialization', slug: 'rn-sdk/init', key: 'rn-sdk' },
  { text: 'Modules', slug: 'rn-sdk/modules', key: 'rn-sdk' },
  { text: 'startSession', slug: 'rn-sdk/start', key: 'rn-sdk/start' },
