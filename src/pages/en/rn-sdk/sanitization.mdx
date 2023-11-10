@@ -1,16 +1,14 @@
 ---
-title: "React Native SDK - Sanitizing the recording"
-metaTitle: "React Native SDK - Sanitizing the recording"
-metaDescription: "Details about sanitizing the screen recording for React Native tracker"
+title: "React Native SDK - Sanitize data"
+metaTitle: "React Native SDK - Sanitize data"
+metaDescription: "Details about sanitizing recordings and network data in React Native"
 ---
 
-## Sanitizing UI Components
+## UI Components
 
-Sanitized views will be blurred out in the resulting replay.
-You can add any UI component and it will be automatically removed (to preserve memory) as soon as its not on screen.
+Sanitized views will be blurred out in the resulting replay. You can add any UI component and it will be automatically removed (to preserve memory) as soon as its not on screen.
 
-
-## Usage
+### ORSanitizedView
 
 SDK exports `ORSanitizedView` which you can use to wrap your sensitive components with to blur them out.
 
@@ -24,4 +22,35 @@ import OR from '@openreplay/react-native'
   </OR.ORSanitizedView>
 
 // ...
+```
+
+## Network Requests
+
+Two keys are exported to automatically trim the request/response data: `ignoredKeys` for body and `ignoredHeaders` for headers. Both, request and response will be sanitized, but body will only be affected if its a valid JSON.
+
+Simply assign a list of strings that you would like to sanitize:
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+It is also possible to change the response data before passing it to the listener:
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
 ```
