@@ -1,15 +1,17 @@
 
 export function getSVGIcon(title: string) {
-	const name = title.toLowerCase().replace(' (beta)', '').split(" ").join("_")
+	const name = title.toLowerCase().replace(' (beta)', '').replace(' (SDK)', '').split(" ").join("_")
     switch(name) {
 			case 'react-native_(ios)':
          case 'react_native':
 			case 'react-native_ios_app':
+         case 'react_native_sdk':
 				return (`
 					<img class="h-7 w-7" src="/landing-icons/icon-react.svg" alt="React" />
 				`)
 			case 'ios':
 			case 'ios_app':
+         case 'ios_sdk':
 				return (`
 							<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
 								<g clip-path="url(#clip0_1_10)">
@@ -23,6 +25,7 @@ export function getSVGIcon(title: string) {
 								</svg>
 						 `)
          case 'js_snippet':
+         case 'js_snippet_sdk':
             return (`
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect width="16" height="16" rx="2" fill="#F9E634"/>
