@@ -58,6 +58,7 @@ export default [
 	{ text: 'How-tos', slug: 'installation/', header: true, type: 'learn', key: 'how-tos', icon: 'features' },
 	{ text: 'Overview', slug: 'installation', key: 'blog-tutorial' },
 	{ text: 'Identify a User', slug: 'installation/identify-user', key: 'blog-installation' },
+	{text: 'Record Canvas Elements', slug: 'installation/canvas', key: 'canvas-recording'},
 	{ text: 'Add users to your team', slug: 'tutorials/adding-users', key: 'blog-installation' },
 	{ text: 'Metadata', slug: 'installation/metadata', key: 'blog-installation' },
 	{ text: 'Custom Events', slug: 'installation/custom-events', key: 'blog-tutorial' },
