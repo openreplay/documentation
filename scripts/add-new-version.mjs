@@ -59,7 +59,7 @@ class VersionManager {
 				const namedExport = path.node.declaration;
 				if (!t.isVariableDeclaration(namedExport)) return;
 
-                console.log("Checkikng if it's the right one...")
+                console.log("Checking if it's the right one...")
 				const declarator = namedExport.declarations[0];
 				if (declarator.id.name !== 'VERSIONS') return;
 
