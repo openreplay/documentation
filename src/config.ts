@@ -31,7 +31,7 @@ export const VERSIONS = [
 		url: '/v1.9.0',
 	},
 	{
-		title: 'v1.16.0',
+		title: '1.16.0',
 		url: '',
 	},
 ];
