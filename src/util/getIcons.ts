@@ -96,6 +96,10 @@ export function getSVGIcon(title: string) {
              return (`
              <img class="h-7 w-7" src="/landing-icons/icon-jira.svg" alt="Jira" />
              `)
+			case 'zendesk':
+				return (`
+					<img class='h-7 w-7' src="/landing-icons/icon-zendesk.svg" alt="Zendesk" />
+				`)
          case 'slack':
              return (`
              <img class="h-7 w-7" src="/landing-icons/icon-slack.svg" alt="Slack" />
