@@ -7,6 +7,25 @@ import Aside from '~/components/Aside.astro'
 
 Each recording exists in the form of a file and an entry in the database. OpenReplay dumps what's necessary to replay a session (DOM mutations, mouse coordinates, console logs, network activity and much more) into 3 files (2 for the replay itself and 1 for the DevTools data). These files are by default stored on your instance, so they make up most of its storage. Session metadata will be stored in the PostgreSQL database forever, but after 180 days the file containing the recording will be expired/deleted through a minio lifecycle policy.
 
+## Temporary storage cleanup
+
+OpenReplay stores temporary data in filesystem prior to processing and uploading to s3. After the processing, these data are deprecated, and a cronjob will delete this data every 2nd day of week at night 3:05. If you want to cleanup daily or faster, you can change the configuration. Eg:
+
+Edit OpenReplay configuration
+
+```bash
+openreplay -e
+```
+
+To change the cronjob timing, append the following
+
+```yaml
+utilities:
+  # Cleanup data everyday morning 3:05 am, server time.
+	cron: "5 3 * * *"
+```
+
+
 There are 2 ways for cleaning up storage in your OpenReplay instance: automated (CLI) and manual.
 
 ## Data cleanup (CLI)
