@@ -59,6 +59,7 @@ export default [
 	{ text: 'Overview', slug: 'installation', key: 'blog-tutorial' },
 	{ text: 'Identify a User', slug: 'installation/identify-user', key: 'blog-installation' },
 	{ text: 'Canvas and WebGL', slug: 'installation/canvas', key: 'canvas-recording'},
+	{ text: 'WebSockets', slug: 'installation/websockets', key: 'websockets' },
 	{ text: 'Add users to your team', slug: 'tutorials/adding-users', key: 'blog-installation' },
 	{ text: 'Metadata', slug: 'installation/metadata', key: 'blog-installation' },
 	{ text: 'Custom Events', slug: 'installation/custom-events', key: 'blog-tutorial' },
@@ -69,8 +70,7 @@ export default [
 	{ text: 'Custom Heuristics', slug: 'tutorials/custom-heuristics', key: 'blog-installation' },
 	{ text: 'OmniSearch', slug: 'tutorials/omnisearch', key: 'blog-installation' },
 	{ text: 'Custom Dashboards', slug: 'tutorials/custom-dashboard', key: 'blog-installation' },
-	{ text: 'Network options (Web)', slug: 'installation/network-options', key: 'blog-installation' },
-	//{ text: 'JavaScript SDK', slug: 'installation/javascript-sdk', key: 'blog-installation' },
+	{ text: 'Network Options (Web)', slug: 'installation/network-options', key: 'blog-installation' },
 	//{ text: 'Setup OpenReplay', slug: 'installation/setup-or', key: 'blog-installation' },
 
 	//plugins
