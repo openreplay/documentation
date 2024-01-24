@@ -16,8 +16,8 @@ To enable canvas recording, simply run `openreplay -e` then add the below block 
 http:
   env:
     RECORD_CANVAS: true
-    CANVAS_QUALITY: medium
-    CANVAS_FPS: 2
+    CANVAS_QUALITY: low
+    CANVAS_FPS: 1
 ```
 
 Once done, save and exit the config using `:wq` so OpenReplay can take care of applying the changes.
@@ -28,8 +28,8 @@ Once done, save and exit the config using `:wq` so OpenReplay can take care of a
 
 You can finetune the below options depending on your needs. In fact, some applications may require a higher framerate. Even though snapshot capture and encoding is done in the background (web-worker) and doesn't impact your app's performance, going for high values would use more bandwidth on the end user's level and would require more disk storage on your OpenReplay instance (backend). The images/snapshots, captured by the tracker, are sent to the backend and then processed and converted into a video for session replay purposes.
 
-- `CANVAS_QUALITY: 'low' | 'medium' | 'high'`: Sets the quality of the recorded snapshots. Defaults to `medium`.
-- `CANVAS_FPS: number`: Defines the number of frames per second at which the canvas elements are recorded. Defaults to `2`.
+- `CANVAS_QUALITY: 'low' | 'medium' | 'high'`: Sets the quality of the recorded snapshots. Defaults to `low`.
+- `CANVAS_FPS: number`: Defines the number of frames per second at which the canvas elements are recorded. Defaults to `1`.
 
 > Note: Due to limitations of the current video codec, the replay of the canvas recording can have a black (or other solid color) background as it's impossible to encode the alpha channel. We're keeping an eye on the subject and we'll update to newer versions of the codec once it becomes available.
 
@@ -40,6 +40,12 @@ Privacy wise, the content of the canvas elements cannot be sanitized.
 ## Cobrowsing Sessions
 
 For live sessions (a.k.a. Assist), no particular settings are necessary. Canvas will be enabled and captured by default and data will be transmitted via the P2P protocol. To ensure optimal network usage, data is only streamed when an agent is watching to the live session and the canvas' content is changing.
+
+## Canvas as animation layer
+
+If you're using canvas above your frontend layer (with higher zIndex), you might notice black screen above session recording, which happens because web API doesn't allow us to capture alpha channel yet.
+
+In such case, add `data-openreplay-hidden` to canvas element to hide it from session recording completely.
 
 ## Have questions?
 
