@@ -1,0 +1,227 @@
+---
+title: "Cleanup Storage"
+metaTitle: "Cleanup Storage"
+metaDescription: "Delete recordings in bulk from database and cleanup your storage."
+---
+import Aside from '~/components/Aside.astro'
+
+Each recording exists in the form of a file and an entry in the database. OpenReplay dumps what's necessary to replay a session (DOM mutations, mouse coordinates, console logs, network activity and much more) into 3 files (2 for the replay itself and 1 for the DevTools data). These files are by default stored on your instance, so they make up most of its storage. Session metadata will be stored in the PostgreSQL database forever, but after 180 days the file containing the recording will be expired/deleted through a minio lifecycle policy.
+
+## Temporary storage cleanup
+
+OpenReplay stores temporary data in the filesystem prior to processing and uploading to the object storage service (minIO or S3). Once the processing is completed, the data gets deprecated, and a cronjob will delete these files every 2nd day of week. 
+
+If you wish to amend the cronjob:
+1. Edit the configuration:
+
+```bash
+openreplay -e
+```
+
+2. Change the cronjob timing by appending the following line:
+
+```yaml
+utilities:
+  # Cleanup data everyday morning 3:05 am, server time.
+	cron: "5 3 * * *"
+```
+
+
+There are 2 ways for cleaning up storage in your OpenReplay instance: automated (CLI) and manual.
+
+## Data cleanup (CLI)
+
+This process is fully automated through our CLI. Simply run the below command to clean up your storage by removing data from both Postgres (where events are stored) and minio (where recordings are saved):
+
+```bash
+# To clean data older than 14 days
+openreplay --cleanup 14
+```
+
+## Data cleanup (Manual)
+
+Data can be removed from both the database (where events are stored) and minio (where recordings are saved).
+
+### Recordings cleanup
+
+If you ever need to free up some space, then login to your OpenReplay instance and follow the below steps:
+
+1. Run `k9s -n db`
+2. Use the keyboard arrows to navigate the list and get to the `minio-*` container
+3. Press `s` to have shell access the Minio (object storage) container
+4. Run `mc alias set minio http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD`
+5. Run `mc rm --recursive --dangerous --force --older-than 7d minio/mobs` (i.e. delete files that are older than 7 days)
+6. Use `exit` to exit the Minio container
+7. Run `:quit` to exit the Kubernetes CLI
+
+#### Change default lifecycle policy
+
+If you're using minio (vanilla installation), you can change the default lifecycle policy this way:
+
+1. Run `k9s -n db`
+2. Use the keyboard arrows to navigate the list and get to the `minio-*` container
+3. Press `s` to have shell access the Minio (object storage) container
+6. Run `mc alias set minio http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD`
+7. To automatically clean recordings 14 days after creation
+
+```bash
+export EXPIRATION_DAYS=14
+export DELETE_JOB_DAYS=$((EXPIRATION_DAYS>30 ? 30 : EXPIRATION_DAYS))
+cat <<EOF > /tmp/lifecycle.json
+{
+  "Rules": [
+    {
+      "Expiration": {
+        "Days": $EXPIRATION_DAYS
+      },
+      "ID": "Delete old mob files",
+      "Status": "Enabled"
+    },
+    {
+      "Expiration": {
+        "Days": $DELETE_JOB_DAYS
+      },
+      "ID": "Delete flagged mob files after ${DELETE_JOB_DAYS} days",
+      "Filter": {
+        "Tag": {
+          "Key": "to_delete_in_days",
+          "Value": "${DELETE_JOB_DAYS}"
+        }
+      },
+      "Status": "Enabled"
+    }
+  ]
+}
+EOF
+mc ilm import minio/mobs < /tmp/lifecycle.json
+```
+
+8. Use `exit` to exit the Minio container
+9. Run `:quit` to exit the Kubernetes CLI
+
+### Database cleanup (PostgeSQL)
+
+Depending on your usage, data can be removed from various tables and in different ways. 
+
+#### Connect to PostgreSQL
+
+Connect to your OpenReplay instance, then:
+
+1. Run `k9s -n db`
+2. Use the keyboard arrows to navigate the list and get to the `postgresql-*` container
+3. Press `s` to have shell access the the Postgres container
+4. Run `PGPASSWORD=MY_PG_PASSWORD psql -U postgres` (replace `MY_PG_PASSWORD` with the value of the `postgresqlPassword` variable from `/var/lib/openreplay/vars.yaml` file)
+5. Execute your delete (or any other) query
+6. Type `exit` to exit the postgresql-client
+7. Use `exit` to exit the Postgres container
+8. Run `:quit` to exit the Kubernetes CLI
+
+#### Check tables size
+
+To check the tables size, you can run the following query:
+
+```sql
+SELECT nspname AS "name_space",
+       relname AS "relation",
+       pg_size_pretty(
+               pg_total_relation_size(C.oid)
+           )   AS "total_size"
+FROM pg_class C
+         LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+WHERE nspname NOT IN ('pg_catalog','information_schema')
+  AND C.relkind <> 'i'
+  AND nspname !~ '^pg_toast'
+ORDER BY pg_total_relation_size(C.oid) DESC
+LIMIT 20;
+```
+
+#### Delete specific events
+
+We noticed that most of OpenReplay users, after checking the results of the previous section, decided to remove specific events instead of cleaning sessions (especially `events.resources` and `events_common.requests`).
+
+To discard all event-data you can run any one of the following queries, but keep in mind this will affect cards values, click-maps, events list and other features.
+
+<Aside type="caution">
+	This is done at your own risk, so be extremely careful when performing such actions in the database as they are irreversible and could affect multiple OpenReplay features.
+</Aside>
+
+```sql
+--- To delete all data related to a specific event
+
+-- The next 2 tables are usually the biggest ones, and they affect some cards only
+TRUNCATE TABLE events.resources;
+TRUNCATE TABLE events_common.requests;
+
+-- The next table will affect click-maps and events list of session's replay
+TRUNCATE TABLE events.clicks;
+TRUNCATE TABLE events.errors;
+TRUNCATE TABLE events.graphql;
+TRUNCATE TABLE events.inputs;
+TRUNCATE TABLE events.pages;
+TRUNCATE TABLE events.performance;
+TRUNCATE TABLE events.state_actions;
+TRUNCATE TABLE events_common.customs;
+TRUNCATE TABLE events_common.issues;
+```
+
+#### Delete specific sessions by time
+
+If you want to clean all sessions, skip to [the next part](#delete-all-sessions) as it is faster and releases storage space instantly.
+
+Use the below SQL query if you wish to cleanup data from your database (PostgreSQL). Replace the `2021-01-01` with the date from which to keep recordings. It's a cascade delete, so all recordings as well as their corresponding events will be removed from the database.
+
+<Aside type="caution">
+	This is done at your own risk, so be extremely careful when performing such actions in the database as they are irreversible.
+</Aside>
+
+```sql
+--- Cascade delete all sessions and their related events captured before Jan 1st, 2021
+DELETE FROM public.sessions WHERE start_ts < extract(epoch from '2021-01-01'::date) * 1000;
+```
+
+After running the previous query, the database will not release the storage space immediately, as it will schedule a cleaning for later, to manually force it to release storage, you can run the following queries:
+
+<Aside type="note">
+	These queries will lock each table so it will not be available, and it might take hours to finish
+	according to your database, if you still have enough free storage space, you can leave the cleaning for the PostgreSQL Auto-Vacuum.
+	
+	In addition it will require some free storage in order for it to work, that's why we highly recommend running these queries in the ascending order of [tables size](#check-tables-size)
+</Aside>
+
+```sql
+--- Recreate indexes and free unused storage
+VACUUM FULL public.sessions;
+VACUUM FULL events_common.customs;
+VACUUM FULL events_common.issues;
+VACUUM FULL events_common.requests;
+VACUUM FULL events.pages;
+VACUUM FULL events.state_actions;
+VACUUM FULL events.errors;
+VACUUM FULL events.graphql;
+VACUUM FULL events.performance;
+VACUUM FULL events.resources;
+VACUUM FULL events.inputs;
+VACUUM FULL events.clicks;
+```
+
+#### Delete all sessions
+
+Use the below SQL query if you wish to cleanup all sessions data from your database (PostgreSQL). It's a cascade delete, so all recordings as well as their corresponding events will be removed from the database.
+
+<Aside type="caution">
+	This is done at your own risk, so be extremely careful when performing such actions in the database as they are irreversible.
+	
+	For OpenReplay Enterprise Edition, these queries will also delete vault-sessions.
+</Aside>
+
+```sql
+--- Cascade delete all sessions and their related events 
+TRUNCATE TABLE public.sessions CASCADE;
+TRUNCATE TABLE public.errors CASCADE;
+TRUNCATE TABLE public.issues CASCADE;
+TRUNCATE TABLE public.autocomplete;
+```
+
+## Have questions?
+
+If you have any questions about this process, feel free to reach out to us on our [Slack](https://slack.openreplay.com) channel.
