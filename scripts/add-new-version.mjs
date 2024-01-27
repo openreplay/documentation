@@ -65,7 +65,7 @@ class VersionManager {
 
 				const versionsArray = declarator.init.elements;
 
-                lastVersion = versionsArray[versionsArray.length - 1].properties[0].value.value
+                lastVersion = versionsArray[0].properties[0].value.value
 			},
 		});
 
