@@ -1,0 +1,77 @@
+---
+title: "Sanitize Data (iOS)"
+metaTitle: "Sanitize Data (iOS)"
+metaDescription: "How to sanitize data and ensure privacy for your users in your iOS app."
+---
+
+
+## Sanitizing UI Components
+
+Sanitized views will be blurred out in the resulting replay. You can add any UI component and it will be automatically removed (to preserve memory) as soon as its not on screen.
+
+### SwiftUI
+
+Simply add `.sensitive()` modifier to desired component.
+
+```swift
+import ORTracker
+
+Text("Very important sensitive text")
+.sensitive()
+
+```
+
+### UIKit
+
+```swift
+import ORTracker
+
+ORTracker.shared.addIgnoredView(view)
+```
+
+### React Native
+
+SDK exports `ORSanitizedView` which you can use to wrap your sensitive components with to blur them out.
+
+```js
+import OR from '@openreplay/react-native'
+
+// ... your app UI
+
+  <OR.ORSanitizedView>
+    <SensitiveComponent />
+  </OR.ORSanitizedView>
+
+// ...
+```
+
+## Sanitizing network requests
+
+Two keys are exported to automatically trim the request/response data: `ignoredKeys` for body and `ignoredHeaders` for headers. Both, request and response will be sanitized, but body will only be affected if its a valid JSON.
+
+Simply assign a list of strings that you would like to sanitize:
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+It is also possible to change the response data before passing it to the listener:
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```
