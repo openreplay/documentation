@@ -54,19 +54,20 @@ Then, save and exit using `:wq` for the service to reload.
 
 OpenReplay supports reCaptcha (v2) for additional security. To enable this protection:
 
-1. Open `/var/lib/openreplay/vars.yaml` then uncomment and update the below env variables in `chalice` section:
+1. Get a v2 reCaptcha key from Google, with `invisible` mode enabled, i.e. do not prompt for `tick I am not a human`.
+2. Open `/var/lib/openreplay/vars.yaml` then uncomment and update the below env variables in `chalice` section:
 - `captcha_server`: The URL to your reCaptcha service (e.g. https://www.google.com/recaptcha/api/siteverify)
 - `captcha_key`: You reCaptcha secret key
 
-2. Edit `env.js` in `openreplay/frontend/` and substitute the `CAPTCHA_SITE_KEY` variable with your reCaptcha site key.
-3. Rebuild the frontend:
+3. Edit `.env` in `openreplay/frontend/` (copy `.env.sample` if it does not exist) and substitute the `CAPTCHA_SITE_KEY` variable with your reCaptcha site key.
+4. Rebuild the frontend:
 
 ```bash
 cd openreplay/frontend
 IMAGE_TAG=my-custom-image PUSH_IMAGE=1 DOCKER_REPO=my-docker-user-name bash -x build.sh
 ```
 
-4. Open `/var/lib/openreplay/vars.yaml` and specify your newly built frontend image in the `frontend` block:
+5. Open `/var/lib/openreplay/vars.yaml` and specify your newly built frontend image in the `frontend` block:
 
 ```yaml
 frontend:
@@ -75,7 +76,7 @@ frontend:
     tag: "my-custom-image"
 ```
 
-5. Restart the frontend and web server services for the changes to take effect:
+6. Restart the frontend and web server services for the changes to take effect:
 
 ```bash
  openreplay -R
