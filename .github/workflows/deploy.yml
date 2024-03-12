@@ -20,21 +20,21 @@ env:
 jobs:
   build-and-deploy:
     name: Build and Deploy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-m
     strategy:
       matrix:
-        node-version: [14.x]
+        node-version: [20.x]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Use Node.js ${{ env.NODE_VERSION }}
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
     - name: Set Swap Space
-      uses: pierotofy/set-swap-space@master
+      uses: actionhippie/swap-space@v1
       with:
-        swap-size-gb: 10
+       size: 10G
     - run: npm install
     - run: npm run build
     - run: aws s3 sync ./dist/ s3://openreplay-documentation --acl public-read --exact-timestamps
