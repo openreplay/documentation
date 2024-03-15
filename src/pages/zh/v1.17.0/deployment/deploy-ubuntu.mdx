@@ -1,0 +1,72 @@
+---
+title: "部署到 Ubuntu"
+metaTitle: "部署到 Ubuntu"
+metaDescription: "逐步指南，用于在任何 Ubuntu 机器上部署 OpenReplay。"
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+OpenReplay 堆栈可以安装在运行 Ubuntu 的单台机器上。以下是操作方法。
+
+## 先决条件
+
+- 操作系统必须是 *Ubuntu Server 20.04 Focal Fossa*。
+- 运行 OpenReplay 的机器的最低规格为 `2 vCPUs, 8 GB of RAM, 50 GB of storage`，否则 OpenReplay 后端服务根本不会启动。这应该足以应对低/中等流量。如果您预计流量高，应该从这里开始扩展。
+- 指向您机器的公共 IP 地址。
+
+## 部署 OpenReplay
+
+1. 确保您的机器已启动，然后通过 SSH 以 root 身份连接到它
+
+2. 通过提供将运行的域名来安装 OpenReplay（例如，DOMAIN_NAME=openreplay.mycompany.com）：
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## 配置 TLS/SSL
+
+OpenReplay 处理敏感用户数据，因此需要 HTTPS 运行。这是强制性的，否则追踪器根本不会开始录制。对于仪表板也是如此，没有 HTTPS 您将无法重放用户会话。
+
+因此，您必须带来（或生成）您自己的 SSL 证书。
+
+1. 首先，前往您的 DNS 服务提供商，编辑您的 DNS 区域并创建一个 `A 记录`。使用您在安装步骤中提供的域名，并使用其公共 IP 指向您的机器。
+
+2. 如果您带来自己的证书，请使用以下命令创建 SSL 密钥：`kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`。
+
+> **注意：** 如果您没有证书，使用 Let's Encrypt 为您的子域（安装期间提供的）生成一个自动续订的证书。只需连接到 OpenReplay 机器，运行 `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` 并按照步骤操作。
+
+3. 如果您希望启用 http 到 https 的重定向（推荐），请取消注释 `/var/lib/openreplay/vars.yaml` 下的 `ingress-nginx` 部分中的下面块：
+
+```yaml
+ingress-nginx: &ingress-nginx
+controller:
+config:
+ssl-redirect: true
+force-ssl-redirect: true
+```
+
+值得一提的是，我们的 `ingress-nginx` 默认在 `80|443` 端口上运行，但如果需要，可以在 `vars.yaml` 中轻松更改：
+
+```yaml
+ingress-nginx: &ingress-nginx
+controller:
+service:
+ports:
+http: 80
+https: 443
+```
+
+4. 最后重新安装 OpenReplay NGINX：
+
+```bash
+openreplay -R
+```
+
+现在一切都设置好了，OpenReplay 应该可以在您的子域上访问。您可以通过访问 `/signup` 页面（即 openreplay.mycompany.com/signup）创建一个帐户。
+
+## 有问题吗？
+
+如果您遇到任何问题，请连接到我们的 [Slack 社区](https://slack.openreplay.com/) 并从我们的开发人员那里获得帮助。
