@@ -109,9 +109,9 @@ class VersionManager {
                     //if the version is not already there, we have to.
                     //1. Update the url of the LAST version so it's not empty anymore
                     //2. Add the new version with an empty url
-                    versionsArray[versionsArray.length - 1].properties[1].value.value = "/v" + versionsArray[versionsArray.length - 1].properties[0].value.value
+                    versionsArray[0].properties[1].value.value = "/v" + versionsArray[0].properties[0].value.value
 
-                    versionsArray.push(t.objectExpression([
+                    versionsArray.unshift(t.objectExpression([
                         t.objectProperty(t.stringLiteral("title"), t.stringLiteral(newVersion)),
                         t.objectProperty(t.stringLiteral("url"), t.stringLiteral(""))
                     ]));
