@@ -105,7 +105,7 @@ const AiChatBot: React.FC = () => {
       </div>
 
       <button
-        className="fixed bottom-4 right-4 bg-gradient-to-r from-teal-500 bg-indigo-600  hover:bg-blue-700 cursor-pointer rounded-full text-white font-bold py-2 px-4 rounded shadow-lg z-50 flex items-center gap-2"
+        className="fixed bottom-4 right-4 bg-gradient-to-r from-teal-500 bg-indigo-600  hover:bg-blue-700 cursor-pointer rounded-full text-white font-bold py-2 px-4 rounded shadow-lg z-50 flex items-center gap-2 drop-shadow-sm"
         onClick={() => {
           setIsChatOpen(!isChatOpen);
           console.log(`Button, isChatOpen: ${!isChatOpen}`); // Log state change
