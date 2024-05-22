@@ -22,7 +22,7 @@ const AiChatBot: React.FC = () => {
     setLoading(true);
     setHasSentMessage(true); // Update the state to indicate a message has been sent
   
-    const apiKey = 'YXNmbmplcm5ndmpzZW52bmVpanJuaWVyaXVlZzRicmJrajRia3JqM2tqZmtqZG5qZ25ka2ZqZ2ZkZw';
+    const apiKey = 'put_key_here';
     const userQuestion = message.content;
   
     try {
