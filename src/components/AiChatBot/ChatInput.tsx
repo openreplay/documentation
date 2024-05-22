@@ -10,25 +10,26 @@ interface Props {
 
 export const ChatInput: FC<Props> = ({ onSend, hasSentMessage }) => {
   const [content, setContent] = useState<string>("");
+  const [remainingChars, setRemainingChars] = useState<number>(300);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
-    if (value.length > 4000) {
-      alert("Message limit is 4000 characters");
-      return;
+    if (value.length <= 300) {
+      setContent(value);
+      setRemainingChars(300 - value.length);
     }
-    setContent(value);
   };
 
   const handleSend = () => {
-    if (!content) {
+    if (!content.trim()) {
       alert("Please enter a message");
       return;
     }
     onSend({ role: "user", content });
     setContent("");
+    setRemainingChars(300);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -45,7 +46,7 @@ export const ChatInput: FC<Props> = ({ onSend, hasSentMessage }) => {
   }, []);
 
   useEffect(() => {
-    if (textareaRef && textareaRef.current) {
+    if (textareaRef.current) {
       textareaRef.current.style.height = "inherit";
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
@@ -85,6 +86,7 @@ export const ChatInput: FC<Props> = ({ onSend, hasSentMessage }) => {
           rows={1}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
+          maxLength={300}
         />
         <button
           onClick={handleSend}
@@ -92,6 +94,9 @@ export const ChatInput: FC<Props> = ({ onSend, hasSentMessage }) => {
         >
           <CornerDownLeft />
         </button>
+      </div>
+      <div className="text-sm text-gray-500 mt-1">
+        {remainingChars} characters remaining
       </div>
     </div>
   );
