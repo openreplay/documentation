@@ -22,8 +22,8 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
             <span className="text-xs  bg-gradient-to-r from-white/50 bg-indigo-50/50  text-black px-2 py-1 rounded-full">EXPERIMENTAL</span>
           </div>
           <button
-            className="absolute top-3 right-2 text-black bg-transparent border-none focus:outline-none"
-            onClick={onClose}
+          className="absolute top-3 right-2 text-black bg-transparent border-none focus:outline-none cursor-pointer"
+          onClick={onClose}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>
