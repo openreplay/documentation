@@ -38,14 +38,14 @@ const AiChatBot: React.FC = () => {
         }),
       });
   
-      console.log('API response status:', response.status);
+      console.debug('API response status:', response.status);
       if (!response.ok) {
         setLoading(false);
         throw new Error(`API response error: ${response.statusText}`);
       }
   
       const data = await response.json();
-      console.log('API response data:', data);
+      console.debug('API response data:', data);
       if (!data) return;
   
       setLoading(false);
@@ -108,7 +108,7 @@ const AiChatBot: React.FC = () => {
         className="fixed bottom-4 right-4 bg-gradient-to-r from-teal-500 bg-indigo-600  hover:bg-blue-700 cursor-pointer rounded-full text-white font-bold py-2 px-4 rounded shadow-lg z-50 flex items-center gap-2 drop-shadow-sm"
         onClick={() => {
           setIsChatOpen(!isChatOpen);
-          console.log(`Button, isChatOpen: ${!isChatOpen}`); // Log state change
+          console.debug(`Button, isChatOpen: ${!isChatOpen}`);
         }}
       >
          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-sparkles"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>
