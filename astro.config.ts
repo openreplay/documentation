@@ -21,7 +21,9 @@ import { remarkCodeSnippets } from './integrations/astro-code-snippets';
 import { remarkAsides } from './integrations/astro-asides';
 import remarkDirective from 'remark-directive';
 import remarkCopy from 'remark-copy-linked-files'
+import dotenv from 'dotenv';
 
+dotenv.config();
 //import remarkCopyLinkedFiles from 'remark-copy-linked-files';
 
 function addDefaultLayout() {
@@ -104,5 +106,10 @@ export default defineConfig({
   //	astroAsides(),
   astroSpoilers()
   //	astroCodeSnippets()
-  ]
+  ],
+  vite: {
+    define: {
+      'process.env.DOCS_KEY': JSON.stringify(process.env.DOCS_KEY)
+    }
+  }
 });
