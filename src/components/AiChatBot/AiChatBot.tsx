@@ -20,9 +20,9 @@ const AiChatBot: React.FC = () => {
     const updatedMessages = [...messages, message];
     setMessages(updatedMessages);
     setLoading(true);
-    setHasSentMessage(true); // Update the state to indicate a message has been sent
+    setHasSentMessage(true); 
   
-    const apiKey = 'put_key_here';
+    const apiKey = process.env.DOCS_KEY;
     const userQuestion = message.content;
   
     try {
@@ -73,7 +73,7 @@ const AiChatBot: React.FC = () => {
         content: 'Welcome to the OpenReplay Docs AI Assistant. What can I help you with?',
       },
     ]);
-    setHasSentMessage(false); // Reset the state
+    setHasSentMessage(false);
   };
 
   useEffect(() => {
