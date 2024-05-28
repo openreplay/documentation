@@ -62,7 +62,7 @@ export const ChatInput: FC<Props> = ({ onSend, hasSentMessage }) => {
     <div className="relative">
       {!hasSentMessage && (
         <div className="mb-4">
-          <h3 className="text-lg font-semibold">Suggested Prompts</h3>
+          <h3 className="text-lg font-semibold" style={{ color: 'black' }}>Suggested Prompts</h3>
           <div className="flex flex-col gap-2 mt-2">
             {suggestedPrompts.map((prompt, index) => (
               <button
