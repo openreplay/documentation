@@ -81,12 +81,14 @@ There are a set of options you can pass to the constructor. Only `projectKey` is
 - `revID?: string` The revision ID of your web app. Useful when searching for issues happening on a specific release version.
 - `resourceBaseHref?: string` Refers to the publicly accessible domain where assets (styles, fonts and icons) could be fetched by OpenReplay. Since they're required for proper session replay, this option is useful to get around the limitation of having your site (and therefore assets) hosted in a private domain. Example: `https://mypublicsite.com/assets/`.
 - `captureIFrames?: boolean` For capturing all of the same-domain iFrames in your web app. If you wish to track a specific iFrame, then instead simply add the `data-openreplay-capture` HTML attribute to the `<iframe>` tag. Default: `true`.
-- `disableClickmaps?: boolean` For disabling click maps. Default: `true`.
+- `disableClickmaps?: boolean` For disabling css selector calculation (used in click maps). Default: `false`.
 - `verbose?: boolean` For enabling logs. Default: `false`.
 - `autoResetOnWindowOpen?: boolean` Enable this option to reset the sessionID when opening a new tab from your application. This overwrites the `window.open` method to avoid duplicate sessionIDs due to shared session storage between browser tabs. Default: `false`.
 - `forceSingleTab: boolean` Disables the multi-tab recording capability which stitches user sessions, conducted across multiple tabs, into a single replay. Instead, by enabling this option, sessions captured in different browser tabs will be recorded in separate recordings. Default: `false`.
 - `disableStringDict: boolean` Disables the string dictionary logic (for optimizing storage) in recordings. Default: `false`.
 - `fixedCanvasScaling: boolean` Forces canvas images to be rendered with pixel density of 1 instead of devicePixelRatio. (lowers the potential quality of an image to make end result smaller in size)
+- `disableCanvas?: boolean` Disables recording of canvas elements
+- `assistSocketHost?: string` Can be used to set a specific host for assist plugin connection
 
 ### Privacy
 
@@ -161,6 +163,24 @@ mouse?:
 
 - `connAttemptCount?: number` Max number of retries when tracker's HTTP requests fail to reach the backend. Default: `10`.
 - `connAttemptGap?: number` Duration between each retry attempt (expressed in ms). Default: `8000`.
+
+### Feature Flags
+- `onFlagsLoad` callback used to perform an action once feature flags are loaded (every time).
+
+```ts
+ flags?: {
+ 	onFlagsLoad?: (flags: IFeatureFlag[]) => void
+ } 
+ 
+ 
+// ...
+interface IFeatureFlag {
+  key: string
+  is_persist: boolean
+  value: string | boolean
+  payload: string
+}
+```
 
 ### Security
 
