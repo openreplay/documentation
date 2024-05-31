@@ -51,18 +51,18 @@ Then, save and quit using `:wq` for the changes to take effect:
 
 ## OpenReplay certificate
 
-This is optional, starting from v1.10.0, you can add a x509 certificate for extra SSO security:
+This is optional, you can add a x509 certificate for extra SSO security:
 
 1. run this command in your server or your secure machine (you can change the validity time of your certificate according to your needs):
 ```bash
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout openreplay-sso.key -out openreplay-sso.crt
 ```
-2. In your server, run `openreplay -e`
-3. Under the `chalice` section, add the following env variables:
+1. In your server, run `openreplay -e`
+2. Under the `chalice` section, add the following env variables:
 - **sp_crt**: must be a one-line string, without line breaks of the generated 'openreplay-sso.crt' file (you can use <a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">this tool</a> to format your value)
 - **sp_key**: must be a one-line string, without line breaks of the generated 'openreplay-sso.key' file
-4. Save and quit using `:wq` for the changes to take effect
-5. Add the generated 'openreplay-sso.crt' file to your Identity Provider's application configuration
+1. Save and quit using `:wq` for the changes to take effect
+2. Add the generated 'openreplay-sso.crt' file to your Identity Provider's application configuration
 
 ## Example using Okta
 
@@ -100,7 +100,7 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout openreplay-sso.key -
  - **Identifier (Entity ID)** to <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>:<ORDynamicCode id="port" initialValue={initialValues.port} client:idle/>/api/sso/saml2/metadata/</code>
  - **Reply URL (Assertion Consumer Service URL)** to <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>:<ORDynamicCode id="port" initialValue={initialValues.port} client:idle/>/api/sso/saml2/acs/</code>
  - **Logout URL** to <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>:<ORDynamicCode id="port" initialValue={initialValues.port} client:idle/>/api/sso/saml2/sls/</code>
-5. Add the below claims in 'Attribute & Claims' block:
+5. Add the below claims in 'Attribute & Claims' block and ensure the 'Namespace' field is left empty for each of them:
  - **tenantKey**: set the value to <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>, found in OpenReplay dashboard under 'Preferences' > 'Account'
  - **firstName**: set the value to `user.givenname`
  - **lastName**: set the value to `user.surname`
@@ -208,5 +208,8 @@ otherwise you have to add a new string-attribute to the JumpCloud's group, call 
 - **idp_name**: JumpCloud
 12. Finally, save and quit using `:wq` for the changes to take effect.
 
-## Have questions?
-If you have any questions about this process, feel free to reach out to us on our [Slack](https://slack.openreplay.com) or check out our [Forum](https://forum.openreplay.com).
+## Errors
+
+### The response was received at http instead of http
+
+This is very common, and is due to the 'X-Forwarded-Proto' header not being present in th request. In order to resolve that, make sure the Load Balancer is correctly forwarding the header to the OpenReplay backend.
