@@ -42,6 +42,7 @@ export default [
 	{ text: 'Angular', slug: 'using-or/angular', key: 'using-or/' },
 	{ text: 'Gatsby', slug: 'using-or/gatsby', key: 'using-or/' },
 	{ text: 'iOS (beta)', slug: 'ios-sdk/init', key: 'using-or/' },
+	{ text: 'Android (beta)', slug: 'android-sdk/init', key: 'using-or/' },
 	{ text: 'React Native', slug: 'rn-sdk/init', key: 'using-or/' },
 
 	{ text: 'Administration', slug: 'configuration/', header: true, type: 'learn', key: 'admin', icon: 'configure' },
