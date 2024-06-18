@@ -93,7 +93,7 @@ const AiChatBot: React.FC = () => {
         setContinuationMessageId(updatedMessages.length); 
         setMessages((messages) => [
           ...messages,
-          { role: 'assistant', content: "Continue generating answer?", isContinuation: true },
+          { role: 'assistant', content: "Continue generating answer? Click here!", isContinuation: true },
         ]);
       } else {
         setContinuationMessageId(null);
