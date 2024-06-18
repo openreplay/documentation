@@ -10,6 +10,7 @@ const AiChatBot: React.FC = () => {
   const [hasSentMessage, setHasSentMessage] = useState<boolean>(false);
   const [assistantHistory, setAssistantHistory] = useState<string[]>([]);
   const [userHistory, setUserHistory] = useState<string[]>([]);
+  const [continuationMessageId, setContinuationMessageId] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -45,6 +46,7 @@ const AiChatBot: React.FC = () => {
         assistant_history: assistantHistory,
         user_history: userHistory,
         n_references: 3,
+        resume: false,
       });
 
       console.debug('Request body:', body);
@@ -71,7 +73,85 @@ const AiChatBot: React.FC = () => {
       setLoading(false);
 
       // Format the response and references
-      const formattedResponse = `${data.response}\n\n**Related resources:**\n${data.references.map((ref: { url: string, title: string }) => `- [${ref.title}](${ref.url})`).join('\n')}`;
+      const formattedResponse = `${data.response.join(' ')}\n\n**Related resources:**\n${data.references.map((ref: { url: string, title: string }) => `- [${ref.title}](${ref.url})`).join('\n')}`;
+
+      setMessages((messages) => [
+        ...messages,
+        { role: 'assistant', content: formattedResponse },
+      ]);
+
+      // Ensure data.response is a string before updating history
+      const responseContent = Array.isArray(data.response) ? data.response.join(' ') : data.response;
+      if (typeof responseContent === 'string') {
+        updateHistory('assistant', responseContent);
+      } else {
+        console.error('Response is not a string:', data.response);
+      }
+
+      // Check endReason and set continuation message
+      if (data.endReason === "length") {
+        setContinuationMessageId(updatedMessages.length); 
+        setMessages((messages) => [
+          ...messages,
+          { role: 'assistant', content: "Continue generating answer? Click here!", isContinuation: true },
+        ]);
+      } else {
+        setContinuationMessageId(null);
+      }
+    } catch (error) {
+      console.error('Error fetching chat response:', error);
+      setLoading(false);
+    }
+  };
+
+  const handleContinue = async () => {
+    if (continuationMessageId === null) return;
+
+    setLoading(true);
+    const lastAssistantMessage = messages[continuationMessageId].content;
+    const apiKey = process.env.DOCS_KEY;
+
+    try {
+      const body = JSON.stringify({
+        question: lastAssistantMessage,
+        assistant_history: assistantHistory,
+        user_history: userHistory,
+        n_references: 3,
+        resume: true,
+      });
+
+      console.debug('Request body for continuation:', body);
+
+      const response = await fetch('https://api.openreplay.com/ai/docs/chat', { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body,
+      });
+
+      console.debug('API response status for continuation:', response.status);
+      if (!response.ok) {
+        setLoading(false);
+        throw new Error(`API response error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.debug('API response data for continuation:', data);
+      if (!data) return;
+
+      setLoading(false);
+
+      // Check endReason and update continuation message id if needed
+      if (data.endReason === "length") {
+        setContinuationMessageId(messages.length); 
+      } else {
+        setContinuationMessageId(null);
+      }
+
+      // Format the response and references
+      const formattedResponse = `${data.response.join(' ')}\n\n**Related resources:**\n${data.references.map((ref: { url: string, title: string }) => `- [${ref.title}](${ref.url})`).join('\n')}`;
 
       setMessages((messages) => [
         ...messages,
@@ -86,7 +166,7 @@ const AiChatBot: React.FC = () => {
         console.error('Response is not a string:', data.response);
       }
     } catch (error) {
-      console.error('Error fetching chat response:', error);
+      console.error('Error fetching chat continuation response:', error);
       setLoading(false);
     }
   };
@@ -115,6 +195,12 @@ const AiChatBot: React.FC = () => {
       },
     ]);
   }, []);
+
+  const handleAssistantMessageClick = (messageId: number) => {
+    if (messages[messageId].isContinuation) {
+      handleContinue();
+    }
+  };
 
   return (
     <div>
@@ -150,6 +236,7 @@ const AiChatBot: React.FC = () => {
             onSend={handleSend}
             onReset={handleReset}
             hasSentMessage={hasSentMessage}
+            onMessageClick={handleAssistantMessageClick}
           />
           <div ref={messagesEndRef}></div>
         </Modal>
