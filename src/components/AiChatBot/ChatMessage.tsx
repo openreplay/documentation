@@ -2,6 +2,7 @@ import { Message } from ".";
 import React from 'react';
 import { FC } from "react";
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Props {
   message: Message;
@@ -15,6 +16,7 @@ export const ChatMessage: FC<Props> = ({ message }) => {
         style={{ overflowWrap: "anywhere" }}
       >
         <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
           components={{
             p: ({ node, ...props }) => (
               <p style={{ color: message.role === "assistant" ? "inherit" : "black", marginTop: 2 }} {...props} />
@@ -27,6 +29,18 @@ export const ChatMessage: FC<Props> = ({ message }) => {
             ),
             li: ({ node, ...props }) => (
               <li style={{ color: message.role === "assistant" ? "inherit" : "white", marginTop: -20 }} {...props} />
+            ),
+            table: ({ node, ...props }) => (
+              <table style={{ borderCollapse: 'collapse', width: '100%', marginTop: '10px' }} {...props} />
+            ),
+            th: ({ node, ...props }) => (
+              <th style={{  padding: '8px', backgroundColor: '#f8f9fa' }} {...props} />
+            ),
+            td: ({ node, ...props }) => (
+              <td style={{  padding: '8px' }} {...props} />
+            ),
+            tr: ({ node, ...props }) => (
+              <tr style={{ backgroundColor: 'white' }} {...props} />
             ),
           }}
         >
