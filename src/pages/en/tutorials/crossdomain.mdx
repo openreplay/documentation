@@ -1,0 +1,45 @@
+---
+title: "Crossdomain Iframe Tracking"
+metaTitle: "Crossdomain Iframe Tracking"
+metaDescription: "Track user interactions in crossdomain iframes with OpenReplay."
+---
+
+To enable crossdomain iframe tracking, you need to add the `crossdomain.enabled` option to the tracker's constructor, 
+then add domain area via `data-domain` to all desired iframes like so:
+
+```html
+<iframe
+	title="test"
+	src="http://iframe1.website.com/iframe-path"
+	width="300"
+	height="300"
+	data-domain="iframe1.website.com"
+></iframe>
+``` 
+
+Add following to your tracker constructor:
+
+```js
+const tracker = new OpenReplay({
+	projectKey: PROJECT_KEY,
+	crossdomain: {
+		enabled: true
+	},
+	captureIFrames: true
+});
+```
+
+then add tracker inside the desired iframe and add `crossdomain.parentDomain` to its constructor:
+
+```js
+const tracker = new OpenReplay({
+	projectKey: PROJECT_KEY,
+	crossdomain: {
+	  // specifies domain of parent window
+	  // if not specified, it will be set to '*'
+	  // which means that child window will send messages to all domains inside the browser window
+	  // consult your CSP settings to ensure that '*' is allowed or specify the parent domain
+		parentDomain: '*',
+	}
+});
+```
