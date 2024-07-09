@@ -60,7 +60,7 @@ export default [
 	{ text: 'Overview', slug: 'installation', key: 'blog-tutorial' },
 	{ text: 'Identify a User', slug: 'installation/identify-user', key: 'blog-installation' },
 	{ text: 'Canvas and WebGL', slug: 'installation/canvas', key: 'canvas-recording'},
-	{ text: 'Crossdomain tracking', slug: 'tutorials/crossdomain', key: 'iframe-crossdomain' },
+	{ text: 'Cross-domain iFrames', slug: 'tutorials/crossdomain-iframe', key: 'iframe-crossdomain' },
 	{ text: 'WebSockets', slug: 'installation/websockets', key: 'websockets' },
 	{ text: 'Add users to your team', slug: 'tutorials/adding-users', key: 'blog-installation' },
 	{ text: 'Metadata', slug: 'installation/metadata', key: 'blog-installation' },
