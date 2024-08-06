@@ -63,8 +63,17 @@ const AiChatBot: React.FC = () => {
       console.debug('API response status:', response.status);
       if (!response.ok) {
         setLoading(false);
-        throw new Error(`API response error: ${response.statusText}`);
+        if (response.status === 500) {
+          setMessages((messages) => [
+            ...messages,
+            { role: 'assistant', content: "Yikes! I'm temporarily unavailable because I'm off recharging my circuits. Please check back in a few hours!" },
+          ]);
+        } else {
+          throw new Error(`API response error: ${response.statusText}`);
+        }
+        return;
       }
+
 
       const data = await response.json();
       console.debug('API response data:', data);
