@@ -66,7 +66,7 @@ const AiChatBot: React.FC = () => {
         if (response.status === 500) {
           setMessages((messages) => [
             ...messages,
-            { role: 'assistant', content: "Yikes! I'm temporarily unavailable because I'm off recharging my circuits. Please check back in a few hours!" },
+            { role: 'assistant', content: "I'm temporarily unavailable. Please check back in a few hours!" },
           ]);
         } else {
           throw new Error(`API response error: ${response.statusText}`);
@@ -108,6 +108,10 @@ const AiChatBot: React.FC = () => {
         setContinuationMessageId(null);
       }
     } catch (error) {
+      setMessages((messages) => [
+        ...messages,
+        { role: 'assistant', content: "I'm temporarily unavailable. Please check back in a few hours!" },
+      ]);
       console.error('Error fetching chat response:', error);
       setLoading(false);
     }
