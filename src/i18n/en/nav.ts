@@ -164,6 +164,11 @@ export const subMenus = [
  { text: 'clearPersistFlag', slug: 'sdk/clear-persist-flag', key: 'sdk/troubleshooting' },
  { text: 'start', slug: 'sdk/start', key: 'sdk/troubleshooting' },
  { text: 'stop', slug: 'sdk/stop', key: 'sdk/troubleshooting' },
+ { text: 'coldStart', slug: 'sdk/cold-start', key: 'sdk/troubleshooting' },
+ { text: 'startOfflineRecording', slug: 'sdk/start-offline-recording', key: 'sdk/troubleshooting' },
+ { text: 'uploadOfflineRecording', slug: 'sdk/upload-offline-recording', key: 'sdk/troubleshooting' },
+ { text: 'forceFlushBatch', slug: 'sdk/force-flush-batch', key: 'sdk/troubleshooting' },
+ { text: 'trackWs', slug: 'sdk/track-ws', key: 'sdk/troubleshooting' },
 
  { text: 'iOS SDK (beta)', header:true,type: 'learn', slug: 'ios-sdk/', key: 'ios-sdk', icon: 'ios_app' },
  { text: 'Initialization', slug: 'ios-sdk/init', key: 'ios-sdk' },
