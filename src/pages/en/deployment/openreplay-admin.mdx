@@ -95,6 +95,62 @@ Finally, reinstall the service for the new limits to take effect (your data won'
 openreplay -R
 ```
 
+## Upgrade PostgreSQL
+
+Below are the instructions for upgrading PostgreSQL to version 1.16 or later:
+
+1. Take the DB dump in the persistent volume:
+
+   If you're using a vanilla installation, execute the following command to take a database dump:
+
+   > Note: You can expect the data to get compressed to 3:1 ratio (example: if you have 15G of postgres data, it will be 5G in the dump). So make sure you have enough disk space.
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'PGPASSWORD=$POSTGRES_PASSWORD PGUSER=postgres pg_dumpall -v > /bitnami/postgresql/dumpall.sql'
+   ```
+
+2. Delete the existing data directory:
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'rm -rf /bitnami/postgresql/data'
+   ```
+
+3. Scale the PostgreSQL StatefulSet to zero to stop the current pods:
+
+   ```sh
+   kubectl scale sts postgresql --replicas=0 -n db
+   ```
+
+4. Update the PostgreSQL image to version 16.3.0 or later:
+
+   ```sh
+   kubectl set image statefulset/postgresql postgresql=bitnami/postgresql:16.3.0 -n db
+   ```
+
+5. Scale the StatefulSet back to one to start the updated pod:
+
+   ```sh
+   kubectl scale sts postgresql --replicas=1 -n db
+   ```
+
+6. Ensure that the pod is running and the scaling operation is complete:
+
+   ```sh
+   kg po -n db -l app.kubernetes.io/name=postgresql
+   ```
+
+7. Restore the database from the dump:
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'PGPASSWORD=$POSTGRES_PASSWORD PGUSER=postgres psql -f /bitnami/postgresql/dumpall.sql'
+   ```
+
+8. Once the upgrade is complete, you can delete the dump file from the PostgreSQL pod:
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'rm /bitnami/postgresql/dumpall.sql'
+   ```
+
 ## Uninstall OpenReplay
 
 Run the below commands to uninstall OpenReplay:
