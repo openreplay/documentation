@@ -73,6 +73,8 @@ export default [
 	{ text: 'OmniSearch', slug: 'tutorials/omnisearch', key: 'blog-installation' },
 	{ text: 'Custom Dashboards', slug: 'tutorials/custom-dashboard', key: 'blog-installation' },
 	{ text: 'Network Options (Web)', slug: 'installation/network-options', key: 'blog-installation' },
+	{ text: 'Spot (Chrome Extension)', slug: 'tutorials/spot', key: 'blog-tutorial' },
+
 	//{ text: 'Setup OpenReplay', slug: 'installation/setup-or', key: 'blog-installation' },
 
 	//plugins
