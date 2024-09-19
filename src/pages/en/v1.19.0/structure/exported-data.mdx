@@ -10,16 +10,18 @@ OpenReplay Enterprise Edition comes with different connectors for exporting capt
 - PostgreSQL
 - Snowflake
 - ClickHouse
+- 
 
 ## Sessions
 
-|﻿Column name|Type|Category|Description|
+|Column name|Type|Category|Description|
 |-----------|----|--------|-----------|
 sessionid|text|session metadata|Unique session identifier
-user_agent|text|session metadata|Example: Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0
 user_browser|text|session metadata|User browser
 user_browser_version|text|session metadata|User browser version
 user_country|text|session metadata|User country
+user_city|text|session metadata|User city
+user_state|text|session metadata|User state
 user_device|text|session metadata|User device
 user_device_heap_size|biginteger|session metadata|User device heap size
 user_device_memory_size|biginteger|session metadata|The approximate amount of device memory in gigabytes
@@ -29,11 +31,11 @@ user_os_version|text|session metadata|User OS version
 user_uuid|text|session metadata|User unique identifier
 connection_effective_bandwidth|biginteger|session metadata|The effective bandwidth estimate in megabits per second
 connection_type|text|session metadata|Connection type. One of the following: bluetooth, cellular, ethernet, none, wifi, other, unknown
-metadata_key|text|session metadata|Additional information about users (also known as traits or user variables). Learn more about [metadata](https://docs.openreplay.com/installation/metadata)
-metadata_value|text|session metadata|Additional information about users (also known as traits or user variables). Learn more about [metadata](https://docs.openreplay.com/installation/metadata)
 referrer|text|session metadata|the URI of the page that linked to this page
 user_anonymous_id|text|session metadata|Optional user identifier
 user_id|text|session metadata|An identifier of a user within a session, that can be set manually with setUserID() [tracker method](https://docs.openreplay.com/installation/identify-user)
+tracker_version|text|technical|Version of tracker
+rev_id|text|technical|Revision ID
 session_start_timestamp|biginteger|session metadata|Timestamp when the first message from the session was generated on the user side
 session_end_timestamp|biginteger|session metadata|Timestamp when the last message from a session arrived followed by 2 minutes and 30 seconds of inactivity
 session_duration|biginteger|session metadata|The difference between session_end_timestamp and session_start_timestamp in milliseconds
@@ -51,7 +53,18 @@ js_exceptions_count|biginteger|issues and events|A count of JavaScript exception
 inputs_count|biginteger|issues and events|A count of Input events within a session
 clicks_count|biginteger|issues and events|A count of Click events within a session
 issues_count|biginteger|issues and events|A count of Issue events within a session
-urls_count|biginteger|issues and events|A count of different URL visited during a session
+pages_count|biginteger|issues and events|A count of different URL visited during a session
+metadata_1|text|session metadata|Additional information about users (also known as traits or user variables). Learn more about [metadata](https://docs.openreplay.com/installation/metadata)
+metadata_2|text|session metadata|Additional information about users (also known as traits or user variables). Learn more about [metadata](https://docs.openreplay.com/installation/metadata)
+metadata_3|text|session metadata|Additional information about users (also known as traits or user variables). Learn more about [metadata](https://docs.openreplay.com/installation/metadata)
+metadata_4|text|session metadata|Additional information about users (also known as traits or user variables). Learn more about [metadata](https://docs.openreplay.com/installation/metadata)
+metadata_5|text|session metadata|Additional information about users (also known as traits or user variables). Learn more about [metadata](https://docs.openreplay.com/installation/metadata)
+metadata_6|text|session metadata|Additional information about users (also known as traits or user variables). Learn more about [metadata](https://docs.openreplay.com/installation/metadata)
+metadata_7|text|session metadata|Additional information about users (also known as traits or user variables). Learn more about [metadata](https://docs.openreplay.com/installation/metadata)
+metadata_8|text|session metadata|Additional information about users (also known as traits or user variables). Learn more about [metadata](https://docs.openreplay.com/installation/metadata)
+metadata_9|text|session metadata|Additional information about users (also known as traits or user variables). Learn more about [metadata](https://docs.openreplay.com/installation/metadata)
+metadata_10|text|session metadata|Additional information about users (also known as traits or user variables). Learn more about [metadata](https://docs.openreplay.com/installation/metadata)
+
 
 ## Events
 
@@ -61,12 +74,13 @@ sessionid|biginteger|technical|Unique session identifier
 consolelog_level|text|technical|Verbose, Info, Warning, or Error
 consolelog_value|text|technical|Console log message content
 customevent_name|text|technical|Name of the custom event
-customevent_payload|text|technical|custom event's payload
+customevent_payload|text|technical|Custom event's payload
 jsexception_message|text|technical|JS exception message content
 jsexception_name|text|technical|Exception's name
 jsexception_payload|text|technical|Exception's payload
 jsexception_metadata|text|technical|Exception’s metadata
 networkrequest_type|text|behavioral and technical|Request type (GET, PUT, FETCH,…)
+networkrequest_method|text|behavioral and technical|Request method
 networkrequest_url|text|behavioral and technical|Requested url site
 networkrequest_request|text|behavioral and technical|Request payload
 networkrequest_response|text|behavioral and technical|Response from server
@@ -79,98 +93,55 @@ issueevent_type|text|behavioral and technical|Type of the issue (see Issue Type 
 issueevent_context_string|text|behavioral and technical|Issue message with explanation
 issueevent_context|text|behavioral and technical|Relevant information on the issue
 issueevent_payload|text|behavioral and technical|Payload
+issueevent_url|text|behavioral and technical|URL
 customissue_name|text|technical|Custom issue name
 customissue_payload|text|technical|Custom issue payload
-received_at|biginteger|technical|Timestamp when the event is recieved by connector
-batch_order_number|biginteger|technical|Order number in a batch. To reconstruct the order of messages, sort by received_at and batch_order_number
-
-
-## Events detailed
-
-|Column name|Type|Category|Description|
-|----------|----|--------|-----------|
-sessionid|biginteger|technical|Unique session identifier
-clickevent_hesitationtime|biginteger|behavioral|Time between hovering on element and clicking it
 clickevent_label|text|behavioral|Element text if present
-clickevent_messageid|biginteger|behavioral|Unique identifier of DOM element
+clickevent_selector|text|behavioral|Element selector if present
+clickevent_url|text|behavioral|URL
+clickevent_hesitation_time|biginteger|behavioral|Time between hovering on element and clicking it
 clickevent_timestamp|biginteger|behavioral|Timestamp of click event
-connectioninformation_downlink|biginteger|technical|The effective bandwidth estimate in megabits per second, rounded to the nearest multiple of 25 kilobits per seconds
-connectioninformation_type|text|technical|The type of connection a device is using to communicate with the network. One of the following: bluetooth, cellular, ethernet, none, wifi, other, unknown.
-consolelog_level|text|technical|Verbose, Info, Warning, or Error
-consolelog_value|text|technical|Console log message content
-customevent_name|text|technical|Name of the custom event
-customevent_payload|text|technical|Custom event's payload
-fetch_duration|biginteger|technical|Duration of fetch request
-fetch_request|text|technical|Fetch request payload
-fetch_response|text|technical|Response from server
-fetch_status|biginteger|technical|Status of request
-fetch_timestamp|biginteger|technical|Timestamp of fetch request
-fetch_url|text|technical|URL of server
-graphql_operationkind|text|technical|GraphQL operation kind
-graphql_operationname|text|technical|GraphQL operation
-graphql_response|text|technical|GraphQL response
-graphql_variables|text|technical|GraphQL variables
-inputevent_label|text|behavioral|Element text if exists
-inputevent_messageid|biginteger|behavioral|Unique identifier
-inputevent_timestamp|biginteger|behavioral|Timestamp of input event
-inputevent_value|text|behavioral|Input value
-inputevent_valuemasked|boolean|behavioral|True if value is masked
-jsexception_message|text|technical|JS exception message content
-jsexception_name|text|technical|Exception's name
-jsexception_payload|text|technical|Exception's payload
-jsexception_metadata|text|technical|Exception’s metadata
-networkrequest_type|text|behavioral and technical|Request type (GET, PUT, FETCH,…)
-networkrequest_url|text|behavioral and technical|Requested url site
-networkrequest_request|text|behavioral and technical|Request payload
-networkrequest_response|text|behavioral and technical|Response from server
-networkrequest_status|biginteger|behavioral and technical|Status of the request
-networkrequest_timestamp|biginteger|behavioral and technical|Timestamp of request
-networkrequest_duration|biginteger|behavioral and technical|Total duration of the request
-pageevent_domcontentloadedeventend|biginteger|technical|Timestamp when DOM contents are loaded
-pageevent_domcontentloadedeventstart|biginteger|technical|Timestamp of DOM contents load
-pageevent_firstcontentfulpaint|biginteger|technical|Timestamp when the browser first rendered any text, image
-pageevent_firstpaint|bginteger|technical|Is the time between navigation and when the browser renders the first pixels to the screen, rendering anything that is visually different from what was on the screen prior to navigation. It answers the question: Is it happening?
-pageevent_loaded|boolean|technical|True if loaded
-pageevent_loadeventend|biginteger|technical|Timestamp when page loaded
-pageevent_loadeventstart|biginteger|technical|Timestamp when start page loading
-pageevent_messageid|biginteger|technical|Unique identifier
+pageevent_url|text|technical|URL
 pageevent_referrer|text|technical|The URI of the page that linked to this page
-pageevent_requeststart|bginteger|technical|Timestamp of start of the request
-pageevent_responseend|biginteger|technical|Timestamp of response end
-pageevent_responsestart|bginteger|technical|Timestamp of response start
 pageevent_speedindex|biginteger|technical|The average time at which visible parts of the page are displayed. Expressed in milliseconds
 pageevent_timestamp|biginteger|technical|Timestamp of the event
-pageevent_url|text|technical|URL
-sessionend_timestamp|biginteger|technical|Timestamp when session end
-sessionend_encryption_key|text|technical|Encryption key
-sessionstart_projectid|biginteger|technical|Session’s project id
-sessionstart_revid|text|technical|Revision id
-sessionstart_timestamp|biginteger|technical|Timestamp when session start
-sessionstart_trackerversion|text|technical|Version of tracker
-sessionstart_useragent|text|technical|Example: Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0
-sessionstart_userbrowser|text|technical|User browser
-sessionstart_userbrowserversion|text|technical|User browser version
-sessionstart_usercountry|text|technical|User country
-sessionstart_userdevice|text|technical|User’s device
-sessionstart_userdeviceheapsize|biginteger|technical|User device heap size
-sessionstart_userdevicememorysize|biginteger|technical|The approximate amount of device memory in gigabytes
-sessionstart_userdevicetype|text|technical|User’s device type
-sessionstart_useros|text|technical|User’s OS
-sessionstart_userosversion|text|technical|OS version
-sessionstart_useruuid|text|technical|User’s unique identifier
-setpagelocation_navigationstart|biginteger|behavioral and technical|Timestamp of start of navigation
-setpagelocation_referrer|text|behavioral and technical|The URI of the page that linked to the url
-setpagelocation_url|text|behavioral and technical|URL location
-issueevent_message_id|biginteger|behavioral and technical|Unique identifier
-issueevent_timestamp|biginteger|behavioral and technical|Timestamp of the event
-issueevent_type|text|behavioral and technical|Type of the issue (see Issue Type documentation for more)
-issueevent_context_string|text|behavioral and technical|Issue message with explanation
-issueevent_context|text|behavioral and technical|Relevant information on the issue
-issueevent_payload|text|behavioral and technical|Payload
-customissue_name|text|technical|Custom issue name
-customissue_payload|text|technical|Custom issue payload
+inputevent_label|text|behavioral|Element text if exists
+inputevent_hesitation_time|biginteger|behavioral|Hesitation time when typing the input
+inputevent_input_duration|text|behavioral|Input duration
+inputevent_timestamp|biginteger|behavioral|Timestamp of input event
+mobile_event_name|text|behavioral and technical|Mobile event name
+mobile_event_payload|text|behavioral and technical|Mobile event payload
+mobile_networkcall_type|text|technical|Mobile network call type
+mobile_networkcall_method|text|technical|Mobile network call method
+mobile_networkcall_url|text|technical|Mobile network call URL
+mobile_networkcall_request|text|technical|Mobile network request
+mobile_networkcall_response|text|technical|Mobile network response
+mobile_networkcall_status|text|technical|Mobile network request status
+mobile_networkcall_timestamp|biginteger|technical|Mobile network request timestamp
+mobile_networkcall_duration|biginteger|technical|Mobile network request duration
+mobile_clickevent_x|biginteger|behavioral|Mobile tap event x coordinate
+mobile_clickevent_y|biginteger|behavioral|Mobile tap event y coordinate
+mobile_clickevent_timestamp|biginteger|behavioral|Mobile tap event timestamp
+mobile_clickevent_label|text|behavioral|Mobile tap event label
+mobile_swipeevent_x|biginteger|behavioral|Mobile swipe event x coordinate
+mobile_swipeevent_y|biginteger|behavioral|Mobile swipe event y coordinate
+mobile_swipeevent_timestamp|biginteger|behavioral|Mobile swipe event timestamp
+mobile_swipeevent_label|text|behavioral|Mobile swipe event label
+mobile_inputevent_label|text|behavioral|Mobile input label
+mobile_inputevent_value|text|behavioral|Mobile input value
+mobile_crash_name|text|technical|Mobile crash view name
+mobile_crash_reason|text|technical|Mobile crash error
+mobile_crash_stacktrace|text|technical|Mobile crash stacktrace
+mobile_issueevent_timestamp|biginteger|technical|Mobile issue name
+mobile_issueevent_type|text|technical|Mobile issue type
+mobile_issueevent_context_string|text|technical|Mobile issue context
+mobile_issueevent_context|text|technical|Mobile issue
+mobile_issueevent_payload|text|technical|Mobile issue payload
+mobile_viewcomponentevent_screen_name|text|behavioral|Mobile screen name
+mobile_viewcomponentevent_view_name|text|behavioral|Mobile view name
+mobile_viewcomponentevent_visible|boolean|behavioral|Is visible
+mobile_viewcomponentevent_timestamp|biginteger|behavioral|Mobile screen/view event timestamp
 received_at|biginteger|technical|Timestamp when the event is recieved by connector
-batch_order_number|biginteger|technical|Order number in a batch. To reconstruct the order of messages, sort by received_at and batch_order_number
 
 ## Have questions?
 If you have any questions about this process, feel free to reach out to us on our [Slack](https://slack.openreplay.com) or check out our [Forum](https://forum.openreplay.com).
