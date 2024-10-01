@@ -15,7 +15,7 @@ The local schema and recorded data must now be exported to the external Postgres
 1. First, backup the local database:
 
 ```bash
-kubectl exec -n db postgresql-postgresql-0 -- bash -c 'PGPASSWORD=<postgresPassword from vars.yaml> pg_dumpall -U postgres '"  > ~/path/to/dump.sql
+kubectl exec -n db postgresql-0 -- bash -c 'PGPASSWORD=<postgresPassword from vars.yaml> pg_dumpall -U postgres '  > ~/path/to/dump.sql
 ```
 
 2. Install the Postgres client on your OpenReplay instance and ensure it has access to the external database:
@@ -27,7 +27,7 @@ sudo apt install postgresql-client
 3. Restore the backup into the new externalPostgres:
 
 ```bash
-PGPASSWORD=PG_PASSWORD psql -U PG_USERNAME -h [RDS_URL} -d postgres < /path/to/dump.sql
+PGPASSWORD=PG_PASSWORD psql -U PG_USERNAME -h {RDS_URL} -d postgres < /path/to/dump.sql
 ```
 
 4. Finally, update all `postgres` variables in `openreplay -e` and point them towards the external database:
