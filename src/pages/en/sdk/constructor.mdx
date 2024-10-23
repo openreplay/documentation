@@ -90,6 +90,29 @@ There are a set of options you can pass to the constructor. Only `projectKey` is
 - `fixedCanvasScaling: boolean` Forces canvas images to be rendered with pixel density of 1 instead of devicePixelRatio. (lowers the potential quality of an image to make end result smaller in size). Default: `false`.
 - `disableCanvas?: boolean` Disables recording of canvas elements. Default: `false`.
 - `assistSocketHost?: string` Can be used to set a specific host for assist plugin connection. Defaults to the value of `ingestPoint`.
+- `nodes?: { maintainer: MaintainerOptions }` The new `nodes.maintainer` option helps manage memory and clean up DOM nodes that are no longer in use. It has the following parameters:
+    - `interval: number`: Time interval (in milliseconds) between cleanup runs. Default: 30 * 1000 (30 seconds).
+    - `batchSize: number`: Number of nodes to check during each cleanup run. Default: 2500.
+    - `enabled: boolean`: Enable or disable the node maintainer. Default: true.
+
+#### Example
+
+```js
+
+import OpenReplay from '@openreplay/tracker/cjs';
+
+const tracker = new OpenReplay({
+  projectKey: 'your_project_key',
+  nodes: {
+    maintainer: {
+      interval: 60 * 1000, // Run cleanup every minute
+      batchSize: 2500, // Check nodes in batches of 2500
+      enabled: true, // Enable the node maintainer
+    }
+  }
+});
+
+```
 
 ### Privacy
 
@@ -176,6 +199,7 @@ The `crossdomain` option relates to capturing iFrames from different domains. It
 		parentDomain?: string
 	}
 ```
+As of Tracker version [14.0.10](https://github.com/openreplay/openreplay/blob/dev/tracker/tracker/CHANGELOG.md), the **`data-domain` attribute is no longer required** on HTML elements when working with cross-domain iFrames.
 
 See [Cross-domain iFrame Tracking](/tutorials/crossdomain-iframe) for more details on how to capture an iFrame from a different domain. 
 
