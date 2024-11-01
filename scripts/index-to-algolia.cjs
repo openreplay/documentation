@@ -1,4 +1,4 @@
-const {algoliasearch} = require('algoliasearch')
+const algoliasearch = require('algoliasearch')
 const {readFile} = require('fs')
 const dotenv = require('dotenv')
 
