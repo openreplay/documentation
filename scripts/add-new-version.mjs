@@ -120,9 +120,11 @@ class VersionManager {
 		});
 
 		if (!versionAlreadyInList) {
-			const newCode = VersionManager.format(astToString(ast), versionsListPath);
-			fs.writeFileSync(resolve(versionsListPath), newCode, { encoding: 'utf-8' });
-			done('Updated', kleur.bold(versionsListPath));
+			VersionManager.format(astToString(ast), versionsListPath).then((newCode) => {
+                console.log(newCode)
+                fs.writeFileSync(resolve(versionsListPath), newCode, { encoding: 'utf-8' });
+                done('Updated', kleur.bold(versionsListPath));
+            });
 		}
 	}
 }
