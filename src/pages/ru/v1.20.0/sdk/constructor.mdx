@@ -1,0 +1,261 @@
+---
+title: "JavaScript SDK - Инициализация SDK"
+metaTitle: "JavaScript SDK - Инициализация SDK"
+metaDescription: "Параметры конфигурации для метода конструктора трекера"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+## Установка
+
+Следующая команда установит трекер и вместе с ним SDK, чтобы вы могли воспользоваться всеми возможностями трекера.
+
+```bash
+npm i @openreplay/tracker
+```
+
+## Инициализация
+При создании экземпляра трекера OpenReplay вы можете указать несколько параметров конфигурации для настройки различных аспектов записи и работы с записями.
+
+Вы должны установить опцию `projectKey` в конструкторе. Вы можете получить это значение из вашей панели управления OpenReplay в разделе 'Preferences > Projects'.
+
+<Aside type="tip">
+  Обратите внимание, что если у вас несколько проектов, вам нужно внимательно выбрать ключ проекта.
+</Aside>
+
+
+### Одностраничные приложения (SPA)
+Если ваш веб-сайт является **Одностраничным приложением (SPA)**, используйте следующий код:
+
+```js
+import OpenReplay from '@openreplay/tracker';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+tracker.start(); // возвращает промис с информацией о сессии (sessionID, sessionHash, userUUID)
+```
+
+### Серверный рендеринг (SSR)
+Если ваше веб-приложение использует **Серверный рендеринг (SSR)** (например, NextJS, NuxtJS), используйте следующий код. Убедитесь, что `tracker.start()` вызывается после запуска приложения (в `useEffect` или `componentDidMount`).
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+//...
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY,
+});
+//...
+function MyApp() {
+  useEffect(() => { // используйте componentDidMount в случае классового компонента React
+    tracker.start(); // возвращает промис с информацией о сессии (sessionID, sessionHash, userUUID)
+  }, [])
+}
+```
+
+<Aside type="tip">
+Если вы используете определенный веб-фреймворк, ознакомьтесь с нашим [разделом настройки трекера](/using-or), чтобы узнать, как начать.
+</Aside>
+
+## Пример
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+//...
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY,
+      ingestPoint: "https://openreplay.mydomain.com/ingest", // при использовании самоуправляемой версии OpenReplay
+      capturePerformance: true,
+      __DISABLE_SECURE_MODE: true // для локального тестирования
+});
+```
+
+## Параметры инициализации
+
+Существует набор опций, которые вы можете передать в конструктор. Только `projectKey` является обязательным.
+
+### Общие настройки 
+
+- `projectKey: string` ID проекта, который вы отслеживаете.
+- `sessionHash?: string` Хэш начальной сессии. Это полезно, когда сессии переходят через разные поддомены в вашем веб-приложении, но вы хотите объединить их в одну запись. В случае, если продолжить сессию невозможно (не существует или завершена), трекер автоматически начнет новую. Он также возвращается при вызове `stop()`. Подробнее об этом [здесь](/troubleshooting/session-recordings#replaysarebrokenacrosssubdomains).
+- `ingestPoint?: string` Ваш домен OpenReplay (например, https://openreplay.mydomain.com/ingest), на который трекер будет отправлять события. Это необязательно для пользователей OpenReplay Cloud. По умолчанию: `https://api.openreplay.com/ingest` (указывает на OpenReplay Cloud). 
+- `revID?: string` ID ревизии вашего веб-приложения. Полезно при поиске проблем, происходящих в определенной версии.
+- `resourceBaseHref?: string` Ссылается на общедоступный домен, где OpenReplay может получить доступ к ресурсам (стили, шрифты и иконки). Поскольку они необходимы для корректного воспроизведения сессии, эта опция полезна для обхода ограничения размещения вашего сайта (и, следовательно, ресурсов) в приватном домене. Пример: `https://mypublicsite.com/assets/`.
+- `captureIFrames?: boolean` Для захвата всех iframe того же домена в вашем веб-приложении. Если вы хотите отслеживать определенный iframe, просто добавьте HTML-атрибут `data-openreplay-capture` к тегу `<iframe>`. По умолчанию: `true`.
+- `disableClickmaps?: boolean` Для отключения вычисления CSS-селекторов (используется в Clickmaps). По умолчанию: `false`.
+- `verbose?: boolean` Для включения логирования. По умолчанию: `false`.
+- `autoResetOnWindowOpen?: boolean` Включите эту опцию, чтобы сбросить sessionID при открытии новой вкладки из вашего приложения. Это переопределяет метод `window.open`, чтобы избежать дублирования sessionID из-за общего хранения сессии между вкладками браузера. По умолчанию: `false`.
+- `forceSingleTab: boolean` Отключает возможность записи в нескольких вкладках, которая объединяет пользовательские сессии, проведенные в нескольких вкладках, в одно воспроизведение. Вместо этого, при включении этой опции, сессии, захваченные в разных вкладках браузера, будут записаны в отдельные записи. По умолчанию: `false`.
+- `disableStringDict: boolean` Отключает логику словаря строк (для оптимизации хранения) в записях. По умолчанию: `false`.
+- `fixedCanvasScaling: boolean` Заставляет изображения canvas рендериться с плотностью пикселей 1 вместо devicePixelRatio (снижает потенциальное качество изображения, чтобы итоговый результат был меньше по размеру). По умолчанию: `false`.
+- `disableCanvas?: boolean` Отключает запись элементов canvas. По умолчанию: `false`.
+- `assistSocketHost?: string` Может быть использован для установки определенного хоста для подключения плагина Assist. По умолчанию использует значение `ingestPoint`.
+- `nodes?: { maintainer: MaintainerOptions }` Новая опция `nodes.maintainer` помогает управлять памятью и очищать DOM-узлы, которые больше не используются. Имеет следующие параметры:
+    - `interval: number`: Интервал времени (в миллисекундах) между запусками очистки. По умолчанию: 30 * 1000 (30 секунд).
+    - `batchSize: number`: Количество узлов для проверки во время каждого запуска очистки. По умолчанию: 2500.
+    - `enabled: boolean`: Включение или отключение обслуживания узлов. По умолчанию: true.
+
+#### Пример
+
+```js
+
+import OpenReplay from '@openreplay/tracker/cjs';
+
+const tracker = new OpenReplay({
+  projectKey: 'your_project_key',
+  nodes: {
+    maintainer: {
+      interval: 60 * 1000, // Запускать очистку каждую минуту
+      batchSize: 2500, // Проверять узлы партиями по 2500
+      enabled: true, // Включить обслуживание узлов
+    }
+  }
+});
+
+```
+
+### Конфиденциальность
+
+- `respectDoNotTrack?: boolean` Не запускать трекер, если в браузере пользователя включен флаг do-not-track. По умолчанию: `false`.
+- `obscureTextEmails?: boolean` Скрывает электронные почты в текстовых элементах. Электронные почты будут заменены случайной цепочкой звездочек. По умолчанию: `true`.
+- `obscureTextNumbers?: boolean` Скрывает числа в текстовых элементах. Числа будут заменены случайной цепочкой звездочек. По умолчанию: `false`.
+- `obscureInputEmails?: boolean` Скрывает электронные почты в полях ввода. Значения электронной почты будут заменены случайной цепочкой звездочек. По умолчанию: `true`.
+- `obscureInputNumbers?: boolean` Скрывает числа в полях ввода. Числовые значения будут заменены случайной цепочкой звездочек. По умолчанию: `false`.
+- `obscureInputDates?: boolean` Скрывает даты в полях ввода. Значения дат будут заменены случайной цепочкой звездочек. По умолчанию: `false`.
+- `defaultInputMode?: 0 | 1 | 2` Режим захвата по умолчанию для значений ввода. Соответственно: обычный, скрытый или игнорируемый. По умолчанию: `1` (скрытый).
+
+Обратите внимание, что исключенные данные скрываются или подавляются перед отправкой на серверы OpenReplay. Изменения, примененные к вышеуказанным опциям, не могут быть ретроактивными и будут применяться только к вновь собранным данным. См. [Очистка данных](/installation/sanitize-data) для получения более подробной информации.
+
+### Консоль
+
+- `consoleMethods?: Array<'log' | 'info' | 'warn' | 'error'  'debug' | 'assert'> | null` Указывает список методов консоли для захвата. По умолчанию: `['log', 'info', 'warn', 'error', 'debug', 'assert']`
+- `consoleThrottling?: number` Максимальное количество записей консоли, захватываемых в секунду. По умолчанию: `30`.
+
+### Исключения
+
+- `captureExceptions?: boolean` Захватывает исключения JavaScript и трассировки стека. По умолчанию: `true`.
+
+### Тайминги
+
+- `captureResourceTimings?: boolean` Записывает тайминги ресурсов. По умолчанию: `true`.
+- `capturePageLoadTimings?: boolean` Записывает тайминги загрузки страницы. По умолчанию: `true`.
+- `capturePageRenderTimings?: boolean` Вычисляет метрики рендеринга страницы, такие как Speed Index, Visually Complete или Time To Interactive. Требует `captureResourceTimings = true`. По умолчанию: `true`.
+
+### Производительность
+
+- `capturePerformance?: boolean` Для захвата метрик производительности, таких как частота кадров, использование CPU и памяти. По умолчанию: `true`.
+
+### Сеть
+
+Опция `network` относится к захвату сетевых запросов и полезной нагрузки для `fetch` и `XHR`.
+
+```js
+network?: {
+    failuresOnly: boolean;
+    sessionTokenHeader: string;
+    ignoreHeaders: Array<string> | boolean;
+    capturePayload: boolean; // убедитесь, что вы очистили ваши данные перед включением этого
+    sanitizer: (RequestResponseData) => RequestResponseData | null;
+    captureInIframes: boolean;
+    axiosInstances: AxiosInstance[];
+    useProxy?: boolean;
+    tokenUrlMatcher?: (url: string) => boolean;
+  }
+```
+
+См. [Сетевые опции](/installation/network-options) для примеров и более подробной информации о том, как редактировать конфиденциальные данные. 
+
+### Canvas
+
+Опция `canvas` относится к захвату элементов canvas/WebGL:
+
+```js
+canvas?: {
+  disableCanvas?: boolean
+  fixedCanvasScaling?: boolean
+  useAnimationFrame?: boolean
+  fileExt?: 'webp' | 'png' | 'jpeg' | 'avif'
+}
+```
+
+См. [Canvas и WebGL](/installation/canvas) для того, чтобы узнать, как включить эту функцию и получить более подробную информацию о доступных опциях.
+
+### Кросс-доменные iFrame
+
+Опция `crossdomain` относится к захвату iFrame с разных доменов. Используется в сочетании с опцией `captureIFrames`, которая должна быть установлена в `true`.
+
+```ts 
+ crossdomain?: {
+    /**
+     * Включить кросс-доменное отслеживание
+     * @default false
+     * */
+    enabled?: boolean
+    /**
+     * Используется для указания родительского домена, по умолчанию '*'
+     * (Проверьте настройки CSP)
+     * @default '*'
+     * */
+    parentDomain?: string
+}
+```
+Начиная с версии трекера [14.0.10](https://github.com/openreplay/openreplay/blob/dev/tracker/tracker/CHANGELOG.md), **атрибут `data-domain` больше не требуется** на HTML-элементах при работе с кросс-доменными iFrame.
+
+См. [Отслеживание кросс-доменных iFrame](/tutorials/crossdomain-iframe) для получения более подробной информации о том, как захватить iFrame с другого домена. 
+
+### Курсор мыши
+
+Опция `mouse` относится к захвату селекторов для кликов с целью построения карт кликов.
+
+```js
+mouse?: 
+  {
+  disableClickmaps?: boolean
+  minSelectorDepth?: number
+  nthThreshold?: number
+  maxOptimiseTries?: number
+  }
+```
+
+- `disableClickmaps?: boolean` Полностью отключает вычисление селекторов. По умолчанию: `false`.
+- `minSelectorDepth?: number` Минимальная длина оптимизированного селектора (по умолчанию 2). Пример: `body > div > div > p => body > p`
+- `nthThreshold?: number` Количество попыток селектора перед использованием селекторов nth-child. Это **дорогостоящая операция** и может привести к значительной нагрузке, не устанавливайте выше 2000. По умолчанию: `1000`.
+- `maxOptimiseTries?: number` Количество попыток оптимизировать и сократить селектор. По умолчанию: `10 000`.
+
+### Повторные подключения
+
+- `connAttemptCount?: number` Максимальное количество повторных попыток, когда HTTP-запросы трекера не достигают бэкенда. По умолчанию: `10`.
+- `connAttemptGap?: number` Длительность между каждой повторной попыткой (в миллисекундах). По умолчанию: `8000`.
+
+### Флаги функций
+
+- `onFlagsLoad` колбэк, используемый для выполнения действия после загрузки флагов функций (каждый раз).
+
+```ts
+ flags?: {
+    onFlagsLoad?: (flags: IFeatureFlag[]) => void
+ } 
+
+// ...
+interface IFeatureFlag {
+  key: string
+  is_persist: boolean
+  value: string | boolean
+  payload: string
+}
+```
+
+### Безопасность
+
+- `__DISABLE_SECURE_MODE?: boolean` Для разрешения небезопасного соединения между трекером и бэкендом на сайтах без SSL. Это следует использовать **только в целях разработки**. По умолчанию: `false`.
+
+<Aside type="caution">
+    Обратите внимание, что при использовании `__DISABLE_SECURE_MODE` с вашей локальной рабочей станции вы **можете** увидеть визуальные различия при просмотре записи, такие как неправильная загрузка CSS-стилей.
+    Для оптимальной записи ваши тесты должны выполняться с общедоступного URL.
+</Aside>
+
+## Методы
+
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+  <ORCard title="Узнайте о методах" url="/sdk/methods" hideIcon={true} width="100"/>
+</div>

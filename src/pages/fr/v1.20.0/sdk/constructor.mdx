@@ -1,0 +1,261 @@
+---
+title: "JavaScript SDK - Initialiser le SDK"
+metaTitle: "JavaScript SDK - Initialiser le SDK"
+metaDescription: "Options de configuration pour la méthode du constructeur du tracker"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+## Installation
+
+La ligne suivante installera le tracker et avec lui le SDK pour que vous puissiez profiter de toutes les fonctionnalités du tracker.
+
+```bash
+npm i @openreplay/tracker
+```
+
+## Initialisation
+Lors de l'instanciation du tracker OpenReplay, il existe plusieurs options de configuration que vous pouvez fournir pour personnaliser de nombreux aspects de l'enregistrement et de l'expérience d'enregistrement.
+
+Vous devez définir l'option `projectKey` dans le constructeur. Vous pouvez obtenir cette valeur depuis votre tableau de bord OpenReplay sous 'Préférences > Projets'.
+
+<Aside type="tip">
+  Notez que si vous avez plusieurs projets, vous devez faire attention au project key que vous choisissez.
+</Aside>
+
+
+### Applications monopage (SPA)
+Si votre site web est une **Application Monopage (SPA)**, utilisez le code ci-dessous :
+
+```js
+import OpenReplay from '@openreplay/tracker';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+tracker.start(); // renvoie une promesse avec les informations de session (sessionID, sessionHash, userUUID)
+```
+
+### Rendu côté serveur (SSR)
+Sinon, si votre application web est **rendue côté serveur (SSR)** (c'est-à-dire NextJS, NuxtJS), utilisez le snippet ci-dessous. Assurez-vous que `tracker.start()` est appelé une fois que l'application est démarrée (dans `useEffect` ou `componentDidMount`).
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+//...
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY,
+});
+//...
+function MyApp() {
+  useEffect(() => { // utilisez componentDidMount dans le cas d'un composant de classe React
+    tracker.start(); // renvoie une promesse avec les informations de session (sessionID, sessionHash, userUUID)
+  }, [])
+}
+```
+
+<Aside type="tip">
+Si vous utilisez un framework web particulier, consultez notre [section de configuration du tracker](/using-or) pour savoir comment commencer.
+</Aside>
+
+## Exemple
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+//...
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY,
+      ingestPoint: "https://openreplay.mydomain.com/ingest", // lorsque vous utilisez la version auto-hébergée d'OpenReplay
+      capturePerformance: true,
+      __DISABLE_SECURE_MODE: true // pour les tests locaux
+});
+```
+
+## Options d'initialisation
+
+Il existe un ensemble d'options que vous pouvez passer au constructeur. Seul `projectKey` est requis.
+
+### Usage général 
+
+- `projectKey: string` L'ID du projet que vous suivez.
+- `sessionHash?: string` Le hachage de la session initiale. Ceci est utile lorsque les sessions traversent différents sous-domaines sur votre application web mais que vous souhaitez les assembler en un seul enregistrement. Dans le cas où il n'est pas possible de continuer la session (n'existe pas ou est terminée), le tracker démarrera automatiquement une nouvelle. Il est également renvoyé sur `stop()`. Plus de détails à ce sujet [ici](/troubleshooting/session-recordings#replaysarebrokenacrosssubdomains).
+- `ingestPoint?: string` Votre domaine OpenReplay (par exemple https://openreplay.mydomain.com/ingest), auquel le tracker enverra les événements. Ceci est optionnel pour les utilisateurs d'OpenReplay Cloud. Par défaut : `https://api.openreplay.com/ingest` (qui pointe vers OpenReplay Cloud). 
+- `revID?: string` L'ID de révision de votre application web. Utile lors de la recherche de problèmes se produisant sur une version spécifique.
+- `resourceBaseHref?: string` Se réfère au domaine accessible publiquement où les ressources (styles, polices et icônes) pourraient être récupérées par OpenReplay. Puisqu'elles sont nécessaires pour une relecture correcte de la session, cette option est utile pour contourner la limitation d'avoir votre site (et donc les ressources) hébergé dans un domaine privé. Exemple : `https://mysitepublic.com/assets/`.
+- `captureIFrames?: boolean` Pour capturer tous les iFrames du même domaine dans votre application web. Si vous souhaitez suivre un iFrame spécifique, alors ajoutez simplement l'attribut HTML `data-openreplay-capture` à la balise `<iframe>`. Par défaut : `true`.
+- `disableClickmaps?: boolean` Pour désactiver le calcul du sélecteur CSS (utilisé dans les cartes de clics). Par défaut : `false`.
+- `verbose?: boolean` Pour activer les logs. Par défaut : `false`.
+- `autoResetOnWindowOpen?: boolean` Activez cette option pour réinitialiser l'ID de session lors de l'ouverture d'un nouvel onglet depuis votre application. Cela remplace la méthode `window.open` pour éviter les ID de session dupliqués en raison du stockage de session partagé entre les onglets du navigateur. Par défaut : `false`.
+- `forceSingleTab: boolean` Désactive la capacité d'enregistrement multi-onglets qui assemble les sessions utilisateur, effectuées sur plusieurs onglets, en une seule relecture. Au lieu de cela, en activant cette option, les sessions capturées dans différents onglets du navigateur seront enregistrées dans des enregistrements séparés. Par défaut : `false`.
+- `disableStringDict: boolean` Désactive la logique du dictionnaire de chaînes (pour optimiser le stockage) dans les enregistrements. Par défaut : `false`.
+- `fixedCanvasScaling: boolean` Force les images du canevas à être rendues avec une densité de pixels de 1 au lieu de devicePixelRatio. (réduit la qualité potentielle d'une image pour rendre le résultat final plus petit en taille). Par défaut : `false`.
+- `disableCanvas?: boolean` Désactive l'enregistrement des éléments canvas. Par défaut : `false`.
+- `assistSocketHost?: string` Peut être utilisé pour définir un hôte spécifique pour la connexion du plugin d'assistance. Défaut sur la valeur de `ingestPoint`.
+- `nodes?: { maintainer: MaintainerOptions }` La nouvelle option `nodes.maintainer` aide à gérer la mémoire et à nettoyer les nœuds DOM qui ne sont plus utilisés. Elle a les paramètres suivants:
+    - `interval: number`: Intervalle de temps (en millisecondes) entre les exécutions de nettoyage. Par défaut : 30 * 1000 (30 secondes).
+    - `batchSize: number`: Nombre de nœuds à vérifier lors de chaque exécution de nettoyage. Par défaut : 2500.
+    - `enabled: boolean`: Activer ou désactiver le mainteneur de nœuds. Par défaut : true.
+
+#### Exemple
+
+```js
+
+import OpenReplay from '@openreplay/tracker/cjs';
+
+const tracker = new OpenReplay({
+  projectKey: 'your_project_key',
+  nodes: {
+    maintainer: {
+      interval: 60 * 1000, // Exécuter le nettoyage chaque minute
+      batchSize: 2500, // Vérifier les nœuds par lots de 2500
+      enabled: true, // Activer le mainteneur de nœuds
+    }
+  }
+});
+
+```
+
+### Confidentialité
+
+- `respectDoNotTrack?: boolean` Ne pas démarrer le tracker si le drapeau do-not-track est activé dans le navigateur de l'utilisateur. Par défaut : `false`.
+- `obscureTextEmails?: boolean` Obscurcit les emails dans les éléments texte. Les emails seront convertis en une chaîne aléatoire d'astérisques. Par défaut : `true`.
+- `obscureTextNumbers?: boolean` Obscurcit les nombres dans les éléments texte. Les nombres seront convertis en une chaîne aléatoire d'astérisques. Par défaut : `false`.
+- `obscureInputEmails?: boolean` Obscurcit les emails dans les champs de saisie. Les valeurs des emails seront converties en une chaîne aléatoire d'astérisques. Par défaut : `true`.
+- `obscureInputNumbers?: boolean` Obscurcit les nombres dans les champs de saisie. Les valeurs numériques seront converties en une chaîne aléatoire d'astérisques. Par défaut : `false`.
+- `obscureInputDates?: boolean` Obscurcit les dates dans les champs de saisie. Les valeurs de date seront converties en une chaîne aléatoire d'astérisques. Par défaut : false.
+- `defaultInputMode?: 0 | 1 | 2` Mode de capture par défaut pour les valeurs d'entrée. Respectivement : en clair, obscurci ou ignoré. Par défaut : `1` (obscurci).
+
+Notez que les données exclues sont obscurcies ou supprimées avant d'être envoyées aux serveurs OpenReplay. Les modifications appliquées aux options ci-dessus ne peuvent pas être rétroactives et ne s'appliqueront qu'aux nouvelles données collectées. Voir [Assainir les données](/installation/sanitize-data) pour plus de détails.
+
+### Console
+
+- `consoleMethods?: Array<'log' | 'info' | 'warn' | 'error'  'debug' | 'assert'> | null` Spécifie la liste des méthodes de console à capturer. Par défaut : `['log', 'info', 'warn', 'error', 'debug', 'assert']`
+- `consoleThrottling?: number` Nombre maximal d'entrées de console capturées par seconde. Par défaut : `30`.
+
+### Exceptions
+
+- `captureExceptions?: boolean` Capture les exceptions JavaScript et les traces de pile. Par défaut : `true`.
+
+### Temps
+
+- `captureResourceTimings?: boolean` Enregistre les temps des ressources. Par défaut : `true`.
+- `capturePageLoadTimings?: boolean` Enregistre les temps de chargement de la page. Par défaut : `true`.
+- `capturePageRenderTimings?: boolean` Calcule les métriques de rendu de la page telles que Speed Index, Visually Complete ou Time To Interactive. Nécessite `captureResourceTimings = true`. Par défaut : `true`.
+
+### Performance
+
+- `capturePerformance?: boolean` Pour capturer les métriques de performance telles que le taux de rafraîchissement, la consommation CPU et mémoire. Par défaut : `true`.
+
+### Réseau
+
+L'option `network` concerne la capture des requêtes réseau et des charges utiles pour `fetch` et `XHR`.
+
+```js
+network?: {
+    failuresOnly: boolean;
+    sessionTokenHeader: string;
+    ignoreHeaders: Array<string> | boolean;
+    capturePayload: boolean; // assurez-vous d'assainir vos données avant d'activer cela
+    sanitizer: (RequestResponseData) => RequestResponseData | null;
+    captureInIframes: boolean;
+    axiosInstances: AxiosInstance[];
+    useProxy?: boolean;
+    tokenUrlMatcher?: (url: string) => boolean;
+  }
+```
+
+Voir [Options réseau](/installation/network-options) pour des exemples et plus de détails sur la façon de masquer les données sensibles. 
+
+### Canvas
+
+L'option `canvas` concerne la capture des éléments canvas/WebGL :
+
+```js
+canvas?: {
+  disableCanvas?: boolean
+  fixedCanvasScaling?: boolean
+  useAnimationFrame?: boolean
+  fileExt?: 'webp' | 'png' | 'jpeg' | 'avif'
+}
+```
+
+Voir [Canvas et WebGL](/installation/canvas) pour savoir comment activer cette fonctionnalité et plus de détails sur les options disponibles.
+
+### iFrames multi-domaines
+
+L'option `crossdomain` concerne la capture des iFrames de différents domaines. Elle est utilisée en conjonction avec l'option `captureIFrames` qui doit être définie sur `true`.
+
+```ts 
+ crossdomain?: {
+    /**
+     * Activer le suivi multi-domaines
+     * @default false
+     * */
+    enabled?: boolean
+    /**
+     * Utilisé pour spécifier le domaine parent, sera '*' par défaut
+     * (Vérifiez les paramètres CSP)
+     * @default '*'
+     * */
+    parentDomain?: string
+}
+```
+À partir de la version du Tracker [14.0.10](https://github.com/openreplay/openreplay/blob/dev/tracker/tracker/CHANGELOG.md), **l'attribut `data-domain` n'est plus requis** sur les éléments HTML lors du travail avec les iFrames multi-domaines.
+
+Voir [Suivi des iFrames multi-domaines](/tutorials/crossdomain-iframe) pour plus de détails sur la façon de capturer un iFrame d'un domaine différent. 
+
+### Pointeur de souris
+
+L'option `mouse` concerne la capture des sélecteurs pour les clics afin de construire des cartes de clics.
+
+```js
+mouse?: 
+  {
+  disableClickmaps?: boolean
+  minSelectorDepth?: number
+  nthThreshold?: number
+  maxOptimiseTries?: number
+  }
+```
+
+- `disableClickmaps?: boolean` Désactive complètement le calcul du sélecteur. Par défaut : `false`.
+- `minSelectorDepth?: number` Longueur minimale d'un sélecteur optimisé (par défaut 2). Exemple : `body > div > div > p => body > p`
+- `nthThreshold?: number` Nombre d'essais de sélecteur avant de revenir aux sélecteurs nth-child. C'est une **opération coûteuse** et peut entraîner une surcharge importante, ne le réglez pas à plus de 2000. Par défaut : `1000`.
+- `maxOptimiseTries?: number` Nombre d'essais pour optimiser et raccourcir le sélecteur. Par défaut : `10 000`.
+
+### Reconnexions
+
+- `connAttemptCount?: number` Nombre maximal de nouvelles tentatives lorsque les requêtes HTTP du tracker ne parviennent pas à atteindre le backend. Par défaut : `10`.
+- `connAttemptGap?: number` Durée entre chaque tentative de réessai (exprimée en ms). Par défaut : `8000`.
+
+### Flags de fonctionnalité
+
+- `onFlagsLoad` Callback utilisé pour effectuer une action une fois que les flags de fonctionnalité sont chargés (à chaque fois).
+
+```ts
+ flags?: {
+ 	onFlagsLoad?: (flags: IFeatureFlag[]) => void
+ } 
+
+// ...
+interface IFeatureFlag {
+  key: string
+  is_persist: boolean
+  value: string | boolean
+  payload: string
+}
+```
+
+### Sécurité
+
+- `__DISABLE_SECURE_MODE?: boolean` Pour autoriser une connexion non sécurisée entre le tracker et le backend sur les sites sans SSL. Ceci doit être utilisé à des **fins de développement uniquement**. Par défaut : `false`.
+
+<Aside type="caution">
+    Notez que lorsque vous utilisez `__DISABLE_SECURE_MODE` depuis votre poste de travail local, vous **pourriez** voir des différences visuelles lors de la lecture, comme des styles CSS ne se chargeant pas correctement.
+    Pour un enregistrement optimal, vos tests doivent être effectués depuis une URL accessible au public.
+</Aside>
+
+## Méthodes
+
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+  <ORCard title="Découvrez les méthodes" url="/sdk/methods" hideIcon={true} width="100"/>
+</div>
