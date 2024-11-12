@@ -121,7 +121,6 @@ class VersionManager {
 
 		if (!versionAlreadyInList) {
 			VersionManager.format(astToString(ast), versionsListPath).then((newCode) => {
-                console.log(newCode)
                 fs.writeFileSync(resolve(versionsListPath), newCode, { encoding: 'utf-8' });
                 done('Updated', kleur.bold(versionsListPath));
             });
