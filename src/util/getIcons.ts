@@ -96,7 +96,10 @@ export function getSVGIcon(title: string) {
              return (`
              <img class="h-7 w-7" src="/landing-icons/icon-datadog.svg" alt="DataDog" />
              `)
-
+          case 'dynatrace':
+             return (`
+             <img class="h-7 w-7" src="/landing-icons/icon-dynatrace.svg" alt="Dynatrace" />
+             `)
 
           case 'react':
              return (`
@@ -117,7 +120,7 @@ export function getSVGIcon(title: string) {
              `)
          case 'newrelic':
              return (`
-             <img class="h-7 w-7" src="/landing-icons/icon-newrelic.svg" alt="NewRelic" />
+             <img class="h-7 w-7" src="/landing-icons/icon-new_relic.svg" alt="NewRelic" />
              `)
          case 'stackdriver':
              return (`
