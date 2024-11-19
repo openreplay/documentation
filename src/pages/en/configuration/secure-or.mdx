@@ -14,7 +14,7 @@ If you're bringing your own certificate, create an SSL secret using the followin
 
 > **Note:** If you don't have a certificate, generate one, that auto-renews, for your subdomain (the one provided during installation) using Let's Encrypt. Simply connect to OpenReplay instance, run `cd openreplay/scripts/helmcharts && bash certmanager.sh` and follow the steps.
 
-If you wish to enable http to https redirection (recommended) edit the configuration using `openreplay -e`, then uncomment the below block, under the `ingress-nginx` section:
+If you wish to enable http to https redirection (recommended) c, then uncomment the below block, under the `ingress-nginx` section:
    
 ```yaml
 ingress-nginx: &ingress-nginx
@@ -24,7 +24,7 @@ ingress-nginx: &ingress-nginx
       force-ssl-redirect: true
 ```
 
-> **Note:** Our `ingress-nginx` runs by default on ports `80|443`, but this can be easily changed, if needed, in `vars.yaml`:
+> **Note:** Our `ingress-nginx` runs by default on ports `80|443`, but this can be easily changed, if needed, in `openreplay -e`:
 
 ```yaml
 ingress-nginx: &ingress-nginx
@@ -55,7 +55,7 @@ Then, save and exit using `:wq` for the service to reload.
 OpenReplay supports reCaptcha (v2) for additional security. To enable this protection:
 
 1. Get a v2 reCaptcha key from Google, with `invisible` mode enabled, i.e. do not prompt for `tick I am not a human`.
-2. Open `/var/lib/openreplay/vars.yaml` then uncomment and update the below env variables in `chalice` section:
+2. Run `openreplay -e` then uncomment and update the below env variables in `chalice` section:
 - `captcha_server`: The URL to your reCaptcha service (e.g. https://www.google.com/recaptcha/api/siteverify)
 - `captcha_key`: You reCaptcha secret key
 
@@ -67,7 +67,7 @@ cd openreplay/frontend
 IMAGE_TAG=my-custom-image PUSH_IMAGE=1 DOCKER_REPO=my-docker-user-name bash -x build.sh
 ```
 
-5. Open `/var/lib/openreplay/vars.yaml` and specify your newly built frontend image in the `frontend` block:
+5. Run `openreplay -e` and specify your newly built frontend image in the `frontend` block:
 
 ```yaml
 frontend:
@@ -101,7 +101,7 @@ frontend:
       add_header Content-Security-Policy "worker-src 'self' blob: https://openreplay.mycompany.com https://*.openreplay.com; script-src 'self' https://openreplay.mycompany.com https://*.openreplay.com;";
 ```
 
-> **Note:** Make sure to replace `https://openreplay.mycompany.com` occurences in the above CSP with your OpenReplay domain name. The value should be the same as `DOMAIN_NAME` in `/var/lib/openreplay/vars.yaml` file. 
+> **Note:** Make sure to replace `https://openreplay.mycompany.com` occurences in the above CSP with your OpenReplay domain name. The value should be the same as `DOMAIN_NAME` when you run `openreplay -e`. 
 
 2. Save and exit using `:wq` to apply your newly added CSP
 
