@@ -1,0 +1,64 @@
+---
+title: "Using Openreplay with Electron"
+metaTitle: "Record Electron app with OpenReplay"
+metaDescription: "How to How to record Electron app with OpenReplay."
+---
+import Aside from '~/components/Aside.astro'
+
+<Aside type="caution">
+	In order to support Cobrowsing Tracker@11.0.0 and Tracker-assist@7.0.0 or higher are required.
+</Aside>
+
+There are two different approaches to integrate OpenReplay into Electron app.
+
+Whenever you will chose one of them, you will have to check your CSP settings to allow following APIs:
+- WebWorkers (used to store, encode and send message batches)
+- Websockets (used in assist plugin to transmit sessions in real time)
+- Peers (used in assist plugin for calls)
+
+## Adding Snippet Code
+
+You can add OpenReplay snippet code  directly to the root of the HTML file of your app.
+This is the easiest way, its also comes with all restrictions of JS snippet.
+
+## Using NPM library
+
+If you're using React, Angular or Vue, you can use exactly same approach and create tracker instance in rendering
+process inside your app. This will allow you to use all features of OpenReplay, including all plugins.
+
+In order to use tracker API outside of rendering context, you will have to use IPC to trigger actions be events
+you're sending from main process.
+
+## Using with Assist Plugin
+
+
+In case of Tracker-Assist plugin, you will have to add `socketHost` property which will point to your ingest point
+without `/ingest` suffix to correct default WS routing.
+
+for NPM library:
+```js
+new Tracker({ ingestPoint: 'https://mywebsite.com/ingest' })
+
+// ...
+
+// or https://app.openreplay.com if you're using SaaS version
+tracker.use(trackerAssist({ socketHost: 'https://mywebsite.com' }))
+```
+
+for code snippet:
+```js
+  var initOpts = {
+    projectKey: "...",
+		ingestPoint: "https://mywebsite.com/ingest",
+    assistSocketHost: "https://mywebsite.com"
+  };
+```
+
+Otherwise WS will try to create connection on `ws://file/ingest` which will fail.
+
+<Aside type="tip">
+	This article is based on our in-home proof-of-concept app made with Electron@26.2.1 and React@16.13.1 configured
+	to handle ESM bundling. If your setup is different, you have any suggestions or questions, please reach out to us on
+	our
+	[Slack community](https://slack.openreplay.com/)
+</Aside>
