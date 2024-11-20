@@ -41,13 +41,41 @@ To link Dynatrace logs with OpenReplay sessions, a unique session ID `openReplay
 Modify your frontend code to add the `openReplaySession.id` to the headers of your API requests:
 
 ```javascript
-// JavaScript Example
-fetch('/api/endpoint', {
-  method: 'GET', // or 'POST', 'PUT', etc.
-  headers: {
+
+// JavaScript Example for for Single Page Applications (SPA):
+
+// Import OpenReplay
+import OpenReplay from '@openreplay/tracker';
+
+// Initialize the tracker
+const tracker = new OpenReplay({
+  projectKey: 'YOUR_PROJECT_KEY',
+});
+
+// Start the tracker and wait for it to resolve
+tracker.start().then(() => {
+  // Get the session ID after the tracker has started
+  const sessionId = tracker.getSessionID();
+
+  const headers = {
     'Content-Type': 'application/json',
-    'openReplaySession.id': openReplay.getSessionToken(), // or window.OpenReplay.getSessionToken() if using the snippet
-  },
+  };
+
+// Get the session ID
+const sessionId = tracker.getSessionID();
+
+const headers = {
+  'Content-Type': 'application/json',
+};
+
+if (sessionId) {
+  headers['openReplaySession.id'] = sessionId;
+}
+
+// Make the API request
+fetch('/api/endpoint', {
+  method: 'GET', // or 'POST', etc.
+  headers,
   // ...other options
 })
   .then(response => {
@@ -56,6 +84,7 @@ fetch('/api/endpoint', {
   .catch(error => {
     // Handle error
   });
+
 ```
 
 ### Include openReplaySession.id in Backend Logs
