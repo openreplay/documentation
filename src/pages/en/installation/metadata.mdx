@@ -1,30 +1,42 @@
 ---
-title: "Metadata"
+title: "Send Metadata"
 metaTitle: "Metadata"
 metaDescription: "How to pass user metadata to OpenReplay. Also known as traits or user variables in other platforms."
 ---
 import Aside from '~/components/Aside.astro'
 
-Additional information about users can be provided with metadata (also known as traits or user variables). They take the form of key/value pairs, and are useful for filtering and searching for specific session replays.
+Metadata allows you to add additional information about users to session replays in the form of key-value pairs. This feature enhances your ability to filter and search session recordings, making it easier to identify relevant sessions.  Refer to this [tutorial](/tutorials/metadata) for more details on how to send metadata.
 
-<Aside type="tip">
-  We also have a detailed tutorial on how to send metadata as part of your session, you can check it out [here](/tutorials/metadata).
+<Aside>
+
+**Metadata keys are project-specific**: Metadata keys must be defined in the dashboard before you can send metadata to OpenReplay. Each project can have its own set of metadata keys.
+
 </Aside>
 
+## Adding Metadata keys to a project  
 
-## 1. Explicitly specify the Metadata
+To set up metadata keys:  
 
-Metadata must be explicitly specified from the dashboard from 'Preferences > Metadata'. You can add up to 10 keys. In the below example, we use `plan`.
+1. Navigate to **Preferences > Metadata** in OpenReplay.  
+2. Choose the project to which you want to add metadata.  
+3. Click **Add Metadata**.  
+4. Enter the desired key name in the **Field Name** input.  
+5. Click **Add** to save the metadata key.  
 
-![Add Metadata](/static/metadata-1.png#center)
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="./images/send-metadata/send_metadata.gif" alt="Send Metadata" style={{ width: '600px', height: 'auto' }} />
+</div>
 
-## 2. Inject Metadata when recording sessions
 
-Once the key(s) added (in this example `plan`) then you can inject the metadata on tracker' start in the form of a key/value pair (`string`).
+> **Limit:** You can add up to 10 metadata keys per project.  
 
-### With NPM
+## Injecting Metadata into Session Replays  
 
-Inject the metadata on tracker' start (in this example `plan`).
+Once your metadata keys are defined, you can send metadata when recording sessions. Below are the available implementation methods:  
+
+### 1. Using NPM  
+
+Inject metadata when starting the tracker:  
 
 ```js
 const tracker = new OpenReplay({
@@ -40,48 +52,47 @@ tracker.start({
 });
 ```
 
-If that's not possible (some or all metadata may be set/known only later in the navigation flow, so way after the tracker starts), then call the `setMetadata` method to do so: 
+If metadata is only available after the tracker starts, use the `setMetadata` method:  
 
-```js
+```javascript
 tracker.setMetadata('plan', 'free'); // after tracker.start()
 ```
 
-### With JavaScript snippet
+### 2. Using JavaScript Snippet  
 
-Below is an example on how to inject the metadata (in this example `plan`) using the snippet. Note the `startOpts` variable/line added, also the parameters change in the second line.
-
-```js
-<!-- OpenReplay Tracking Code -->
-<script>
-var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
-var startOpts = { userID: getUserID(), metadata: { plan: getPlan()} } // use startOpts variable to inject metadata
-(function(A,s,a,y,e,r){
-  r=window.OpenReplay=[e,r,y,[s-1, e]];
-  s=document.createElement('script');s.src=A;s.async=!a;
-  ...
-})(0, "GxPpaDARdn2345fgt321", "//static.openreplay.com/3.5.0/openreplay.js",1,29);
-</script>
-```
-
-If that's not possible (metadata is known later in the navigation flow, so way after the tracker starts), then instead call the `setMetadata` method to identify your users. The identity of the user can be changed anytime during the session by calling `setMetadata`. However, OpenReplay will only keep the last injected user ID.
+To include metadata with the snippet, modify the `startOpts` variable:  
 
 ```js
 <!-- OpenReplay Tracking Code -->
 <script>
-var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
-var startOpts = { userID: "" };
-(function(A,s,a,y,e,r){
-  r=window.OpenReplay=[e,r,y,[s-1, e]];
-  s=document.createElement('script');s.src=A;s.async=!a;
-  ...
-})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+  var initOpts = {
+    projectKey: "project_key",
+    defaultInputMode: 2,
+    obscureTextNumbers: false,
+    obscureTextEmails: true,
+  };
+  const yourMetadata = { yourKey: 'yourValue' };
+  var startOpts = { userID: "", metadata: yourMetadata };
+  (function(A,s,a,y,e,r){
+    r=window.OpenReplay=[e,r,y,[s-1, e]];
+    s=document.createElement('script');s.src=A;s.async=!a;
+    ...
+  })("//static.openreplay.com/latest/openreplay.js",1,0,initOpts,startOpts);
+
 </script>
-  ...
-  OpenReplay.setMetadata("plan", "free"); // set metadata later in your code
-  ...
 ```
 
-### With iOS app
+If metadata becomes available later:  
+
+```html
+<script>
+  OpenReplay.setMetadata("plan", "free");
+</script>
+```
+
+### 3. Using iOS SDK  
+
+Inject metadata in your iOS app:  
 
 ```swift
 import ORTracker
@@ -89,17 +100,20 @@ import ORTracker
 ORTracker.shared.setMetadata(key: String, value: String)
 ```
 
-## 3. Search for Sessions Recordings using Metadata
+## Filtering and searching sessions with Metadata  
 
-Clicking on the omni-search bar will show you the list of available filters, including the metadata key(s) you added. You can now filter sessions recordings by any key/value.
+Metadata keys allow you to filter and search sessions in OpenReplay:  
 
-![Search using Metadata](/static/metadata-2.png#center)
+1. Open the **Omni-Search** in the Sessions view.  
+2. Select your metadata key (e.g., `plan`).  
+3. Enter the metadata value (e.g., `free`) to filter session recordings.  
 
-## 4. See Metadata in Session Replay
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="./images/send-metadata/filter_metatdata.gif" alt="Filter Metadata" style={{ width: '600px', height: 'auto' }} />
+</div>
 
-Metadata key/value pairs are displayed in the session replay page, in the user identification card. Sessions with similar metadata values can be found by clicking on the *loop* icon.
-
-![Metadata in Session Replay](/static/metadata-3.png#center)
+This feature enables quick and precise identification of sessions based on user-specific details.  
 
 ## Have questions?
 If you have any questions about this process, feel free to reach out to us on our [Slack](https://slack.openreplay.com) or check out our [Forum](https://forum.openreplay.com).
+
