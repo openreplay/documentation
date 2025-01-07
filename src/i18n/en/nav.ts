@@ -74,9 +74,9 @@ export default [
 	{ text: 'Overview', slug: 'tutorials', key: 'blog-tutorial' },
 	{ text: 'Team Management', slug: 'tutorials/invite-team-members', key: 'blog-tutorial' },
 	{ text: 'Roles and Access', slug: 'tutorials/roles-and-access', key: 'blog-tutorial' },
-	{ text: 'Custom Heuristics', slug: 'tutorials/custom-heuristics', key: 'blog-tutorial' },
+	// { text: 'Custom Heuristics', slug: 'tutorials/custom-heuristics', key: 'blog-tutorial' },
 	{ text: 'OmniSearch', slug: 'tutorials/omnisearch', key: 'blog-tutorial' },
-	{ text: 'Custom Dashboards', slug: 'tutorials/custom-dashboard', key: 'blog-tutorial' },
+	{ text: 'Dashboards', slug: 'tutorials/custom-dashboard', key: 'blog-tutorial' },
 	{ text: 'Spot (Chrome Extension)', slug: 'tutorials/spot', key: 'blog-tutorial' },
 
 	//{ text: 'Setup OpenReplay', slug: 'installation/setup-or', key: 'blog-installation' },
