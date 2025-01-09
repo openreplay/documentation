@@ -1,0 +1,113 @@
+---
+title: "React Native SDK - Initializing the SDK"
+metaTitle: "React Native SDK - Initializing the SDK"
+metaDescription: "Configuration options for the iOS React Native tracker's constructor method"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	React Native SDK is in Beta. Feel free to give us feedback or report any issue you may encounter on our [Slack](https://slack.openreplay.com) or check out our [Forum](https://forum.openreplay.com).
+</Aside>
+
+## Installation
+
+The following line will install the tracker and with it the SDK for you to take advantage of all tracker features.
+
+```bash
+npm i @openreplay/react-native
+```
+
+## Initialization
+
+When instantiating OpenReplay's tracker, there are several configuration options you can provide to customize many aspects of the recording and the recording experience. You must set the `projectKey` option in the constructor. You can get this value from your OpenReplay dashboard under 'Preferences > Projects'.
+
+<Aside type="tip">
+	Note that if you have multiple projects, you need to be careful which project key you choose.
+</Aside>
+
+
+### Adding the tracking code
+
+Add the following code to your root file:
+
+```js
+import Openreplay from '@openreplay/react-native';
+
+// ...
+useEffect(() => {
+	Openreplay.tracker.startSession(
+		'yourProjectKey',
+		options, // explained below, set {} if empty
+		'https://local.openreplay.instance/ingest' // if you're using our Serverless/SaaS plan then 'https://api.openreplay.com/ingest'
+	);
+}, [])
+```
+
+### Adding enhanced components
+
+In order to track user interactions within the app, you will need to add the following components to your application:
+
+- `ORTouchTrackingView` - added at the root level to track touch interactions
+- `ORTrackedInput` - wrapper around React-Native Input that sends signals whenever user is finished with input
+- `ORSanitizedView` - blurs out the contents inside
+
+```js
+// App.tsx
+import Openreplay from '@openreplay/react-native';
+
+function App() {
+	const start = () => {
+	    Openreplay.tracker.startSession(
+	      process.env.REACT_APP_KEY!,
+	      {},
+	      process.env.REACT_APP_INGEST
+	    );
+	    Openreplay.tracker.setMetadata('key', 'value');
+	    Openreplay.tracker.setUserID('user-id');
+	    Openreplay.patchNetwork(global, () => false, {});
+	};
+	
+	React.useEffect(() => start(), []);
+	
+	return (
+		// this top-level view is required to track touch interactions
+		<Openreplay.ORTouchTrackingView style={styles.container}> 
+		      <View style={styles.container}>
+		         <Openreplay.ORTrackedInput
+		          style={styles.input}
+		          onChangeText={onChangeNumber}
+		          value={number}
+		          placeholder="Trackable input"
+		          numberOfLines={1}
+		        />
+		
+		        <Openreplay.ORSanitizedView style={styles.sanitizedView}>
+		          <Text>Contents of this view are sanitized and invisible on the recording</Text>
+		        </Openreplay.ORSanitizedView>
+		      </View>
+		</Openreplay.ORTouchTrackingView>
+	)
+}
+```
+
+
+### Sanitize Data
+
+See [how to sanitize data in React Native replays](/rn-sdk/sanitization) for more details.
+
+## Initialization Options
+
+By default, all options are marked as `true`:
+
+- `crashes: Bool` Enables crashlytics.
+- `analytics: Bool` Enables analytics tracking of marked views.
+- `performances: Bool` Enables performance listener.
+- `logs: Bool` Enables logs listener.
+- `screen: Bool` Enables screen recorder.
+
+## Methods
+
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="Get to know the methods and modules of the React Native SDK" url="/rn-sdk/modules" hideIcon={true} width="100"/>
+</div>
