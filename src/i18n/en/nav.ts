@@ -55,31 +55,35 @@ export default [
 	{ text: 'Secure OpenReplay', slug: 'configuration/secure-or', key: 'concepts/islands' },
 	{ text: 'Single Sign-On (SSO)', slug: 'configuration/sso', key: 'concepts/islands' },
 
-	{ text: 'Advanced Setup', slug: 'installation/', header: true, type: 'learn', key: 'blog-installation', icon: 'features' },
+	{ text: 'How-tos', slug: 'installation/', header: true, type: 'learn', key: 'blog-installation', icon: 'features' },
 	{ text: 'Overview', slug: 'installation', key: 'blog-installation' },
 	{ text: 'Identify a User', slug: 'installation/identify-user', key: 'blog-installation' },
+	{ text: 'Send Metadata', slug: 'installation/metadata', key: 'blog-installation' },
+
+	{ text: 'Custom Events', slug: 'installation/custom-events', key: 'blog-installation' },
 	{ text: 'Canvas and WebGL', slug: 'installation/canvas', key: 'canvas-recording'},
 	{ text: 'Cross-domain iFrames', slug: 'installation/crossdomain-iframe', key: 'iframe-crossdomain' },
 	{ text: 'WebSockets', slug: 'installation/websockets', key: 'websockets' },
-	{ text: 'Send Metadata', slug: 'installation/metadata', key: 'blog-installation' },
-	{ text: 'Custom Events', slug: 'installation/custom-events', key: 'blog-installation' },
+
 	{ text: 'Network Options (Web)', slug: 'installation/network-options', key: 'blog-installation' },
+	{ text: 'Network Options (Mobile)', slug: 'installation/network-options-mobile', key: 'blog-installation' },
 	{ text: 'Sanitize Data (Web)', slug: 'installation/sanitize-data', key: 'blog-installation' },
-	{ text: 'Sanitize Data (iOS)', slug: 'installation/sanitize-data-ios', key: 'blog-installation' },
+	{ text: 'Sanitize Data (Mobile)', slug: 'installation/sanitize-data-mobile', key: 'blog-installation' },
+
 	{ text: 'Error tracking', slug: 'installation/error-reporting', key: 'blog-installation' },
 	{ text: 'Upload Source maps', slug: 'installation/upload-sourcemaps', key: 'blog-installation' },
 
 
-	{ text: 'How-tos', slug: 'tutorials/', header: true, type: 'learn', key: 'blog-tutorial', icon: 'tutorials' },
+	{ text: 'Guides', slug: 'tutorials/', header: true, type: 'learn', key: 'blog-tutorial', icon: 'tutorials' },
 	{ text: 'Overview', slug: 'tutorials', key: 'blog-tutorial' },
 	{ text: 'Team Management', slug: 'tutorials/invite-team-members', key: 'blog-tutorial' },
 	{ text: 'Roles and Access', slug: 'tutorials/roles-and-access', key: 'blog-tutorial' },
-	// { text: 'Custom Heuristics', slug: 'tutorials/custom-heuristics', key: 'blog-tutorial' },
+	{ text: 'Spot (Chrome Extension)', slug: 'tutorials/spot', key: 'blog-tutorial' },
 	{ text: 'OmniSearch', slug: 'tutorials/omnisearch', key: 'blog-tutorial' },
 	{ text: 'Dashboards', slug: 'tutorials/custom-dashboard', key: 'blog-tutorial' },
-	{ text: 'Spot (Chrome Extension)', slug: 'tutorials/spot', key: 'blog-tutorial' },
 
 	//{ text: 'Setup OpenReplay', slug: 'installation/setup-or', key: 'blog-installation' },
+	// { text: 'Custom Heuristics', slug: 'tutorials/custom-heuristics', key: 'blog-tutorial' },
 
 	//plugins
 	{ text: 'Plugins', header:true, type: 'learn', slug: 'plugins/', key: 'plugins', icon: 'plugins' },
