@@ -3,11 +3,11 @@ title: "SSO"
 metaTitle: "SSO"
 metaDescription: "How to setup Single-Sign-On (SSO) via SAML2."
 ---
-import ORDynamicCode from '../../../components/Code/ORDynamicCode';
+import ORDynamicCode from '../../../../components/Code/ORDynamicCode';
 export const initialValues = {domain: "YOUR_DOMAIN", tenantKey: "TENANT_KEY", port: "PORT"};
 export const ignoreValues = {jumpcloud: "https://sso.jumpcloud.com"};
 
-Single-Sign-On (via SAML2) is available on OpenReplay Enterprise Edition only.
+Single-Sign-On (via SAML2) is available on OpenReplay Enterprise Edition and Dedicated instances only.
 
 ## Identity Provider (IDP) configuration
 
@@ -25,7 +25,7 @@ In the 'Attribute Statements', or the 'Parameters' section, please make sure to 
 
 | Field | Value |
 |----------|-------------|
-| tenantKey | <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> its value can be found in the Dashboard, under 'Preferences' > 'Account' |
+| tenantKey | <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> its value can be found in the Dashboard, under 'Preferences' > 'Account' (Note: It should be ignored/left empty if you're using a dedicated/cloud instance) |
 | firstName | `user.firstName` |
 | lastName |  `user.lastName` |
 | internalId | Internal ID or `user.email` (the user's ID in your identity management system) (optional) |
@@ -74,7 +74,7 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout openreplay-sso.key -
  - **Audience URI (SP Entity ID)** to <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code>
  - **Name ID format** to `EmailAddress`
 5. Define the below fields in 'Attribute Statements':
- - **tenantKey**: format `Basic` and set the value to <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>, found in OpenReplay dashboard under 'Preferences' > 'Account'
+ - **tenantKey**: format `Basic` and set the value to <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>, found in OpenReplay dashboard under 'Preferences' > 'Account' (Note: It should be ignored/left empty if you're using a dedicated/cloud instance).
  - **firstName**: format `Basic` and set the value to `user.firstName`
  - **lastName**: format `Basic` and set the value to `user.lastName`
  - **internalId**: format `Basic` and set the value to `user.email`
@@ -101,7 +101,7 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout openreplay-sso.key -
  - **Reply URL (Assertion Consumer Service URL)** to <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/</code>
  - **Logout URL** to <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/sls/</code>
 5. Add the below claims in 'Attribute & Claims' block and ensure the 'Namespace' field is left empty for each of them:
- - **tenantKey**: set the value to <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>, found in OpenReplay dashboard under 'Preferences' > 'Account'
+ - **tenantKey**: set the value to <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>, found in OpenReplay dashboard under 'Preferences' > 'Account' (Note: It should be ignored/left empty if you're using a dedicated/cloud instance).
  - **firstName**: set the value to `user.givenname`
  - **lastName**: set the value to `user.surname`
  - **internalId**: set the value to `user.mail`
@@ -148,7 +148,7 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout openreplay-sso.key -
 3. Set the 'App name' to OpenReplay (you can upload this <a href="https://docs.openreplay.com/static/OpenReplay.png" target="_blank">icon</a> for 'App icon'') then press 'Continue'
 4. Copy 'SSO URL', 'Entity ID' and 'Certificate' then click 'Continue' (we will use these values in step 11)
 5. Set:
- - **ACS URL** to <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/>/</code> (<code>{initialValues.tenantKey}</code> is found in OpenReplay dashboard under 'Preferences' > 'Account')
+ - **ACS URL** to <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/>/</code> (<code>{initialValues.tenantKey}</code> is found in OpenReplay dashboard under 'Preferences' > 'Account'. Note: It should be ignored/left empty if you're using a dedicated/cloud instance.)
  - **Entity ID** to <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code>
  - **Name ID format** to `Email`
  - **Name ID** to `Basic information > Primary Email`
@@ -167,7 +167,7 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout openreplay-sso.key -
    - **idp_entityId**: paste the value of 'Entity ID'
    - **idp_x509cert**: use <a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">this tool</a> to format the copied/downloaded certificate
    - **idp_name**: set the value to `G-Suite`
-   - **idp_tenantKey**: <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> found in OpenReplay dashboard under 'Preferences' > 'Account'
+   - **idp_tenantKey**: <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> found in OpenReplay dashboard under 'Preferences' > 'Account' (Note: It should be ignored/left empty if you're using a dedicated/cloud instance).
 15. Finally, save and quit using `:wq` for the changes to take effect.
 
 ## Example using JumpCloud
@@ -193,7 +193,7 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout openreplay-sso.key -
 otherwise you have to add a new string-attribute to the JumpCloud's group, call it `OpenReplayRole` and set the value to the role's name, and then in the SSO configuration, select 'Custom User or Group Attribute' and set the value to `OpenReplayRole`.
 - **adminPrivileges**: optional, if it is a constant value for all users, you should define it in the next step, otherwise you have to add a new boolean-attribute to the JumpCloud's group, call it `OpenReplayAdminPrivileges` and set the value to the role's name, and then in the SSO configuration, select 'Custom User or Group Attribute' and set the value to `OpenReplayAdminPrivileges`.
 6. Define the below fields in 'CONSTANT ATTRIBUTES' by pressing the 'add attribute' button:
-- **tenantKey**: set the value to <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>, found in OpenReplay dashboard under 'Preferences' > 'Account'
+- **tenantKey**: set the value to <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>, found in OpenReplay dashboard under 'Preferences' > 'Account' (Note: It should be ignored/left empty if you're using a dedicated/cloud instance).
 - **role**: optional, ignore if defined in the previous step, the user’s role in OpenReplay, should match role name already defined in OpenReplay (default = `member`)
 - **adminPrivileges**: optional, ignore if defined in the previous step, set the value to `true` if you want to give new users admin privilege, `false` if not
 (default = `false`)
