@@ -57,11 +57,11 @@ async function markFallbackNavEntries(lang: string, nav: NavDict) {
 	return nav;
 }
 
-const translations = mapDefaultExports<UIDict>(import.meta.globEager('./*/ui.ts'));
+const translations = mapDefaultExports<UIDict>(import.meta.glob('./*/ui.ts', { eager: true }));
 const docsearchTranslations = mapDefaultExports<DocSearchTranslation>(
-	import.meta.globEager('./*/docsearch.ts')
+	import.meta.glob('./*/docsearch.ts', { eager: true })
 );
-const navTranslations = mapDefaultExports<NavDict>(import.meta.globEager('./*/nav.ts'));
+const navTranslations = mapDefaultExports<NavDict>(import.meta.glob('./*/nav.ts', { eager: true }));
 
 const fallbackLang = 'en';
 
