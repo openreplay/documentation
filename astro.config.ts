@@ -10,15 +10,11 @@ import inspectUrls from '@jsdevtools/rehype-url-inspector';
 import { toString } from 'hast-util-to-string';
 import { h } from 'hastscript';
 import { escape } from 'html-escaper';
-import { astroAsides } from './integrations/astro-asides';
-import { astroCodeSnippets } from './integrations/astro-code-snippets';
 import { astroSpoilers } from './integrations/astro-spoilers';
 import { sitemap } from './integrations/sitemap';
 import { rehypeTasklistEnhancer } from './plugins/rehype-tasklist-enhancer';
 import { remarkFallbackLang } from './plugins/remark-fallback-lang';
-import { backgroundPrimary, foregroundPrimary, tokens } from './syntax-highlighting-theme';
 import { remarkCodeSnippets } from './integrations/astro-code-snippets';
-import { remarkAsides } from './integrations/astro-asides';
 import remarkDirective from 'remark-directive';
 import remarkCopy from 'remark-copy-linked-files'
 import dotenv from 'dotenv';
@@ -52,10 +48,6 @@ const createSROnlyLabel = (text: string) => {
 };
 
 // https://astro.build/config
-
-// https://astro.build/config
-
-// https://astro.build/config
 export default defineConfig({
   site: 'https://docs.openreplay.com/',
   legacy: {
@@ -70,7 +62,7 @@ export default defineConfig({
   },
 
 
-  
+
   integrations: [tailwind(), preact({
     compat: true
   }), sitemap(), mdx({
