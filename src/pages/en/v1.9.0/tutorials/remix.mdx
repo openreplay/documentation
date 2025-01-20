@@ -12,7 +12,7 @@ With your Remix project ready,  look for the `root.jsx` file inside the `app` fo
 
 You can definitely use the code presented by the platform, that would represent the bare minimum you need to get started. If you do, make sure you select the “Server-Side-Rendered (SSR)” option like shown below.
 
-![snippet-code-screenshot.jpg](images/snippet-code-screenshot.jpg)
+![snippet-code-screenshot.jpg](/tutorials/snippet-code-screenshot.jpg)
 
 But for this example, we’re going to create a sample module which we’ll save as `tracker.ts` inside the `app` folder. This module will export a function called `startTracker` which will instantiate the tracker, and get it going.
 
@@ -21,7 +21,7 @@ import {v4 as uuidV4} from 'uuid'
 import Tracker from '@openreplay/tracker'
 
 function defaultGetUserId() {
-    return uuidV4() 
+    return uuidV4()
 }
 
 type TrackerConfig = {
@@ -33,27 +33,27 @@ type TrackerConfig = {
 export function startTracker(config: TrackerConfig) {
     let tracker = null;
     let userId = "";
-   
+
     console.log("Starting tracker...")
     console.log("Custom configuration received: ", config)
-        
+
     const getUserId = (config?.userIdEnabled && config?.getUserId) ? config.getUserId : defaultGetUserId
-        
+
     const trackerConfig: TrackerConfig = {
         projectKey: config?.projectKey
     }
-        
+
     console.log("Tracker configuration")
     console.log(trackerConfig)
     tracker = new Tracker(trackerConfig);
-        
+
     if(config?.userIdEnabled) {
         userId = getUserId()
         tracker.setUserID(userId)
     }
-     
+
     tracker.start();
-      
+
     return {
         tracker,
         userId
@@ -67,7 +67,7 @@ If you run into issues importing the Tracker module from OpenReplay this way, co
 import {v4 as uuidV4} from 'uuid'
 
 function defaultGetUserId() {
-    return uuidV4() 
+    return uuidV4()
 }
 
 type TrackerConfig = {
@@ -80,33 +80,33 @@ export function startTracker(config: TrackerConfig) {
     let tracker = null;
     let Tracker = null
     let userId = "";
-    
+
     (async () => {
-				//dynamic import 
-        Tracker  = (await import('@openreplay/tracker')).default 
+				//dynamic import
+        Tracker  = (await import('@openreplay/tracker')).default
         console.log("Starting tracker...")
         console.log("Custom configuration received: ", config)
-        
+
         const getUserId = (config?.userIdEnabled && config?.getUserId) ? config.getUserId : defaultGetUserId
-        
+
         const trackerConfig: TrackerConfig = {
             projectKey: config?.projectKey
         }
-        
+
         console.log("Tracker configuration")
         console.log(trackerConfig)
         tracker = new Tracker(trackerConfig);
-        
+
         if(config?.userIdEnabled) {
             userId = getUserId()
             tracker.setUserID(userId)
         }
-        
-        
+
+
         tracker.start();
-        
+
     })()
-    
+
     return {
         tracker,
         userId
@@ -114,8 +114,8 @@ export function startTracker(config: TrackerConfig) {
 }
 ```
 
-💡**A note for self-hosted users:** if you’re using the self-hosted version of OpenReplay, you’ll also have to specify the `ingestPoint`configuration property. This property specifies the ingestion endpoint for the tracker’s data. Cloud users don’t need this, because by default 
-the tracker will know where the SaaS version of this endpoint is, but if 
+💡**A note for self-hosted users:** if you’re using the self-hosted version of OpenReplay, you’ll also have to specify the `ingestPoint`configuration property. This property specifies the ingestion endpoint for the tracker’s data. Cloud users don’t need this, because by default
+the tracker will know where the SaaS version of this endpoint is, but if
 you’re self-hosting it, you’ll need to specify it (it should be something like `https://openreplay.mydomain.com/ingest`)
 
 ## Step 2.  Add the code and the tracker to your project
@@ -132,7 +132,7 @@ Once that is done we’re almost ready to start tracking, but we still need  to 
 
 ### Loading ENV variables in Remix
 
-ENV variables are accessible in the back-end, so we’ll take advantage of the `loader` function that can be used to load any external data, including ENV variables. 
+ENV variables are accessible in the back-end, so we’ll take advantage of the `loader` function that can be used to load any external data, including ENV variables.
 
 And then we’ll use the `useLoaderData` hook so that after hydration, our component has access to the data loaded.
 
@@ -167,7 +167,7 @@ export default function App() {
     startTracker({
       projectKey:  loaderData.ENV.projectKey
     })
-  }, []) 
+  }, [])
 
   return (
     <html lang="en">
@@ -190,7 +190,7 @@ The content of your component might be different, depending on what  you’re tr
 
 ## Step 3. Enjoy your debugging experience!
 
-With that out of the way, you can now proceed to deploy your application. 
+With that out of the way, you can now proceed to deploy your application.
 
 Once you start testing it, you’ll see the replays listed a few minutes after the tab was closed (this is to ensure the tab wasn’t closed by accident).
 

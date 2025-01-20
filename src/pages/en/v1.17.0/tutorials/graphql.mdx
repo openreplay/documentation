@@ -7,7 +7,7 @@ If you’re using GraphQL as a query language for your APIs from within your app
 
 In this tutorial, we’ll use the Apollo Boost client, but as long as the client you’re using allows you to set up some middleware, you’ll be able to use the plugin in your code.
 
-If you’d like to follow along, you can [check out this repo](https://github.com/deleteman/openreplay-graphql-example) which contains both, the GraphQL server and the client app. 
+If you’d like to follow along, you can [check out this repo](https://github.com/deleteman/openreplay-graphql-example) which contains both, the GraphQL server and the client app.
 
 ## Setting up the Tracker first
 
@@ -15,7 +15,7 @@ Before installing the GraphQL plugin, you’ll need to have the Tracker installe
 
 We’ll save this code inside a separate module that will export two functions: `init` and `start`.
 
-The first function will instantiate the tracker and set up all plugins; the second will only call the `start` method. 
+The first function will instantiate the tracker and set up all plugins; the second will only call the `start` method.
 
 ```jsx
 import OpenReplay from '@openreplay/tracker';
@@ -28,7 +28,7 @@ export function init({plugins}) {
         projectKey: process.env.OPENREPLAY_PROJECT_KEY
     });
 
-    
+
     let pluginResults = {}
     if(plugins) {
         Object.keys(plugins).forEach( pk => {
@@ -54,7 +54,7 @@ import trackerGraphQL from '@openreplay/tracker-graphql';
 import {init} from './tracker/index'
 
 const {graphqlTracker} = init({
-  plugins: { 
+  plugins: {
     graphqlTracker: trackerGraphQL
   }
 })
@@ -115,11 +115,11 @@ The above code is taken from the Apollo documentation, at this point the tracker
 
 Once done, your replays will show a new section listing all GraphQL operations.
 
-![The GraphQL UI inside the Session Replay](images/graphql-ui.png)
+![The GraphQL UI inside the Session Replay](/images/graphql-ui.png)
 
 That said, the sensitive information that is automatically sanitized by the tracker (like email addresses) will not be sanitized by the plugin. So you’ll have situations like the following where the DOM has the sanitized data, but the operation details show the actual data.
 
-![Sanitized vs Not Sanitized data](images/sanitized-vs-not-sanitized.png)
+![Sanitized vs Not Sanitized data](/images/sanitized-vs-not-sanitized.png)
 
 While the plugin itself doesn’t provide any sanitization function, we can still add code that will hide personal and private information from the replay to help keep your user’s privacy.
 
@@ -127,7 +127,7 @@ While the plugin itself doesn’t provide any sanitization function, we can stil
 
 If you look at the code sample where I create the trackerApolloLink object, you’ll see that all I’m doing is calling the tracker function that saves information on the tracker.
 
-If I don’t change the data, then everything gets saved unchanged. So to sanitize the data in the replay **and keep the operation unchanged**, we need to clone the key variables before calling the tracker. That means cloning the variables and the results from the operation, and that’s all we want. 
+If I don’t change the data, then everything gets saved unchanged. So to sanitize the data in the replay **and keep the operation unchanged**, we need to clone the key variables before calling the tracker. That means cloning the variables and the results from the operation, and that’s all we want.
 
 So here is a snippet of code that will create the ApolloLink and keep the data secret within the replay data:
 
@@ -185,7 +185,7 @@ Key aspects of this code are:
 2. Inside the `map` callback (from the link function), we’re now not returning the output from graphqlTracker, because that function will return the result value it received untouched. 1. But that result will be returned to the client app, and if we’re sanitizing the result, the user will see the sanitized version of the dataset. Instead, we need to clone the result to modify the one being tracked and return the original.
 3. The `sanitizeResult` function deep clones the object because modifying otherwise will change the result itself.
 
-![Sanitized data everywhere](images/sanitized.png)
+![Sanitized data everywhere](/images/sanitized.png)
 
 ## Have questions?
 
