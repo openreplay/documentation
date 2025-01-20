@@ -22,7 +22,7 @@ And the `Suggestion` component simply renders the suggestion inside a nice-looki
 
 I'm going to focus on the first one, since it's the only one sending requests using the `fetch` function.
 
-**Note** that this technique also works for any request performed with **Axios** as well. 
+**Note** that this technique also works for any request performed with **Axios** as well.
 
 Let's take a quick look at the component to understand what's it doing.
 
@@ -30,7 +30,7 @@ Let's take a quick look at the component to understand what's it doing.
 
 This is not a complex component, but there is a section that is especially relevant for this particular use case, so let's take a quick look at it.
 
-```javascript 
+```javascript
 import { Container, Col, Form, Row, Button } from 'react-bootstrap';
 
 const SearchForm = ({setResult, fetcher}) => {
@@ -104,15 +104,15 @@ Now that you've seen the code, let's take a look at what you'd get if you were t
 ## Regular data capture with OpenReplay
 For this example, I'm going to be using the NPM version of the package, if you don't know how to do that, check out [the docs](https://docs.openreplay.com/installation/setup-or) and then get back here.
 
-![](./images/fetch/network-tab-imbored.png)
+![](/tutorials//fetch/network-tab-imbored.png)
 
-This is the UI for the session replay by default. 
-Notice how on the bottom half I've already selected the "Network" tab, but while it does show the requests being made, there are no details 
+This is the UI for the session replay by default.
+Notice how on the bottom half I've already selected the "Network" tab, but while it does show the requests being made, there are no details
 about them. Even if you click on one of them, you'll get the minimum details available:
 
-![](./images/fetch/network-tab-details.png)
+![](/tutorials//fetch/network-tab-details.png)
 
-So what can we do? You can enable capturing of the request information with the [Network options object](installation/network-options). 
+So what can we do? You can enable capturing of the request information with the [Network options object](installation/network-options).
 Let's look at that.
 
 ### Capturing request data in your session replays
@@ -132,7 +132,7 @@ const tracker = new Tracker({
 ```
 
 That's all we need to do, from now on, every time you perform a request, the data will be recorded by the tracker.
-Now deploy the change, test the app, close the tab and wait a couple of minutes. 
+Now deploy the change, test the app, close the tab and wait a couple of minutes.
 The session should appear soon enough and you can hit the "play" button.
 
 ## Inspecting the client-server communication
@@ -143,16 +143,16 @@ Notice the warning box I get in this case:
 
 ![](https://i.imgur.com/nOlRjO9.png)
 
-As the dev who coded this I know what to do to test it and understand where the bug is. However, as a user the error is not really telling me much, and I might not be able to communicate this in a way the dev team can understand. 
+As the dev who coded this I know what to do to test it and understand where the bug is. However, as a user the error is not really telling me much, and I might not be able to communicate this in a way the dev team can understand.
 So instead, as a user, I can simply complain to the company about their app not working, and you, as the developer responsible for the application can take a look at my session and inspect the request the client sent and the response from the server.
 
-![](./images/fetch/network-tab-requests.png)
+![](/tutorials//fetch/network-tab-requests.png)
 
 Look at the session replay UI now. Inside the Network tab you can see the requests we've been doing to the external API.
 
-All we have to do now, is to find the moment where we get the error response and look at the requests being made. 
-Chances are, you'll see the problem inside the request details. 
-For our case, the error says "Failed to query due to error in arguments", meaning that when we select the "Free" option on the dropdown, 
+All we have to do now, is to find the moment where we get the error response and look at the requests being made.
+Chances are, you'll see the problem inside the request details.
+For our case, the error says "Failed to query due to error in arguments", meaning that when we select the "Free" option on the dropdown,
 we're not sending a valid request. So let's take a look at its details.
 
 ![](https://i.imgur.com/FAtZEgt.png)
@@ -162,7 +162,7 @@ Can you see the issue? Let me help you:
 ![](https://i.imgur.com/yX8TJpp.png)
 
 Yes, I'm sending an `undefined` as the value of the `maxprice` attribute. I totally missed that in my logic, and picked it up while inspecting the request.
-Granted, it's an easy fix now that I know where the problem is, but thanks to this process I would've been able to either raise a very detailed error report, or directly helped the developer identify and solve the problem without having to test myself and reproduce the issue. 
+Granted, it's an easy fix now that I know where the problem is, but thanks to this process I would've been able to either raise a very detailed error report, or directly helped the developer identify and solve the problem without having to test myself and reproduce the issue.
 
 ## Putting privacy to the test
 
@@ -172,7 +172,7 @@ I'll add the field to the form, and I'll update the code to capture that value a
 
 The HTML for the form is just adding a new `Col` element like so:
 
-```html 
+```html
 <!-- previous code -->
 <Col>
     <Form.Group controlId='phoneNumber'>
@@ -185,12 +185,12 @@ The HTML for the form is just adding a new `Col` element like so:
 
 And adding the contents of this field into the actual request only needs a single line of code:
 
-```javascript 
+```javascript
 getParams.phonenumber = form.phoneNumber.value
 ```
 
 Now, what happens if we use this new code and capture a session with OpenReplay?
-Well, two things: 
+Well, two things:
 
 1. The actual replay you _watch_ will automatically sanitize the content of the phone number field and it will not be shown to anyone watching it.
 2. The request information captured by the plugin will, however, show the value.
@@ -199,19 +199,19 @@ The following screenshot shows what I just describes:
 
 ![](https://i.imgur.com/kKL47Rd.png)
 
-In the right section of the screen, you can see the full phone number. This happens because while the normal tracker can understand the phone number field to be a numeric field, it will not capture its input just in case the number represents personal information. But on the request side, we can't really make that assumption since the developer could've done anything with the data, or even the name of the parameter. 
+In the right section of the screen, you can see the full phone number. This happens because while the normal tracker can understand the phone number field to be a numeric field, it will not capture its input just in case the number represents personal information. But on the request side, we can't really make that assumption since the developer could've done anything with the data, or even the name of the parameter.
 So the question then, is: can we protect our user's privacy with this plugin?
 
 And the answer, I'm happy to report, is: YES we can.
 
 ### Sanitizing the request data
 
-If you go back to the start of this tutorial, when I configured the network options, you'll see that I didn't say anything about sanitization. 
-However, as part of those options you can specify a callback meant to sanitize data. This callback receives a single attribute with both, the request and the response object. You can then choose to edit them however you want, they will not affect the actual request but will change the way the data is displayed on the OpenReplay UI. 
+If you go back to the start of this tutorial, when I configured the network options, you'll see that I didn't say anything about sanitization.
+However, as part of those options you can specify a callback meant to sanitize data. This callback receives a single attribute with both, the request and the response object. You can then choose to edit them however you want, they will not affect the actual request but will change the way the data is displayed on the OpenReplay UI.
 
 For example, let's say I want to change the "phonenumber" attribute and remove the numbers so we avoid leaking that information. This can be done like this:
 
-```javascript 
+```javascript
 const tracker = new Tracker({
   projectKey: "<your project id>",
   network: {
@@ -226,9 +226,9 @@ const tracker = new Tracker({
 
 As you can see, the change is simple, we replace only the numbers on this attribute so now the request looks like this in our UI:
 
-![](./images/fetch/network-tab-sanitized-data.png)
+![](/tutorials//fetch/network-tab-sanitized-data.png)
 
-Now your user's data is secured once again. 
+Now your user's data is secured once again.
 
 ## Have questions?
 
