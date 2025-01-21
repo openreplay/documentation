@@ -24,10 +24,10 @@ function getExtraNav(astro: AstroGlobal) {
 	const lang = getLanguageFromURL(astro.url.pathname) || "en";
 	let mod = import.meta.glob('../../i18n/**/*.ts', {eager: true})
 
-	let menuItems: MenuItemπ[] = []
+	let menuItems: MenuItem[] = []
 	for(let k in mod) {
 		if((k.indexOf(`/${lang}/`) != -1) && (k.indexOf('nav.ts') != -1)) {
-			(mod[k].subMenus as Array<MenuItem>).forEach( (m: MenuItem) => {
+			(mod[k].subMenus ?? []).forEach( (m: MenuItem) => {
 				menuItems.push(m)
 			})
 		}
@@ -42,7 +42,7 @@ const { currentPage } = Astro.props as Props;
 const currentPageMatch = removeLeadingSlash(removeTrailingSlash(currentPage));
 
 // Group nav menu by sections to properly render.
-//const sidebarSections = 
+//const sidebarSections =
 function createMenuSections(elems: NavDict) {
 	return (elems).reduce((collection, item) => {
 		if ('header' in item) {
@@ -54,11 +54,11 @@ function createMenuSections(elems: NavDict) {
 	}, [] as Parameters<typeof SidebarContent>[0]['sidebarSections']);
 }
 
-const sidebarSections = createMenuSections(await getNav(Astro))
+const { children: sidebarSections } = await getNav(Astro)
 const subMenusSections = createMenuSections(getExtraNav(Astro))
 
-const learnSections = sidebarSections.filter((section) => section.type === 'learn');
-const apiSections = sidebarSections.filter((section) => section.type === 'api');
+console.log(subMenusSections)
+
 let activeTab: 'learn' | 'api' = 'learn';
 for (const section of sidebarSections) {
 	if (section.children.some((item) => currentPageMatch.includes(item.slug))) {
@@ -86,16 +86,10 @@ const lang = currentPage && getLanguageFromURL(currentPage);
 			<SidebarContent
 				type={'learn'}
 				defaultActiveTab={activeTab}
-				sidebarSections={learnSections}
+				sidebarSections={sidebarSections}
 				{currentPageMatch}
 			/>
-			<SidebarContent
-				type={'api'}
-				defaultActiveTab={activeTab}
-				sidebarSections={apiSections}
-				{currentPageMatch}
-			/>
-			<li>
+			<!-- <li>
 				<div class="nav-link pt-4 border-t">
 					{subMenusSections && (
 						<ul class={`nav-groups`}>
@@ -108,7 +102,7 @@ const lang = currentPage && getLanguageFromURL(currentPage);
 						</ul>
 						)}
 				</div>
-			</li>
+			</li> -->
 			<li>
 				<div class="py-5 xl:hidden border-t">
 					<div class="items flex flex-col gap-1">
@@ -129,7 +123,7 @@ const lang = currentPage && getLanguageFromURL(currentPage);
 								<span><UIString key="rightSidebar.readBlog" /></span>
 							</a>
 						</div>
-						
+
 						<div class="nav-link pb-5">
 							<a class="flex gap-2 no-underline" href="https://github.com/openreplay/openreplay" target="_blank">
 								<svg aria-hidden="true" focusable="false" data-prefix="fas"
@@ -145,7 +139,7 @@ const lang = currentPage && getLanguageFromURL(currentPage);
 					</div>
 					<div class="items flex pt-5 border-t pb-3 gap-4 items-center pb-6">
 						<ThemeToggleButton client:visible labels={{ useLight: t('themeToggle.useLight'), useDark: t('themeToggle.useDark') }}/>
-		
+
 						<div class="flex nav-link xl:hidden justify-end gap-1">
 							<div dir="ltr" lang="en">
 								{lang && <LanguageSelect lang={lang} client:idle />}
@@ -153,7 +147,7 @@ const lang = currentPage && getLanguageFromURL(currentPage);
 						</div>
 				</div>
 			</li>
-		</ul>				
+		</ul>
 	</nav>
 </div>
 <script>
@@ -220,7 +214,7 @@ const lang = currentPage && getLanguageFromURL(currentPage);
 		.nav-link a{
 			padding: 0.3rem .5rem;
 		}
-		
+
 		.nav-container{
 		width: inherit;
 		max-width: 280px;

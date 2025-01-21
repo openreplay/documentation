@@ -1,224 +1,299 @@
-/**
- * This configures the navigation sidebar.
- * All other languages follow this ordering/structure and will fall back to
- * English for any entries they haven’t translated.
- *
- * - All entries MUST include `text` and `key`
- * - Heading entries MUST include `header: true` and `type`
- * - Link entries MUST include `slug` (which excludes the language code)
- */
-export default [
-	//{ text: 'Getting started', header: true, type: 'learn', key: 'startHere', icon: 'start' },
-	//{ text: 'Introduction', slug: 'getting-started', key: 'introduction' },
-	//{ text: 'Layouts', slug: 'layout-elements', key: 'layouts' },
+export interface NavItem {
+  text: string
+  slug: string | null
+  icon?: string
+  hideChevron?: boolean
+  children?: NavItem[]
+  isSectionTitle?: boolean
+}
 
-	{ text: 'Home', header: true, type: 'learn', slug: 'home', key: 'home', icon: 'home', hideChevron: true },
-	{ text: 'Getting started', header: true, type: 'learn', slug: 'getting-started', key: 'getting-started', icon: 'start', hideChevron: true},
+const nav: NavItem = {
+  text: 'root',
+  slug: '',
+  children: [
+    {
+      text: 'Test Section Title',
+      slug: null,
+      icon: 'home',
+      hideChevron: true,
+      children: [],
+      isSectionTitle: true
+    },
+    {
+      text: 'Home',
+      slug: 'home',
+      icon: 'home',
+      hideChevron: true,
+      children: []
+    },
+    {
+      text: 'Getting started',
+      slug: 'getting-started',
+      icon: 'start',
+      hideChevron: true,
+      children: []
+    },
+    {
+      text: 'Deployment',
+      slug: 'deployment/',
+      icon: 'deployment',
+      children: [
+        { text: 'Overview', slug: 'deployment/', children: [] },
+        { text: 'Test List', slug: null, children: [
+          { text: 'Deploy to AWS', slug: 'deployment/deploy-aws', children: [] },
+        { text: 'Deploy to Azure', slug: 'deployment/deploy-azure', children: [] },
+        { text: 'Deploy to GCP', slug: 'deployment/deploy-gcp', children: [] },
+        ] },
+        { text: 'Deploy to AWS', slug: 'deployment/deploy-aws', children: [] },
+        { text: 'Deploy to Azure', slug: 'deployment/deploy-azure', children: [] },
+        { text: 'Deploy to GCP', slug: 'deployment/deploy-gcp', children: [] },
+        { text: 'Deploy to Digital Ocean', slug: 'deployment/deploy-digitalocean', children: [] },
+        { text: 'Deploy to Kubernetes', slug: 'deployment/deploy-kubernetes', children: [] },
+        { text: 'Deploy to Docker', slug: 'deployment/deploy-docker', children: [] },
+        { text: 'Deploy to OVHCloud', slug: 'deployment/deploy-ovhcloud', children: [] },
+        { text: 'Deploy to Scaleway', slug: 'deployment/deploy-scaleway', children: [] },
+        { text: 'Deploy from Source', slug: 'deployment/deploy-source', children: [] },
+        { text: 'Deploy to Ubuntu', slug: 'deployment/deploy-ubuntu', children: [] },
+        { text: 'OpenReplay Administration', slug: 'deployment/openreplay-admin', children: [] },
+        { text: 'Upgrade Deployment', slug: 'deployment/upgrade', children: [] },
+      ]
+    },
+    {
+      text: 'Tracker Setup',
+      slug: 'using-or',
+      icon: 'tracker-setup',
+      children: [
+        { text: 'Overview', slug: 'using-or', children: [] },
+        { text: 'JS Snippet', slug: 'using-or/snippet', children: [] },
+        { text: 'React', slug: 'using-or/react', children: [] },
+        { text: 'Vue', slug: 'using-or/vue', children: [] },
+        { text: 'Next.js', slug: 'using-or/next', children: [] },
+        { text: 'Nuxt', slug: 'using-or/nuxt', children: [] },
+        { text: 'Remix', slug: 'using-or/remix', children: [] },
+        { text: 'Svelte', slug: 'using-or/svelte', children: [] },
+        { text: 'Angular', slug: 'using-or/angular', children: [] },
+        { text: 'Gatsby', slug: 'using-or/gatsby', children: [] },
+        { text: 'iOS (beta)', slug: 'ios-sdk/init', children: [] },
+        { text: 'Android (beta)', slug: 'android-sdk/init', children: [] },
+        { text: 'React Native', slug: 'rn-sdk/init', children: [] },
+      ]
+    },
+    {
+      text: 'Administration',
+      slug: 'configuration',
+      icon: 'configure',
+      children: [
+        { text: 'Overview', slug: 'configuration', children: [] },
+        { text: 'Cleanup Storage', slug: 'configuration/cleanup-storage', children: [] },
+        { text: 'Configure SMTP', slug: 'configuration/configure-smtp', children: [] },
+        { text: 'External Database (Postgres)', slug: 'configuration/external-db', children: [] },
+        { text: 'External Storage', slug: 'configuration/external-storage', children: [] },
+        { text: 'Proxy Settings', slug: 'configuration/proxy-settings', children: [] },
+        { text: 'Secure OpenReplay', slug: 'configuration/secure-or', children: [] },
+        { text: 'Single Sign-On (SSO)', slug: 'configuration/sso', children: [] },
+      ]
+    },
+    {
+      text: 'How-tos',
+      slug: 'installation',
+      icon: 'features',
+      children: [
+        { text: 'Overview', slug: 'installation', children: [] },
+        { text: 'Identify a User', slug: 'installation/identify-user', children: [] },
+        { text: 'Send Metadata', slug: 'installation/metadata', children: [] },
+        { text: 'Custom Events', slug: 'installation/custom-events', children: [] },
+        { text: 'Canvas and WebGL', slug: 'installation/canvas', children: [] },
+        { text: 'Cross-domain iFrames', slug: 'installation/crossdomain-iframe', children: [] },
+        { text: 'WebSockets', slug: 'installation/websockets', children: [] },
+        { text: 'Network Options (Web)', slug: 'installation/network-options', children: [] },
+        { text: 'Network Options (Mobile)', slug: 'installation/network-options-mobile', children: [] },
+        { text: 'Sanitize Data (Web)', slug: 'installation/sanitize-data', children: [] },
+        { text: 'Sanitize Data (Mobile)', slug: 'installation/sanitize-data-mobile', children: [] },
+        { text: 'Error tracking', slug: 'installation/error-reporting', children: [] },
+        { text: 'Upload Source maps', slug: 'installation/upload-sourcemaps', children: [] },
+      ]
+    },
+    {
+      text: 'Guides',
+      slug: 'tutorials',
+      icon: 'tutorials',
+      children: [
+        { text: 'Overview', slug: 'tutorials', children: [] },
+        { text: 'Team Management', slug: 'tutorials/invite-team-members', children: [] },
+        { text: 'Roles and Access', slug: 'tutorials/roles-and-access', children: [] },
+        { text: 'Spot (Chrome Extension)', slug: 'tutorials/spot', children: [] },
+        { text: 'OmniSearch', slug: 'tutorials/omnisearch', children: [] },
+        { text: 'Dashboards', slug: 'tutorials/custom-dashboard', children: [] },
+      ]
+    },
+    {
+      text: 'Plugins',
+      slug: 'plugins',
+      icon: 'plugins',
+      children: [
+        { text: 'Overview', slug: 'plugins', children: [] },
+        { text: 'Assist', slug: 'plugins/assist', children: [] },
+        { text: 'Axios', slug: 'plugins/axios', children: [] },
+        { text: 'Fetch', slug: 'plugins/fetch', children: [] },
+        { text: 'GraphQL', slug: 'plugins/graphql', children: [] },
+        { text: 'MobX', slug: 'plugins/mobx', children: [] },
+        { text: 'NgRx', slug: 'plugins/ngrx', children: [] },
+        { text: 'Pinia', slug: 'plugins/pinia', children: [] },
+        { text: 'VueX', slug: 'plugins/vuex', children: [] },
+        { text: 'Profiler', slug: 'plugins/profiler', children: [] },
+        { text: 'Redux', slug: 'plugins/redux', children: [] },
+        { text: 'Zustand', slug: 'plugins/zustand', children: [] },
+      ]
+    },
+    {
+      text: 'Integrations',
+      slug: 'integrations',
+      icon: 'integration',
+      children: [
+        { text: 'Overview', slug: 'integrations', children: [] },
+        { text: 'Datadog', slug: 'integrations/datadog', children: [] },
+        { text: 'Elastic', slug: 'integrations/elastic', children: [] },
+        { text: 'Dynatrace', slug: 'integrations/dynatrace', children: [] },
+        { text: 'Sentry', slug: 'integrations/sentry', children: [] },
+        { text: 'GitHub', slug: 'integrations/github', children: [] },
+        { text: 'Slack', slug: 'integrations/slack', children: [] },
+        { text: 'MSTeams', slug: 'integrations/msteams', children: [] },
+        { text: 'Jira Cloud', slug: 'integrations/jira', children: [] },
+        { text: 'Zendesk', slug: 'integrations/zendesk', children: [] },
+      ]
+    },
+    {
+      text: 'Troubleshooting',
+      slug: 'troubleshooting',
+      icon: 'troubleshoot',
+      children: [
+        { text: 'Overview', slug: 'troubleshooting', children: [] },
+        { text: 'Clear Cache', slug: 'troubleshooting/cache', children: [] },
+        { text: 'Content Security Policy (CSP)', slug: 'troubleshooting/csp', children: [] },
+        { text: 'JS Errors', slug: 'troubleshooting/js-errors', children: [] },
+        { text: 'Localhost Testing', slug: 'troubleshooting/localhost', children: [] },
+        { text: 'Session Recording Issues', slug: 'troubleshooting/session-recordings', children: [] },
+        { text: 'Sourcemaps Issues', slug: 'troubleshooting/sourcemaps', children: [] },
+        { text: 'Supported Browsers', slug: 'troubleshooting/supported-browsers', children: [] },
+        { text: 'Deployment Issues', slug: 'troubleshooting/deployment-issues', children: [] },
+      ]
+    },
+    {
+      text: 'Exporting data',
+      slug: 'structure',
+      icon: 'structure',
+      children: [
+        { text: 'Overview', slug: 'structure', children: [] },
+        { text: 'Exported Data', slug: 'structure/exported-data', children: [] },
+      ]
+    },
+    {
+      text: 'API',
+      slug: 'api',
+      icon: 'api',
+      children: [
+        { text: 'Overview', slug: 'api', children: [] },
+        { text: 'Assist', slug: 'api/assist', children: [] },
+        { text: 'Events', slug: 'api/events', children: [] },
+        { text: 'Jobs', slug: 'api/jobs', children: [] },
+        { text: 'Projects', slug: 'api/projects', children: [] },
+        { text: 'Sessions', slug: 'api/sessions', children: [] },
+        { text: 'Users', slug: 'api/users', children: [] },
+      ]
+    },
+    {
+      text: 'JavaScript SDK',
+      slug: 'sdk',
+      icon: 'sdk',
+      children: [
+        { text: 'Overview', slug: 'sdk', children: [] },
+        { text: 'Initialization', slug: 'sdk/constructor', children: [] },
+        { text: 'Methods', slug: 'sdk/methods', children: [] },
+        { text: 'event', slug: 'sdk/event', children: [] },
+        { text: 'getSessionToken', slug: 'sdk/get-session-token', children: [] },
+        { text: 'getSessionID', slug: 'sdk/get-session-id', children: [] },
+        { text: 'getSessionURL', slug: 'sdk/get-session-url', children: [] },
+        { text: 'handleError', slug: 'sdk/handle-error', children: [] },
+        { text: 'isActive', slug: 'sdk/is-active', children: [] },
+        { text: 'issue', slug: 'sdk/issue', children: [] },
+        { text: 'setUserID', slug: 'sdk/set-user-id', children: [] },
+        { text: 'setUserAnonymousID', slug: 'sdk/set-user-anonymous-id', children: [] },
+        { text: 'setMetadata', slug: 'sdk/set-metadata', children: [] },
+        { text: 'isFlagEnabled', slug: 'sdk/is-flag-enabled', children: [] },
+        { text: 'onFlagLoads', slug: 'sdk/on-flag-loads', children: [] },
+        { text: 'reloadFags', slug: 'sdk/reload-flags', children: [] },
+        { text: 'getFeatureFlag', slug: 'sdk/get-feature-flag', children: [] },
+        { text: 'getAllFeatureFlags', slug: 'sdk/get-all-feature-flags', children: [] },
+        { text: 'clearPersistFlag', slug: 'sdk/clear-persist-flag', children: [] },
+        { text: 'start', slug: 'sdk/start', children: [] },
+        { text: 'stop', slug: 'sdk/stop', children: [] },
+        { text: 'coldStart', slug: 'sdk/cold-start', children: [] },
+        { text: 'startOfflineRecording', slug: 'sdk/start-offline-recording', children: [] },
+        { text: 'uploadOfflineRecording', slug: 'sdk/upload-offline-recording', children: [] },
+        { text: 'forceFlushBatch', slug: 'sdk/force-flush-batch', children: [] },
+        { text: 'trackWs', slug: 'sdk/track-ws', children: [] },
+      ]
+    },
+    {
+      text: 'iOS SDK (beta)',
+      slug: 'ios-sdk',
+      icon: 'ios_app',
+      children: [
+        { text: 'Initialization', slug: 'ios-sdk/init', children: [] },
+        { text: 'Modules', slug: 'ios-sdk/modules', children: [] },
+        { text: 'Start', slug: 'ios-sdk/start', children: [] },
+        { text: 'Capturing Inputs', slug: 'ios-sdk/inputs', children: [] },
+        { text: 'Network', slug: 'ios-sdk/network', children: [] },
+        { text: 'Events', slug: 'ios-sdk/event', children: [] },
+        { text: 'Analytics', slug: 'ios-sdk/analytics', children: [] },
+        { text: 'Sanitization', slug: 'ios-sdk/sanitization', children: [] },
+        { text: 'setUserID', slug: 'ios-sdk/set-user-id', children: [] },
+        { text: 'setMetadata', slug: 'ios-sdk/set-metadata', children: [] },
+        { text: 'userAnonymousId', slug: 'ios-sdk/user-anonymous-id', children: [] },
+      ]
+    },
+    {
+      text: 'Android SDK (beta)',
+      slug: 'android-sdk',
+      icon: 'android_app',
+      children: [
+        { text: 'Initialization', slug: 'android-sdk/init', children: [] },
+        { text: 'Modules', slug: 'android-sdk/modules', children: [] },
+        { text: 'Start', slug: 'android-sdk/start', children: [] },
+        { text: 'Capturing Inputs', slug: 'android-sdk/inputs', children: [] },
+        { text: 'Network', slug: 'android-sdk/network', children: [] },
+        { text: 'Events', slug: 'android-sdk/event', children: [] },
+        { text: 'Analytics', slug: 'android-sdk/analytics', children: [] },
+        { text: 'Sanitization', slug: 'android-sdk/sanitization', children: [] },
+        { text: 'setUserID', slug: 'android-sdk/set-user-id', children: [] },
+        { text: 'setMetadata', slug: 'android-sdk/set-metadata', children: [] },
+        { text: 'userAnonymousId', slug: 'android-sdk/user-anonymous-id', children: [] },
+      ]
+    },
+    {
+      text: 'React Native SDK (beta)',
+      slug: 'rn-sdk',
+      icon: 'react-native_ios_app',
+      children: [
+        { text: 'Initialization', slug: 'rn-sdk/init', children: [] },
+        { text: 'Modules', slug: 'rn-sdk/modules', children: [] },
+        { text: 'startSession', slug: 'rn-sdk/start', children: [] },
+        { text: 'Capturing Inputs', slug: 'rn-sdk/inputs', children: [] },
+        { text: 'Events', slug: 'rn-sdk/event', children: [] },
+        { text: 'Analytics', slug: 'rn-sdk/analytics', children: [] },
+        { text: 'Sanitization', slug: 'rn-sdk/sanitization', children: [] },
+        { text: 'setUserID', slug: 'rn-sdk/set-user-id', children: [] },
+        { text: 'setMetadata', slug: 'rn-sdk/set-metadata', children: [] },
+      ]
+    },
+    {
+      text: 'OpenReplay CLI',
+      slug: 'cli',
+      icon: 'cli',
+      hideChevron: true,
+      children: []
+    }
+  ]
+}
 
-	{ text: 'Deployment', header: true, type: 'learn', slug: 'deployment/', key: 'deployment', icon: 'deployment', extraCSSClasses: "pt-5 border-t"},
-	{ text: 'Overview', slug: 'deployment', key: 'deploy-overview' },
-	{ text: 'Deploy to AWS', slug: 'deployment/deploy-aws', key: 'deploy-aws' },
-	{ text: 'Deploy to Azure', slug: 'deployment/deploy-azure', key: 'deploy-azure' },
-	{ text: 'Deploy to GCP', slug: 'deployment/deploy-gcp', key: 'deploy-gcp' },
-	{ text: 'Deploy to Digital Ocean', slug: 'deployment/deploy-digitalocean', key: 'deploy-do' },
-	{ text: 'Deploy to Kubernetes', slug: 'deployment/deploy-kubernetes', key: 'deploy-kub' },
-	{ text: 'Deploy to Docker', slug: 'deployment/deploy-docker', key: 'deploy-docker' },
-	{ text: 'Deploy to OVHCloud', slug: 'deployment/deploy-ovhcloud', key: 'deploy-ovh' },
-	{ text: 'Deploy to Scaleway', slug: 'deployment/deploy-scaleway', key: 'deploy-scaleway' },
-	{ text: 'Deploy from Source', slug: 'deployment/deploy-source', key: 'deploy-source' },
-	{ text: 'Deploy to Ubuntu', slug: 'deployment/deploy-ubuntu', key: 'deploy-ubuntu' },
-	{ text: 'OpenReplay Administration', slug: 'deployment/openreplay-admin', key: 'deploy-admin' },
-	{ text: 'Upgrade Deployment', slug: 'deployment/upgrade', key: 'migrate' },
-
-	{ text: 'Tracker Setup', slug: 'using-or/', header: true, type: 'learn', key: 'tracker-setup', icon: 'tracker-setup' },
-	{ text: 'Overview', slug: 'using-or', key: 'tutorials/' },
-	{ text: 'JS Snippet', slug: 'using-or/snippet', key: 'using-or/' },
-	{ text: 'React', slug: 'using-or/react', key: 'using-or/' },
-	{ text: 'Vue', slug: 'using-or/vue', key: 'using-or/' },
-	{ text: 'Next.js', slug: 'using-or/next', key: 'using-or/' },
-	{ text: 'Nuxt', slug: 'using-or/nuxt', key: 'using-or/' },
-	{ text: 'Remix', slug: 'using-or/remix', key: 'using-or/' },
-	{ text: 'Svelte', slug: 'using-or/svelte', key: 'using-or/' },
-	{ text: 'Angular', slug: 'using-or/angular', key: 'using-or/' },
-	{ text: 'Gatsby', slug: 'using-or/gatsby', key: 'using-or/' },
-	{ text: 'iOS (beta)', slug: 'ios-sdk/init', key: 'using-or/' },
-	{ text: 'Android (beta)', slug: 'android-sdk/init', key: 'using-or/' },
-	{ text: 'React Native', slug: 'rn-sdk/init', key: 'using-or/' },
-
-	{ text: 'Administration', slug: 'configuration/', header: true, type: 'learn', key: 'admin', icon: 'configure' },
-	{ text: 'Overview', slug: 'configuration', key: 'concepts/why-astro' },
-	{ text: 'Cleanup Storage', slug: 'configuration/cleanup-storage', key: 'concepts/why-astro' },
-	{ text: 'Configure SMTP', slug: 'configuration/configure-smtp', key: 'concepts/mpa-vs-spa' },
-	{ text: 'External Database (Postgres)', slug: 'configuration/external-db', key: 'concepts/islands' },
-	{ text: 'External Storage', slug: 'configuration/external-storage', key: 'concepts/islands' },
-	{ text: 'Proxy Settings', slug: 'configuration/proxy-settings', key: 'concepts/islands' },
-	{ text: 'Secure OpenReplay', slug: 'configuration/secure-or', key: 'concepts/islands' },
-	{ text: 'Single Sign-On (SSO)', slug: 'configuration/sso', key: 'concepts/islands' },
-
-	{ text: 'How-tos', slug: 'installation/', header: true, type: 'learn', key: 'blog-installation', icon: 'features' },
-	{ text: 'Overview', slug: 'installation', key: 'blog-installation' },
-	{ text: 'Identify a User', slug: 'installation/identify-user', key: 'blog-installation' },
-	{ text: 'Send Metadata', slug: 'installation/metadata', key: 'blog-installation' },
-
-	{ text: 'Custom Events', slug: 'installation/custom-events', key: 'blog-installation' },
-	{ text: 'Canvas and WebGL', slug: 'installation/canvas', key: 'canvas-recording'},
-	{ text: 'Cross-domain iFrames', slug: 'installation/crossdomain-iframe', key: 'iframe-crossdomain' },
-	{ text: 'WebSockets', slug: 'installation/websockets', key: 'websockets' },
-
-	{ text: 'Network Options (Web)', slug: 'installation/network-options', key: 'blog-installation' },
-	{ text: 'Network Options (Mobile)', slug: 'installation/network-options-mobile', key: 'blog-installation' },
-	{ text: 'Sanitize Data (Web)', slug: 'installation/sanitize-data', key: 'blog-installation' },
-	{ text: 'Sanitize Data (Mobile)', slug: 'installation/sanitize-data-mobile', key: 'blog-installation' },
-
-	{ text: 'Error tracking', slug: 'installation/error-reporting', key: 'blog-installation' },
-	{ text: 'Upload Source maps', slug: 'installation/upload-sourcemaps', key: 'blog-installation' },
-
-
-	{ text: 'Guides', slug: 'tutorials/', header: true, type: 'learn', key: 'blog-tutorial', icon: 'tutorials' },
-	{ text: 'Overview', slug: 'tutorials', key: 'blog-tutorial' },
-	{ text: 'Team Management', slug: 'tutorials/invite-team-members', key: 'blog-tutorial' },
-	{ text: 'Roles and Access', slug: 'tutorials/roles-and-access', key: 'blog-tutorial' },
-	{ text: 'Spot (Chrome Extension)', slug: 'tutorials/spot', key: 'blog-tutorial' },
-	{ text: 'OmniSearch', slug: 'tutorials/omnisearch', key: 'blog-tutorial' },
-	{ text: 'Dashboards', slug: 'tutorials/custom-dashboard', key: 'blog-tutorial' },
-
-	//{ text: 'Setup OpenReplay', slug: 'installation/setup-or', key: 'blog-installation' },
-	// { text: 'Custom Heuristics', slug: 'tutorials/custom-heuristics', key: 'blog-tutorial' },
-
-	//plugins
-	{ text: 'Plugins', header:true, type: 'learn', slug: 'plugins/', key: 'plugins', icon: 'plugins' },
-	{ text: 'Overview', slug: 'plugins', key: 'plugins/troubleshooting' },
-	{ text: 'Assist', slug: 'plugins/assist', key: 'plugins/troubleshooting' },
-	{ text: 'Axios', slug: 'plugins/axios', key: 'plugins/troubleshooting' },
-	{ text: 'Fetch', slug: 'plugins/fetch', key: 'plugins/troubleshooting' },
-	{ text: 'GraphQL', slug: 'plugins/graphql', key: 'plugins/troubleshooting' },
-	{ text: 'MobX', slug: 'plugins/mobx', key: 'plugins/troubleshooting' },
-	{ text: 'NgRx', slug: 'plugins/ngrx', key: 'plugins/troubleshooting' },
-	{ text: 'Pinia', slug: 'plugins/pinia', key: 'plugins/troubleshooting' },
-	{ text: 'VueX', slug: 'plugins/vuex', key: 'plugins/troubleshooting' },
-	{ text: 'Profiler', slug: 'plugins/profiler', key: 'plugins/troubleshooting' },
-	{ text: 'Redux', slug: 'plugins/redux', key: 'plugins/troubleshooting' },
-	{ text: 'Zustand', slug: 'plugins/zustand', key: 'plugins/troubleshooting' },
-
-
-	//integrations
-	{ text: 'Integrations', header:true,type: 'learn', slug: 'integrations/', key: 'integrations', icon: 'integration' },
-	{ text: 'Overview', slug: 'integrations', key: 'integrations/troubleshooting' },
-	//{ text: 'Bugsnag', slug: 'integrations/bugsnag', key: 'integrations/troubleshooting' },
-	//{ text: 'CloudWatch', slug: 'integrations/cloudwatch', key: 'integrations/troubleshooting' },
-	{ text: 'Datadog', slug: 'integrations/datadog', key: 'integrations/troubleshooting' },
-	{ text: 'Elastic', slug: 'integrations/elastic', key: 'integrations/troubleshooting' },
-	{ text: 'Dynatrace', slug: 'integrations/dynatrace', key: 'integrations/troubleshooting' },
-	{ text: 'Sentry', slug: 'integrations/sentry', key: 'integrations/troubleshooting' },
-	{ text: 'GitHub', slug: 'integrations/github', key: 'integrations/troubleshooting' },
-	//{ text: 'Google Tag Manager', slug: 'integrations/google-tag-manager', key: 'integrations/troubleshooting' },
-	{ text: 'Slack', slug: 'integrations/slack', key: 'integrations/troubleshooting' },
-	{ text: 'MSTeams', slug: 'integrations/msteams', key: 'integrations/troubleshooting' },
-	{ text: 'Jira Cloud', slug: 'integrations/jira', key: 'integrations/troubleshooting' },
-	//{ text: 'New Relic', slug: 'integrations/newrelic', key: 'integrations/troubleshooting' },
-	//{ text: 'Rollbar', slug: 'integrations/rollbar', key: 'integrations/troubleshooting' },
-	//{ text: 'Segment', slug: 'integrations/segment', key: 'integrations/troubleshooting' },
-	{text: 'Zendesk', slug: 'integrations/zendesk', key: 'integrations/troubleshooting'},
-	//{ text: 'Stackdriver', slug: 'integrations/stackdriver', key: 'integrations/troubleshooting' },
-	//{ text: 'SumoLogic', slug: 'integrations/sumo', key: 'integrations/troubleshooting' },
-
-	//troubleshooting
-	{ text: 'Troubleshooting', header:true,type: 'learn', slug: 'troubleshooting/', key: 'troubleshooting', icon: 'troubleshoot' },
-	{ text: 'Overview', slug: 'troubleshooting', key: 'troubleshooting/' },
-	{ text: 'Clear Cache', slug: 'troubleshooting/cache', key: 'troubleshooting/' },
-	{ text: 'Content Security Policy (CSP)', slug: 'troubleshooting/csp', key: 'troubleshooting/' },
-	{ text: 'JS Errors', slug: 'troubleshooting/js-errors', key: 'troubleshooting/' },
-	{ text: 'Localhost Testing', slug: 'troubleshooting/localhost', key: 'troubleshooting/' },
-	{ text: 'Session Recording Issues', slug: 'troubleshooting/session-recordings', key: 'troubleshooting/' },
-	{ text: 'Sourcemaps Issues', slug: 'troubleshooting/sourcemaps', key: 'troubleshooting/' },
-	{ text: 'Supported Browsers', slug: 'troubleshooting/supported-browsers', key: 'troubleshooting/' },
-	{ text: 'Deployment Issues', slug: 'troubleshooting/deployment-issues', key: 'troubleshooting/' },
-
-// structure
-	{ text: 'Exporting data', header:true,type: 'learn', slug: 'structure/', key: 'data-export', icon: 'structure' },
-	{ text: 'Overview', slug: 'structure', key: 'structure/troubleshooting' },
-	{ text: 'Exported Data', slug: 'structure/exported-data', key: 'structure/troubleshooting' },
-
-] as const;
-
-
-export const subMenus = [
-//API
-{ text: 'API', header:true,type: 'learn', slug: 'api/', key: 'guides/troubleshooting', icon: 'api' },
-{ text: 'Overview', slug: 'api', key: 'api/troubleshooting' },
-{ text: 'Assist', slug: 'api/assist', key: 'api/troubleshooting' },
-{ text: 'Events', slug: 'api/events', key: 'api/troubleshooting' },
-{ text: 'Jobs', slug: 'api/jobs', key: 'api/troubleshooting' },
-{ text: 'Projects', slug: 'api/projects', key: 'api/troubleshooting' },
-{ text: 'Sessions', slug: 'api/sessions', key: 'api/troubleshooting' },
-{ text: 'Users', slug: 'api/users', key: 'api/troubleshooting' },
-
- { text: 'JavaScript SDK', header:true,type: 'learn', slug: 'sdk/', key: 'guides/troubleshooting', icon: 'sdk' },
- { text: 'Overview', slug: 'sdk', key: 'sdk' },
- { text: 'Initialization', slug: 'sdk/constructor', key: 'sdk' },
- { text: 'Methods', slug: 'sdk/methods', key: 'sdk' },
- { text: 'event', slug: 'sdk/event', key: 'sdk/troubleshooting' },
- { text: 'getSessionToken', slug: 'sdk/get-session-token', key: 'sdk/troubleshooting' },
- { text: 'getSessionID', slug: 'sdk/get-session-id', key: 'sdk/troubleshooting' },
- { text: 'getSessionURL', slug: 'sdk/get-session-url', key: 'sdk/troubleshooting' },
- { text: 'handleError', slug: 'sdk/handle-error', key: 'sdk/troubleshooting' },
- { text: 'isActive', slug: 'sdk/is-active', key: 'api/troubleshooting' },
- { text: 'issue', slug: 'sdk/issue', key: 'sdk/troubleshooting' },
- { text: 'setUserID', slug: 'sdk/set-user-id', key: 'sdk/troubleshooting' },
- { text: 'setUserAnonymousID', slug: 'sdk/set-user-anonymous-id', key: 'sdk/troubleshooting' },
- { text: 'setMetadata', slug: 'sdk/set-metadata', key: 'sdk/troubleshooting' },
- { text: 'isFlagEnabled', slug: 'sdk/is-flag-enabled', key: 'sdk/troubleshooting' },
- { text: 'onFlagLoads', slug: 'sdk/on-flag-loads', key: 'sdk/troubleshooting' },
- { text: 'reloadFags', slug: 'sdk/reload-flags', key: 'sdk/troubleshooting' },
- { text: 'getFeatureFlag', slug: 'sdk/get-feature-flag', key: 'sdk/troubleshooting' },
- { text: 'getAllFeatureFlags', slug: 'sdk/get-all-feature-flags', key: 'sdk/troubleshooting' },
- { text: 'clearPersistFlag', slug: 'sdk/clear-persist-flag', key: 'sdk/troubleshooting' },
- { text: 'start', slug: 'sdk/start', key: 'sdk/troubleshooting' },
- { text: 'stop', slug: 'sdk/stop', key: 'sdk/troubleshooting' },
- { text: 'coldStart', slug: 'sdk/cold-start', key: 'sdk/troubleshooting' },
- { text: 'startOfflineRecording', slug: 'sdk/start-offline-recording', key: 'sdk/troubleshooting' },
- { text: 'uploadOfflineRecording', slug: 'sdk/upload-offline-recording', key: 'sdk/troubleshooting' },
- { text: 'forceFlushBatch', slug: 'sdk/force-flush-batch', key: 'sdk/troubleshooting' },
- { text: 'trackWs', slug: 'sdk/track-ws', key: 'sdk/troubleshooting' },
-
- { text: 'iOS SDK (beta)', header:true,type: 'learn', slug: 'ios-sdk/', key: 'ios-sdk', icon: 'ios_app' },
- { text: 'Initialization', slug: 'ios-sdk/init', key: 'ios-sdk' },
- { text: 'Modules', slug: 'ios-sdk/modules', key: 'ios-sdk' },
- { text: 'Start', slug: 'ios-sdk/start', key: 'ios-sdk/start' },
- { text: 'Capturing Inputs', slug: 'ios-sdk/inputs', key: 'ios-sdk/inputs' },
- { text: 'Network', slug: 'ios-sdk/network', key: 'ios-sdk/network' },
- { text: 'Events', slug: 'ios-sdk/event', key: 'ios-sdk/event' },
- { text: 'Analytics', slug: 'ios-sdk/analytics', key: 'ios-sdk/analytics' },
- { text: 'Sanitization', slug: 'ios-sdk/sanitization', key: 'ios-sdk/sanitization' },
- { text: 'setUserID', slug: 'ios-sdk/set-user-id', key: 'ios-sdk/setuserid' },
- { text: 'setMetadata', slug: 'ios-sdk/set-metadata', key: 'ios-sdk/metadata' },
- { text: 'userAnonymousId', slug: 'ios-sdk/user-anonymous-id', key: 'ios-sdk/anonid' },
-
-	{ text: 'Android SDK (beta)', header:true,type: 'learn', slug: 'android-sdk/', key: 'android-sdk', icon: 'android_app' },
-	{ text: 'Initialization', slug: 'android-sdk/init', key: 'android-sdk' },
-	{ text: 'Modules', slug: 'android-sdk/modules', key: 'android-sdk' },
-	{ text: 'Start', slug: 'android-sdk/start', key: 'android-sdk/start' },
-	{ text: 'Capturing Inputs', slug: 'android-sdk/inputs', key: 'android-sdk/inputs' },
-	{ text: 'Network', slug: 'android-sdk/network', key: 'android-sdk/network' },
-	{ text: 'Events', slug: 'android-sdk/event', key: 'android-sdk/event' },
-	{ text: 'Analytics', slug: 'android-sdk/analytics', key: 'android-sdk/analytics' },
-	{ text: 'Sanitization', slug: 'android-sdk/sanitization', key: 'android-sdk/sanitization' },
-	{ text: 'setUserID', slug: 'android-sdk/set-user-id', key: 'android-sdk/setuserid' },
-	{ text: 'setMetadata', slug: 'android-sdk/set-metadata', key: 'android-sdk/metadata' },
-	{ text: 'userAnonymousId', slug: 'android-sdk/user-anonymous-id', key: 'android-sdk/anonid' },
-
- { text: 'React Native SDK (beta)', header:true,type: 'learn', slug: 'rn-sdk/', key: 'rn-sdk', icon: 'react-native_ios_app' },
- { text: 'Initialization', slug: 'rn-sdk/init', key: 'rn-sdk' },
- { text: 'Modules', slug: 'rn-sdk/modules', key: 'rn-sdk' },
- { text: 'startSession', slug: 'rn-sdk/start', key: 'rn-sdk/start' },
- { text: 'Capturing Inputs', slug: 'rn-sdk/inputs', key: 'rn-sdk/inputs' },
-//  { text: 'Network', slug: 'ios-sdk/network', key: 'ios-sdk/network' },
- { text: 'Events', slug: 'rn-sdk/event', key: 'rn-sdk/event' },
- { text: 'Analytics', slug: 'rn-sdk/analytics', key: 'rn-sdk/analytics' },
- { text: 'Sanitization', slug: 'rn-sdk/sanitization', key: 'rn-sdk/sanitization' },
- { text: 'setUserID', slug: 'rn-sdk/set-user-id', key: 'ios-sdk/setuserid' },
- { text: 'setMetadata', slug: 'rn-sdk/set-metadata', key: 'ios-sdk/metadata' },
-//  { text: 'userAnonymousId', slug: 'ios-sdk/user-anonymous-id', key: 'ios-sdk/anonid' },
-
- { text: 'OpenReplay CLI', header:true,type: 'learn', slug: 'cli/', key: 'guides/troubleshooting', icon: 'cli', hideChevron: true },
-]
+export default nav

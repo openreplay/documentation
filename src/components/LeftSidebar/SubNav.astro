@@ -1,0 +1,106 @@
+---
+import MenuIcon from './MenuIcon'
+import type { NavItem } from '../../i18n/en/nav'
+import SelfSubNav from './SubNav.astro'
+
+export interface Props {
+  item: NavItem
+  currentPageNoLangNoVer: string
+  categoryLinkPrefix: string
+}
+
+const { item, currentPageNoLangNoVer, categoryLinkPrefix } = Astro.props
+const hasChildren = item.children && item.children.length > 0
+const isToggleList = item.slug.startsWith('?')
+
+const isActive = currentPageNoLangNoVer.indexOf(item.slug) >= 0
+const hrefValue = !isToggleList
+  ? categoryLinkPrefix + item.slug
+  : item.slug
+
+---
+
+<li class:list={['menu-item', isActive && 'active']}>
+    <a
+      href={hrefValue}
+      class:list={[
+        'flex items-center justify-between uppercase font-bold',
+        isActive && 'active',
+      ]}
+      style={{ display: 'flex' }}
+    >
+      <div class="flex items-center">
+        {item.icon && <MenuIcon icon={item.icon} />}
+        <span class="ml-2">{item.text}</span>
+      </div>
+      {hasChildren && !item.hideChevron && (
+        <div class="toggle px-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            fill="currentColor"
+            class="chevron bi bi-chevron-right"
+            viewBox="0 0 16 16"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M4.646 1.646a.5.5 0 0 1 .708 0l6
+                 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0
+                 1-.708-.708L10.293 8
+                 4.646 2.354a.5.5 0 0 1 0-.708z"
+            />
+          </svg>
+        </div>
+      )}
+    </a>
+  {isActive && hasChildren && (
+    <ul class="submenu">
+      {item.children!.map((child) => (
+        <SelfSubNav
+          item={child}
+          currentPageNoLangNoVer={currentPageNoLangNoVer}
+          categoryLinkPrefix={categoryLinkPrefix}
+        />
+      ))}
+    </ul>
+  )}
+</li>
+
+<style lang="scss">
+  .menu-item a {
+    color: var(--theme-readable-grey);
+    border-radius: 4px;
+  }
+  .menu-item .submenu {
+    display: none;
+    margin-left: 26px;
+  }
+  .menu-item a {
+    padding: 0.5rem;
+    display: block;
+    margin: 0.3rem 0;
+  }
+  .menu-item .submenu a {
+    margin: 0.2rem 0;
+    padding: 0.3rem;
+  }
+  .menu-item .submenu li:hover {
+    background: var(--theme-gray-opacity);
+    border-radius: var(--theme-border-radius);
+  }
+  .menu-item.active > a,
+  .menu-item.active > div {
+    background-color: var(--theme-accent-opacity);
+  }
+  .menu-item.active .toggle {
+    transform: rotate(90deg);
+  }
+  .submenu a.active {
+    background-color: #eee;
+    color: var(--theme-accent-full);
+  }
+  .menu-item.active .submenu {
+    display: block;
+  }
+</style>
