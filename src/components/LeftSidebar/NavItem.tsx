@@ -1,6 +1,8 @@
 import React from 'react'
 import type { NavItem } from '../../i18n/en/nav'
 import MenuIcon from './MenuIcon'
+import {ChevronRight} from 'lucide-react'
+
 
 interface Props {
   item: NavItem
@@ -31,10 +33,10 @@ function NavItem({ item, currentPageNoLangNoVer, categoryLinkPrefix }: Props) {
     : item.slug
 
   return (
-    <li className={isOpen ? 'menu-item active' : 'menu-item'}>
+    <li className={isOpen ? 'menu-item active' : 'menu-item '}>
       <div
       className={
-        'flex items-center justify-between font-normal'
+        'flex items-center justify-between font-normal px-2'
       }
       style={{ display: 'flex' }}
     >
@@ -50,27 +52,12 @@ function NavItem({ item, currentPageNoLangNoVer, categoryLinkPrefix }: Props) {
     </a>
       {hasChildren && !item.hideChevron && (
         <div className="toggle px-2 cursor-pointer" onClick={() => toggleOpen(!isOpen)}>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            fill="currentColor"
-            className="chevron bi bi-chevron-right"
-            viewBox="0 0 16 16"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M4.646 1.646a.5.5 0 0 1 .708 0l6
-                 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0
-                 1-.708-.708L10.293 8
-                 4.646 2.354a.5.5 0 0 1 0-.708z"
-            />
-          </svg>
+         <ChevronRight size={16} strokeWidth={1.5} />
         </div>
       )}
     </div>
   {isOpen && hasChildren && (
-    <ul className="submenu">
+    <ul className="submenu mt-0.5">
       {item.children!.map((child) => (
         <NavItem
           item={child}
