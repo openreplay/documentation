@@ -32,20 +32,24 @@ function NavItem({ item, currentPageNoLangNoVer, categoryLinkPrefix }: Props) {
 
   return (
     <li className={isOpen ? 'menu-item active' : 'menu-item'}>
-      <a
-      href={hrefValue}
-      onClick={onLinkClick}
+      <div
       className={
         'flex items-center justify-between uppercase font-bold'
       }
       style={{ display: 'flex' }}
     >
+    <a
+	   	href={hrefValue}
+	    onClick={onLinkClick}
+			className={'w-full'}
+    >
       <div className="flex items-center">
         {item.icon && <MenuIcon icon={item.icon} />}
         <span className="ml-2">{item.text}</span>
       </div>
+    </a>
       {hasChildren && !item.hideChevron && (
-        <div className="toggle px-2">
+        <div className="toggle px-2 cursor-pointer" onClick={() => toggleOpen(!isOpen)}>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="16"
@@ -64,7 +68,7 @@ function NavItem({ item, currentPageNoLangNoVer, categoryLinkPrefix }: Props) {
           </svg>
         </div>
       )}
-    </a>
+    </div>
   {isOpen && hasChildren && (
     <ul className="submenu">
       {item.children!.map((child) => (
