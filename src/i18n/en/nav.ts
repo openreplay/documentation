@@ -12,7 +12,7 @@ const nav: NavItem = {
   slug: '',
   children: [
     {
-      text: 'Test Section Title',
+      text: 'Intro',
       slug: null,
       icon: 'home',
       hideChevron: true,
@@ -20,7 +20,7 @@ const nav: NavItem = {
       isSectionTitle: true
     },
     {
-      text: 'Home',
+      text: 'What is OpenReplay?',
       slug: 'home',
       icon: 'home',
       hideChevron: true,
@@ -30,8 +30,20 @@ const nav: NavItem = {
       text: 'Getting started',
       slug: 'getting-started',
       icon: 'start',
+      hideChevron: false,
+      children: [
+        { text: 'OpenReplay Serverless', slug: 'getting-started/serverless', children: [] },
+        { text: 'OpenReplay Dedicated', slug: 'getting-started/dedicated', children: [] },
+        { text: 'OpenReplay Self-Host', slug: 'getting-started/self-host', children: [] },
+      ]
+    },
+    {
+      text: 'Deployment',
+      slug: null,
+      icon: 'null',
       hideChevron: true,
-      children: []
+      children: [],
+      isSectionTitle: true
     },
     {
       text: 'Deployment',
@@ -39,25 +51,169 @@ const nav: NavItem = {
       icon: 'deployment',
       children: [
         { text: 'Overview', slug: 'deployment/', children: [] },
-        { text: 'Test List', slug: null, children: [
+        { text: 'Cloud Providers', slug: null, children: [
           { text: 'Deploy to AWS', slug: 'deployment/deploy-aws', children: [] },
-        { text: 'Deploy to Azure', slug: 'deployment/deploy-azure', children: [] },
-        { text: 'Deploy to GCP', slug: 'deployment/deploy-gcp', children: [] },
+          { text: 'Deploy to Azure', slug: 'deployment/deploy-azure', children: [] },
+          { text: 'Deploy to GCP', slug: 'deployment/deploy-gcp', children: [] },
+          { text: 'Deploy to Digital Ocean', slug: 'deployment/deploy-digitalocean', children: [] },
+          { text: 'Deploy to OVHCloud', slug: 'deployment/deploy-ovhcloud', children: [] },
+          { text: 'Deploy to Scaleway', slug: 'deployment/deploy-scaleway', children: [] }
         ] },
-        { text: 'Deploy to AWS', slug: 'deployment/deploy-aws', children: [] },
-        { text: 'Deploy to Azure', slug: 'deployment/deploy-azure', children: [] },
-        { text: 'Deploy to GCP', slug: 'deployment/deploy-gcp', children: [] },
-        { text: 'Deploy to Digital Ocean', slug: 'deployment/deploy-digitalocean', children: [] },
-        { text: 'Deploy to Kubernetes', slug: 'deployment/deploy-kubernetes', children: [] },
-        { text: 'Deploy to Docker', slug: 'deployment/deploy-docker', children: [] },
-        { text: 'Deploy to OVHCloud', slug: 'deployment/deploy-ovhcloud', children: [] },
-        { text: 'Deploy to Scaleway', slug: 'deployment/deploy-scaleway', children: [] },
+        { text: 'Self-Hosting', slug: null, children: [
+          { text: 'Deploy to Kubernetes', slug: 'deployment/deploy-kubernetes', children: [] },
+          { text: 'Deploy to Docker', slug: 'deployment/deploy-docker', children: [] },
+          { text: 'Deploy to Ubuntu', slug: 'deployment/deploy-ubuntu', children: [] }
+        ] },
         { text: 'Deploy from Source', slug: 'deployment/deploy-source', children: [] },
-        { text: 'Deploy to Ubuntu', slug: 'deployment/deploy-ubuntu', children: [] },
-        { text: 'OpenReplay Administration', slug: 'deployment/openreplay-admin', children: [] },
-        { text: 'Upgrade Deployment', slug: 'deployment/upgrade', children: [] },
+        { text: 'Maintenance', slug: null, children: [
+          { text: 'OpenReplay CLI', slug: 'deployment/openreplay-admin', children: []},
+          { text: 'Upgrade Deployment', slug: 'deployment/upgrade', children: [] }
+        ] },
+        { text: 'Administration', slug: null, children: [
+          { text: 'Team Management', slug: 'administration/invite-team-members', children: [] },
+          { text: 'Roles and Access', slug: 'administration/roles-and-access', children: [] }
+        ] },
       ]
     },
+    {
+      text: 'Configuration',
+      slug: 'configuration/',
+      icon: 'configure',
+      children: [
+        { text: 'Overview', slug: 'configuration', children: [] },
+        { text: 'Cleanup Storage', slug: 'configuration/cleanup-storage', children: [] },
+        { text: 'Configure SMTP', slug: 'configuration/configure-smtp', children: [] },
+        { text: 'External Database (Postgres)', slug: 'configuration/external-db', children: [] },
+        { text: 'External Storage', slug: 'configuration/external-storage', children: [] },
+        { text: 'Proxy Settings', slug: 'configuration/proxy-settings', children: [] },
+        { text: 'Secure OpenReplay', slug: 'configuration/secure-or', children: [] },
+        { text: 'Single Sign-On (SSO)', slug: 'configuration/sso', children: [] },
+      ]
+    },
+    {
+      text: 'SDKs',
+      slug: null,
+      icon: 'null',
+      hideChevron: true,
+      children: [],
+      isSectionTitle: true
+    },
+    {
+      text: 'JavaScript',
+      slug: 'sdk',
+      icon: 'sdk',
+      children: [
+        { text: 'Overview', slug: 'sdk', children: [] },
+        { text: 'Initialization', slug: 'sdk/constructor', children: [] },
+        { text: 'Methods', slug: 'sdk/methods', children: [] },
+        { text: 'Network Options', slug: 'sdk/network-options', children: [] },
+        { text: 'Sanitize Data', slug: 'sdk/sanitize-data', children: [] },
+        { text: 'Frameworks', slug: 'null', children: [
+          { text: 'React', slug: 'using-or/react', children: [] },
+          { text: 'Vue', slug: 'using-or/vue', children: [] },
+          { text: 'Next.js', slug: 'using-or/next', children: [] },
+          { text: 'Nuxt', slug: 'using-or/nuxt', children: [] },
+          { text: 'Remix', slug: 'using-or/remix', children: [] },
+          { text: 'Svelte', slug: 'using-or/svelte', children: [] },
+          { text: 'Angular', slug: 'using-or/angular', children: [] },
+          { text: 'Gatsby', slug: 'using-or/gatsby', children: [] },  
+        ] },
+      ]
+    },
+    {
+      text: 'iOS (beta)',
+      slug: 'ios-sdk',
+      icon: 'ios_app',
+      children: [
+        { text: 'Initialization', slug: 'ios-sdk/init', children: [] },
+        { text: 'Modules', slug: 'ios-sdk/modules', children: [] },
+        { text: 'Methods', slug: 'ios-sdk/methods', children: [] },
+        { text: 'Network Options', slug: 'ios-sdk/network-options', children: [] },
+        { text: 'Sanitize Data', slug: 'ios-sdk/sanitize-data', children: [] },
+      ]
+    },
+    {
+      text: 'Android (beta)',
+      slug: 'android-sdk',
+      icon: 'android_app',
+      children: [
+        { text: 'Initialization', slug: 'android-sdk/init', children: [] },
+        { text: 'Modules', slug: 'android-sdk/modules', children: [] },
+        { text: 'Methods', slug: 'ios-sdk/methods', children: [] },
+        { text: 'Network Options', slug: 'ios-sdk/network-options', children: [] },
+        { text: 'Sanitize Data', slug: 'ios-sdk/sanitize-data', children: [] },
+      ]
+    },
+    {
+      text: 'React Native (beta)',
+      slug: 'rn-sdk',
+      icon: 'react-native_ios_app',
+      children: [
+        { text: 'Initialization', slug: 'rn-sdk/init', children: [] },
+        { text: 'Modules', slug: 'rn-sdk/modules', children: [] },
+        { text: 'Methods', slug: 'rn-sdk/methods', children: [] },
+        { text: 'Network Options', slug: 'rn-sdk/network-options', children: [] },
+        { text: 'Sanitize Data', slug: 'rn-sdk/sanitize-data', children: [] },
+      ]
+    },
+    {
+      text: 'Products',
+      slug: null,
+      icon: 'null',
+      hideChevron: true,
+      children: [],
+      isSectionTitle: true
+    },
+    {
+      text: 'Session Replay',
+      slug: 'session-replay',
+      icon: 'session-replay',
+      children: [
+        { text: 'Overview', slug: 'session-replay', children: [] },
+        { text: 'Guides', slug: 'null', children: [
+          { text: 'Omnisearch', slug: 'session-replay/omnisearch', children: [] },
+          { text: 'Highlights', slug: 'session-replay/highlights', children: [] },
+        ] 
+        },
+        { text: 'Advanced Setup', slug: 'null', children: [
+          { text: 'Identify a User', slug: 'session-replay/omnisearch', children: [] },
+          { text: 'Send Metadata', slug: 'session-replay/metadata', children: [] },
+          { text: 'Canvas & WebGL', slug: 'session-replay/canvas-webgl', children: [] },
+          { text: 'Cross-domain iFrames', slug: 'session-replay/cross-domain-iframes', children: [] },
+          { text: 'WebSockets', slug: 'session-replay/websockets', children: [] },
+        ] 
+        },
+      ]
+    },
+    {
+      text: 'Product Analytics',
+      slug: 'product-analytics',
+      icon: 'product-analytics',
+      children: [
+        { text: 'Overview', slug: 'product-analytics', children: [] },
+        { text: 'Guides', slug: 'null', children: [
+          { text: 'Dashboards', slug: 'product-analytics/dashboards', children: [] },
+          { text: 'Trends', slug: 'product-analytics/trends', children: [] },
+          { text: 'Funnels', slug: 'product-analytics/funnels', children: [] },
+          { text: 'Journeys', slug: 'product-analytics/journeys', children: [] },
+          { text: 'Heatmaps', slug: 'product-analytics/heatmaps', children: [] },
+          { text: 'Web Analytics', slug: 'product-analytics/web-analytics', children: [] },
+          { text: 'Monitors', slug: 'product-analytics/Monitors', children: [] },
+          { text: 'Custom Events', slug: 'product-analytics/custom-events', children: [] },
+
+        ] 
+        },
+      ]
+    },
+    {
+      text: 'Co-browsing',
+      slug: 'co-browsing',
+      icon: 'co-browsing',
+      children: [
+        { text: 'Overview', slug: 'co-browsing', children: [] }
+      ]
+    },
+    
     {
       text: 'Tracker Setup',
       slug: 'using-or',

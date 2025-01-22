@@ -34,7 +34,7 @@ function NavItem({ item, currentPageNoLangNoVer, categoryLinkPrefix }: Props) {
     <li className={isOpen ? 'menu-item active' : 'menu-item'}>
       <div
       className={
-        'flex items-center justify-between uppercase font-bold'
+        'flex items-center justify-between font-normal'
       }
       style={{ display: 'flex' }}
     >
