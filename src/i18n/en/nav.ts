@@ -263,12 +263,25 @@ const nav: NavItem = {
       text: 'Co-browsing', slug: 'co-browsing', icon: 'co-browsing', children: []
     },
     {
-      text: 'Extensions',
+      text: 'Platform',
       slug: null,
       icon: 'null',
       hideChevron: true,
       children: [],
       isSectionTitle: true
+    },
+    {
+      text: 'AI',
+      slug: 'ai',
+      icon: 'ai',
+      children: [
+        { text: 'Overview', slug: 'ai', children: [] },
+        { text: 'Summary AI ', slug: 'ai/summary-ai', children: [] },
+        { text: 'Similar Sessions', slug: 'ai/similar-sessions', children: [] },
+        { text: 'Explain AI', slug: 'ai/explain-ai', children: [] },
+        { text: 'Smart Search', slug: 'ai/smart-search', children: [] },
+        { text: 'Clips', slug: 'ai/clips', children: [] },
+      ]
     },
     {
       text: 'Plugins',
