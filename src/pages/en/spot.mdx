@@ -136,6 +136,26 @@ In Spot, we detect when a GraphQL response contains an `errors` object in the bo
   <img src="/tutorials/spot/share_spot.gif" alt="Share Spot" style={{ width: '600px', height: 'auto' }} />
 </div>
 
+## Troubleshooting
+
+### Network Error 520 When Saving Spot
+
+If you encounter a HTTP 520 Unknown Error when trying to save Spot recordings, this typically indicates that the video file size exceeds Cloudflare's accepted size limit. This can happen when recording longer spots or spots with complex interactions.
+
+To resolve this issue:
+
+1. Access your OpenReplay deployment configuration at: `scripts/helmcharts/vars.yaml`
+2. Locate the `proxy-body-size` variable (around line 109)
+3. Increase the value from the default `10m` to accommodate larger recordings
+   - For example, if you need to upload files around 36MB, you should set it to at least `40m`
+
+Example configuration adjustment:
+```yaml
+proxy-body-size: 40m  # Increase this value based on your recording size needs
+```
+
+After updating the configuration, apply the changes to your deployment for them to take effect.
+
 ## Have questions?
 
 Having trouble setting up this plugin? Please connect to our [Slack](https://slack.openreplay.com) or check out our [Forum](https://forum.openreplay.com) and get help from our community.
