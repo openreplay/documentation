@@ -101,7 +101,7 @@ export default defineConfig({
   ],
   vite: {
     define: {
-      'process.env.DOCS_KEY': JSON.stringify(process.env.DOCS_KEY)
+      'process.env.DOCS_KEY': JSON.stringify("ZXJ3dmxud2VscnZ1d2VucnZubHdldmxld252aW5lcnZubGVudg==")
     }
   }
 });
