@@ -224,6 +224,7 @@ const nav: NavItem = {
         { text: 'Guides', slug: null, children: [ 
           { text: 'Omnisearch', slug: 'session-replay/omnisearch', children: [] },
           { text: 'Highlights', slug: 'session-replay/highlights', children: [] },
+          { text: 'Session to E2E Test', slug: 'session-replay/generate-e2e-test', children: [] },
         ] 
         },
         { text: 'Advanced Setup', slug: null, children: [
