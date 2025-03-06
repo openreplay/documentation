@@ -18,13 +18,11 @@ We’ll save this code inside a separate module that will export two functions: 
 The first function will instantiate the tracker and set up all plugins; the second will only call the `start` method. 
 
 ```jsx
-import OpenReplay from '@openreplay/tracker';
-
-let _tracker = null;
+import { tracker } from '@openreplay/tracker';
 
 export function init({plugins}) {
 
-    _tracker = new OpenReplay({
+    tracker.configure({
         projectKey: process.env.OPENREPLAY_PROJECT_KEY
     });
 
@@ -32,14 +30,14 @@ export function init({plugins}) {
     let pluginResults = {}
     if(plugins) {
         Object.keys(plugins).forEach( pk => {
-            pluginResults[pk] = _tracker.use(plugins[pk]())
+            pluginResults[pk] = tracker.use(plugins[pk]())
         })
     }
     return pluginResults
 }
 
 export function start() {
-    return _tracker.start()
+    return tracker.start()
 }
 ```
 

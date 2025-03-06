@@ -9,7 +9,7 @@ The key to making it work will be the use of context, which, while it sounds sim
 
 ## SvelteKit and SSR Behavior
 
-As our tracker requires browser context to run, you mightn need to adjust the "Creating the tracker context" example like shown below to ensure that its imported and created inside client side:
+As our tracker requires browser context to run, you might need to adjust the "Creating the tracker context" example like shown below to ensure that its imported and created inside client side:
 
 ```jsx
 <script>
@@ -17,6 +17,14 @@ As our tracker requires browser context to run, you mightn need to adjust the "C
 
   onMount(async () => {
     if (process.browser) {
+			// singleton approach
+			const { tracker } = await import('@openreplay/tracker');
+			tracker.configure({
+				projectKey: "", // pKey
+			});
+			tracker.start();
+			
+			// or you can use a class based approach
       const Tracker = await import('@openreplay/tracker');
       const tracker = new Tracker({
 	      projectKey: "", // pKey

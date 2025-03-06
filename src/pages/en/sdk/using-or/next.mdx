@@ -19,10 +19,11 @@ This method provides minimalistic approach where we inject the tracker into the 
 
 ```jsx
 'use client'
-import {useEffect} from "react"
-import Tracker from '@openreplay/tracker'
+import { useEffect } from "react"
+// note that you can manually import Tracker class if you want to handle the instance manually
+import { tracker } from '@openreplay/tracker'
 
-const tracker = new Tracker({
+tracker.configure({
   projectKey: "",
   ingestPoint: "",
 })
@@ -71,13 +72,13 @@ const [tracker, setTracker] = React.useState(null);
 
   React.useEffect(() => {
     (async function () {
-      const Tracker = await import("@openreplay/tracker");
-      const openRelayTracker = new Tracker.default({
+      const { tracker } = await import("@openreplay/tracker");
+      tracker.configure({
         projectKey: PROJECT_KEY,
         __DISABLE_SECURE_MODE: true,
       });
 
-      setTracker(openRelayTracker);
+      setTracker(tracker);
     })();
   }, []);
 [...]
@@ -100,7 +101,7 @@ function defaultGetUserId() {
 
 async function newTracker(config) {
     // we use dynamic import to make sure that tracker is started inside browser env
-    const Tracker = await import("@openreplay/tracker");
+    const { tracker } = await import("@openreplay/tracker");
     const getUserId = (config?.userIdEnabled && config?.getUserId) ? config.getUserId : defaultGetUserId
     let userId = null;
 
@@ -108,7 +109,7 @@ async function newTracker(config) {
         projectKey: config?.projectKey || process.env.NEXT_PUBLIC_OPENREPLAY_PROJECT_KEY
     }
 
-    const tracker = new Tracker(trackerConfig);
+    tracker.configure(trackerConfig);
     
     if(config?.userIdEnabled) {
         userId = getUserId()
