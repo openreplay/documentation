@@ -1,8 +1,8 @@
 import type { AstroGlobal } from 'astro';
 import { readdir } from 'node:fs/promises';
-import { DocSearchTranslation, UIDict, UIDictionaryKeys, NavDict } from './translation-checkers';
+import { DocSearchTranslation, UIDict, UIDictionaryKeys } from './translation-checkers';
 import { getLanguageFromURL } from '../util';
-
+import { NavItem } from './en/nav';
 /**
  * Convert the map of modules returned by `import.meta.globEager` to an object
  * mapping the language code from each module’s filepath to the module’s default export.
@@ -39,29 +39,32 @@ async function getAllMarkdownPaths(dir: URL, files: URL[] = []) {
 }
 
 /** If a nav entry’s slug is not found, mark it as needing fallback content. */
-async function markFallbackNavEntries(lang: string, nav: NavDict) {
-	// import.meta.url is `./src/i18n/util.ts` in dev but `./dist/entry.js` in build.
-	const dirURL = new URL(
-		import.meta.env.DEV ? `../pages/${lang}/` : `../src/pages/${lang}/`,
-		import.meta.url
-	);
-	const urlToSlug = (url: URL) => url.pathname.split(`/src/pages/${lang}/`)[1];
-	const markdownSlugs = new Set((await getAllMarkdownPaths(dirURL)).map(urlToSlug));
+async function markFallbackNavEntries(lang: string, nav: NavItem) {
+  const dirURL = new URL(
+    import.meta.env.DEV ? `../pages/${lang}/` : `../pages/${lang}/`,
+    import.meta.url
+  );
+  const urlToSlug = (url: URL) => url.pathname.split(`/pages/${lang}/`)[1];
+  const markdownSlugs = new Set((await getAllMarkdownPaths(dirURL)).map(urlToSlug));
 
-	for (const entry of nav) {
-		if ('header' in entry) continue;
-		if (!(markdownSlugs.has(entry.slug + '.md') || markdownSlugs.has(entry.slug + '/index.md'))) {
-			entry.isFallback = true;
-		}
-	}
-	return nav;
+  function setFallbackRecursive(item: NavItem) {
+    if (item.slug) {
+      const hasPage =
+        markdownSlugs.has(item.slug + '.md') || markdownSlugs.has(item.slug + '/index.md');
+      if (!hasPage) item.isFallback = true;
+    }
+    item.children?.forEach(setFallbackRecursive);
+  }
+
+  setFallbackRecursive(nav);
+  return nav;
 }
 
-const translations = mapDefaultExports<UIDict>(import.meta.globEager('./*/ui.ts'));
+const translations = mapDefaultExports<UIDict>(import.meta.glob('./*/ui.ts', { eager: true }));
 const docsearchTranslations = mapDefaultExports<DocSearchTranslation>(
-	import.meta.globEager('./*/docsearch.ts')
+	import.meta.glob('./*/docsearch.ts', { eager: true })
 );
-const navTranslations = mapDefaultExports<NavDict>(import.meta.globEager('./*/nav.ts'));
+const navTranslations = mapDefaultExports<NavItem>(import.meta.glob('./*/nav.ts', { eager: true }));
 
 const fallbackLang = 'en';
 
@@ -73,7 +76,7 @@ export function getDocSearchStrings(Astro: AstroGlobal): DocSearchTranslation {
 }
 
 /** Get the navigation sidebar content for the current language. */
-export async function getNav(Astro: AstroGlobal): Promise<NavDict> {
+export async function getNav(Astro: AstroGlobal): Promise<NavItem> {
 	const lang = getLanguageFromURL(Astro.url.pathname) || fallbackLang;
 	return await markFallbackNavEntries(lang, navTranslations[lang]);
 }

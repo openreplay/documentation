@@ -10,6 +10,7 @@ import { AllPagesByPathname, HtmlPage } from '../base/page';
  */
 export function getPagePathnamesFromSitemap(options: LinkCheckerOptions) {
 	const distContents = fs.readdirSync(options.buildOutputDir);
+	console.log(options.buildOutputDir);
 	const sitemaps = distContents.filter((path) => /^sitemap-\d+\.xml$/.test(path));
 
 	const sitemapRegex = new RegExp(`<loc>${options.baseUrl}(/.*?)</loc>`, 'ig');

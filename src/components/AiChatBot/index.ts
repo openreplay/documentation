@@ -1,5 +1,5 @@
 export interface Message {
-  role: Role;
+  role: string;
   content: string;
   isContinuation?: boolean; 
 }

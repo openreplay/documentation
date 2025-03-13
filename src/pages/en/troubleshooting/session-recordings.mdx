@@ -18,13 +18,19 @@ Another common mistake consists in starting the tracker twice, which prevents se
 
 If you're not sure about the setup, open the browser's inspector and check the Network tab to see if there are XHR requests (look for "ingest") made to your IP/domain (or *.openreplay.com if you're on OpenReplay Cloud).
 
-Another way would be to update the tracker's constructor and log a message on start.
+Another way would be to use the tracker's start callback and log a message on start.
 
 ```js
 const tracker = new OpenReplay({
 	projectKey: PROJECT_KEY,
-	onStart: ({ sessionID }) => console.log("OpenReplay tracker started with session: ", sessionID),
 });
+
+tracker.start().then(({sessionID}) => console.log("OpenReplay tracker started with session: ", sessionID))
+// OR you can use startCallback method
+tracker.start({
+	startCallback: ({ sessionID }) => console.log("OpenReplay tracker started with session: ", sessionID)
+});
+// for snippet, just add startCallback to initOpts
 ```
 
 ### Testing in localhost
@@ -81,18 +87,24 @@ Sites that spread across many subdomains will generate multiple sessions for the
 
 ```js
 // Initialize the tracker as you would normally do
-const tracker = new OpenReplay({
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
   projectKey: PROJECT_KEY
+})
+
+// or with class instance:
+import OpenReplay from '@openreplay/tracker'
+
+const tracker = new OpenReplay({
+	projectKey: PROJECT_KEY
 })
 ...
 // Make sure the tracker is stopped when passing subdomains and collect the sessionHash
 const sessionHash = tracker.stop(); // This can be saved in cookies or passed through URL (if needed)
 ...
 // Initialize another tracker on the new subdomain with the same projectKey
-const trackerNewDomain = new OpenReplay({
-  projectKey: PROJECT_KEY
-})
-// Pass the sessionHash to the newly started session
+// then Pass the sessionHash to the newly started session
 trackerNewDomain.start({ 
   sessionHash, // This can be retrieved from cookies or URL (if needed)
 })

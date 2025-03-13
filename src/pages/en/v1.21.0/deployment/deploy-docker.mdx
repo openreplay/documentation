@@ -1,0 +1,43 @@
+---
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+title: "Deploy with Docker Compose"
+metaTitle: "Deploy with Docker Compose"
+metaDescription: "Step-by-step guide for deploying OpenReplay with Docker Compose."
+---
+import Aside from '~/components/Aside.astro'
+
+<Aside type="tip">
+	This is an experimental feature and its implementation may evolve in the future.
+</Aside>
+
+OpenReplay stack can be installed on a single machine with Docker Compose. 
+
+## Pre-requisites
+
+1. Ubuntu 20.04 LTS (LTS version is recommended)
+2. Public IP Attached to the machine. Means your server is reachable from the Internet.
+3. You should have a domain name attached to the ip address.
+4. Choose your instance type. The minimum specs are `2 vCPUs, 8 GB of RAM, 50 GB of storage`, otherwise OpenReplay backend services won't simply start. So, we recommend **at least** the `t3.large` (or an equivalent), which is enough for a low/moderate volume. If you're expecting high traffic, you should scale from here.
+
+## Deploy OpenReplay
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem #! wherever you've saved the SSH key
+INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
+chmod 400 $SSH_KEY
+ssh -i $SSH_KEY ubuntu@$INSTANCE_IP
+```
+
+2. Install OpenReplay by providing the domain on which it will be running (e.g. DOMAIN_NAME=openreplay.mycompany.com):
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/docker-compose/docker-install.sh)"
+```
+
+You're all set now, OpenReplay should be securely accessible on the domain you created first. You can create an account by visiting the `/signup` page (i.e. openreplay.mycompany.com/signup).
+
+## Have questions?
+
+If you encounter any issues, connect to our [Slack](https://slack.openreplay.com) or check out our [Forum](https://forum.openreplay.com) and get help from our community.
