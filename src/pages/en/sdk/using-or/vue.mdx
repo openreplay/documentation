@@ -9,8 +9,6 @@ Getting the tracker to work on a Vue application is quite straightforward.
 
 ## Adding the tracking code
 
-While you can [get a copy&paste version of the code directly from the platform when you create a new project](/using-or/snippet#getting-the-snippet), that code is too barebone and will make it a lot harder to customize and add extra plugins.
-
 Assuming you're building a SPA (Single Page Application), all you have to do, is to add the following code to your setup script in your main file.
 
 ```html
@@ -19,7 +17,8 @@ Assuming you're building a SPA (Single Page Application), all you have to do, is
 import { tracker } from '@openreplay/tracker'
 //... your code here
 tracker.configure({
-  projectKey: "<your project key>"
+  projectKey: "<your project key>",
+  ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
 });
 
 tracker.start();
@@ -27,23 +26,17 @@ tracker.start();
 </script>
 ```
 
-
 <Aside type="tip">
-**A note for self-hosted users**: if you're using the self-hosted version of OpenReplay, you'll also have to specify the `ingestPoint` configuration property. 
-This property specifies the ingestion endpoint for the tracker’s data. Cloud users don’t need this, 
-because by default the tracker will now where the SaaS version of this endpoint is, but if you’re self-hosting it, you’ll need to specify it 
-(it should be something like `https://openreplay.mydomain.com/ingest`) 
+While you can get the [JS snippet version](/using-or/snippet#getting-the-snippet) of our tracker directly from our CDN when you create a new project, the code is too barebone and will make it harder to customize and add extra plugins.
 </Aside>
 
 ### Handling the "projectKey" in your code
 
-As a note, the `projectKey` that you configure is the one provided by OpenReplay’s platform. 
-This value should not be stored hardcoded in your code for security reasons, but rather on some kind of configuration file/sytem.
+For security reasons, avoid hardcoding your `projectKey` directly in your application code. Instead, store it in a configuration file or environment system.
 
-One option would be to add an environment variable into a `.env` file in the root of your project and prefix the variable with `VITE_`, that will make it available to you in your Vue code.
-You can use it later using `import.meta.env.<your variable name>`.
-Like this:
+One option would be to add an environment variable into a `.env` file in the root of your project and prefix the variable with `VITE_`, that will make it available to you in your Vue code. You can use it later using `import.meta.env.<your variable name>`.
 
+Here is an example:
 ```javascript
 tracker.configure({
   projectKey: import.meta.env.VITE_VUE_APP_PROJECT_KEY,
@@ -51,7 +44,8 @@ tracker.configure({
  ```
 
 ## Building something more complex?
-If you're building a complext applicaton with Vue, chances are you're using [Nuxt](/using-or/nuxt) or something like it. Make sure to check out our [Setup section](/using-or) to find the framework you're working with.
+
+If you're building a complext applicaton with Vue, chances are you're using [Nuxt](/using-or/nuxt) or something like it. Make sure to check out our [Tracker Setup](/using-or) section to find the framework you're working with.
 
 ## Have questions?
 

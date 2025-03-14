@@ -9,15 +9,14 @@ Getting the tracker to work on a React application is quite straightforward.
 
 ## Adding the tracking code
 
-While you can [get a copy&paste version of the code directly from the platform when you create a new project](/using-or/snippet#getting-the-snippet), that code is too barebone and will make it a lot harder to customize and add extra plugins.
-
 Assuming you're building a SPA (Single Page Application), all you have to do, is to add the following code to your entry point:
 
 ```jsx
 import { tracker } from '@openreplay/tracker';
 
 tracker.configure({
-  projectKey: "<your project key>",  
+  projectKey: "<your project key>", 
+  ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
 });
 
 function YourMainComponent({props}) {
@@ -38,6 +37,7 @@ import Tracker from '@openreplay/tracker';
 
 const tracker = new Tracker({
   projectKey: "<your project key>",  
+  ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
 });
 
 function YourMainComponent({props}) {
@@ -51,23 +51,30 @@ function YourMainComponent({props}) {
 }
 ```
 
-In other words, you can instatiate the tracker at the start of the script, and once the page loads, you can start it using a `useEffect` hook.
+In other words, you can instantiate the tracker at the start of the script, and once the page loads, you can start it using a `useEffect` hook.
 
 <Aside type="tip">
-**A note for self-hosted users**: if you're using the self-hosted version of OpenReplay, you'll also have to specify the `ingestPoint` configuration property. 
-This property specifies the ingestion endpoint for the tracker’s data. Cloud users don’t need this, 
-because by default the tracker will now where the SaaS version of this endpoint is, but if you’re self-hosting it, you’ll need to specify it 
-(it should be something like `https://openreplay.mydomain.com/ingest`) 
+While you can get the [JS snippet version](/using-or/snippet#getting-the-snippet) of our tracker directly from our CDN when you create a new project, the code is too barebone and will make it harder to customize and add extra plugins.
 </Aside>
 
 ### Handling the "projectKey" in your code
 
-As a note, the `projectKey` that you configure is the one provided by OpenReplay’s platform. This value should not be stored hardcoded in your code for security reasons, but rather on some kind of configuration file/sytem.
+For security reasons, avoid hardcoding your `projectKey` directly in your application code. Instead, store it in a configuration file or environment system.
 
-There are different options out there to solve this problem, depending on your setup, you could use something like [`create-react-app` support for ENV variables](https://create-react-app.dev/docs/adding-custom-environment-variables/).
+Several approaches are available depending on your project setup:
+- **Environment Variables**: If using Create React App, leverage its [built-in support for environment variables](https://create-react-app.dev/docs/adding-custom-environment-variables/)
+- **Configuration Files**: Use dedicated config files that are excluded from version control
+- **Environment Management**: Tools like `dotenv` can help manage different keys across environments
+
+Below is an example:
+```javascript
+// Access the key from environment variables
+const openReplayKey = process.env.REACT_APP_OPENREPLAY_KEY;
+```
 
 ## Building something more complex?
-If you're building a complext applicaton with React, chances are you're using [Next](/using-or/next), [Remix](/using-or/remix) or something like those. Make sure to check out our [Setup section](/using-or) to find the framework you're working with.
+
+If you're building a complex application with React, chances are you're using [Next](/using-or/next), [Remix](/using-or/remix) or a similar framework. Make sure to check out our [Tracker Setup](/using-or) section to find the framework you're working with.
 
 ## Have questions?
 

@@ -3,6 +3,8 @@ title: "Using OpenReplay with Next.js"
 metaTitle: "Adding the OpenReplay Tracker to your Next.js application"
 metaDescription: "Learn how to get the tracker working on your Next.js application"
 ---
+import Aside from '~/components/Aside.astro'
+
 Getting the tracker to work on a Next.js application is quite straightforward. Since Next.js works on top of React, the process is quite similar, the main difficulty comes from the Server Side Rendering capabilities of Next.js.
 
 But once you understand how they work and how to structure your client-only code, you’ll be tracking your users in no time.
@@ -24,8 +26,8 @@ import { useEffect } from "react"
 import { tracker } from '@openreplay/tracker'
 
 tracker.configure({
-  projectKey: "",
-  ingestPoint: "",
+  projectKey: PROJECT_KEY,
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
 })
 
 const Openreplay = () => {
@@ -75,6 +77,7 @@ const [tracker, setTracker] = React.useState(null);
       const { tracker } = await import("@openreplay/tracker");
       tracker.configure({
         projectKey: PROJECT_KEY,
+        ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
         __DISABLE_SECURE_MODE: true,
       });
 
@@ -156,7 +159,9 @@ This provider also takes on a “configuration” object that you can extend for
 
 With your custom function, you could be providing the customer ID of your store, or the user’s email addressa or anything that uniquely identifies the user within your app. This way you can track their session replays across time in case they have a particular problem that others aren’t reporting.
 
-💡**A note for self-hosted users**: if you’re using the self-hosted version of OpenReplay, you’ll also have to specify the `ingestPoint` configuration property. This property specifies the ingestion endpoint for the tracker’s data. Cloud users don’t need this, because by default the tracker will now where the SaaS version of this endpoint is, but if you’re self-hosting it, you’ll need to specify it (it should be something like `https://openreplay.mydomain.com/ingest`) 
+<Aside type="tip">
+If you’re using the self-hosted version of OpenReplay, you’ll also have to specify the `ingestPoint`configuration property in step 2 (it should point to your domain: `https://openreplay.mydomain.com/ingest`). This property specifies the ingestion endpoint for the tracker’s data.
+</Aside>
 
 ### Handling the "projectKey" in your code
 

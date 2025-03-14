@@ -3,6 +3,8 @@ title: "Using OpenReplay with Remix"
 metaTitle: "Using the tracker inside a Remix project"
 metaDescription: "Learn how to start tracking your users on your Remix project"
 ---
+import Aside from '~/components/Aside.astro'
+
 Installing the OpenReplay tracker into a Remix-based project is relatively straightforward.
 
 With your Remix project ready,  look for the `root.jsx` file inside the `app` folder, and include the SSR code provided by OpenReplay when you created the project on the platform.
@@ -19,7 +21,10 @@ This way, you can access the tracker from anywhere in your app:
 ```js
 import { tracker } from '@openreplay/tracker'
 
-tracker.configure({ projectKey: "<your project key>" });
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
 ```
 
 For this example, we’re going to create a sample module which we’ll save as `tracker.ts` inside the `app` folder. This module will export a function called `startTracker` which will instantiate the tracker, and get it going.
@@ -122,9 +127,9 @@ export function startTracker(config: TrackerConfig) {
 }
 ```
 
-💡**A note for self-hosted users:** if you’re using the self-hosted version of OpenReplay, you’ll also have to specify the `ingestPoint`configuration property. This property specifies the ingestion endpoint for the tracker’s data. Cloud users don’t need this, because by default 
-the tracker will know where the SaaS version of this endpoint is, but if 
-you’re self-hosting it, you’ll need to specify it (it should be something like `https://openreplay.mydomain.com/ingest`)
+<Aside type="tip">
+If you’re using the self-hosted version of OpenReplay, you’ll also have to specify the `ingestPoint`configuration property in step 2 (it should point to your domain: `https://openreplay.mydomain.com/ingest`). This property specifies the ingestion endpoint for the tracker’s data.
+</Aside>
 
 ## Step 2.  Add the code and the tracker to your project
 
@@ -202,8 +207,9 @@ With that out of the way, you can now proceed to deploy your application.
 
 Once you start testing it, you’ll see the replays listed a few minutes after the tab was closed (this is to ensure the tab wasn’t closed by accident).
 
-💡 **Remember**: the tracker won't work locally, and you won't see your local tests on the platform. You'll have to deploy the application for the tracker to have access to the OpenReplay back-end.
-
+<Aside type="tip">
+The tracker won't work locally, and you won't see your local tests on the platform. You'll have to deploy the application for the tracker to have access to the OpenReplay back-end.
+</Aside>
 
 ## Have questions?
 
