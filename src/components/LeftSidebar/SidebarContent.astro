@@ -1,8 +1,8 @@
 ---
 import { getLanguageFromURL, getVersionFromURL } from '../../util'
 import type { NavItem } from '../../i18n/en/nav'
-import SubNav from './SubNav.astro'
 import NavItemComp from './NavItem'
+import LeftSidebarWrapper from './LeftSidebarWrapper'
 
 export interface Props {
   sidebarSections: NavItem[]
@@ -20,22 +20,31 @@ const categoryLinkPrefix = `/${lang}/${urlVersion}`
 const currentPageNoLangNoVer = currentPageMatch.replace(`${lang}/`, '').replace(urlVersion, '') + '/'
 ---
 
-<ul>
-  {sidebarSections.map((section) => section.isSectionTitle ? (
-		<div class="ml-2 text-black-300 font-bold my-2">
-			{section.text}
-		</div>
-	) :
-    <NavItemComp
-      item={section}
-      currentPageNoLangNoVer={currentPageNoLangNoVer}
-      categoryLinkPrefix={categoryLinkPrefix}
-			client:only
-    />
-  )}
-</ul>
+<LeftSidebarWrapper client:load>
+  <ul>
+    {sidebarSections.map((section, index) => section.isSectionTitle ? (
+      <div class="ml-2 text-black-300 font-bold my-2" key={`section-${index}`}>
+        {section.text}
+      </div>
+    ) :
+      <NavItemComp
+        key={`navitem-${section.slug || section.text}-${index}`}
+        item={section}
+        currentPageNoLangNoVer={currentPageNoLangNoVer}
+        categoryLinkPrefix={categoryLinkPrefix}
+        client:load
+      />
+    )}
+  </ul>
+</LeftSidebarWrapper>
 
 <style lang="scss" is:global>
+  .sidebar-scroll-container {
+    scrollbar-width: thin;
+    position: sticky;
+    top: 0;
+  }
+
   .menu-item a {
     color: var(--theme-readable-grey);
     border-radius: 4px;
@@ -76,5 +85,4 @@ const currentPageNoLangNoVer = currentPageMatch.replace(`${lang}/`, '').replace(
   .menu-item.active .submenu {
     display: block;
   }
-
 </style>
