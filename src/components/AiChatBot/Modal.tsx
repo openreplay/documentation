@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -25,7 +25,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
           className="absolute top-3 right-2 text-black bg-transparent border-none focus:outline-none cursor-pointer"
           onClick={onClose}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            <X />
           </button>
         </div>
         <div className="bg-indigo-50 p-6 w-full rounded-b-lg overflow-y-auto" style={{ maxHeight: '75vh' }}>

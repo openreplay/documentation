@@ -1,7 +1,6 @@
 import React, { FC, KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Message } from ".";
-import { CornerDownLeft } from 'lucide-react';
-import styles from './AiChatBotStyles.module.css';
+import { CornerDownLeft } from "lucide-react";
 
 interface Props {
   onSend: (message: Message) => void;
@@ -11,7 +10,6 @@ interface Props {
 export const ChatInput: FC<Props> = ({ onSend, hasSentMessage }) => {
   const [content, setContent] = useState<string>("");
   const [remainingChars, setRemainingChars] = useState<number>(300);
-
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -55,14 +53,14 @@ export const ChatInput: FC<Props> = ({ onSend, hasSentMessage }) => {
   const suggestedPrompts = [
     "Get Started with OpenReplay",
     "How can I deploy OpenReplay on Docker",
-    "How can I troubleshoot session replays"
+    "How can I troubleshoot session replays",
   ];
 
   return (
     <div className="relative">
       {!hasSentMessage && (
         <div className="mb-4">
-          <h3 className="text-lg font-semibold" style={{ color: 'black' }}>Suggested Prompts</h3>
+          <h3 className="text-lg font-semibold text-black">Suggested Prompts</h3>
           <div className="flex flex-col gap-2 mt-2">
             {suggestedPrompts.map((prompt, index) => (
               <button
@@ -77,10 +75,17 @@ export const ChatInput: FC<Props> = ({ onSend, hasSentMessage }) => {
         </div>
       )}
 
-      <div className={`${styles.textareaContainer} w-100`}>
+      <div
+        className="relative inline-block rounded-[0.75rem] p-[2px] w-full bg-white
+          before:content-[''] before:absolute before:inset-0 before:rounded-[0.75rem] before:p-[2px]
+          before:bg-[linear-gradient(-25deg,_rgb(57,78,255),_rgb(62,170,175),_rgb(60,207,101))]
+          before:[-webkit-mask:linear-gradient(#fff_0_0)_content-box,linear-gradient(#fff_0_0)]
+          before:[-webkit-mask-composite:destination-out] before:[mask-composite:exclude] overflow-hidden"
+      >
         <textarea
           ref={textareaRef}
-          className={`${styles.textarea} font-sans text-base w-100`}
+          className="w-full h-[40px] border-0 resize-none p-[10px] rounded-[0.75rem] relative z-10 bg-white border-transparent text-black font-sans text-base
+          focus:border-transparent focus:outline-transparent focus-visible:outline-transparent active:border-transparent"
           placeholder="Ask OpenReplay AI a question"
           value={content}
           rows={1}
