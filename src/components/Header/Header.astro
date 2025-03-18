@@ -7,7 +7,8 @@ import ThemeToggleButton from './ThemeToggleButton';
 import { getLanguageFromURL } from '../../util';
 import { getDocSearchStrings, useTranslations } from '../../i18n/util';
 import ORLogo from './ORLogo.astro';
-import AiChatBot from '../AiChatBot/AiChatBot.tsx';
+import Button from '../ui/Button.astro';
+import AiChatBot from '../AiChatBot/AiChatBot';
 
 import VersionSelector from '../versionSelector.astro'
 
@@ -19,17 +20,20 @@ const t = useTranslations(Astro);
 
 <header>
 	<SkipToContent />
-	<nav class="nav-wrapper flex justify-between w-full max-w-screen-2xl mx-auto" aria-label={t('navbar.a11yTitle')}>
+	<nav class="nav-wrapper flex justify-between w-full  mx-auto" aria-label={t('navbar.a11yTitle')}>
 	<div class="flex logo justify-start items-center gap-4 w-max">
 		<a class="block logo-clickarea astro pl-0 pb-0" href={`/${lang || 'en'}/home`}>
 		<ORLogo />
 		<span class="sr-only">OpenReplay</span>
 		</a>
-		<div class="block pt-1 flex items-center gap-16">
+		<div class="pt-1 flex items-center">
 			<VersionSelector />
-			<a href="https://openreplay.com/releases" class="changelog-button">Changelog ↗</a>
 		</div>
+	</div>
 
+	<div class="flex items-center gap-4">
+		<Button label="Change Log" href="https://openreplay.com/releases" variant="text" />
+		<Button label="Blog" href="https://openreplay.com/blog" variant="text" />
 	</div>
 
 	<div class="flex items-center justify-end">
@@ -41,11 +45,14 @@ const t = useTranslations(Astro);
 			</div>
 
 			<div class="nav-theme-toggle">
-			<ThemeToggleButton
+				<ThemeToggleButton
 				client:visible
-				labels={{ useLight: t('themeToggle.useLight'), useDark: t('themeToggle.useDark') }}
+				labels={{
+				  useLight: t('themeToggle.useLight') || 'Light mode',
+				  useDark: t('themeToggle.useDark') || 'Dark mode'
+				}}
 				isInsideHeader={true}
-			/>
+			  />
 			</div>
 		</div>
 		</div>
@@ -58,22 +65,6 @@ const t = useTranslations(Astro);
 </header>
 
 <style>
-
-
-	.changelog-button {
-		color: var(--theme-readable-grey);
-		padding: 0.5rem 1rem;
-		border-radius: 4px;
-		text-decoration: none;
-		font-weight: 500;
-		transition: background 0.2s ease-in-out;
-	}
-
-	.changelog-button:hover,
-	.changelog-button:focus {
-  		background-color: var(--theme-accent-opacity);
-
-	}
 
 	header {
 		position: fixed;

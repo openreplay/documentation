@@ -223,12 +223,7 @@ const AiChatBot: React.FC = () => {
             background-color: rgb(57 77 255);
           }
         `}
-      </style>
-      <div className="flex flex-col h-screen">
-        <div className="flex-1 overflow-auto sm:px-10 pb-4 sm:pb-10">
-          <div className="max-w-[800px] mx-auto mt-4 sm:mt-12"></div>
-        </div>
-      </div>
+      </style>  
 
       <button
         className="fixed bottom-4 right-4 bg-gradient-to-r from-teal-500 bg-indigo-600 hover:bg-blue-700 cursor-pointer rounded-full text-white font-bold py-2 px-4 rounded shadow-lg z-50 flex items-center gap-2 drop-shadow-sm"
