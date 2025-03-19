@@ -110,13 +110,7 @@ function NavItem({ item, currentPageNoLangNoVer, categoryLinkPrefix, level = 0 }
           ? 'bg-opacity-10 bg-accent text-accent' 
           : 'text-readable-grey hover:content-bg' 
       }`}>
-        <a
-          href={hrefValue}
-          onClick={handleClick}
-          className={`w-full px-2 py-1 rounded ${
-            shouldBeHighlighted ? 'text-accent font-medium' : 'text-readable-grey'
-          }`}
-        >
+        <a href={hrefValue} onClick={handleClick} className={`w-full px-2 py-1 rounded ${ shouldBeHighlighted ? 'text-accent font-medium' : 'text-readable-grey' }`} >
           <div className="flex items-center">
             {item.icon && <MenuIcon icon={item.icon} />}
             <span className="ml-2">{item.text}</span>
@@ -127,31 +121,14 @@ function NavItem({ item, currentPageNoLangNoVer, categoryLinkPrefix, level = 0 }
             className={`px-2 cursor-pointer transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}
             onClick={handleChevronClick}
           >
-            <svg 
-              width="16" 
-              height="16" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="1.5" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-            >
-              <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" > <polyline points="9 18 15 12 9 6"></polyline> </svg>
           </div>
         )}
       </div>
       {isOpen && hasChildren && (
         <ul className="ms-4 ps-0" style={{ borderLeft:'thin dotted #555', borderLeftColor: 'var(--color-neutral-400)' }}>
           {item.children!.map((child, idx) => (
-            <NavItem
-              key={`${child.text}-${child.slug || idx}`}
-              item={child}
-              currentPageNoLangNoVer={currentPageNoLangNoVer}
-              categoryLinkPrefix={categoryLinkPrefix}
-              level={level + 1}
-            />
+            <NavItem key={`${child.text}-${child.slug || idx}`} item={child} currentPageNoLangNoVer={currentPageNoLangNoVer} categoryLinkPrefix={categoryLinkPrefix} level={level + 1} />
           ))}
         </ul>
       )}
