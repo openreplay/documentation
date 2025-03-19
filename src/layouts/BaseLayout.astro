@@ -8,19 +8,7 @@ import { normalizeLangTag } from '../i18n/bcp-normalize';
 import { rtlLanguages } from '../i18n/languages';
 import { useTranslations } from '../i18n/util';
 import { getLanguageFromURL } from '../util';
-import '@fontsource/figtree';
-import "@fontsource/figtree/400.css";
-import "@fontsource/figtree/500.css";
-import "@fontsource/figtree/600.css";
-import "@fontsource/figtree/700.css";
-import "@fontsource/fira-code";
-import "@fontsource/fira-code/400.css";
-import "@fontsource/fira-code/500.css";
-import '@fontsource-variable/bricolage-grotesque';
-import '@fontsource-variable/bricolage-grotesque/wdth.css';
-import '@fontsource-variable/bricolage-grotesque/standard.css';
-
-import { Tooltips } from 'astro-tooltips';
+import HeadImports from './HeadImports.astro';
 
 const { content = {} } = Astro.props;
 const isFallback = !!Astro.params.fallback;
@@ -50,139 +38,72 @@ if (isFallback) canonicalURL.pathname = canonicalURL.pathname.replace(`/${lang}/
 		<HeadCommon />
 		<HeadSEO {content} {canonicalURL} site={Astro.site} />
 		<title set:html={formatTitle(content)}></title>
-		<Tooltips interactive={true} />
-		<style>
-			#left-sidebar {
-				display: none;
-				z-index: 10;
-				inset-inline-start: 0;
-				padding-left: 0.45rem;
-
-			}
-			#right-sidebar {
-				top: var(--theme-navbar-height);
-				inset-inline-end: 0;
-			}
-			#main-content {
-				display: flex;
-				flex-direction: column;
-				height: 100%;
-				z-index: 99;
-			}
-
-			.toc-toggle{
-				border-radius: 0;
-			}
-
-			/* Allow showing left sidebar as an overlay, but only while viewport stays narrow */
-			@media not screen and (min-width: 64em) {
-				/* Make the left sidebar visible and fill the entire viewport below the navbar */
-				:global(.mobile-sidebar-toggle #left-sidebar) {
-					display: flex;
-					top: var(--theme-navbar-height);
-					inset-inline-end: 0;
-					position: relative;
-				}
-				
-				:global(.mobile-sidebar-toggle) {
-					overflow-y: scroll;
-				}
-				:global(.mobile-sidebar-toggle .main-column) {
-					display: none !important;
-				}
-				:global(.mobile-sidebar-toggle #left-sidebar ul) {
-					overscroll-behavior: contain;
-				}
-			}
-
-			@media (min-width: 64em) {
-				#left-sidebar {
-					display: flex;
-					background: transparent;
-					margin-top: calc(var(--theme-navbar-height) + 3.5rem)
-				}
-				.toc-toggle{
-				border-radius: var(--theme-border-radius);
-			
-				}	
-				#left-sidebar {
-					margin-left: .5rem;
-				}
-				
-			}
-			@media (min-width: 92em) {
-				#left-sidebar {
-					margin-left: 0;
-				}
-				
-			}
-
-
-		</style>
-		<script is:inline>
-			// This code was migrated/copied from ThemToggleBotton to make the
-			// dark mode toggle instant, vs. hidden inside of a Preact useEffect() call.
-			const theme = (() => {
-				if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
-					return localStorage.getItem('theme');
-				}
-				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-					return 'dark';
-				}
-				return 'light';
-			})();
-			if (theme === 'light') {
-				document.documentElement.classList.remove('theme-dark');
-			} else {
-				document.documentElement.classList.add('theme-dark');
-			}
-		</script>
-		<!-- OpenReplay Tracking Code for OpenReplay Documentation Site -->
-<script is:inline>
-	var initOpts = {
-	  projectKey: "AnCnp3jCbPkBu2vQNrax",
-	  ingestPoint: "https://foss.openreplay.com/ingest",
-	  defaultInputMode: 0,
-	  obscureTextNumbers: false,
-	  obscureTextEmails: true,
-	};
-	var startOpts = { userID: "" };
-	(function(A,s,a,y,e,r){
-	  r=window.OpenReplay=[e,r,y,[s-1, e]];
-	  s=document.createElement('script');s.src=A;s.async=!a;
-	  document.getElementsByTagName('head')[0].appendChild(s);
-	  r.start=function(v){r.push([0])};
-	  r.stop=function(v){r.push([1])};
-	  r.setUserID=function(id){r.push([2,id])};
-	  r.setUserAnonymousID=function(id){r.push([3,id])};
-	  r.setMetadata=function(k,v){r.push([4,k,v])};
-	  r.event=function(k,p,i){r.push([5,k,p,i])};
-	  r.issue=function(k,p){r.push([6,k,p])};
-	  r.isActive=function(){return false};
-	  r.getSessionToken=function(){};
-	})("//static.openreplay.com/latest/openreplay.js",1,0,initOpts,startOpts);
-  </script>
+		<!-- Following import contains openreplay Tracker, fonts used in Docs -->
+		<HeadImports /> 
 	</head>
 
 	<body class={content.baseClass || ""}>
 		<Header {currentPage} />
-		<main class="layout max-w-screen-2xl lg:flex xl:gap-10 mx-auto justify-between">
-			<aside id="left-sidebar" class="sidebar lg:w-72	 xl:w-1/5 relative">
-				<slot name="primary-sidebar">
-					<LeftSidebar {currentPage} />
-				</slot>
+		
+		{/* Mobile Overlay Sidebar */}
+		<aside
+			id="mobile-left-sidebar"
+			class="lg:hidden fixed inset-y-0 left-0 w-10/12 bg-white overflow-y-auto transform -translate-x-full transition-transform duration-300 ease-in-out z-50"
+		>
+			<LeftSidebar {currentPage} />
+		</aside>
+
+		{/* Mobile Background Overlay */}
+		<div
+			id="mobile-overlay"
+			class="lg:hidden fixed inset-0 bg-black bg-opacity-50 opacity-0 pointer-events-none transition-opacity duration-300 z-40"
+			onclick="closeMobileMenu()"
+		></div>
+		
+		<main class="layout max-w-screen-2xl h-screen lg:flex mx-auto justify-between pt-20">
+			<aside id="left-sidebar" class="hidden lg:block w-3/12 p-4 pt-0 overflow-y-auto h-full">
+				<LeftSidebar {currentPage} />
 			</aside>
-			<div id="main-content" class="main-column w-11/12 lg:w-3/5 mx-auto">
-				<slot />
+		
+			<div class="flex-1 flex flex-col overflow-y-auto">
+				<div class="flex-grow flex flex-col xl:flex-row w-full">
+					<div id="main-content" class="p-6 pt-0 xl:w-9/12 min-w-0">
+						<div class="max-w-3xl mx-auto xl:mx-0">
+							<slot />
+						</div>
+					</div>
+					<div id="right-sidebar" class="hidden xl:block xl:w-3/12 px-4 flex-shrink-0">
+						<div class="xl:sticky xl:top-0">
+							<slot name="secondary-sidebar" />
+						</div>
+					</div>
+				</div>
+				<div class="xl:ps-6 xl:pe-20"><Footer /></div>
 			</div>
-			<aside id="right-sidebar" class="hidden xl:block xl:w-1/6">
-				<slot name="secondary-sidebar" />
-			</aside>
 		</main>
-		<div class="main-column">
-			<slot name="footer">
-				<Footer />
-			</slot>
-		</div>
+		<script>
+			// Declare the type for TypeScript
+			declare global {
+				interface Window {
+					closeMobileMenu: () => void;
+				}
+			}
+			
+			window.closeMobileMenu = () => {
+				document.body.classList.remove('mobile-sidebar-toggle');
+				window.dispatchEvent(new CustomEvent('mobile-sidebar-closed'));
+			};
+		</script>
 	</body>
 </html>
+
+<style>
+	/* If the body has the class "mobile-sidebar-toggle", slide-in the mobile sidebar */
+    body.mobile-sidebar-toggle #mobile-left-sidebar {
+        @apply translate-x-0;
+    }
+
+    body.mobile-sidebar-toggle #mobile-overlay {
+        @apply opacity-100 pointer-events-auto;
+    }
+</style>
