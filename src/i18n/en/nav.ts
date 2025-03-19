@@ -77,6 +77,7 @@ const nav: NavItem = {
           { text: 'Team Management', slug: 'deployment/invite-team-members', children: [] },
           { text: 'Roles and Access', slug: 'deployment/roles-and-access', children: [] }
         ] },
+        { text: 'Tracker Compatibility', slug: 'deployment/compatibility', children: [] },
         
       ]
     },
