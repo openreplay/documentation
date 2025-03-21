@@ -45,6 +45,12 @@ export default function Search({ lang = 'en', labels }: Props) {
 		return () => searchButtonRef.current?.removeEventListener('click', onOpen);
 	}, [searchButtonRef.current, onOpen]);
 
+	useEffect(() => {
+		const handleOpen = () => setIsOpen(true);
+		window.addEventListener('open-docsearch', handleOpen);
+		return () => window.removeEventListener('open-docsearch', handleOpen);
+	}, []);
+
 	useDocSearchKeyboardEvents({
 		isOpen,
 		onOpen,

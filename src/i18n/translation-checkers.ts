@@ -1,5 +1,6 @@
 import type { ModalTranslations } from '@docsearch/react';
 import nav, { NavItem } from './en/nav';
+export type { NavItem };
 import type enUI from './en/ui';
 
 export type UIDictionaryKeys = keyof typeof enUI;

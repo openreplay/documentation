@@ -76,7 +76,7 @@ export const ChatInput: FC<Props> = ({ onSend, hasSentMessage }) => {
       )}
 
       <div
-        className="relative inline-block rounded-[0.75rem] p-[2px] w-full bg-white
+        className="relative inline-block rounded-[0.75rem] p-1 w-full bg-white
           before:content-[''] before:absolute before:inset-0 before:rounded-[0.75rem] before:p-[2px]
           before:bg-[linear-gradient(-25deg,_rgb(57,78,255),_rgb(62,170,175),_rgb(60,207,101))]
           before:[-webkit-mask:linear-gradient(#fff_0_0)_content-box,linear-gradient(#fff_0_0)]
