@@ -137,6 +137,7 @@ const nav: NavItem = {
         ] },
         { text: 'Network Options', slug: 'sdk/network-options', children: [] },
         { text: 'Sanitize Data', slug: 'sdk/sanitize-data', children: [] },
+        { text: 'Private Mode', slug: 'sdk/private-mode', children: [] },
         { text: 'Frameworks', slug: 'sdk/using-or/', children: [
           { text: 'Overview', slug: 'sdk/using-or/', children: [] },
           { text: 'React', slug: 'sdk/using-or/react', children: [] },
