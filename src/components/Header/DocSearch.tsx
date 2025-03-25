@@ -1,6 +1,5 @@
 import { DocSearchModal, useDocSearchKeyboardEvents } from '@docsearch/react';
-import { createPortal } from 'preact/compat';
-import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import type { DocSearchTranslation } from '../../i18n/translation-checkers';
 import { getVersionFromURL, __LATEST__, getLanguageFromURL } from '../../util';
 
@@ -11,44 +10,33 @@ interface Props {
 
 export default function Search({ lang = 'en', labels }: Props) {
 	const [isOpen, setIsOpen] = useState(false);
-	const searchButtonRef = useRef(document.getElementById('docsearch-search-button'));
 	const [initialQuery, setInitialQuery] = useState<string>();
 	const [version, setVersion] = useState('');
 	const [language, setLanguage] = useState('');
 
-	const onOpen = useCallback(() => {
+	const onOpen = () => {
 		setIsOpen(true);
-	}, [setIsOpen]);
+	}
 
-	const onClose = useCallback(() => {
+	const onClose = () => {
 		setIsOpen(false);
-	}, [setIsOpen]);
+	}
 
-	const onInput = useCallback(
-		(e) => {
+	const onInput = (e) => {
 			setIsOpen(true);
 			setInitialQuery(e.key);
-		},
-		[setIsOpen, setInitialQuery]
-	);
+	}
 
 	useEffect(() => {
 		let v = getVersionFromURL(window.location.href);
 		let l = getLanguageFromURL(window.location.href);
-		// console.log('v', v)
 		setVersion(v ? 'v' + v : __LATEST__);
 		setLanguage(l);
-	}, []);
-
-	useEffect(() => {
-		searchButtonRef.current?.addEventListener('click', onOpen);
-		return () => searchButtonRef.current?.removeEventListener('click', onOpen);
-	}, [searchButtonRef.current, onOpen]);
-
-	useEffect(() => {
-		const handleOpen = () => setIsOpen(true);
-		window.addEventListener('open-docsearch', handleOpen);
-		return () => window.removeEventListener('open-docsearch', handleOpen);
+		window.addEventListener('open-docsearch', onOpen);
+		console.log('test')
+		return () => {
+			window.removeEventListener('open-docsearch', onOpen);
+		}
 	}, []);
 
 	useDocSearchKeyboardEvents({
@@ -56,47 +44,35 @@ export default function Search({ lang = 'en', labels }: Props) {
 		onOpen,
 		onClose,
 		onInput,
-		searchButtonRef,
 	});
 
 	if (!isOpen) return null;
 
-	function CustomHit(props) {
-		console.log('props', props)
-		return (
-		  <div className="border p-2">
-			<a href={props.hit.url}>
-				<h2 className="font-medium text-lg">{props.hit.title}</h2>
-			</a>
-			<p className="">{props.hit.body}</p>
-			<p>{props.hit.version}</p>
-			{/* <a href={props.hit.url}>Read More</a> */}
-		  </div>
-		);
-	  }
-
-	return createPortal(
+	return (
 		<DocSearchModal
 			initialQuery={initialQuery}
 			initialScrollY={window.scrollY}
 			onClose={onClose}
-			indexName={import.meta.env.PUBLIC_ALGOLIA_INDEX}
-			appId={import.meta.env.PUBLIC_ALGOLIA_KEY}
-			apiKey={import.meta.env.PUBLIC_ALGOLIA_SECRET}
+			indexName={import.meta.env.PUBLIC_ALGOLIA_INDEX ?? 'test'}
+			appId={import.meta.env.PUBLIC_ALGOLIA_KEY ?? 'test'}
+			apiKey={import.meta.env.PUBLIC_ALGOLIA_SECRET ?? 'test'}
 			//searchParameters={{ filters: `version:${version}` }}
-			searchParameters={{ facetFilters: [`version:${version}`,`lang:${language}` ], facets:["*", "version", "lang"], attributesToRetrieve: ["title", "version", "slug", "hierarchy", "body", "excerpt"] }}
+			searchParameters={{
+				facetFilters: [`version:${version}`, `lang:${language}`],
+				facets: ['*', 'version', 'lang'],
+				attributesToRetrieve: ['title', 'version', 'slug', 'hierarchy', 'body', 'excerpt'],
+			}}
 			// searchParameters={{ facetFilters: [[`lang:${lang}`]] }}
 			// searchParameters={{ facetFilters: [`lang:${lang}`, `version:${version}`] }}
 			// hitComponent={CustomHit}
 			transformItems={(items) => {
 				return items.map((item) => {
-					// console.log('item', item);
 					// We transform the absolute URL into a relative URL to
 					// work better on localhost, preview URLS.
 					const a = document.createElement('a');
-					a.href = "/" + item.slug;
-					item.type="lvl1"
-					item.title = ""
+					a.href = '/' + item.slug;
+					item.type = 'lvl1';
+					item.title = '';
 					const hash = a.hash === '#overview' ? '' : a.hash;
 					return {
 						...item,
@@ -106,7 +82,6 @@ export default function Search({ lang = 'en', labels }: Props) {
 			}}
 			placeholder={labels.placeholder}
 			translations={labels.modal}
-		/>,
-		document.body
+		/>
 	);
 }

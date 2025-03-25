@@ -10,8 +10,9 @@ import { getLanguageFromURL } from '../../util';
 import type { NavItem } from '~/i18n/translation-checkers';
 import type { AstroGlobal } from 'astro';
 import LSDocSearchTrigger from '../Header/LSDocSearchTrigger';
+import Search from '../Header/Search.astro';
 
-export interface Props { 
+export interface Props {
   currentPage: string;
 }
 
@@ -65,7 +66,7 @@ const subMenusSections = createMenuSections(getExtraNav(Astro));
 let activeTab: 'learn' | 'api' = 'learn';
 if (sidebarSections) {
   for (const section of sidebarSections) {
-    if (section.children && section.children.some((item) => 
+    if (section.children && section.children.some((item) =>
       item.slug && currentPageMatch.includes(item.slug))) {
       if ('type' in section && (section.type === 'learn' || section.type === 'api')) {
         activeTab = section.type;
@@ -75,19 +76,24 @@ if (sidebarSections) {
 }
 
 const lang = currentPage ? getLanguageFromURL(currentPage) : undefined;
+const docsearchStrings = getDocSearchStrings(Astro);
 ---
 
 <div class="block sidenav-search py-2 lg:pt-0 px-2 pe-4 lg:px-0 sticky top-0 z-10">
   <LSDocSearchTrigger client:load  />
+  <Search
+		labels={docsearchStrings}
+		lang={lang}
+	/>
 </div>
 
 <nav aria-label={t('leftSidebar.a11yTitle')} class="mt-5 px-4 h-full">
   <SidebarToggleTabGroup
     client:load
     defaultActiveTab={activeTab}
-    labels={{ 
-      learn: t('leftSidebar.learnTab') || 'Learn', 
-      api: t('leftSidebar.referenceTab') || 'Reference' 
+    labels={{
+      learn: t('leftSidebar.learnTab') || 'Learn',
+      api: t('leftSidebar.referenceTab') || 'Reference'
     }}
   />
   <ul class={`nav-groups left-nav-parent`}>
@@ -132,11 +138,11 @@ const lang = currentPage ? getLanguageFromURL(currentPage) : undefined;
           </div>
         </div>
         <div class="items flex pt-5 border-t pb-3 gap-4 items-center">
-          <ThemeToggleButton 
-            client:visible 
-            labels={{ 
-              useLight: t('themeToggle.useLight') || 'Use Light Theme', 
-              useDark: t('themeToggle.useDark') || 'Use Dark Theme' 
+          <ThemeToggleButton
+            client:visible
+            labels={{
+              useLight: t('themeToggle.useLight') || 'Use Light Theme',
+              useDark: t('themeToggle.useDark') || 'Use Dark Theme'
             }}
             isInsideHeader={false}
           />
