@@ -3,7 +3,7 @@ export default function DocSearchTrigger() {
 		<div
 			role="button"
 			tabIndex={0}
-			className="cursor-pointer p-4 py-2 overflow-hidden ring-1 ring-neutral-500/10 bg-[--content-bg] rounded-xl flex items-center justify-between"
+			className="cursor-pointer p-4 py-2 overflow-hidden ring-1 ring-neutral-500/10 bg-[--content-bg] rounded-xl hidden lg:flex items-center justify-between"
 			onClick={() => {
 				window.dispatchEvent(new Event('open-docsearch'));
 			}}
