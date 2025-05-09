@@ -98,7 +98,11 @@ There are a set of options you can pass to the constructor. Only `projectKey` is
 - `resourceBaseHref?: string` Refers to the publicly accessible domain where assets (styles, fonts and icons) could be fetched by OpenReplay. Since they're required for proper session replay, this option is useful to get around the limitation of having your site (and therefore assets) hosted in a private domain. Example: `https://mypublicsite.com/assets/`.
 - `captureIFrames?: boolean` For capturing all of the same-domain iFrames in your web app. If you wish to track a specific iFrame, then instead simply add the `data-openreplay-capture` HTML attribute to the `<iframe>` tag. Default: `true`.
 - `disableClickmaps?: boolean` For disabling css selector calculation (used in click maps). Default: `false`.
-- `verbose?: boolean` For enabling logs. Default: `false`.
+- `__debug__: number` For enabling debug logs. Default: `0` (disabled).
+    - `2`: Log errors.
+    - `3`: errors + warnings.
+    - `4`: errors, warnings and logs.
+    - `5`: verbose logging.
 - `autoResetOnWindowOpen?: boolean` Enable this option to reset the sessionID when opening a new tab from your application. This overwrites the `window.open` method to avoid duplicate sessionIDs due to shared session storage between browser tabs. Default: `false`.
 - `forceSingleTab: boolean` Disables the multi-tab recording capability which stitches user sessions, conducted across multiple tabs, into a single replay. Instead, by enabling this option, sessions captured in different browser tabs will be recorded in separate recordings. Default: `false`.
 - `disableStringDict: boolean` Disables the string dictionary logic (for optimizing storage) in recordings. Default: `false`.
@@ -109,11 +113,6 @@ There are a set of options you can pass to the constructor. Only `projectKey` is
     - `interval: number`: Time interval (in milliseconds) between cleanup runs. Default: 30 * 1000 (30 seconds).
     - `batchSize: number`: Number of nodes to check during each cleanup run. Default: 2500.
     - `enabled: boolean`: Enable or disable the node maintainer. Default: true.
-- `inlineCss: number`: Forces the tracker to record and send remote stylesheets as regular messages instead of caching them on backend. This is useful when CSS files are private, and therefore cannot be cached by OpenReplay backend. Values can be:
-    - `0`: The CSS file is cached by the backend. Default behavior.
-    - `1`: Will attempt to record the linked css file as AdoptedStyleSheet object.
-    - `2`: Fetch the file, then simulate AdoptedStyleSheets behavior for the replay.
-    - `3`: Fetch the file, then save it as plain css inside `<style>` node.
 
 #### Example
 
@@ -133,6 +132,34 @@ tracker.configure({
 });
 
 ```
+
+### CSS edge-cases
+
+- `inlineCss: number`: Forces the tracker to record and send remote stylesheets as regular messages instead of caching them on backend. This is useful when CSS files are private, and therefore cannot be cached by OpenReplay backend. Values can be:
+    - `0`: The CSS file is cached by the backend. Default behavior.
+    - `1`: Will attempt to record the linked css file as AdoptedStyleSheet object.
+    - `2`: Fetch the file, then simulate AdoptedStyleSheets behavior for the replay.
+    - `3`: Fetch the file, then save it as plain css inside `<style>` node -- use this option if you have a lot of shorthand properties in your CSS files (covers CSSOM spec bug).
+- `css: CssRulesOptions`: Options that provide better support for applications built with emotion-js library (i.e MUI components)
+
+```ts
+interface CssRulesOptions {
+	/** turn this on if you have issues with emotionjs-created styles */
+  scanInMemoryCSS?: boolean
+	/** how often to scan tracked stylesheets (with "empty" rules) */
+  checkCssInterval?: number
+  /**
+	  Useful for cases where you expect limited amount of mutations
+	
+	  i.e when sheets are hydrated on client after initial render.
+	
+	  if you want to observe for x seconds, do (x*1000)/checkCssInterval = checkLimit
+	
+	  applied to each stylesheet individually.
+  */
+  checkLimit?: number
+}
+  ```
 
 ### Privacy
 
