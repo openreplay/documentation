@@ -109,11 +109,6 @@ There are a set of options you can pass to the constructor. Only `projectKey` is
     - `interval: number`: Time interval (in milliseconds) between cleanup runs. Default: 30 * 1000 (30 seconds).
     - `batchSize: number`: Number of nodes to check during each cleanup run. Default: 2500.
     - `enabled: boolean`: Enable or disable the node maintainer. Default: true.
-- `inlineCss: number`: Forces the tracker to record and send remote stylesheets as regular messages instead of caching them on backend. This is useful when CSS files are private, and therefore cannot be cached by OpenReplay backend. Values can be:
-    - `0`: The CSS file is cached by the backend. Default behavior.
-    - `1`: Will attempt to record the linked css file as AdoptedStyleSheet object.
-    - `2`: Fetch the file, then simulate AdoptedStyleSheets behavior for the replay.
-    - `3`: Fetch the file, then save it as plain css inside `<style>` node.
 
 #### Example
 
@@ -133,6 +128,34 @@ tracker.configure({
 });
 
 ```
+
+### CSS edge-cases
+
+- `inlineCss: number`: Forces the tracker to record and send remote stylesheets as regular messages instead of caching them on backend. This is useful when CSS files are private, and therefore cannot be cached by OpenReplay backend. Values can be:
+    - `0`: The CSS file is cached by the backend. Default behavior.
+    - `1`: Will attempt to record the linked css file as AdoptedStyleSheet object.
+    - `2`: Fetch the file, then simulate AdoptedStyleSheets behavior for the replay.
+    - `3`: Fetch the file, then save it as plain css inside `<style>` node -- use this option if you have a lot of shorthand properties in your CSS files (covers CSSOM spec bug).
+- `css: CssRulesOptions`: Options that provide better support for applications built with emotion-js library (i.e MUI components)
+
+```ts
+interface CssRulesOptions {
+	/** turn this on if you have issues with emotionjs-created styles */
+  scanInMemoryCSS?: boolean
+	/** how often to scan tracked stylesheets (with "empty" rules) */
+  checkCssInterval?: number
+  /**
+	  Useful for cases where you expect limited amount of mutations
+	
+	  i.e when sheets are hydrated on client after initial render.
+	
+	  if you want to observe for x seconds, do (x*1000)/checkCssInterval = checkLimit
+	
+	  applied to each stylesheet individually.
+  */
+  checkLimit?: number
+}
+  ```
 
 ### Privacy
 
