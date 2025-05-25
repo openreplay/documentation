@@ -123,7 +123,7 @@ const nav: NavItem = {
           { text: 'setUserAnonymousID', slug: 'sdk/methods/set-user-anonymous-id', children: [] },
           { text: 'setMetadata', slug: 'sdk/methods/set-metadata', children: [] },
           { text: 'isFlagEnabled', slug: 'sdk/methods/is-flag-enabled', children: [] },
-          { text: 'reloadFags', slug: 'sdk/methods/reload-flags', children: [] },
+          { text: 'reloadFlags', slug: 'sdk/methods/reload-flags', children: [] },
           { text: 'getFeatureFlag', slug: 'sdk/methods/get-feature-flag', children: [] },
           { text: 'getAllFeatureFlags', slug: 'sdk/methods/get-all-feature-flags', children: [] },
           { text: 'clearPersistFlag', slug: 'sdk/methods/clear-persist-flag', children: [] },
