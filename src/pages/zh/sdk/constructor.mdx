@@ -32,7 +32,8 @@ npm i @openreplay/tracker
 import { tracker } from '@openreplay/tracker'
 
 tracker.configure({
-	projectKey: PROJECT_KEY
+	projectKey: PROJECT_KEY, 
+	ingestPoint: "https://openreplay.mydomain.com/ingest", // 当使用自托管版本时
 })
 
 tracker.start() // 返回包含会话信息（sessionID、sessionHash、userUUID）的 Promise
@@ -47,6 +48,7 @@ import OpenReplay from '@openreplay/tracker/cjs';
 //...
 const tracker = new OpenReplay({
       projectKey: PROJECT_KEY,
+      ingestPoint: "https://openreplay.mydomain.com/ingest", // 当使用自托管版本时
 });
 //...
 function MyApp() {
@@ -86,7 +88,11 @@ const tracker = new OpenReplay({
 - `resourceBaseHref?: string` 指向 OpenReplay 可以获取资源（样式、字体和图标）的公开可访问域。由于它们对于正确的会话回放是必需的，此选项有助于绕过您的网站（以及资源）托管在私有域中的限制。示例：`https://mypublicsite.com/assets/`。
 - `captureIFrames?: boolean` 捕获您 Web 应用中所有同域的 iFrame。如果您希望跟踪特定的 iFrame，只需在 `<iframe>` 标签中添加 `data-openreplay-capture` HTML 属性。默认值：`true`。
 - `disableClickmaps?: boolean` 禁用 CSS 选择器计算（用于点击图）。默认值：`false`。
-- `verbose?: boolean` 启用日志记录。默认值：`false`。
+- `__debug__: number` 启用调试日志。默认值：`0`（禁用）。  
+    - `2`：仅错误  
+    - `3`：错误与警告  
+    - `4`：错误、警告与日志  
+    - `5`：详细
 - `autoResetOnWindowOpen?: boolean` 启用此选项可在从您的应用打开新标签时重置 sessionID。这将覆盖 `window.open` 方法，以避免由于浏览器标签之间共享会话存储导致的重复 sessionID。默认值：`false`。
 - `forceSingleTab: boolean` 禁用多标签录制功能，该功能将用户在多个标签中进行的会话拼接成一个回放。启用此选项后，在不同浏览器标签中捕获的会话将记录在单独的录制中。默认值：`false`。
 - `disableStringDict: boolean` 禁用录制中的字符串字典逻辑（用于优化存储）。默认值：`false`。
@@ -106,6 +112,7 @@ import { tracker } from '@openreplay/tracker';
 
 tracker.configure({
   projectKey: 'your_project_key',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // 当使用自托管版本时
   nodes: {
     maintainer: {
       interval: 60 * 1000, // 每分钟运行一次清理
@@ -129,6 +136,18 @@ tracker.configure({
 
 请注意，被排除的数据在发送到 OpenReplay 服务器之前会被模糊或抑制。对上述选项的更改无法追溯，仅适用于新收集的数据。有关更多详细信息，请参阅[数据清理](/installation/sanitize-data)。
 
+### 样式表
+
+- `inlineCss: number`：强制跟踪器将远程样式表记录并作为普通消息发送，而不是在后端缓存。  
+    - `0`：默认行为（后台缓存）  
+    - `1`：尝试将文件记录为 `AdoptedStyleSheet` 对象  
+    - `2`：获取文件后，在回放时模拟 `AdoptedStyleSheets` 行为  
+    - `3`：获取文件并以内联 `<style>` 形式保存纯 CSS——若 CSS 文件中有大量缩写属性可使用  
+- `css: CssRulesOptions`：为使用 emotion-js（如 MUI 组件）的应用提供更好支持。  
+    - `scanInMemoryCSS: boolean`：若 emotion-js 样式有问题可开启。默认 `false`  
+    - `checkCssInterval: number`：扫描空规则样式表的间隔（毫秒）。默认 `200`  
+    - `checkLimit: number`：每张样式表的扫描次数上限。默认 `0`（关闭）
+
 ### 控制台
 
 - `consoleMethods?: Array<'log' | 'info' | 'warn' | 'error'  'debug' | 'assert'> | null` 指定要捕获的控制台方法列表。默认值：`['log', 'info', 'warn', 'error', 'debug', 'assert']`
@@ -147,6 +166,7 @@ tracker.configure({
 ### 性能
 
 - `capturePerformance?: boolean` 用于捕获性能指标，如帧率、CPU 和内存消耗。默认值：`true`。
+- `longTasks?: boolean` 用于捕获长任务事件。默认值：`false`。
 
 ### 网络
 
@@ -166,7 +186,7 @@ network?: {
   }
 ```
 
-有关如何编辑敏感数据的示例和更多详细信息，请参阅 [网络选项](/installation/network-options)。 
+有关如何编辑敏感数据的示例和更多详细信息，请参阅 [网络选项](/sdk/network-options)。 
 
 ### Canvas
 
@@ -181,7 +201,7 @@ canvas?: {
 }
 ```
 
-有关如何启用此功能和可用选项的更多详细信息，请参阅 [Canvas 和 WebGL](/installation/canvas)。
+有关如何启用此功能和可用选项的更多详细信息，请参阅 [Canvas 和 WebGL](/session-replay/canvas)。
 
 ### 跨域 iFrame
 
@@ -204,7 +224,7 @@ canvas?: {
 ```
 从 Tracker 版本 [14.0.10](https://github.com/openreplay/openreplay/blob/dev/tracker/tracker/CHANGELOG.md) 开始，在处理跨域 iFrame 时，**不再需要**在 HTML 元素上添加 `data-domain` 属性。
 
-有关如何捕获不同域的 iFrame 的更多详细信息，请参阅 [跨域 iFrame 跟踪](/tutorials/crossdomain-iframe)。 
+有关如何捕获不同域的 iFrame 的更多详细信息，请参阅 [跨域 iFrame 跟踪](/session-replay/crossdomain-iframe)。 
 
 ### 鼠标指针
 

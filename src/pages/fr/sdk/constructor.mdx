@@ -31,7 +31,8 @@ Si votre site web est une **Application Monopage (SPA)**, utilisez le code ci-de
 import { tracker } from '@openreplay/tracker'
 
 tracker.configure({
-	projectKey: PROJECT_KEY
+	projectKey: PROJECT_KEY,
+	ingestPoint: "https://openreplay.mydomain.com/ingest", // lorsque vous utilisez la version auto-hébergée
 })
 
 tracker.start() // renvoie une promesse avec les informations de session (sessionID, sessionHash, userUUID)
@@ -84,7 +85,11 @@ Il existe un ensemble d'options que vous pouvez passer au constructeur. Seul `pr
 - `resourceBaseHref?: string` Se réfère au domaine accessible publiquement où les ressources (styles, polices et icônes) pourraient être récupérées par OpenReplay. Puisqu'elles sont nécessaires pour une relecture correcte de la session, cette option est utile pour contourner la limitation d'avoir votre site (et donc les ressources) hébergé dans un domaine privé. Exemple : `https://mysitepublic.com/assets/`.
 - `captureIFrames?: boolean` Pour capturer tous les iFrames du même domaine dans votre application web. Si vous souhaitez suivre un iFrame spécifique, alors ajoutez simplement l'attribut HTML `data-openreplay-capture` à la balise `<iframe>`. Par défaut : `true`.
 - `disableClickmaps?: boolean` Pour désactiver le calcul du sélecteur CSS (utilisé dans les cartes de clics). Par défaut : `false`.
-- `verbose?: boolean` Pour activer les logs. Par défaut : `false`.
+- `__debug__: number` Pour activer les logs de débogage. Par défaut : `0` (désactivé).
+    - `2` : Erreurs.
+    - `3` : Erreurs et avertissements.
+    - `4` : Erreurs, avertissements et logs.
+    - `5` : Très verbeux.
 - `autoResetOnWindowOpen?: boolean` Activez cette option pour réinitialiser l'ID de session lors de l'ouverture d'un nouvel onglet depuis votre application. Cela remplace la méthode `window.open` pour éviter les ID de session dupliqués en raison du stockage de session partagé entre les onglets du navigateur. Par défaut : `false`.
 - `forceSingleTab: boolean` Désactive la capacité d'enregistrement multi-onglets qui assemble les sessions utilisateur, effectuées sur plusieurs onglets, en une seule relecture. Au lieu de cela, en activant cette option, les sessions capturées dans différents onglets du navigateur seront enregistrées dans des enregistrements séparés. Par défaut : `false`.
 - `disableStringDict: boolean` Désactive la logique du dictionnaire de chaînes (pour optimiser le stockage) dans les enregistrements. Par défaut : `false`.
@@ -104,6 +109,7 @@ import { tracker } from '@openreplay/tracker';
 
 tracker.configure({
   projectKey: 'your_project_key',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // lorsque vous utilisez la version auto-hébergée
   nodes: {
     maintainer: {
       interval: 60 * 1000, // Exécuter le nettoyage chaque minute
@@ -127,6 +133,18 @@ tracker.configure({
 
 Notez que les données exclues sont obscurcies ou supprimées avant d'être envoyées aux serveurs OpenReplay. Les modifications appliquées aux options ci-dessus ne peuvent pas être rétroactives et ne s'appliqueront qu'aux nouvelles données collectées. Voir [Assainir les données](/installation/sanitize-data) pour plus de détails.
 
+### Feuilles de style
+
+- `inlineCss: number` : force le tracker à enregistrer et envoyer les feuilles de style distantes comme messages normaux au lieu de les mettre en cache côté backend.
+    - `0` : Comportement par défaut (cache).
+    - `1` : Tente d’enregistrer le fichier comme objet `AdoptedStyleSheet`.
+    - `2` : Récupère le fichier puis simule le comportement `AdoptedStyleSheets`.
+    - `3` : Récupère le fichier et l’insère en CSS brut dans `<style>` — utile si vos CSS contiennent beaucoup de propriétés raccourcies.
+- `css: CssRulesOptions` : meilleur support pour les apps utilisant emotion-js (ex. composants MUI).
+    - `scanInMemoryCSS: boolean` : activez-le si vous avez des soucis avec les styles emotion-js. Par défaut `false`.
+    - `checkCssInterval: number` : intervalle (ms) pour scanner les feuilles suivies sans règles. Par défaut `200`.
+    - `checkLimit: number` : limite de scans par feuille. Par défaut `0` (désactivé).
+
 ### Console
 
 - `consoleMethods?: Array<'log' | 'info' | 'warn' | 'error'  'debug' | 'assert'> | null` Spécifie la liste des méthodes de console à capturer. Par défaut : `['log', 'info', 'warn', 'error', 'debug', 'assert']`
@@ -145,6 +163,8 @@ Notez que les données exclues sont obscurcies ou supprimées avant d'être envo
 ### Performance
 
 - `capturePerformance?: boolean` Pour capturer les métriques de performance telles que le taux de rafraîchissement, la consommation CPU et mémoire. Par défaut : `true`.
+- `longTasks?: boolean` Pour capturer les événements long-task. Par défaut : `false`.
+
 
 ### Réseau
 
@@ -164,7 +184,7 @@ network?: {
   }
 ```
 
-Voir [Options réseau](/installation/network-options) pour des exemples et plus de détails sur la façon de masquer les données sensibles. 
+Voir [Options réseau](/sdk/network-options) pour des exemples et plus de détails sur la façon de masquer les données sensibles. 
 
 ### Canvas
 
@@ -179,7 +199,7 @@ canvas?: {
 }
 ```
 
-Voir [Canvas et WebGL](/installation/canvas) pour savoir comment activer cette fonctionnalité et plus de détails sur les options disponibles.
+Voir [Canvas et WebGL](/session-replay/canvas) pour savoir comment activer cette fonctionnalité et plus de détails sur les options disponibles.
 
 ### iFrames multi-domaines
 
@@ -202,7 +222,7 @@ L'option `crossdomain` concerne la capture des iFrames de différents domaines. 
 ```
 À partir de la version du Tracker [14.0.10](https://github.com/openreplay/openreplay/blob/dev/tracker/tracker/CHANGELOG.md), **l'attribut `data-domain` n'est plus requis** sur les éléments HTML lors du travail avec les iFrames multi-domaines.
 
-Voir [Suivi des iFrames multi-domaines](/tutorials/crossdomain-iframe) pour plus de détails sur la façon de capturer un iFrame d'un domaine différent. 
+Voir [Suivi des iFrames multi-domaines](/session-replay/crossdomain-iframe) pour plus de détails sur la façon de capturer un iFrame d'un domaine différent. 
 
 ### Pointeur de souris
 

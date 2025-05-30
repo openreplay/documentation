@@ -31,7 +31,8 @@ Si tu sitio web es una **Aplicación de Página Única (SPA)** utiliza el siguie
 import { tracker } from '@openreplay/tracker'
 
 tracker.configure({
-	projectKey: PROJECT_KEY
+	projectKey: PROJECT_KEY,
+	ingestPoint: "https://openreplay.mydomain.com/ingest", // cuando se utiliza la versión autohospedada
 })
 
 tracker.start() // devuelve una promesa con información de sesión (sessionID, sessionHash, userUUID)
@@ -84,7 +85,11 @@ Hay un conjunto de opciones que puedes pasar al constructor. Solo `projectKey` e
 - `resourceBaseHref?: string` Se refiere al dominio accesible públicamente donde OpenReplay puede obtener los recursos (estilos, fuentes e íconos). Dado que son necesarios para una correcta reproducción de la sesión, esta opción es útil para sortear la limitación de tener tu sitio (y por lo tanto los recursos) alojado en un dominio privado. Ejemplo: `https://misitiopublico.com/assets/`.
 - `captureIFrames?: boolean` Para capturar todos los iFrames del mismo dominio en tu aplicación web. Si deseas rastrear un iFrame específico, simplemente agrega el atributo HTML `data-openreplay-capture` a la etiqueta `<iframe>`. Valor por defecto: `true`.
 - `disableClickmaps?: boolean` Para deshabilitar el cálculo del selector CSS (utilizado en mapas de clics). Valor por defecto: `false`.
-- `verbose?: boolean` Para habilitar los registros. Valor por defecto: `false`.
+- `__debug__: number` Para habilitar registros de depuración. Valor por defecto: `0` (deshabilitado).
+     - `2`: Errores.
+     - `3`: Errores y advertencias.
+     - `4`: Errores, advertencias y logs.
+     - `5`: Verboso.
 - `autoResetOnWindowOpen?: boolean` Habilita esta opción para restablecer el sessionID al abrir una nueva pestaña desde tu aplicación. Esto sobrescribe el método `window.open` para evitar sessionIDs duplicados debido al almacenamiento de sesión compartido entre pestañas del navegador. Valor por defecto: `false`.
 - `forceSingleTab: boolean` Deshabilita la capacidad de grabación en múltiples pestañas que une sesiones de usuario, realizadas en múltiples pestañas, en una sola reproducción. En cambio, al habilitar esta opción, las sesiones capturadas en diferentes pestañas del navegador se grabarán en grabaciones separadas. Valor por defecto: `false`.
 - `disableStringDict: boolean` Deshabilita la lógica del diccionario de cadenas (para optimizar el almacenamiento) en las grabaciones. Valor por defecto: `false`.
@@ -104,6 +109,7 @@ import { tracker } from '@openreplay/tracker';
 
 tracker.configure({
   projectKey: 'your_project_key',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // cuando se utiliza la versión autohospedada
   nodes: {
     maintainer: {
       interval: 60 * 1000, // Ejecutar limpieza cada minuto
@@ -127,6 +133,18 @@ tracker.configure({
 
 Ten en cuenta que los datos excluidos se ocultan o suprimen antes de enviar los datos a los servidores de OpenReplay. Los cambios aplicados a las opciones anteriores no pueden ser retroactivos y solo se aplicarán a los datos recién recopilados. Consulta [Sanitizar Datos](/installation/sanitize-data) para más detalles.
 
+### Hojas de Estilo
+
+- `inlineCss: number`: Obliga al tracker a registrar y enviar las hojas de estilo remotas como mensajes normales en vez de cachearlas en el backend.
+    - `0`: Comportamiento por defecto (se cachea).
+    - `1`: Intenta registrar el archivo como objeto `AdoptedStyleSheet`.
+    - `2`: Obtiene el archivo y simula el comportamiento de `AdoptedStyleSheets`.
+    - `3`: Obtiene el archivo y lo guarda como CSS plano dentro de `<style>` — útil con muchas propiedades abreviadas.
+- `css: CssRulesOptions`: Soporte extra para apps con emotion-js (p. ej. MUI).
+    - `scanInMemoryCSS: boolean`: Actívalo si tienes problemas con estilos de emotion-js. Por defecto `false`.
+    - `checkCssInterval: number`: Intervalo (ms) para escanear hojas de estilo con reglas vacías. Por defecto `200`.
+    - `checkLimit: number`: Límite de escaneos por hoja. Por defecto `0` (deshabilitado).
+
 ### Consola
 
 - `consoleMethods?: Array<'log' | 'info' | 'warn' | 'error'  'debug' | 'assert'> | null` Especifica la lista de métodos de consola a capturar. Valor por defecto: `['log', 'info', 'warn', 'error', 'debug', 'assert']`
@@ -145,6 +163,7 @@ Ten en cuenta que los datos excluidos se ocultan o suprimen antes de enviar los 
 ### Rendimiento
 
 - `capturePerformance?: boolean` Para capturar métricas de rendimiento como tasa de fotogramas, consumo de CPU y memoria. Valor por defecto: `true`.
+- `longTasks?: boolean` Para capturar eventos de long-task. Valor por defecto: `false`.
 
 ### Red
 
@@ -164,7 +183,7 @@ network?: {
   }
 ```
 
-Consulta [Opciones de Red](/installation/network-options) para ejemplos y más detalles sobre cómo redactar datos sensibles. 
+Consulta [Opciones de Red](/sdk/network-options) para ejemplos y más detalles sobre cómo redactar datos sensibles. 
 
 ### Canvas
 
@@ -202,7 +221,7 @@ La opción `crossdomain` se relaciona con capturar iFrames de diferentes dominio
 ```
 A partir de la versión del Tracker [14.0.10](https://github.com/openreplay/openreplay/blob/dev/tracker/tracker/CHANGELOG.md), el atributo **`data-domain` ya no es requerido** en elementos HTML al trabajar con iFrames de dominio cruzado.
 
-Consulta [Seguimiento de iFrames de Dominio Cruzado](/tutorials/crossdomain-iframe) para más detalles sobre cómo capturar un iFrame de un dominio diferente. 
+Consulta [Seguimiento de iFrames de Dominio Cruzado](/session-replay/crossdomain-iframe) para más detalles sobre cómo capturar un iFrame de un dominio diferente. 
 
 ### Puntero del Ratón
 
