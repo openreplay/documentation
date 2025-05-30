@@ -117,6 +117,7 @@ const nav: NavItem = {
           { text: 'getSessionID', slug: 'sdk/methods/get-session-id', children: [] },
           { text: 'getSessionURL', slug: 'sdk/methods/get-session-url', children: [] },
           { text: 'handleError', slug: 'sdk/methods/handle-error', children: [] },
+          { text: 'incident', slug: 'sdk/methods/incident', children: [] },
           { text: 'isActive', slug: 'sdk/methods/is-active', children: [] },
           { text: 'issue', slug: 'sdk/methods/issue', children: [] },
           { text: 'setUserID', slug: 'sdk/methods/set-user-id', children: [] },
