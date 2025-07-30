@@ -16,7 +16,7 @@ export default {
 	es: 'Espa\xF1ol',
 	fr: 'Fran\xE7ais',
 	ru: '\u0420\u0443\u0441\u0441\u043A\u0438\u0439',
-	zh: '\u4E2D\u570B\u4EBA',
+	zh: '\u4e2d\u6587',
 	'ar-ae': '\u0627\u0644\u0639\u0631\u0628\u064A\u0629'
 };
 export const rtlLanguages = new Set(['ar', 'ar-ae']);
