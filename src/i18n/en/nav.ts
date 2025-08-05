@@ -375,6 +375,7 @@ const nav: NavItem = {
         { text: 'Sourcemaps Issues', slug: 'troubleshooting/sourcemaps', children: [] },
         { text: 'Supported Browsers', slug: 'troubleshooting/supported-browsers', children: [] },
         { text: 'Deployment Issues', slug: 'troubleshooting/deployment-issues', children: [] },
+				{ text: 'Network Resources', slug: 'troubleshooting/network-resources', children: [] },
       ]
     },
     {
