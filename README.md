@@ -4,11 +4,11 @@
   </a>
 </p>
 
-OpenReplay is an open-source session replay stack that let's you see what users do on your web app, helping you troubleshoot issues faster.
+OpenReplay is an open-source session replay stack that lets you see what users do on your web app, helping you troubleshoot issues faster.
 
 ## Getting Started
 - [Deployment](https://docs.openreplay.com/deployment): OpenReplay can be deployed anywhere. Follow our step-by-step guides for deploying it on major public clouds and platforms.
-- [Installation](https://docs.openreplay.com/installation/setup-or): Setup OpenReplay in minutes and start recording user sessions.
+- [Installation](https://docs.openreplay.com/installation/setup-or): Set up OpenReplay in minutes and start recording user sessions.
 - [Configuration](https://docs.openreplay.com/configuration.md): Configure and secure your OpenReplay instance.
 
 ## Go Further
@@ -22,7 +22,7 @@ OpenReplay is an open-source session replay stack that let's you see what users 
 All MDX pages must go inside the `src/pages` folder, and in there, use the folder structure to determine where to add them. 
 
 ### Handling multiple versions of the same page
-Inside the `src/pages` folder you'll find language folders and version folders inside them. The version folders start with `vX.Y.Z`, those folder will have a copy of the root of the `src/pages` folder (minus themselves, of course).
+Inside the `src/pages` folder you'll find language folders and version folders inside them. The version folders start with `vX.Y.Z`; those folders will have a copy of the root of the `src/pages` folder (minus themselves, of course).
 
 For every new page that is added, it needs to be duplicated into every version folder to make sure the user is able to switch versions with the version navigation dropdown and still land on the desired page.
 
