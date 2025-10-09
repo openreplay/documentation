@@ -1,60 +1,131 @@
 ---
 import '@fontsource/figtree';
-import "@fontsource/figtree/400.css";
-import "@fontsource/figtree/500.css";
-import "@fontsource/figtree/600.css";
-import "@fontsource/figtree/700.css";
-import "@fontsource/fira-code";
-import "@fontsource/fira-code/400.css";
-import "@fontsource/fira-code/500.css";
+import '@fontsource/figtree/400.css';
+import '@fontsource/figtree/500.css';
+import '@fontsource/figtree/600.css';
+import '@fontsource/figtree/700.css';
+import '@fontsource/fira-code';
+import '@fontsource/fira-code/400.css';
+import '@fontsource/fira-code/500.css';
 import '@fontsource-variable/bricolage-grotesque';
 import '@fontsource-variable/bricolage-grotesque/wdth.css';
 import '@fontsource-variable/bricolage-grotesque/standard.css';
 import { Tooltips } from 'astro-tooltips';
 ---
+
 <Tooltips interactive={true} />
 <script is:inline>
-    // This code was migrated/copied from ThemToggleBotton to make the
-    // dark mode toggle instant, vs. hidden inside of a Preact useEffect() call.
-    const theme = (() => {
-        if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
-            return localStorage.getItem('theme');
-        }
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            return 'dark';
-        }
-        return 'light';
-    })();
-    if (theme === 'light') {
-        document.documentElement.classList.remove('theme-dark');
-    } else {
-        document.documentElement.classList.add('theme-dark');
-    }
+	// This code was migrated/copied from ThemToggleBotton to make the
+	// dark mode toggle instant, vs. hidden inside of a Preact useEffect() call.
+	const theme = (() => {
+		if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
+			return localStorage.getItem('theme');
+		}
+		if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+			return 'dark';
+		}
+		return 'light';
+	})();
+	if (theme === 'light') {
+		document.documentElement.classList.remove('theme-dark');
+	} else {
+		document.documentElement.classList.add('theme-dark');
+	}
 </script>
 
+<script is:inline>
+	var initOpts = {
+		projectKey: 'AnCnp3jCbPkBu2vQNrax',
+		ingestPoint: 'https://foss.openreplay.com/ingest',
+		defaultInputMode: 0,
+		obscureTextNumbers: false,
+		obscureTextEmails: true,
+		crossdomain: { enabled: true },
+	};
+	var startOpts = { userID: '' };
+	(function (A, s, a, y, e, r) {
+		r = window.OpenReplay = [e, r, y, [s - 1, e]];
+		s = document.createElement('script');
+		s.src = A;
+		s.async = !a;
+		document.getElementsByTagName('head')[0].appendChild(s);
+		r.start = function (v) {
+			r.push([0]);
+		};
+		r.stop = function (v) {
+			r.push([1]);
+		};
+		r.setUserID = function (id) {
+			r.push([2, id]);
+		};
+		r.setUserAnonymousID = function (id) {
+			r.push([3, id]);
+		};
+		r.setMetadata = function (k, v) {
+			r.push([4, k, v]);
+		};
+		r.event = function (k, p, i) {
+			r.push([5, k, p, i]);
+		};
+		r.issue = function (k, p) {
+			r.push([6, k, p]);
+		};
+		r.isActive = function () {
+			return false;
+		};
+		r.getSessionToken = function () {};
+	})('//static.openreplay.com/latest/openreplay.js', 1, 0, initOpts, startOpts);
+</script>
 
 <script is:inline>
-    var initOpts = {
-    projectKey: "AnCnp3jCbPkBu2vQNrax",
-    ingestPoint: "https://foss.openreplay.com/ingest",
-    defaultInputMode: 0,
-    obscureTextNumbers: false,
-    obscureTextEmails: true,
-    crossdomain: { enabled: true },
-    };
-    var startOpts = { userID: "" };
-    (function(A,s,a,y,e,r){
-    r=window.OpenReplay=[e,r,y,[s-1, e]];
-    s=document.createElement('script');s.src=A;s.async=!a;
-    document.getElementsByTagName('head')[0].appendChild(s);
-    r.start=function(v){r.push([0])};
-    r.stop=function(v){r.push([1])};
-    r.setUserID=function(id){r.push([2,id])};
-    r.setUserAnonymousID=function(id){r.push([3,id])};
-    r.setMetadata=function(k,v){r.push([4,k,v])};
-    r.event=function(k,p,i){r.push([5,k,p,i])};
-    r.issue=function(k,p){r.push([6,k,p])};
-    r.isActive=function(){return false};
-    r.getSessionToken=function(){};
-    })("//static.openreplay.com/tests/openreplay.js",1,0,initOpts,startOpts);
+	(function () {
+		var webSdkScript = document.createElement('script');
+
+		webSdkScript.src = 'https://unpkg.com/@grafana/faro-web-sdk@1/dist/bundle/faro-web-sdk.iife.js';
+
+		webSdkScript.onload = () => {
+			window.GrafanaFaroWebSdk.initializeFaro({
+				url: 'https://faro-collector-prod-eu-west-0.grafana.net/collect/305bed49d29cfa2d9d1bd78900299e5d',
+				app: {
+					name: 'openreplay',
+					version: '1.0.0',
+					environment: 'production',
+				},
+			});
+
+			let counter = 0;
+			let int = setInterval(() => {
+				if (window.__OPENREPLAY__ && window.__OPENREPLAY__.isActive()) {
+					const id = window.__OPENREPLAY__.getSessionID();
+					const url = window.__OPENREPLAY__.getSessionURL();
+					window.GrafanaFaroWebSdk.faro.api.setSession({
+						id,
+						attributes: {
+							openreplay_session_id: id,
+							openreplay_session_url: url,
+						},
+					});
+					clearInterval(int);
+				}
+				if (counter++ > 20) {
+					clearInterval(int);
+				}
+			}, 500);
+
+			var webTracingScript = document.createElement('script');
+
+			webTracingScript.src =
+				'https://unpkg.com/@grafana/faro-web-tracing@1/dist/bundle/faro-web-tracing.iife.js';
+
+			webTracingScript.onload = () => {
+				window.GrafanaFaroWebSdk.faro.instrumentations.add(
+					new window.GrafanaFaroWebTracing.TracingInstrumentation()
+				);
+			};
+
+			document.head.appendChild(webTracingScript);
+		};
+
+		document.head.appendChild(webSdkScript);
+	})();
 </script>
