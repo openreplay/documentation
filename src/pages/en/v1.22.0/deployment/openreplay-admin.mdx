@@ -1,0 +1,166 @@
+---
+title: "OpenReplay Administration"
+metaTitle: "OpenReplay Administration"
+metaDescription: "How to easily administer and manage your OpenReplay instance."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+## CLI
+
+The CLI is helpful for managing basic aspects of your OpenReplay instance, things such as restarting or reinstalling a service, accessing a component's logs or simply checking the status of your backend services.
+
+Run the CLI with the `-h` option:
+
+```bash
+openreplay -h
+```
+
+And see the list of all available options:
+
+```shellsession
+  ___                   ____            _
+ / _ \ _ __   ___ _ __ |  _ \ ___ _ __ | | __ _ _   _
+| | | | '_ \ / _ \ '_ \| |_) / _ \ '_ \| |/ _` | | | |
+| |_| | |_) |  __/ | | |  _ <  __/ |_) | | (_| | |_| |
+ \___/| .__/ \___|_| |_|_| \_\___| .__/|_|\__,_|\__, |
+      |_|                        |_|            |___/
+
+[INFO]
+  Usage: openreplay [ -h | --help ]
+                    [ -s | --status ]
+                    [ -i | --install DOMAIN_NAME ]
+                    [ -u | --upgrade ]
+                    [ -U | --deprecated-upgrade /path/to/old_vars.yaml]
+                    [ -r | --restart ]
+                    [ -R | --Reload ]
+                    [ -c | --cleanup N (in days) ]
+                    [ -e | --edit ]
+                    [ -p | --install-packages ]
+                    [ -l | --logs SERVICE ]
+         Services: alerts assets assist chalice
+                   db ender frontend heuristics
+                   http integrations nginx-controller
+                   peers sink sourcemapreader storage
+```
+
+OpenReplay backend relies on the below components/services:
+
+| Service | Description |
+|---------|-------------|
+| http | Ingests events and session recordings |
+| sink | Reads data from the streaming pipeline (Redis or Kafka for enterprise edition) and inserts into a temp storage (NFS) |
+| storage | Moves the temp session recording files to the object storage service |
+| assets | For caching assets (CSS, fonts and icons) to properly render the recordings |
+| db | Reads and writes into various databases (Postgres + ClickHouse for enterprise edition) |
+| ender | Terminates user sessions if inactive or disconnected |
+| chalice | API for serving the frontend |
+| alerts | Sends notifications (email, slack, in-app, webhook) when a user set threshold is reached on any of the performance metrics |
+| integrations |  Pushes and pulls data from the supported third-party APIs (Sentry, Elastic, GitHub, Jira, etc.) |
+
+## Helpful Commands
+
+- Check the health status of the OpenReplay
+
+```sh
+openreplay -s
+```
+
+- Check logs of services
+
+```sh
+openreplay -l <service name>
+```
+
+## Increase service capacity
+
+It's possible to increase the capacity of any service by overriding the default cpu/memory allocation values. These latter are determined during the setup process based on your instance capacity and should fit the needs of most installations.
+
+ If you have a high volume and a big fat machine, simply run `openreplay -e` file and override the service's resources. In the below example, we do it for the `http` worker. But this can be done for any service (i.e. sink, storage, postgresql, redis, etc.) by uncommenting and updating the below block. If you have to do it for more than one service, then simply copy and rename/update the same block (mind duplications).
+
+```yaml
+http:
+  resources:
+    limits:
+      cpu: 4096m
+      memory: 8192Mi
+    requests:
+      cpu: 1024m
+      memory: 2056Mi
+```
+
+Finally, reinstall the service for the new limits to take effect (your data won't be lost):
+
+```bash
+openreplay -R
+```
+
+## Upgrade PostgreSQL
+
+Below are the instructions for upgrading PostgreSQL to version 1.16 or later:
+
+1. Take the DB dump in the persistent volume:
+
+   If you're using a vanilla installation, execute the following command to take a database dump:
+
+   > Note: You can expect the data to get compressed to 3:1 ratio (example: if you have 15G of postgres data, it will be 5G in the dump). So make sure you have enough disk space.
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'PGPASSWORD=$POSTGRES_PASSWORD PGUSER=postgres pg_dumpall -v > /bitnami/postgresql/dumpall.sql'
+   ```
+
+2. Delete the existing data directory:
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'rm -rf /bitnami/postgresql/data'
+   ```
+
+3. Scale the PostgreSQL StatefulSet to zero to stop the current pods:
+
+   ```sh
+   kubectl scale sts postgresql --replicas=0 -n db
+   ```
+
+4. Update the PostgreSQL image to version 16.3.0 or later:
+
+   ```sh
+   kubectl set image statefulset/postgresql postgresql=bitnamilegacy/postgresql:16.3.0-debian-12-r9 -n db
+   ```
+
+5. Scale the StatefulSet back to one to start the updated pod:
+
+   ```sh
+   kubectl scale sts postgresql --replicas=1 -n db
+   ```
+
+6. Ensure that the pod is running and the scaling operation is complete:
+
+   ```sh
+   kubectl get pod -n db -l app.kubernetes.io/name=postgresql
+   ```
+
+7. Restore the database from the dump:
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'PGPASSWORD=$POSTGRES_PASSWORD PGUSER=postgres psql -f /bitnami/postgresql/dumpall.sql'
+   ```
+
+8. Once the upgrade is complete, you can delete the dump file from the PostgreSQL pod:
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'rm /bitnami/postgresql/dumpall.sql'
+   ```
+
+## Uninstall OpenReplay
+
+Run the below commands to uninstall OpenReplay:
+
+```bash
+sudo k3s-uninstall.sh
+```
+
+All the configuration stored in `/var/lib/openreplay/`.
+
+```
+sudo rm -rf /var/lib/openreplay/openreplay
+```

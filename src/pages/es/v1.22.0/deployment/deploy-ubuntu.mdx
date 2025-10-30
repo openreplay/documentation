@@ -1,0 +1,72 @@
+---
+title: "Despliegue en Ubuntu"
+metaTitle: "Despliegue en Ubuntu"
+metaDescription: "Guía paso a paso para desplegar OpenReplay en cualquier máquina Ubuntu."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+El stack de OpenReplay se puede instalar en una sola máquina con Ubuntu. Aquí te mostramos cómo hacerlo.
+
+## Pre-requisitos
+
+- El sistema operativo debe ser *Ubuntu Server 20.04 Focal Fossa*.
+- Las especificaciones mínimas para la máquina que ejecuta OpenReplay son `2 vCPUs, 8 GB of RAM, 50 GB of storage`, de lo contrario, los servicios de backend de OpenReplay simplemente no se iniciarán. Esto debería ser suficiente para un volumen bajo/moderado. Si esperas un tráfico alto, debes escalar desde aquí.
+- Una dirección IP pública apuntando a tu máquina.
+
+## Desplegar OpenReplay
+
+1. Asegúrate de que tu máquina esté iniciada y luego conéctate a ella a través de SSH como root
+
+2. Instala OpenReplay proporcionando el dominio en el que se ejecutará (por ejemplo, DOMAIN_NAME=openreplay.mycompany.com):
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## Configurar TLS/SSL
+
+OpenReplay trata con datos sensibles de usuarios y, por lo tanto, requiere HTTPS para funcionar. Esto es obligatorio, de lo contrario, el rastreador simplemente no comenzará a grabar. Lo mismo para el panel de control, sin HTTPS no podrás reproducir las sesiones de usuario.
+
+Por lo tanto, debes traer (o generar) tu propio certificado SSL.
+
+1. Primero, ve a tu proveedor de servicios DNS, edita tu zona DNS y crea un registro `A Record`. Utiliza el dominio que proporcionaste anteriormente durante el paso de instalación y apúntalo a la máquina usando su IP pública.
+
+2. Si traes tu propio certificado, crea un secreto SSL usando el siguiente comando: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
+
+> **Nota:** Si no tienes un certificado, genera uno, que se renueve automáticamente, para tu subdominio (el que proporcionaste durante la instalación) usando Let's Encrypt. Simplemente conéctate a la máquina OpenReplay, ejecuta `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` y sigue los pasos.
+
+3. Si deseas habilitar la redirección de http a https (recomendado), descomenta el bloque a continuación, bajo la sección `ingress-nginx`, en `/var/lib/openreplay/vars.yaml`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+controller:
+config:
+ssl-redirect: true
+force-ssl-redirect: true
+```
+
+Cabe mencionar que nuestro `ingress-nginx` funciona por defecto en los puertos `80|443`, pero esto se puede cambiar fácilmente, si es necesario, en `vars.yaml`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+controller:
+service:
+ports:
+http: 80
+https: 443
+```
+
+4. Finalmente, reinstala OpenReplay NGINX:
+
+```bash
+openreplay -R
+```
+
+Ya está todo listo, ahora OpenReplay debería ser accesible en tu subdominio. Puedes crear una cuenta visitando la página `/signup` (es decir, openreplay.mycompany.com/signup).
+
+## ¿Tienes preguntas?
+
+Si encuentras algún problema, conéctate a nuestra [comunidad de Slack](https://slack.openreplay.com/) y obtén ayuda de nuestros desarrolladores.
