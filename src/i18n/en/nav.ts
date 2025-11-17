@@ -134,6 +134,7 @@ const nav: NavItem = {
           { text: 'uploadOfflineRecording', slug: 'sdk/methods/upload-offline-recording', children: [] },
           { text: 'forceFlushBatch', slug: 'sdk/methods/force-flush-batch', children: [] },
           { text: 'trackWs', slug: 'sdk/methods/track-ws', children: [] }, 
+          { text: 'incident', slug: 'sdk/methods/incident', children: [] },
         ] },
         { text: 'Network Options', slug: 'sdk/network-options', children: [] },
         { text: 'Sanitize Data', slug: 'sdk/sanitize-data', children: [] },
