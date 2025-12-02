@@ -41,6 +41,7 @@ import { Tooltips } from 'astro-tooltips';
 		obscureTextNumbers: false,
 		obscureTextEmails: true,
 		crossdomain: { enabled: true },
+		analytics: { active: true }
 	};
 	var startOpts = { userID: '' };
 	(function (A, s, a, y, e, r) {
@@ -74,68 +75,89 @@ import { Tooltips } from 'astro-tooltips';
 			return false;
 		};
 		r.getSessionToken = function () {};
-	})('//static.openreplay.com/latest/openreplay-assist.js', 1, 0, initOpts, startOpts);
+	})('//static.openreplay.com/rc/openreplay-assist.js', 1, 0, initOpts, startOpts);
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const userAgent = navigator.userAgent;
+    const referrer = document.referrer;
+    const language = navigator.language || navigator.userLanguage;
+		if (window.__OPENREPLAY__ && window.__OPENREPLAY__.analytics) {
+    	window.__OPENREPLAY__.analytics.people.identify('nikita@openreplay.com')
+			window.__OPENREPLAY__.analytics.people.setProperties({ ref: referrer, lang: language })
+      window.__OPENREPLAY__.analytics.events.setProperty('test_prop', 'test_val')
+		}
+
+    document.querySelectorAll('a').forEach(function (link) {
+      link.addEventListener('click', function (event) {
+				if (window.__OPENREPLAY__ && window.__OPENREPLAY__.analytics) {
+        	window.__OPENREPLAY__.analytics.events.track('click_on', { url: event.currentTarget.href })
+				}
+      });
+    });
+  });
 </script>
 
+
 <script is:inline>
-	(function () {
-		let counter = 0;
-		let int = setInterval(() => {
-			if (window.GrafanaFaroWebSdk && window.GrafanaFaroWebSdk.faro) {
-				clearInterval(int);
-				return;
-			}
-			if (window.__OPENREPLAY__ && window.__OPENREPLAY__.isActive()) {
-				clearInterval(int);
-				const id = window.__OPENREPLAY__.getSessionID();
-				const url = window.__OPENREPLAY__.getSessionURL();
+//	(function () {
+// 		let counter = 0;
+// 		let int = setInterval(() => {
+// 			if (window.GrafanaFaroWebSdk && window.GrafanaFaroWebSdk.faro) {
+// 				clearInterval(int);
+// 				return;
+// 			}
+// 			if (window.__OPENREPLAY__ && window.__OPENREPLAY__.isActive()) {
+// 				clearInterval(int);
+// 				const id = window.__OPENREPLAY__.getSessionID();
+// 				const url = window.__OPENREPLAY__.getSessionURL();
 
-				var webSdkScript = document.createElement('script');
+// 				var webSdkScript = document.createElement('script');
 
-				webSdkScript.src =
-					'https://unpkg.com/@grafana/faro-web-sdk@1/dist/bundle/faro-web-sdk.iife.js';
+// 				webSdkScript.src =
+// 					'https://unpkg.com/@grafana/faro-web-sdk@1/dist/bundle/faro-web-sdk.iife.js';
 
-				webSdkScript.onload = () => {
-					window.GrafanaFaroWebSdk.initializeFaro({
-						url: 'https://faro-collector-prod-eu-west-0.grafana.net/collect/305bed49d29cfa2d9d1bd78900299e5d',
-						app: {
-							name: 'openreplay',
-							version: '1.0.0',
-							environment: 'production',
-						},
-						sessionTracking: {
-							session: {
-								id,
-								attributes: {
-									openreplay_session_id: id,
-									openreplay_session_url: url,
-								},
-							},
-							enabled: true,
-						}
-					});
+// 				webSdkScript.onload = () => {
+// 					window.GrafanaFaroWebSdk.initializeFaro({
+// 						url: 'https://faro-collector-prod-eu-west-0.grafana.net/collect/305bed49d29cfa2d9d1bd78900299e5d',
+// 						app: {
+// 							name: 'openreplay',
+// 							version: '1.0.0',
+// 							environment: 'production',
+// 						},
+// 						sessionTracking: {
+// 							session: {
+// 								id,
+// 								attributes: {
+// 									openreplay_session_id: id,
+// 									openreplay_session_url: url,
+// 								},
+// 							},
+// 							enabled: true,
+// 						}
+// 					});
 
-					var webTracingScript = document.createElement('script');
+// 					var webTracingScript = document.createElement('script');
 
-					webTracingScript.src =
-						'https://unpkg.com/@grafana/faro-web-tracing@1/dist/bundle/faro-web-tracing.iife.js';
+// 					webTracingScript.src =
+// 						'https://unpkg.com/@grafana/faro-web-tracing@1/dist/bundle/faro-web-tracing.iife.js';
 
-					webTracingScript.onload = () => {
-						window.GrafanaFaroWebSdk.faro.instrumentations.add(
-							new window.GrafanaFaroWebTracing.TracingInstrumentation()
-						);
-					};
+// 					webTracingScript.onload = () => {
+// 						window.GrafanaFaroWebSdk.faro.instrumentations.add(
+// 							new window.GrafanaFaroWebTracing.TracingInstrumentation()
+// 						);
+// 					};
 
-					document.head.appendChild(webTracingScript);
-				};
+// 					document.head.appendChild(webTracingScript);
+// 				};
 
-				document.head.appendChild(webSdkScript);
-				return;
-			}
-			if (counter++ > 30) {
-				clearInterval(int);
-				return;
-			}
-		}, 500);
-	})();
+// 				document.head.appendChild(webSdkScript);
+// 				return;
+// 			}
+// 			if (counter++ > 30) {
+// 				clearInterval(int);
+// 				return;
+// 			}
+// 		}, 500);
+// 	})();
 </script>
