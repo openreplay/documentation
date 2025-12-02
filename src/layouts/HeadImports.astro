@@ -95,8 +95,16 @@ import { Tooltips } from 'astro-tooltips';
 						const hrs = time.getHours();
 						const ssid = document.title.toLowerCase().replaceAll(' ', '').slice(0, 20) + hrs;
 			      window.__OPENREPLAY__.analytics.people.identify(ssid)
-						window.__OPENREPLAY__.analytics.people.setProperties({ ref: referrer, lang: language })
+						window.__OPENREPLAY__.analytics.people.setProperties({ 
+							ref: referrer, 
+							lang: language, 
+							pages: 0, 
+							urls: document.location.pathname 
+						})
 						document.sessionStorage.setItem('or_identified', 'true')
+					} else {
+						window.__OPENREPLAY__.analytics.people.increment('pages', 1)
+						window.__OPENREPLAY__.analytics.people.appendValues('urls', document.location.pathname)
 					}
 				}
       });
