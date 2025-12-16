@@ -1,0 +1,284 @@
+---
+title: "JavaScript SDK - 初始化 SDK"
+metaTitle: "JavaScript SDK - 初始化 SDK"
+metaDescription: "跟踪器构造方法的配置选项"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+## 安装
+
+以下命令将安装跟踪器以及 SDK，方便您利用所有的跟踪器功能。
+
+```bash
+npm i @openreplay/tracker
+```
+
+## 初始化
+
+在实例化 OpenReplay 的跟踪器时，您可以提供多个配置选项来自定义录制和体验的各个方面。
+
+您必须在构造函数中设置 `projectKey` 选项。您可以在 OpenReplay 仪表板的“偏好设置 > 项目”下获取此值。
+
+<Aside type="tip">
+  请注意，如果您有多个项目，需要仔细选择您使用的项目密钥。
+</Aside>
+
+### 单页应用程序（SPA）
+
+如果您的网站是一个 **单页应用程序（SPA）**，请使用以下代码：
+
+```js
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+	projectKey: PROJECT_KEY, 
+	ingestPoint: "https://openreplay.mydomain.com/ingest", // 当使用自托管版本时
+})
+
+tracker.start() // 返回包含会话信息（sessionID、sessionHash、userUUID）的 Promise
+```
+
+### 服务端渲染（SSR）
+
+如果您的 Web 应用是 **服务端渲染（SSR）**（例如 NextJS、NuxtJS），请使用以下代码片段。确保在应用启动后调用 `tracker.start()`（在 `useEffect` 或 `componentDidMount` 中）。
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+//...
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY,
+      ingestPoint: "https://openreplay.mydomain.com/ingest", // 当使用自托管版本时
+});
+//...
+function MyApp() {
+  useEffect(() => { // 如果是 React 类组件，使用 componentDidMount
+    tracker.start(); // 返回包含会话信息（sessionID、sessionHash、userUUID）的 Promise
+  }, [])
+}
+```
+
+<Aside type="tip">
+如果您正在使用特定的 Web 框架，请查看我们的 [跟踪器设置部分](/using-or) 了解如何开始。
+</Aside>
+
+## 示例
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+//...
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY,
+      ingestPoint: "https://openreplay.mydomain.com/ingest", // 当使用 OpenReplay 自托管版本时
+      capturePerformance: true,
+      __DISABLE_SECURE_MODE: true // 用于本地测试
+});
+```
+
+## 初始化选项
+
+您可以传递一组选项给构造函数。只有 `projectKey` 是必需的。
+
+### 通用选项 
+
+- `projectKey: string` 您正在跟踪的项目的 ID。
+- `sessionHash?: string` 初始会话的哈希值。当会话跨越您 Web 应用的不同子域时，但您希望将它们合并为一个录制，这很有用。如果无法继续会话（不存在或已结束），跟踪器将自动启动新会话。它也会在 `stop()` 时返回。更多细节请参阅 [此处](/troubleshooting/session-recordings#replaysarebrokenacrosssubdomains)。
+- `ingestPoint?: string` 您的 OpenReplay 域（例如：https://openreplay.mydomain.com/ingest），跟踪器将向其发送事件。对于 OpenReplay Cloud 用户，这是可选的。默认值：`https://api.openreplay.com/ingest`（指向 OpenReplay Cloud）。
+- `revID?: string` 您的 Web 应用的修订 ID。在搜索特定版本发生的问题时很有用。
+- `resourceBaseHref?: string` 指向 OpenReplay 可以获取资源（样式、字体和图标）的公开可访问域。由于它们对于正确的会话回放是必需的，此选项有助于绕过您的网站（以及资源）托管在私有域中的限制。示例：`https://mypublicsite.com/assets/`。
+- `captureIFrames?: boolean` 捕获您 Web 应用中所有同域的 iFrame。如果您希望跟踪特定的 iFrame，只需在 `<iframe>` 标签中添加 `data-openreplay-capture` HTML 属性。默认值：`true`。
+- `disableClickmaps?: boolean` 禁用 CSS 选择器计算（用于点击图）。默认值：`false`。
+- `__debug__: number` 启用调试日志。默认值：`0`（禁用）。  
+    - `2`：仅错误  
+    - `3`：错误与警告  
+    - `4`：错误、警告与日志  
+    - `5`：详细
+- `autoResetOnWindowOpen?: boolean` 启用此选项可在从您的应用打开新标签时重置 sessionID。这将覆盖 `window.open` 方法，以避免由于浏览器标签之间共享会话存储导致的重复 sessionID。默认值：`false`。
+- `forceSingleTab: boolean` 禁用多标签录制功能，该功能将用户在多个标签中进行的会话拼接成一个回放。启用此选项后，在不同浏览器标签中捕获的会话将记录在单独的录制中。默认值：`false`。
+- `disableStringDict: boolean` 禁用录制中的字符串字典逻辑（用于优化存储）。默认值：`false`。
+- `fixedCanvasScaling: boolean` 强制 canvas 图像以像素密度 1 而非 devicePixelRatio 渲染（降低图像的潜在质量，使最终结果更小）。默认值：`false`。
+- `disableCanvas?: boolean` 禁用对 canvas 元素的录制。默认值：`false`。
+- `assistSocketHost?: string` 可用于为 Assist 插件连接设置特定的主机。默认为 `ingestPoint` 的值。
+- `nodes?: { maintainer: MaintainerOptions }` 新的 `nodes.maintainer` 选项有助于管理内存并清理不再使用的 DOM 节点。它具有以下参数：
+    - `interval: number`：清理运行之间的时间间隔（以毫秒为单位）。默认值：30 * 1000（30 秒）。
+    - `batchSize: number`：每次清理运行中要检查的节点数。默认值：2500。
+    - `enabled: boolean`：启用或禁用节点维护器。默认值：`true`。
+
+#### 示例
+
+```js
+
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'your_project_key',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // 当使用自托管版本时
+  nodes: {
+    maintainer: {
+      interval: 60 * 1000, // 每分钟运行一次清理
+      batchSize: 2500, // 每批检查 2500 个节点
+      enabled: true, // 启用节点维护器
+    }
+  }
+});
+
+```
+
+### 隐私
+
+- `respectDoNotTrack?: boolean` 如果用户的浏览器启用了“请勿跟踪”标志，则不要启动跟踪器。默认值：`false`。
+- `obscureTextEmails?: boolean` 模糊文本元素中的电子邮件。电子邮件将转换为一串随机的星号。默认值：`true`。
+- `obscureTextNumbers?: boolean` 模糊文本元素中的数字。数字将转换为一串随机的星号。默认值：`false`。
+- `obscureInputEmails?: boolean` 模糊输入字段中的电子邮件。电子邮件值将转换为一串随机的星号。默认值：`true`。
+- `obscureInputNumbers?: boolean` 模糊输入字段中的数字。数字值将转换为一串随机的星号。默认值：`false`。
+- `obscureInputDates?: boolean` 模糊输入字段中的日期。日期值将转换为一串随机的星号。默认值：`false`。
+- `defaultInputMode?: 0 | 1 | 2` 输入值的默认捕获模式。分别为：明文、模糊或忽略。默认值：`1`（模糊）。
+
+请注意，被排除的数据在发送到 OpenReplay 服务器之前会被模糊或抑制。对上述选项的更改无法追溯，仅适用于新收集的数据。有关更多详细信息，请参阅[数据清理](/installation/sanitize-data)。
+
+### 样式表
+
+- `inlineCss: number`：强制跟踪器将远程样式表记录并作为普通消息发送，而不是在后端缓存。  
+    - `0`：默认行为（后台缓存）  
+    - `1`：尝试将文件记录为 `AdoptedStyleSheet` 对象  
+    - `2`：获取文件后，在回放时模拟 `AdoptedStyleSheets` 行为  
+    - `3`：获取文件并以内联 `<style>` 形式保存纯 CSS——若 CSS 文件中有大量缩写属性可使用  
+- `css: CssRulesOptions`：为使用 emotion-js（如 MUI 组件）的应用提供更好支持。  
+    - `scanInMemoryCSS: boolean`：若 emotion-js 样式有问题可开启。默认 `false`  
+    - `checkCssInterval: number`：扫描空规则样式表的间隔（毫秒）。默认 `200`  
+    - `checkLimit: number`：每张样式表的扫描次数上限。默认 `0`（关闭）
+
+### 控制台
+
+- `consoleMethods?: Array<'log' | 'info' | 'warn' | 'error'  'debug' | 'assert'> | null` 指定要捕获的控制台方法列表。默认值：`['log', 'info', 'warn', 'error', 'debug', 'assert']`
+- `consoleThrottling?: number` 每秒捕获的控制台条目最大数量。默认值：`30`。
+
+### 异常
+
+- `captureExceptions?: boolean` 捕获 JavaScript 异常和堆栈跟踪。默认值：`true`。
+
+### 时间
+
+- `captureResourceTimings?: boolean` 记录资源加载时间。默认值：`true`。
+- `capturePageLoadTimings?: boolean` 记录页面加载时间。默认值：`true`。
+- `capturePageRenderTimings?: boolean` 计算页面渲染指标，如速度指数、视觉完成度或可交互时间。需要 `captureResourceTimings = true`。默认值：`true`。
+
+### 性能
+
+- `capturePerformance?: boolean` 用于捕获性能指标，如帧率、CPU 和内存消耗。默认值：`true`。
+- `longTasks?: boolean` 用于捕获长任务事件。默认值：`false`。
+
+### 网络
+
+`network` 选项与捕获 `fetch` 和 `XHR` 的网络请求和负载有关。
+
+```js
+network?: {
+    failuresOnly: boolean;
+    sessionTokenHeader: string;
+    ignoreHeaders: Array<string> | boolean;
+    capturePayload: boolean; // 启用前确保清理您的数据
+    sanitizer: (RequestResponseData) => RequestResponseData | null;
+    captureInIframes: boolean;
+    axiosInstances: AxiosInstance[];
+    useProxy?: boolean;
+    tokenUrlMatcher?: (url: string) => boolean;
+  }
+```
+
+有关如何编辑敏感数据的示例和更多详细信息，请参阅 [网络选项](/sdk/network-options)。 
+
+### Canvas
+
+`canvas` 选项与捕获 canvas/WebGL 元素有关：
+
+```js
+canvas?: {
+  disableCanvas?: boolean
+  fixedCanvasScaling?: boolean
+  useAnimationFrame?: boolean
+  fileExt?: 'webp' | 'png' | 'jpeg' | 'avif'
+}
+```
+
+有关如何启用此功能和可用选项的更多详细信息，请参阅 [Canvas 和 WebGL](/session-replay/canvas)。
+
+### 跨域 iFrame
+
+`crossdomain` 选项与捕获来自不同域的 iFrame 有关。它与必须设置为 `true` 的 `captureIFrames` 选项一起使用。
+
+```ts 
+ crossdomain?: {
+    /**
+     * 启用跨域跟踪
+     * @default false
+     * */
+    enabled?: boolean
+    /**
+     * 用于指定父域，默认为 '*'
+     * （检查您的 CSP 设置）
+     * @default '*'
+     * */
+    parentDomain?: string
+}
+```
+从 Tracker 版本 [14.0.10](https://github.com/openreplay/openreplay/blob/dev/tracker/tracker/CHANGELOG.md) 开始，在处理跨域 iFrame 时，**不再需要**在 HTML 元素上添加 `data-domain` 属性。
+
+有关如何捕获不同域的 iFrame 的更多详细信息，请参阅 [跨域 iFrame 跟踪](/session-replay/crossdomain-iframe)。 
+
+### 鼠标指针
+
+`mouse` 选项与捕获点击的选择器以构建点击图有关。
+
+```js
+mouse?: 
+  {
+  disableClickmaps?: boolean
+  minSelectorDepth?: number
+  nthThreshold?: number
+  maxOptimiseTries?: number
+  }
+```
+
+- `disableClickmaps?: boolean` 完全禁用选择器计算。默认值：`false`。
+- `minSelectorDepth?: number` 优化选择器的最小长度（默认值为 2）。例如：`body > div > div > p => body > p`
+- `nthThreshold?: number` 在回退到 nth-child 选择器之前的选择器尝试次数。这是一个**耗费资源的操作**，可能会产生显著的开销，不要设置高于 2000。默认值：`1000`。
+- `maxOptimiseTries?: number` 优化和缩短选择器的尝试次数。默认值：`10 000`。
+
+### 重连
+
+- `connAttemptCount?: number` 当跟踪器的 HTTP 请求未能到达后端时，最大的重试次数。默认值：`10`。
+- `connAttemptGap?: number` 每次重试尝试之间的时间间隔（以毫秒为单位）。默认值：`8000`。
+
+### 功能标志
+
+- `onFlagsLoad` 回调函数，用于在功能标志加载后执行操作（每次）。
+
+```ts
+ flags?: {
+    onFlagsLoad?: (flags: IFeatureFlag[]) => void
+ } 
+
+// ...
+interface IFeatureFlag {
+  key: string
+  is_persist: boolean
+  value: string | boolean
+  payload: string
+}
+```
+
+### 安全
+
+- `__DISABLE_SECURE_MODE?: boolean` 允许在没有 SSL 的网站上跟踪器和后端之间的不安全连接。**仅应出于开发目的使用**。默认值：`false`。
+
+<Aside type="caution">
+    请注意，当从您的本地工作站使用 `__DISABLE_SECURE_MODE` 时，您**可能**在观看回放时看到视觉差异，例如 CSS 样式未正确加载。
+    为了获得最佳的录制效果，您的测试应从公开可用的 URL 进行。
+</Aside>
+
+## 方法
+
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+  <ORCard title="了解这些方法" url="/sdk/methods" hideIcon={true} width="100"/>
+</div>
