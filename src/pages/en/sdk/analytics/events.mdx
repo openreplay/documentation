@@ -1,0 +1,184 @@
+---
+title: "Events"
+metaTitle: "OpenReplay Analytics SDK — Events"
+metaDescription: "Define and manage super properties for OpenReplay tracker analytics events."
+---
+
+## Events
+
+This module lets you manage **events** and **properties** — persistent key/value pairs that are automatically attached to every tracked event.
+
+Super properties are stored locally and merged into each event payload when you track events.
+
+Available at:
+
+`tracker.analytics.events`
+
+## Concepts
+
+### Super properties
+
+Super properties are stored in the SDK and merged into every event under `properties`.
+
+### Event properties
+
+Event properties are passed only for a single call to `track/sendEvent` and are **not saved** as super properties.
+
+## Reserved keys
+
+These keys are reserved and cannot be created/removed via the super properties helpers:
+
+- `properties`
+- `token`
+- `timestamp`
+
+## Top-level signatures
+
+```ts
+// Track an event.
+// The `properties` argument is per-event only (not persisted).
+tracker.analytics.events.sendEvent(eventName: string, properties?: Record<string, any>, options?: { send_immediately: boolean })
+
+// Create/update super properties (persisted)
+tracker.analytics.events.setProperty(name: string, value: any): void
+tracker.analytics.events.setProperty(properties: Record<string, any>): void
+
+// Create super properties only if they don't exist yet (persisted)
+tracker.analytics.events.setPropertiesOnce(name: string, value: any): void
+tracker.analytics.events.setPropertiesOnce(properties: Record<string, any>): void
+
+// Remove super properties (persisted)
+tracker.analytics.events.unsetProperties(name: string): void
+tracker.analytics.events.unsetProperties(names: string[]): void
+
+// Clear all super properties
+tracker.analytics.events.reset(): void
+```
+
+## Track events with properties
+
+### Per-event properties (not persisted)
+
+```ts
+tracker.analytics.events.sendEvent("Button Clicked", {
+  button_text: "Start",
+  page: "home",
+})
+```
+
+These properties apply only to this event.
+
+### Super properties + per-event properties (merged)
+
+When you set super properties, they are automatically included in each event and then merged with per-event properties:
+
+```ts
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  env: "prod",
+})
+
+tracker.analytics.events.sendEvent("Signup Started", {
+	// per-event, can override a super property with the same key
+  plan: "pro", 
+})
+```
+
+Merge order:
+
+- super properties are added first
+- per-event properties are merged on top
+
+So per-event properties win on key collisions.
+
+## setProperty
+
+Creates or overwrites super properties.
+
+```ts
+// object form
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  region: "eu",
+})
+
+// key/value form
+tracker.analytics.events.setProperty("build_sha", "3f2c9a1")
+```
+
+### Notes:
+
+- Default/internal keys (tracked by the SDK) are ignored and won’t be added as super properties.
+- Changes are saved locally only if something actually changed.
+
+## setPropertiesOnce
+
+Creates super properties only if they do not exist yet.
+
+```ts
+tracker.analytics.events.setPropertiesOnce({
+  first_seen_at: Date.now(),
+  signup_source: "docs",
+})
+
+// key/value form
+tracker.analytics.events.setPropertiesOnce("initial_referrer", document.referrer)
+```
+
+### Notes:
+
+- Properties are only set if the key is missing.
+- Reserved keys (`properties`, `token`, `timestamp`) are ignored.
+
+## unsetProperties
+
+Removes one or more super properties.
+
+```ts
+// single
+tracker.analytics.events.unsetProperties("region")
+
+// multiple
+tracker.analytics.events.unsetProperties(["app_version", "build_sha"])
+```
+
+### Notes:
+
+- Reserved keys cannot be removed.
+- Removal is persisted.
+
+## reset
+
+Clears all super properties.
+
+```ts
+tracker.analytics.events.reset()
+```
+
+## Send immediately
+
+By default, events are queued/batched. You can request an immediate send for an event:
+
+```ts
+tracker.analytics.events.sendEvent(
+  "Checkout Completed",
+  { value: 199, currency: "EUR" },
+  { send_immediately: true },
+)
+```
+
+## Mixpanel-compatible aliases
+
+All methods support compatibility layer provided for familiarity:
+
+```ts
+tracker.analytics.events.register       // setProperty
+tracker.analytics.events.register_once  // setPropertiesOnce
+tracker.analytics.events.unregister     // unsetProperties
+tracker.analytics.events.track          // sendEvent
+```
+
+
+## Have questions?
+
+If you encounter any issues, connect to our [Slack](https://slack.openreplay.com) or check out our [Forum](https://forum.openreplay.com) and get help from our community.
