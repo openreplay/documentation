@@ -137,6 +137,13 @@ const nav: NavItem = {
           { text: 'incident', slug: 'sdk/methods/incident', children: [] },
         ] },
         { text: 'Network Options', slug: 'sdk/network-options', children: [] },
+				{
+					text: 'Analytics', slug: 'sdk/analytics', children: [
+						{ text: 'Overview', slug: 'sdk/analytics', children: [] },
+						{ text: 'People', slug: 'sdk/analytics/people', children: [] },
+						{ text: 'Events', slug: 'sdk/analytics/events', children: [] },
+					]
+				},
         { text: 'Sanitize Data', slug: 'sdk/sanitize-data', children: [] },
         { text: 'Private Mode', slug: 'sdk/private-mode', children: [] },
         { text: 'Frameworks', slug: 'sdk/using-or/', children: [
