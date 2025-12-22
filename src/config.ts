@@ -3,8 +3,12 @@ export const OPEN_GRAPH = {
 };
 export const VERSIONS = [
 	{
-		title: '1.23.0',
+		title: 'v1.24.0',
 		url: '',
+	},
+	{
+		title: '1.23.0',
+		url: '/v1.23.0',
 	},
 	{
 		title: '1.22.0',

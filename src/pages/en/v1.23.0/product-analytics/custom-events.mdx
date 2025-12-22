@@ -1,0 +1,98 @@
+---
+title: "Custom Events"
+metaTitle: "Custom Events"
+metaDescription: "How to send domain-specific events and add additional intelligence to session recordings."
+---
+import Aside from '~/components/Aside.astro'
+
+Custom events are great for adding more intelligence by recording domain-specific events alongside session replays. OpenReplay makes use of 2 types of events: functional (`event`) and technical (`issue`). All events are indexed for easy search, and sync'ed with session recordings.
+
+<Aside type="tip">
+  We also have a detailed tutorial on how to send custom events, you can check it out [here](/tutorials/custom-events).
+</Aside>
+
+## Functional Events
+
+Functional events are indexed and makes looking for specific session recordings easier. If they were successfully received by OpenReplay, they will be available as filters in the omnisearch bar.
+
+![Functional Event](/static/custom-events-1.png#center)
+
+### With NPM
+
+Use the `event` method to signal functional events such as *order completed* or *product added*. It takes 2 parameters: *name* (string) and *payload* (non-recursive JS object).
+
+```js
+tracker.event('product_added', 'shoes'); // after tracker.start()
+```
+
+### With JavaScript snippet
+
+Below is an example on how to send a functional event using the snippet.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: ""}; 
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+  ...
+  __OPENREPLAY__.event('product_added', 'shoes'); // send a functional event later in your code
+  ...
+```
+
+## Technical Events
+
+Technical events are shown in session replay under the *Events* tab in DevTools, and as annotations on the playback. They're also taken into account in Funnels for correlating conversion drops with technical issues.
+
+![Technical Event](/static/custom-events-2.png#center)
+
+### With NPM
+
+`issue` is used to send technical events, like errors, that may occur in your stack or other downstream systems. `issue` takes 2 parameters: *name* (string) and *payload* (non-recursive JS object).
+
+```js
+tracker.issue('payment_error', {code: 500, context: 42}); // after tracker.start()
+```
+
+### With JavaScript snippet
+
+Below is an example on how to send a technical event using the snippet.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" }; 
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+  ...
+  __OPENREPLAY__.issue('payment_error', {code: 500, context: 42}); // send a technical event (issue) later in your code
+  ...
+```
+
+### With iOS app
+
+
+```swift
+import ORTracker
+
+ORTracker.shared.event(name: String, payload: Encodable?)
+```
+
+
+## Tutorial
+If you're looking for a practical example of how to use custom events, check out [our detailed tutorial over here](/tutorials/custom-events).
+
+## Have questions?
+
+Having trouble using custom events? please connect to our [Slack](https://slack.openreplay.com) or check out our [Forum](https://forum.openreplay.com) and get help from our community.
+
