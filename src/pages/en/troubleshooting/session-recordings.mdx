@@ -35,7 +35,7 @@ tracker.start({
 
 ### Testing in localhost
 
-OpenReplay needs public access to copy some of your app's resources (CSS, fonts and icons) for properly rendering the recordings. Your site must also use SSL/HTTPS, otherwise the tracker won't start. For these reasons, sessions won't be captured in localhost, unless you apply this [workaround](/troubleshooting/localhost).
+OpenReplay needs public access to copy some of your app's resources (CSS, fonts and icons) for properly rendering the recordings. Your site must also use SSL/HTTPS, otherwise the tracker won't start. For these reasons, sessions won't be captured in localhost, unless you add the `inlineCss: 3` option to your [tracker constructor](/sdk/constructor/#stylesheets) so stylesheets will then be captured as part of each replay (instead of being centrally cached by the server).
 
 ### Site is not on HTTPS
 
@@ -59,7 +59,11 @@ OpenReplay throws an exception when it runs in an unsupported browser. See [here
 
 ### Styles are missing
 
-OpenReplay needs access to resources, such as your css, to make replays work. In fact, these files are copied then cached by our backend so you can see old recordings even if your web app has changed. That'w why you must ensure your styles (as well as icons and fonts) are publicly accessible. If your assets are hosted on a restricted domain (private or protected) then OpenReplay won't be able to copy and use them in replays. You can copy them to a publicly accessible domain and then use the `resourceBaseHref` option to specify the domain in the [tracker's constructor](/sdk/constructor).
+OpenReplay needs access to resources, such as your css, to make replays work. In fact, these files are copied then cached by our backend so you can see old recordings even if your web app has changed. That's why you must ensure your styles (as well as icons and fonts) are publicly accessible. Even though they are, some CDNs (like CloudFlare) consider our cache requests as coming from a bot and therefore blocks them. If that's the case, make sure to whitelist the source IP of you VM (if using our open-source edition), or your dedicated instance (if you're on our dedicated cloud plan) or the following IPs (if you're on our serverless cloud plan): `18.197.95.153` and `18.197.221.118`.
+
+If your assets are hosted on a restricted domain (private or protected) then OpenReplay won't be able to copy and use them in replays. You have 2 options:
+- (Recommended) Add the `inlineCss: 3` option to your [tracker constructor](/sdk/constructor/#stylesheets) so stylesheets will be captured as part of each replay (instead of being centrally cached by the server)
+- Or you can copy your assets to a publicly accessible domain and then use the `resourceBaseHref` option to specify the domain in the [tracker's constructor](/sdk/constructor).
 
 If your same-origin iFrames have nested frames, make sure to use absolute path (in the `<link>` elements pointing to your CSS files) in every embedded frame, or use the `resourceBaseHref` option to specify the domain in the [tracker's constructor](/sdk/constructor).
 
