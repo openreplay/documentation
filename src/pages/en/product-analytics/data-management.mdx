@@ -1,0 +1,142 @@
+---
+title: "Data Management"
+metaTitle: "Data Management - OpenReplay"
+metaDescription: "Track custom events and user properties to power your product analytics in OpenReplay."
+---
+
+Data Management in OpenReplay allows you to track custom events and user properties to power your product analytics. This page covers both the SDK integration for sending data and the UI for managing it.
+
+## Events Overview
+
+OpenReplay captures two types of events:
+
+- **Auto-captured events**: Automatically tracked interactions like page views, clicks, and form submissions
+- **Custom events**: Domain-specific events you define, such as "purchase completed" or "feature enabled"
+
+Custom events let you track the specific user actions that matter to your business and use them in analytics features like [Trends](/product-analytics/trends), [Funnels](/product-analytics/funnels), and [Journeys](/product-analytics/journeys).
+
+## Tracking Events
+
+To track custom events, use the SDK's analytics events module. For complete API documentation, see the [Events SDK reference](/sdk/analytics/events).
+
+### Basic Example
+
+```ts
+// Track a simple event
+tracker.analytics.events.sendEvent("Button Clicked", {
+  button_text: "Start",
+  page: "home",
+})
+```
+
+### Super Properties
+
+Super properties are persistent key/value pairs automatically attached to every tracked event:
+
+```ts
+// Set super properties that apply to all events
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  env: "prod",
+})
+
+// This event will include app_version and env automatically
+tracker.analytics.events.sendEvent("Signup Started", {
+  plan: "pro",
+})
+```
+
+## User Properties
+
+User properties allow you to store attributes about your users for segmentation and analysis. For complete API documentation, see the [People SDK reference](/sdk/analytics/people).
+
+### Identifying Users
+
+```ts
+// Identify the current user
+tracker.analytics.people.identify("user_123")
+
+// Set user properties
+tracker.analytics.people.setProperties({
+  email: "user@example.com",
+  plan: "pro",
+})
+```
+
+### Property Types
+
+OpenReplay supports several property types:
+
+| Type | Description | Examples |
+|------|-------------|----------|
+| **Auto-tracked** | Automatically captured by the SDK | Device, browser, OS, UTM parameters, referrer |
+| **Special** | Special properties with defined behavior | `$user_id`, `$email`, `$name` |
+| **Custom** | User-defined properties | Plan type, company, signup date |
+
+## Managing Data in the UI
+
+OpenReplay provides a Data Management interface to browse, filter, and organize your events and properties.
+
+### Events Tab
+
+<img src="/data-management/events-page.png" alt="Events Page" style={{ width: '700px', height: 'auto' }} />
+
+The Events tab displays all tracked event kinds in your project:
+
+- Browse and search events by name
+- Filter by event type (auto-captured vs custom)
+- Edit event metadata (display name, description)
+- Control event visibility in dashboards and filters
+
+### Properties Tab
+
+<img src="/data-management/props-page.png" alt="Events Page" style={{ width: '700px', height: 'auto' }} />
+
+
+The Properties tab lets you manage both user and event properties:
+
+- Toggle between user properties and event properties
+- View property types and value distributions
+- Edit property display names
+- Control property visibility in dashboards and filters 
+
+### People Tab
+
+<img src="/data-management/people-page.png" alt="Events Page" style={{ width: '700px', height: 'auto' }} />
+
+The People tab provides a view of your identified users:
+
+- Browse users and their properties
+- Search by user ID or property values
+- View user activity and session history
+- Access individual user profiles
+
+### Activity Tab
+
+<img src="/data-management/activity-page.png" alt="Events Page" style={{ width: '700px', height: 'auto' }} />
+
+The Activity tab shows a real-time stream of events:
+
+- Monitor events as they arrive
+- Filter by event type or user
+- Verify events are being captured correctly
+
+### Mixpanel-compatible aliases
+Section titled Mixpanel-compatible aliases
+All methods support compatibility layer provided for familiarity:
+
+```ts
+tracker.analytics.people.set            // setProperties
+tracker.analytics.people.set_once       // setPropertiesOnce
+tracker.analytics.people.append         // appendValues
+tracker.analytics.people.union          // appendUniqueValues
+tracker.analytics.people.incrementBy    // increment
+tracker.analytics.events.register       // setProperty
+tracker.analytics.events.register_once  // setPropertiesOnce
+tracker.analytics.events.unregister     // unsetProperties
+tracker.analytics.events.track          // sendEvent
+```
+
+## Have questions?
+
+If you encounter any issues, connect to our [Slack](https://slack.openreplay.com) or check out our [Forum](https://forum.openreplay.com) and get help from our community.
