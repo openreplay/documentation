@@ -1,0 +1,217 @@
+---
+title: "People"
+metaTitle: "OpenReplay Analytics SDK — People"
+metaDescription: "Identify users and manage user properties with the OpenReplay tracker analytics People module."
+---
+
+## People
+
+This module is used to identify users and mutate user profile properties (set, set once, append, increment, delete).
+
+Available at:
+
+`tracker.analytics.people`
+
+Top-level alias: `tracker.analytics.identify(...)` → same as `tracker.analytics.people.identify(...)`
+
+## Signatures
+
+```ts
+// Identify a user (required before other operations except reset)
+tracker.analytics.people.identify(user_id: string, options?: { fromTracker: boolean }): void
+
+// Reset local user context & properties (optionally, destroy device id)
+// should be called on logout and session end
+tracker.analytics.people.reset(hard?: boolean): void
+
+// Delete user on backend, then reset local properties
+tracker.analytics.people.deleteUser(): void
+
+// Set properties (overwrite existing values)
+tracker.analytics.people.setProperties(properties: Record<string, string | number>): void
+tracker.analytics.people.setProperties(key: string, value: string | number): void
+
+// Set properties only if they don't exist yet
+tracker.analytics.people.setPropertiesOnce(properties: Record<string, string | number>): void
+
+// Append values to an existing property (string becomes array)
+tracker.analytics.people.appendValues(key: string, value: string | number): void
+
+// Append value only if it’s not already present (requires property to exist locally)
+tracker.analytics.people.appendUniqueValues(key: string, value: string | number): void
+
+// Increment (or decrement) a numeric property
+tracker.analytics.people.increment(key: string, value: number): void
+
+// Read current user id
+tracker.analytics.people.user_id: string | null | undefined
+```
+
+## identify
+
+Identifies the current user by a string id (email, username, internal id, etc.) and queues an identity event.
+
+```ts
+tracker.analytics.people.identify("nikita@openreplay.com")
+```
+
+### Notes:
+
+If a different user was already identified, the SDK resets local people properties before switching to the new id.
+
+`options.fromTracker` is used internally to avoid double-calling the tracker-level id hook; you typically don’t need it.
+
+## reset
+
+Resets the current user id and all local people properties.
+
+```ts
+// soft reset
+tracker.analytics.people.reset()
+
+// hard reset (also clears persistent device id)
+tracker.analytics.people.reset(true)
+```
+
+## deleteUser
+
+Deletes the currently identified user on the backend (by sending a delete mutation), then clears local state.
+
+```ts
+tracker.analytics.people.deleteUser()
+```
+
+### Notes:
+
+If no user is identified, it’s a no-op.
+
+After calling this, `user_id` will be cleared and local properties are wiped.
+
+## setProperties
+
+Sets user properties, overwriting existing values.
+
+```ts
+tracker.analytics.people.setProperties({
+	plan: "pro",
+	seats: 5,
+})
+
+// or key/value
+tracker.analytics.people.setProperties("plan", "enterprise")
+```
+
+### Notes:
+
+Reserved/default keys (internal tracker keys) are ignored for the SDK’s local cache.
+
+An event is queued with the full `properties` payload you pass.
+
+## setPropertiesOnce
+
+Sets properties only if they don’t exist yet (from the SDK’s local perspective).
+
+```ts
+tracker.analytics.people.setPropertiesOnce({
+	signup_source: "docs",
+	first_seen_at: Date.now(),
+})
+```
+
+### Notes:
+
+Only properties not already present in the local people cache will be written locally.
+
+A `setPropertyOnce` mutation event is still queued with the properties you pass.
+
+## appendValues
+
+Appends a value to an existing property. If the property is currently a string/number, it becomes an array.
+
+```ts
+// start with something
+tracker.analytics.people.setProperties({ tags: "new" })
+
+// append
+tracker.analytics.people.appendValues("tags", "beta-user")
+```
+
+### Notes:
+
+The SDK only updates the local cache if that property already exists locally.
+
+An append mutation event is always queued.
+
+## appendUniqueValues
+
+Appends a value only if it’s not already present.
+
+```ts
+tracker.analytics.people.setProperties({ tags: ["new"] })
+tracker.analytics.people.appendUniqueValues("tags", "new") // no change
+tracker.analytics.people.appendUniqueValues("tags", "beta-user") // appended
+```
+
+### Notes:
+
+If the property does not exist locally yet, this call does nothing (returns early). Set it first via `setProperties` / `setPropertiesOnce`.
+
+## increment
+
+Adds a number (including negative values) to a numeric property.
+
+```ts
+tracker.analytics.people.increment("logins", 1)
+tracker.analytics.people.increment("credits", -10)
+```
+
+### Notes:
+
+If the property doesn’t exist locally, it’s initialized to `0` before incrementing.
+
+If the property exists but is not numeric, the SDK throws an error.
+
+## Mixpanel-compatible aliases
+
+All methods support compatibility layer provided for familiarity:
+
+```ts
+tracker.analytics.people.set // setProperties
+tracker.analytics.people.set_once // setPropertiesOnce
+tracker.analytics.people.append // appendValues
+tracker.analytics.people.union // appendUniqueValues
+tracker.analytics.people.incrementBy // increment
+```
+
+## Examples
+Typical flow
+
+```ts
+tracker.analytics.people.identify("user_123")
+
+tracker.analytics.people.setProperties({
+	email: "user@example.com",
+	plan: "pro",
+})
+
+tracker.analytics.people.increment("sessions", 1)
+tracker.analytics.people.appendUniqueValues("features_used", "analytics")
+```
+
+### Switching users
+
+Keep in mind, that OpenReplay sessions only support single user as of 1.24.0, which means new user overwrites the previous one in the session.
+When switching users, restart the tracker with `forceNew` option as well.
+
+```ts
+tracker.analytics.people.identify("user_a")
+tracker.analytics.people.setProperties({ plan: "free" })
+
+// switching user resets local people properties automatically
+tracker.analytics.people.identify("user_b")
+```
+
+
+## Have questions?
+
+If you encounter any issues, connect to our [Slack](https://slack.openreplay.com) or check out our [Forum](https://forum.openreplay.com) and get help from our community.

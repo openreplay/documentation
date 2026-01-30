@@ -266,8 +266,9 @@ const nav: NavItem = {
         ]
         },
         { text: 'Advanced Setup', slug: null, children: [
-          { text: 'Custom Events', slug: 'product-analytics/custom-events', children: [] }
-        ] 
+					{ text: 'Custom Events', slug: 'product-analytics/custom-events', children: [] },
+          { text: 'Data Management', slug: 'product-analytics/data-management', children: [] }
+        ]
         },
       ]
     },
@@ -291,8 +292,6 @@ const nav: NavItem = {
         { text: 'Summary AI ', slug: 'ai/summary-ai', children: [] },
         { text: 'Similar Sessions', slug: 'ai/similar-sessions', children: [] },
         { text: 'Explain AI', slug: 'ai/explain-ai', children: [] },
-        { text: 'Smart Search', slug: 'ai/smart-search', children: [] },
-        { text: 'Clips', slug: 'ai/clips', children: [] },
       ]
     },
     {
