@@ -1,0 +1,128 @@
+---
+title: "النشر على Kubernetes"
+metaTitle: "النشر على Kubernetes"
+metaDescription: "دليل خطوة بخطوة لنشر OpenReplay على Kubernetes."
+---
+
+يعتمد نشر OpenReplay على [Helm Charts](https://helm.sh)، مما يجعله متوافقًا تمامًا مع Kubernetes. نحن نقوم بتضمين PostgreSQL وRedis، والتي تعتبر ضرورية لـ OpenReplay. إليك كيفية القيام بذلك.
+
+## المتطلبات الأساسية
+
+يحتاج نشر OpenReplay على Kubernetes إلى:
+ - Kubernetes **v1.18+**
+ - helm **3.10+**
+ - **RWX PVC مع معرف المستخدم 1001 وإذن RW** (للمكونات المشتركة، إذا كان العقدة لديها أكثر من عقدة واحدة). تأكد من إلغاء التعليق على الكتلة أدناه في `/var/lib/openreplay/vars.yaml` وتحديث اسم PVC لمكونات **sink, storage** و **chalice**:
+
+```yaml
+# في حالة وجود عدة عقد في مجموعة Kubernetes،
+# سيتعين عليك إنشاء PVC RWX للمكونات المشتركة.
+# إذا كانت عقدة واحدة، سنستخدم hostVolume، وهو الافتراضي للنسخة المجتمعية/oss.
+pvcRWXName: "hostPath"
+```
+
+يتطلب OpenReplay أيضًا **2 vCPUs، 8 جيجابايت من الرام، 50 جيجابايت من التخزين** للعمل بشكل صحيح، وإلا فإن خدمات الخلفية لـ OpenReplay لن تبدأ ببساطة. هذه المواصفات كافية لحجم معتدل، ولكن إذا كنت تتوقع حركة مرور عالية، فيجب عليك التوسع من هنا.
+
+تم اختبار النشر على المنصات التالية:
+- مجموعة Kube المحلية بعقدة واحدة
+- Google Kubernetes Engine (GKE)
+- Amazon Elastic Kubernetes Service (EKS)
+- Microsoft Azure Kubernetes Service (AKS)
+- Scaleway Elements Kubernetes (Kapsule)
+
+## نشر OpenReplay
+
+قم بالاتصال بمجموعتك وانسخ مستودع OpenReplay:
+
+```bash
+git clone https://github.com/openreplay/openreplay.git
+cd openreplay/scripts/helmcharts
+```
+
+> إذا كان هناك عدة عقد في مجموعة Kubernetes،
+ستحتاج إلى إنشاء PVC RWX (على سبيل المثال efs، في حالة AWS) لمشاركة البيانات بين الحاويات.
+إذا كانت عقدة واحدة، سنستخدم hostVolume، وهو الافتراضي للتثبيت المجتمعي.
+
+ثم افتح الملف `vars.yaml` باستخدام الأمر `vim vars.yaml` ثم استبدل:
+- `domainName`: هذا هو المكان الذي سيكون فيه OpenReplay متاحًا (أي openreplay.mycompany.com)
+- `postgresqlPassword`: كلمة مرور Postgres (قم بتعيينها أو توليد واحدة عشوائية)
+- `accessKey`: مطلوب لخدمة تخزين الكائنات (استخدم سلسلة عشوائية)
+- `secretKey`: مطلوب لخدمة تخزين الكائنات (استخدم سلسلة عشوائية)
+- `jwt_secret`: مطلوب للواجهة البرمجية للتطبيقات API (استخدم سلسلة عشوائية)
+
+تأكد من تثبيت [helm](https://helm.sh/docs/intro/install/) ثم قم بإعداد OpenReplay:
+
+```bash
+cd openreplay/scripts/helmcharts
+helm upgrade --install databases ./databases -n db --create-namespace --wait -f ./vars.yaml --atomic
+helm upgrade --install openreplay ./openreplay -n app --create-namespace --wait -f ./vars.yaml --atomic
+```
+
+## تكوين TLS/SSL
+
+يتعامل OpenReplay مع بيانات المستخدم الحساسة وبالتالي يتطلب HTTPS للعمل. هذا إلزامي، وإلا فإن المتتبع لن يبدأ التسجيل ببساطة. نفس الأمر بالنسبة للوحة التحكم، بدون HTTPS لن تتمكن من إعادة تشغيل جلسات المستخدم.
+
+إذا كان مجموعة Kubernetes الخاصة بك في السحاب (مثل EKS، AKS أو GKE)، فإن أسهل طريقة للتعامل مع SSL هي إعداد موازن تحميل السحاب وتشغيل مجموعتك خلفه. خيار آخر هو إنشاء أو استخدام شهادة SSL الخاصة بك وتوجيه النطاق الفرعي الخاص بك (أي openreplay.mycompany.com) إلى مجموعتك. المزيد عن كلا الخيارين أدناه.
+
+### إعداد موازن تحميل السحاب (الخيار 1)
+
+أحد الفوائد الرئيسية لتشغيل OpenReplay خلف موازن تحميل السحاب هو أن يتم إدارة الشهادة من قبل مزود السحاب. فيما يلي أدلة خطوة بخطوة حول كيفية إنشاء:
+- [AWS - Elastic Load Balancing](/deployment/deploy-aws#setupawsloadbalancer(option1))
+- [Google - Cloud Load Balancing](/deployment/deploy-gcp#setupgoogleloadbalancer(option1))
+- [Azure - Load Balancer]([/deployment/deploy-azure#setupazurefrontdoor(option1))
+- [Digital Ocean - تكوين TLS/SSL](/deployment/deploy-digitalocean#configuretls/ssl)
+
+ثم تأكد من أن مجموعتك توفر [نوع الخدمة](https://kubernetes.io/ar/docs/concepts/services-networking/service/#loadbalancer) `LoadBalancer` حتى يتم توجيه حركة المرور من موازن تحميل السحاب إلى الخلفية لـ OpenReplay. الآن، اذهب إلى مزود خدمة DNS الخاص بك وأنشئ `سجل A` يشير إلى المجموعة باستخدام عنوان IP العام لها.
+
+أخيرًا، قم بتمكين `use-forwarded-headers`، من خلال إلغاء التعليق على السطر أدناه تحت قسم `ingress-nginx`، في `/var/lib/openreplay/vars.yaml`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+controller:
+config:
+use-forwarded-headers: true
+```
+
+أنت الآن جاهز، يجب أن يكون OpenReplay متاحًا على نطاقك الفرعي. يمكنك إنشاء حساب بزيارة صفحة `/signup` (أي openreplay.mycompany.com/signup).
+
+### جلب/إنشاء شهادتك SSL (الخيار 2)
+
+بديلًا لإنشاء موازن التحميل، يمكنك جلب (أو إنشاء) شهادتك SSL الخاصة.
+
+1. أولاً، اذهب إلى مزود خدمة DNS الخاص بك وأضف `سجل A`. استخدم النطاق الذي قدمته سابقًا أثناء خطوة التثبيت ووجهه إلى المجموعة باستخدام عنوان IP العام لها.
+
+2. إذا كنت تجلب شهادتك الخاصة، أنشئ سر SSL باستخدام الأمر التالي: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
+
+> **ملاحظة:** إذا لم يكن لديك شهادة، قم بإنشاء واحدة تتجدد تلقائيًا لنطاقك الفرعي (الذي قدمته أثناء التثبيت) باستخدام Let's Encrypt. ما عليك سوى الاتصال بمثيل OpenReplay، وتشغيل `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` واتباع الخطوات.
+
+3. إذا كنت ترغب في تمكين إعادة التوجيه من http إلى https (موصى به)، فقم بإلغاء التعليق على الكتلة أدناه، تحت قسم `ingress-nginx`، في `/var/lib/openreplay/vars.yaml`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+controller:
+config:
+ssl-redirect: true
+force-ssl-redirect: true
+```
+
+تجدر الإشارة إلى أن `ingress-nginx` الخاص بنا يعمل افتراضيًا على المنافذ `80|443`، ولكن يمكن تغيير ذلك بسهولة، إذا لزم الأمر، في `vars.yaml`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+controller:
+service:
+ports:
+http: 80
+https: 443
+```
+
+4. أخيرًا، أعد تثبيت OpenReplay NGINX:
+
+```bash
+openreplay -R
+```
+
+أنت الآن جاهز، يجب أن يكون OpenReplay متاحًا على نطاقك الفرعي. يمكنك إنشاء حساب بزيارة صفحة `/signup` (أي openreplay.mycompany.com/signup).
+
+## هل لديك أسئلة؟
+
+يرجى إعلامنا على Slack أو بمشكلة على Github إذا كنت تواجه صعوبات على منصتك. سنكون سعداء بمساعدتك في تشغيلها.
