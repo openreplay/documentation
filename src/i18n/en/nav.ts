@@ -267,7 +267,8 @@ const nav: NavItem = {
         },
         { text: 'Advanced Setup', slug: null, children: [
 					{ text: 'Custom Events', slug: 'product-analytics/custom-events', children: [] },
-          { text: 'Data Management', slug: 'product-analytics/data-management', children: [] }
+          { text: 'Data Management', slug: 'product-analytics/data-management', children: [] },
+          { text: 'Actions', slug: 'product-analytics/actions', children: [] }
         ]
         },
       ]
