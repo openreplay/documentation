@@ -1,0 +1,43 @@
+---
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+title: "النشر باستخدام Docker Compose"
+metaTitle: "النشر باستخدام Docker Compose"
+metaDescription: "دليل خطوة بخطوة لنشر OpenReplay باستخدام Docker Compose."
+---
+import Aside from '~/components/Aside.astro'
+
+<Aside type="tip">
+	هذه ميزة تجريبية وقد يتطور تنفيذها في المستقبل.
+</Aside>
+
+يمكن تثبيت مجموعة OpenReplay على جهاز واحد يعمل بـ Docker Compose.
+
+## المتطلبات الأساسية
+
+1. Ubuntu 20.04 LTS (يُوصى باستخدام الإصدار LTS)
+2. عنوان IP عام مرتبط بالجهاز. يعني أن الخادم الخاص بك يمكن الوصول إليه من الإنترنت.
+3. يجب أن يكون لديك اسم نطاق مرتبط بعنوان IP.
+4. اختر نوع النسخة الخاصة بك. المواصفات الدنيا هي `2 vCPUs, 8 GB of RAM, 50 GB of storage`، وإلا فإن خدمات الخلفية لـ OpenReplay لن تبدأ ببساطة. لذلك، نوصي **على الأقل** بـ `t3.large` (أو ما يعادله)، والذي يكفي لحجم منخفض/معتدل. إذا كنت تتوقع حركة مرور عالية، يجب أن تبدأ بالتوسع من هنا.
+
+## نشر OpenReplay
+
+```bash
+## من الطرفية الخاصة بك
+SSH_KEY=~/Downloads/openreplay-key.pem #! أينما قمت بحفظ مفتاح SSH
+INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
+chmod 400 `SSH_KEY
+ssh -i `SSH_KEY ubuntu@`INSTANCE_IP
+```
+
+2. قم بتثبيت OpenReplay من خلال توفير النطاق الذي سيعمل عليه (مثلاً DOMAIN_NAME=openreplay.mycompany.com):
+
+```bash
+/bin/bash -c "`(curl -fsSL https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/docker-compose/docker-install.sh)"
+```
+
+الآن كل شيء جاهز، يجب أن يكون OpenReplay متاحًا بأمان على النطاق الذي قمت بإنشائه أولاً. يمكنك إنشاء حساب من خلال زيارة صفحة `/signup` (أي openreplay.mycompany.com/signup).
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات، تواصل مع مجتمعنا على [Slack](https://slack.openreplay.com) واحصل على المساعدة من مجتمعنا.

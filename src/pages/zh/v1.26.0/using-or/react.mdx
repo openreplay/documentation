@@ -1,0 +1,57 @@
+---
+title: "在 React 中使用 OpenReplay"
+metaTitle: "将 OpenReplay 跟踪器添加到您的 React 应用程序"
+metaDescription: "了解如何在您的 React 应用程序上使跟踪器工作"
+---
+import GoDeeperFooter from '~/components/go-deeper-footer.astro'
+import Aside from '~/components/Aside.astro'
+
+在 React 应用程序上使跟踪器工作相当简单。
+
+## 添加跟踪代码
+
+虽然您可以[直接从平台获取复制粘贴版本的代码，当您创建一个新项目时](/using-or/snippet#getting-the-snippet)，但该代码太基础，将使自定义和添加额外插件变得更加困难。
+
+假设您正在构建一个 SPA（单页应用程序），您只需要将以下代码添加到您的入口点：
+
+```jsx
+import Tracker from '@openreplay/tracker';
+
+const tracker = new Tracker({
+projectKey: "<您的项目密钥>",  
+});
+
+function YourMainComponent({props}) {
+//这里有一些代码...
+
+    useEffect(() => {
+        tracker.start();
+    }, [])
+
+    return //....
+}
+```
+
+换句话说，您可以在脚本开始时实例化跟踪器，一旦页面加载，您可以使用 `useEffect` 钩子启动它。
+
+<Aside type="tip">
+	**自托管用户的说明**：如果您正在使用 OpenReplay 的自托管版本，您还需要指定 `ingestPoint` 配置属性。
+	此属性指定跟踪器数据的摄取端点。云用户不需要这个，
+	因为默认情况下跟踪器会知道 SaaS 版本的这个端点在哪里，但如果您是自托管的，您需要指定它
+	（应该是像 `https://openreplay.mydomain.com/ingest` 这样的东西）
+</Aside>
+
+### 在代码中处理 "projectKey"
+
+作为说明，您配置的 `projectKey` 是 OpenReplay 平台提供的。出于安全原因，此值不应在代码中硬编码存储，而应在某种配置文件/系统中存储。
+
+有多种解决此问题的选项，根据您的设置，您可以使用类似于 [`create-react-app` 对 ENV 变量的支持](https://create-react-app.dev/docs/adding-custom-environment-variables/)。
+
+## 构建更复杂的东西？
+如果您正在用 React 构建一个复杂的应用程序，很可能您正在使用 [Next](/using-or/next)，[Remix](/using-or/remix) 或类似的东西。确保查看我们的[设置部分](/using-or)以找到您正在使用的框架。
+
+## 有问题吗？
+
+如果您在 React 项目上设置跟踪器时遇到任何问题，请加入我们的 [Slack 社区](https://slack.openreplay.com/)并直接向我们的开发人员询问！
+
+<GoDeeperFooter/>

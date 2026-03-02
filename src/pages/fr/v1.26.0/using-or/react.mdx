@@ -1,0 +1,60 @@
+---
+title: "Utilisation d'OpenReplay avec React"
+metaTitle: "Ajout du tracker OpenReplay à votre application React"
+metaDescription: "Apprenez comment faire fonctionner le tracker sur votre application React"
+---
+import GoDeeperFooter from '~/components/go-deeper-footer.astro'
+import Aside from '~/components/Aside.astro'
+
+Faire fonctionner le tracker sur une application React est assez simple.
+
+## Ajout du code de suivi
+
+Bien que vous puissiez [obtenir une version copier-coller du code directement depuis la plateforme lorsque vous créez un nouveau projet](/using-or/snippet#getting-the-snippet), ce code est trop basique et rendra beaucoup plus difficile la personnalisation et l'ajout de plugins supplémentaires.
+
+En supposant que vous construisez une SPA (Single Page Application), tout ce que vous avez à faire est d'ajouter le code suivant à votre point d'entrée :
+
+```jsx
+import Tracker from '@openreplay/tracker';
+
+const tracker = new Tracker({
+projectKey: "<votre clé de projet>",  
+});
+
+function YourMainComponent({props}) {
+//quelque code ici...
+
+    useEffect(() => {
+        tracker.start();
+    }, [])
+
+    return //....
+}
+```
+
+En d'autres termes, vous pouvez instancier le tracker au début du script, et une fois la page chargée, vous pouvez le démarrer en utilisant un hook `useEffect`.
+
+<Aside type="tip">
+	**Note pour les utilisateurs auto-hébergés** : si vous utilisez la version auto-hébergée d'OpenReplay, vous devrez
+	également spécifier la propriété de configuration `ingestPoint`.
+	Cette propriété spécifie le point de terminaison d'ingestion pour les données du tracker. Les utilisateurs du Cloud
+	n'en ont pas besoin,
+	car par défaut le tracker saura où se trouve la version SaaS de ce point de terminaison, mais si vous l'hébergez
+	vous-même, vous devrez le spécifier
+	(ça devrait être quelque chose comme `https://openreplay.mydomain.com/ingest`)
+</Aside>
+
+### Gestion de la "projectKey" dans votre code
+
+Comme note, la `projectKey` que vous configurez est celle fournie par la plateforme OpenReplay. Cette valeur ne doit pas être stockée en dur dans votre code pour des raisons de sécurité, mais plutôt dans un fichier/système de configuration.
+
+Il existe différentes options pour résoudre ce problème, en fonction de votre configuration, vous pourriez utiliser quelque chose comme [le support des variables ENV par `create-react-app`](https://create-react-app.dev/docs/adding-custom-environment-variables/).
+
+## Vous construisez quelque chose de plus complexe ?
+Si vous construisez une application complexe avec React, il y a de fortes chances que vous utilisiez [Next](/using-or/next), [Remix](/using-or/remix) ou quelque chose de similaire. Assurez-vous de consulter notre [section de configuration](/using-or) pour trouver le framework avec lequel vous travaillez.
+
+## Des questions ?
+
+Si vous rencontrez des problèmes lors de la configuration du tracker sur votre projet React, n'hésitez pas à nous contacter sur notre [communauté Slack](https://slack.openreplay.com/) et posez vos questions directement à nos développeurs !
+
+<GoDeeperFooter/>

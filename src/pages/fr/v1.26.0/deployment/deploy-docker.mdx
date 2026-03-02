@@ -1,0 +1,43 @@
+---
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+title: "Déploiement avec Docker Compose"
+metaTitle: "Déploiement avec Docker Compose"
+metaDescription: "Guide étape par étape pour déployer OpenReplay avec Docker Compose."
+---
+import Aside from '~/components/Aside.astro'
+
+<Aside type="tip">
+	Ceci est une fonctionnalité expérimentale et sa mise en œuvre peut évoluer à l'avenir.
+</Aside>
+
+Le stack OpenReplay peut être installé sur une seule machine avec Docker Compose.
+
+## Prérequis
+
+1. Ubuntu 20.04 LTS (la version LTS est recommandée)
+2. Une adresse IP publique attachée à la machine. Cela signifie que votre serveur est accessible depuis Internet.
+3. Vous devriez avoir un nom de domaine attaché à l'adresse IP.
+4. Choisissez votre type d'instance. Les spécifications minimales sont `2 vCPUs, 8 GB of RAM, 50 GB of storage`, sinon les services backend d'OpenReplay ne démarreront tout simplement pas. Ainsi, nous recommandons **au moins** le `t3.large` (ou un équivalent), ce qui est suffisant pour un volume faible/modéré. Si vous vous attendez à un trafic élevé, vous devriez évoluer à partir d'ici.
+
+## Déployer OpenReplay
+
+```bash
+## Depuis votre terminal
+SSH_KEY=~/Downloads/openreplay-key.pem #! où que vous ayez enregistré la clé SSH
+INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
+chmod 400 `SSH_KEY
+ssh -i `SSH_KEY ubuntu@`INSTANCE_IP
+```
+
+2. Installez OpenReplay en fournissant le domaine sur lequel il fonctionnera (par exemple, DOMAIN_NAME=openreplay.mycompany.com) :
+
+```bash
+/bin/bash -c "`(curl -fsSL https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/docker-compose/docker-install.sh)"
+```
+
+Tout est maintenant configuré, OpenReplay devrait être accessible en toute sécurité sur le domaine que vous avez créé en premier. Vous pouvez créer un compte en visitant la page `/signup` (c'est-à-dire openreplay.mycompany.com/signup).
+
+## Des questions ?
+
+Si vous rencontrez des problèmes, connectez-vous à notre [Slack](https://slack.openreplay.com) et obtenez de l'aide auprès de notre communauté.
