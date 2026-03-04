@@ -8,25 +8,101 @@ How to integrate Zendesk with OpenReplay.
 
 ## Installation
 
-The easiest way to integrate Zendesk with Openreplay is to use the [Text app](https://www.zendesk.com/marketplace/apps/support/1691/text/) to  add a link to user's sessions to your ticket pages.
+The easiest way to integrate Zendesk with OpenReplay is to build a small private sidebar app using the [Zendesk Apps Framework (ZAF)](https://developer.zendesk.com/documentation/apps/getting-started/zendesk-app-quick-start/). This app adds a direct link to the requester's OpenReplay user profile inside every ticket where you can observe their events and sessions (as long as you tag sessions with email as user id).
 
-1. Install the free [Text app](https://www.zendesk.com/marketplace/apps/support/1691/text/) from the Zendesk marketplace.
-2. Specify a preferred title (i.e "OpenReplay Recordings").
-3. For the text display, you can follow this format while making sure to change `OPENREPLAY_DOMAIN` and `PROJECT_ID` with the valid Domain and Project ID (if you're not sure about what values to pick, check the URL of any of your existing recordings, the first part of it is the domain and the second number if the Porject ID):
+### 1. Create the app files
 
-```
-https://<OPENREPLAY_DOMAIN>/<PROJECT_ID>/sessions?uid=is|{{ticket.requester.email}}&range=LAST_24_HOURS
-```
-
-4. To view the link, navigate to a ticket and open the Apps panel by clicking on the Apps button in the upper right side. See the [Text app documentation](https://www.zendesk.com/marketplace/apps/support/1691/text/) for more details.
-
-## Change the format
-
-You can test your link format by going to your OpenReplay instance and changing the search criteria, starting with the UserID filter, then adding any important events. For example, the below query searches for all sessions that had a bad request and are associated with the ticket's user email:
+Create a folder with the following structure:
 
 ```
-https://<OPENREPLAY_DOMAIN>/<PROJECT_ID>/sessions?uid=is|{{ticket.requester.email}}&iss=is|bad_request&range=LAST_24_HOURS
+openreplay-zendesk-app/
+├── manifest.json
+└── assets/
+    └── iframe.html
 ```
+
+**`manifest.json`**
+
+```json
+{
+  "name": "OpenReplay",
+  "author": {
+    "name": "Your Name",
+    "email": "you@example.com"
+  },
+  "defaultLocale": "en",
+  "private": true,
+  "version": "1.0.0",
+  "frameworkVersion": "2.0",
+  "location": {
+    "support": {
+      "ticket_sidebar": {
+        "url": "assets/iframe.html",
+        "flexible": true
+      }
+    }
+  }
+}
+```
+
+**`assets/iframe.html`**
+
+Make sure to replace `OPENREPLAY_DOMAIN` and `PROJECT_ID` with the correct values. If you're not sure what values to pick, check the URL of any existing recording — the first part is the domain and the number following it is the Project ID.
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://static.zdassets.com/zendesk_app_framework_sdk/2.0/zaf_sdk.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 12px; margin: 0; }
+    a { color: #1f73b7; text-decoration: none; font-size: 14px; }
+    a:hover { text-decoration: underline; }
+    #status { color: #999; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <p id="content">Loading...</p>
+  <script>
+    const client  = ZAFClient.init();
+    const DOMAIN  = '<OPENREPLAY_DOMAIN>';
+    const PROJECT = '<PROJECT_ID>';
+
+    client.get('ticket.requester.email').then(data => {
+      const userId = data['ticket.requester.email'];
+
+      if (!userId) {
+        document.getElementById('content').innerHTML =
+          '<span id="status">No OpenReplay user ID found for this requester.</span>';
+        return;
+      }
+
+      const url = `https://${DOMAIN}/${PROJECT}/data-management/user/${encodeURIComponent(userId)}`;
+      document.getElementById('content').innerHTML =
+        `<a href="${url}" target="_blank">👤 View User in OpenReplay</a>`;
+
+      client.invoke('resize', { width: '100%', height: '50px' });
+    }).catch(() => {
+      document.getElementById('content').innerHTML =
+        '<span id="status">Could not load requester data.</span>';
+    });
+  </script>
+</body>
+</html>
+```
+
+### 2. Package and install the app
+
+1. Zip the `openreplay-zendesk-app/` folder (make sure `manifest.json` is at the root of the zip, not nested inside a subfolder).
+2. In Zendesk, go to **Admin Center → Apps and Integrations → Support Apps**.
+3. Click **Upload private app** in the top-right corner.
+4. Give the app a name (e.g. "OpenReplay") and upload the zip file.
+5. Click **Install**.
+
+### 3. View the link
+
+Navigate to any ticket and open the **Apps panel** by clicking the Apps button in the upper-right corner. You will see a direct link to the requester's user profile in OpenReplay.
 
 ## Have questions?
 
