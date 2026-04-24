@@ -1,0 +1,122 @@
+---
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+title: "Déployer sur AWS"
+metaTitle: "Déployer sur AWS"
+metaDescription: "Guide étape par étape pour déployer OpenReplay sur Amazon AWS."
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="Regardez comment déployer OpenReplay dans votre infrastructure AWS (Anglais)"
+							description="Si vous n'aimez pas lire, vous pouvez suivre ce tutoriel vidéo vous montrant comment déployer OpenReplay sur AWS"
+							videoURL="https://www.youtube.com/watch?v=0-02jJyL4_A"
+/>
+
+
+La pile OpenReplay peut être installée sur une seule machine et AWS EC2 est un candidat idéal.
+
+## Lancer une instance EC2
+
+1. Aller au tableau de bord AWS EC2
+2. 'Lancer une nouvelle instance'
+3. Sélectionnez votre AMI. Pour ce guide, nous utiliserons **Ubuntu Server 20.04 LTS**
+4. Choisissez votre type d'instance. Les spécifications minimales sont de **2 vCPU, 8 Go de RAM, 50 Go** de stockage, sinon les services backend d'OpenReplay ne démarreront tout simplement pas. Ainsi, nous recommandons au moins le **t3.large** (ou un équivalent), qui est suffisant pour un volume faible/modéré. Si vous attendez un trafic élevé, vous devriez évoluer à partir d'ici.
+5. Configurer les détails de l'instance : Réglez les paramètres du réseau/sous-réseau si nécessaire ou gardez simplement les paramètres par défaut
+6. Ajouter du Stockage : Définissez la taille à 50 Go (SSD Usage Général (gp2))
+7. Ajouter des Tags : Ajustez les paramètres ou gardez les valeurs par défaut
+8. Groupes de Sécurité : Conservez la règle SSH existante et ajoutez 2 autres pour HTTP (80) et HTTPS (443) (source : 0.0.0.0/0)
+9. Cliquez sur ‘Revoir et Lancer’
+10. Créez/téléchargez la clé SSH puis cliquez sur ‘Lancer les instances’
+
+## Déployer OpenReplay
+
+1. Assurez-vous que votre instance est en cours d'exécution puis connectez-vous à elle :
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem #! wherever you've saved the SSH key
+INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
+chmod 400 $SSH_KEY
+ssh -i $SSH_KEY ubuntu@$INSTANCE_IP
+```
+
+2. Installez OpenReplay en fournissant le domaine sur lequel il sera exécuté (par exemple, DOMAIN_NAME=openreplay.mycompany.com) :
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## Configurer TLS/SSL
+
+OpenReplay traite des données utilisateur sensibles et nécessite donc HTTPS pour fonctionner. C'est obligatoire, sinon le tracker ne commencerait tout simplement pas l'enregistrement. Il en va de même pour le tableau de bord, sans HTTPS, vous ne pourrez pas relire les sessions des utilisateurs.
+
+La façon la plus simple de gérer SSL dans AWS est de configurer un équilibreur de charge (ELB) et d'exécuter OpenReplay derrière. Une autre option consiste à générer ou utiliser votre propre certificat SSL et à pointer votre sous-domaine (c.-à-d. openreplay.mycompany.com) vers l'instance OpenReplay. Plus d'informations sur les deux options ci-dessous.
+
+### Configurer le répartiteur de charge AWS (option 1)
+
+1. Aller à ‘EC2’ > ‘Répartiteurs de charge’
+2. ‘Créer un répartiteur de charge’ et choisir un répartiteur de charge d'application
+3. Ajouter un écouteur à HTTPS (gardez celui-ci uniquement) et assurez-vous de sélectionner le(s) même(s) sous-réseau(x) dans lequel votre instance OpenReplay fonctionne.
+4. Choisissez un certificat existant (par exemple, *.mycompany.com) ou générez-en un nouveau à partir du Gestionnaire de Certificats AWS (ACM). Vous pouvez également importer le vôtre.
+5. Configurer les Groupes de Sécurité : Sélectionnez le groupe de sécurité précédemment créé pour l'instance OpenReplay (vous pouvez le trouver dans le ‘Tableau de bord EC2’ sous l'onglet ‘Sécurité’)
+6. Configurer l'écouteur et le routage : Conservez le protocole et le port par défaut (HTTP:80). Créez maintenant un nouveau groupe cible. Donnez-lui un nom et sélectionnez des adresses IP dans Type de Cible. Assurez-vous que le chemin de vérification de santé est défini sur `/healthz` tout en conservant les autres paramètres par défaut. Cliquez sur ‘Suivant’ pour enregistrer des cibles, ajoutez l'IPv4 privée de l'instance OpenReplay (ports 80) puis ajoutez la cible à la liste (l'IP privée peut être trouvée dans le tableau de bord EC2). Revoyez puis cliquez sur ‘Créer un groupe de cibles’.
+7. Maintenant, retournez à la page de création du LB et transférez ce nouveau groupe cible à l'écouteur LB.
+8. Vérifiez puis ‘Créer un répartiteur de charge’
+
+Une fois créé, allez à Route 53 (ou votre fournisseur de service DNS) et créez un Enregistrement A qui pointe vers le répartiteur de charge en utilisant son nom DNS (peut être trouvé dans le tableau de bord ELB).
+
+Enfin, activez les use-forwarded-headers, en décommentant la ligne ci-dessous dans la section `ingress-nginx`, dans `/var/lib/openreplay/vars.yaml` :
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      use-forwarded-headers: true
+```
+
+Tout est prêt maintenant, OpenReplay devrait être accessible en toute sécurité sur le sous-domaine que vous venez de configurer. Vous pouvez créer un compte en visitant la page /signup (c.-à-d. openreplay.mycompany.com/signup).
+
+### Apporter/générer votre certificat SSL (option 2)
+
+En alternative à la création d'un répartiteur de charge, vous pouvez apporter (ou générer) votre propre certificat SSL.
+
+1. Tout d'abord, allez à Route 53 (ou votre autre fournisseur de service DNS) et créez un Enregistrement A. Utilisez le domaine que vous avez fourni précédemment lors de l'étape d'installation et pointez-le vers l'instance en utilisant son IP publique (peut être trouvé dans le tableau de bord EC2).
+
+2.  Si vous apportez votre propre certificat, créez un secret SSL en utilisant la commande suivante : `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
+
+> *Remarque* : Si vous n'avez pas de certificat, générez-en un qui se renouvelle automatiquement pour votre sous-domaine (celui fourni lors de l'installation) en utilisant Let’s Encrypt. Connectez-vous simplement à l'instance EC2 d'OpenReplay, exécutez `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` et suivez les étapes.
+
+3. Si vous souhaitez activer la redirection de http vers https (recommandé), alors décommentez le bloc ci-dessous, sous la section `ingress-nginx`, dans `/var/lib/openreplay/vars.yaml` :
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+Il est bon de mentionner que notre `ingress-nginx` fonctionne par défaut sur les ports `80|443`, mais cela peut être facilement changé, si nécessaire, dans vars.yaml :
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. Enfin, réinstallez OpenReplay NGINX :
+
+```bash
+openreplay -R
+```
+
+Tout est prêt maintenant, OpenReplay devrait être accessible sur votre sous-domaine. Vous pouvez créer un compte en visitant la page /signup (c'est-à-dire openreplay.mycompany.com/signup).
+
+## Des questions ?
+
+Si vous rencontrez des problèmes, connectez-vous à notre [Slack](https://slack.openreplay.com) et obtenez de l'aide de notre communauté.
