@@ -1,0 +1,128 @@
+---
+title: "部署到 Kubernetes"
+metaTitle: "部署到 Kubernetes"
+metaDescription: "逐步指导如何在 Kubernetes 上部署 OpenReplay。"
+---
+
+OpenReplay 部署基于 [Helm Charts](https://helm.sh)，使其与 Kubernetes 完全兼容。我们打包了 PostgreSQL 和 Redis，这些是 OpenReplay 所需的。下面是操作方法。
+
+## 先决条件
+
+在 Kubernetes 上部署 OpenReplay 需要：
+ - Kubernetes **v1.18+**
+ - helm **3.10+**
+ - **具有用户ID 1001读写权限的 RWX PVC**（对于共享组件，如果集群有多个节点）。确保你取消注释了 `/var/lib/openreplay/vars.yaml` 中的下面这段，并更新 **sink, storage** 和 **chalice** 组件的 PVC 名称：
+
+```yaml
+# 如果 Kubernetes 集群中有多个节点，
+# 你需要为共享组件创建一个 RWX PVC。
+# 如果是单节点，我们将使用 hostVolume，这是社区/开源版的默认设置。
+pvcRWXName: "hostPath"
+```
+
+OpenReplay 还**需要** `2 vCPUs, 8 GB 的 RAM, 50 GB 的存储空间` 才能正常运行，否则 OpenReplay 后端服务将无法启动。这些规格足以应对中等流量，但如果你预期有高流量，应该考虑扩展这些规格。
+
+该部署已在以下平台上进行了测试：
+- 本地单节点 Kube 集群
+- Google Kubernetes Engine (GKE)
+- Amazon Elastic Kubernetes Service (EKS)
+- Microsoft Azure Kubernetes Service (AKS)
+- Scaleway Elements Kubernetes (Kapsule)
+
+## 部署 OpenReplay
+
+连接到你的集群并克隆 OpenReplay 仓库：
+
+```bash
+git clone https://github.com/openreplay/openreplay.git
+cd openreplay/scripts/helmcharts
+```
+
+> 如果 Kubernetes 集群中有多个节点，
+你需要为容器共享数据创建一个 RWX（例如 AWS 的 efs）PVC。
+如果是单节点，我们将使用 hostVolume，这是社区安装的默认设置。
+
+然后，使用命令 `vim vars.yaml` 打开 `vars.yaml` 文件并替换：
+- `domainName`：OpenReplay 可访问的位置（即 openreplay.mycompany.com）
+- `postgresqlPassword`：Postgres 密码（设置或生成一个随机的）
+- `accessKey`：对象存储服务所需（使用随机生成的字符串）
+- `secretKey`：对象存储服务所需（使用随机生成的字符串）
+- `jwt_secret`：API 所需（使用随机生成的字符串）
+
+确保已安装 [helm](https://helm.sh/docs/intro/install/)，然后设置 OpenReplay：
+
+```bash
+cd openreplay/scripts/helmcharts
+helm upgrade --install databases ./databases -n db --create-namespace --wait -f ./vars.yaml --atomic
+helm upgrade --install openreplay ./openreplay -n app --create-namespace --wait -f ./vars.yaml --atomic
+```
+
+## 配置 TLS/SSL
+
+OpenReplay 处理敏感用户数据，因此需要 HTTPS 来运行。这是强制性的，否则跟踪器根本不会开始记录。对于仪表板也是一样，没有 HTTPS，你将无法重放用户会话。
+
+如果你的 Kubernetes 集群在云中（如 EKS、AKS 或 GKE），则处理 SSL 的最简单方式是设置一个云负载均衡器，并在其后面运行你的集群。另一个选择是生成或使用你自己的 SSL 证书，并将你的子域（例如 openreplay.mycompany.com）指向你的集群。以下是关于这两个选项的更多信息。
+
+### 设置云负载均衡器（选项 1）
+
+在云负载均衡器后面运行 OpenReplay 的主要好处之一是让云提供商管理证书。以下是如何创建的分步指南：
+- [AWS - 弹性负载平衡](/deployment/deploy-aws#setupawsloadbalancer(option1))
+- [Google - 云负载平衡](/deployment/deploy-gcp#setupgoogleloadbalancer(option1))
+- [Azure - 负载均衡器]([/deployment/deploy-azure#setupazurefrontdoor(option1)](https://docs.microsoft.com/zh-cn/azure/load-balancer/load-balancer-overview))
+- [Digital Ocean - 配置 TLS/SSL](/deployment/deploy-digitalocean#configuretls/ssl)
+
+然后，确保你的集群配置了一个 [服务类型](https://kubernetes.io/zh/docs/concepts/services-networking/service/#loadbalancer) `LoadBalancer`，以便将云负载均衡器的流量引导到 OpenReplay 后端。现在，转到你的 DNS 服务提供商，创建一个 `A 记录`，使用集群的公共 IP 指向集群。
+
+最后，通过在 `/var/lib/openreplay/vars.yaml` 中的 `ingress-nginx` 部分下取消注释以下行，启用 `use-forwarded-headers`：
+
+```yaml
+ingress-nginx: &ingress-nginx
+controller:
+config:
+use-forwarded-headers: true
+```
+
+现在，OpenReplay 应该可以在你的子域上访问。你可以通过访问 `/signup` 页面（即 openreplay.mycompany.com/signup）创建一个账户。
+
+### 带上/生成你的 SSL 证书（选项 2）
+
+作为创建负载均衡器的替代方案，你可以带上（或生成）你自己的 SSL 证书。
+
+1. 首先，转到你的 DNS 服务提供商并添加一个 `A 记录`。使用你在安装步骤中提供的域名，并使用集群的公共 IP 指向它。
+
+2. 如果你带来了自己的证书，请使用以下命令创建一个 SSL 密钥：`kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`。
+
+> **注意：** 如果你没有证书，可以为你的子域（安装时提供的那个）使用 Let's Encrypt 生成一个自动续订的证书。简单地连接到 OpenReplay 实例，运行 `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` 并遵循步骤。
+
+3. 如果你希望启用 http 到 https 重定向（推荐），则取消注释 `/var/lib/openreplay/vars.yaml` 中 `ingress-nginx` 部分下的以下块：
+
+```yaml
+ingress-nginx: &ingress-nginx
+controller:
+config:
+ssl-redirect: true
+force-ssl-redirect: true
+```
+
+值得一提的是，我们的 `ingress-nginx` 默认运行在端口 `80|443`，但如果需要，可以在 `vars.yaml` 中轻松更改：
+
+```yaml
+ingress-nginx: &ingress-nginx
+controller:
+service:
+ports:
+http: 80
+https: 443
+```
+
+4. 最后重新安装 OpenReplay NGINX：
+
+```bash
+openreplay -R
+```
+
+现在，OpenReplay 应该可以在你的子域上访问。你可以通过访问 `/signup` 页面（即 openreplay.mycompany.com/signup）创建一个账户。
+
+## 有问题吗？
+
+如果在你的平台上遇到困难，请通过 Slack 或 Github 问题告知我们。我们很乐意帮助你运行起来。

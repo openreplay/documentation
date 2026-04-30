@@ -4,31 +4,35 @@ metaTitle: "Jobs"
 metaDescription: "How to manage user data deletion jobs."
 ---
 
+Job status values: `scheduled`, `running`, `completed`, `failed`, `cancelled`.
+
 ## List all jobs
 
-Retrieve all jobs, including those that are completed or canceled.
+Retrieve all jobs for a project, including completed and cancelled ones. Paginated.
 
 ### Method
 `GET`
 
 ### URL
-`/api/v1/:projectKey/jobs`
+`/public/:projectKey/jobs`
+
+### Query Parameters
+
+| Name  | Type    | Description                                                                 |
+|-------|---------|-----------------------------------------------------------------------------|
+| limit | integer | Page size, 1-200 (default: 50). Values outside the range fall back to 50.   |
+| page  | integer | Page number, starts at 1 (default: 1). Values < 1 fall back to 1.           |
 
 ### Request Headers
 
-`Authorization: {YOUR_ORGANIZATION_API_KEY}`: The key can be found in 'Preferences' > 'Account' > 'Organization API Key'.
-
-### Status Codes
-
-`200`: Response sent as JSON in body
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
 
 ### Example Request
 
 ```shell
 curl -X GET \
-  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/jobs \
-  -H 'content-type: application/json' \
-  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+  '{BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs?limit=50&page=1' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
 ```
 
 ### Example Response
@@ -42,19 +46,19 @@ curl -X GET \
       "status": "scheduled",
       "projectId": 1,
       "action": "delete_user_data",
-      "referenceId": "mehdi@openreplay.com",
+      "referenceId": "shekar@example.com",
       "createdAt": 1623912955277,
-      "updatedAt": 1623912955277,
+      "updatedAt": null,
       "startAt": 1623954600000,
       "errors": null
     },
     {
       "jobId": 3452,
-      "description": "Delete user sessions of userId = shekar@example.com",
+      "description": "Delete user sessions of userId = mehdi@example.com",
       "status": "cancelled",
       "projectId": 1,
       "action": "delete_user_data",
-      "referenceId": "mehdi@openreplay.com",
+      "referenceId": "mehdi@example.com",
       "createdAt": 1623912962910,
       "updatedAt": 1623913015276,
       "startAt": 1623954600000,
@@ -66,35 +70,36 @@ curl -X GET \
 
 ## Get job details
 
-Return the job's `status` and other details such as `createdAt`, `referenceId` and `errors`.
+Return the job's status and metadata.
 
 ### Method
 `GET`
 
 ### URL
-`/api/v1/:projectKey/jobs/:jobId`
+`/public/:projectKey/jobs/:jobId`
 
 ### Parameters
 
-| Name | Type | Description |
-|----------|-------------|-------------|
-| jobId | string | The ID returned by the user deletion call (required) |
+| Name  | Type    | Description                    |
+|-------|---------|--------------------------------|
+| jobId | integer | The job ID (required)          |
 
 ### Request Headers
 
-`Authorization: {YOUR_ORGANIZATION_API_KEY}`: The key can be found in 'Preferences' > 'Account' > 'Organization API Key'.
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
 
 ### Status Codes
 
-`200`: Response sent as JSON in body
+`200`: Response sent as JSON in body  
+`400`: Invalid `jobId` (not an integer)  
+`404`: Job not found
 
 ### Example Request
 
 ```shell
 curl -X GET \
-  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/jobs/3451\
-  -H 'content-type: application/json' \
-  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs/3451 \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
 ```
 
 ### Example Response
@@ -107,9 +112,9 @@ curl -X GET \
     "status": "scheduled",
     "projectId": 1,
     "action": "delete_user_data",
-    "referenceId": "mehdi@openreplay.com",
+    "referenceId": "shekar@example.com",
     "createdAt": 1623912955277,
-    "updatedAt": 1623912955277,
+    "updatedAt": null,
     "startAt": 1623954600000,
     "errors": null
   }
@@ -118,36 +123,36 @@ curl -X GET \
 
 ## Cancel job
 
-Cancel a job if it hasn't yet started or still in progress.
+Cancel a job that hasn't started or is still in progress.
 
 ### Method
 `DELETE`
 
 ### URL
-`/api/v1/:projectKey/jobs/:jobId`
+`/public/:projectKey/jobs/:jobId`
 
 ### Parameters
 
-| Name | Type | Description |
-|----------|-------------|-------------|
-| jobId | string | The ID returned by the user deletion call (required) |
+| Name  | Type    | Description                    |
+|-------|---------|--------------------------------|
+| jobId | integer | The job ID (required)          |
 
 ### Request Headers
 
-`Authorization: {YOUR_ORGANIZATION_API_KEY}`: The key can be found in 'Preferences' > 'Account' > 'Organization API Key'.
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
 
 ### Status Codes
 
-`200`: Response sent as JSON in body
-`501`: Returned if the job cannot be cancelled
+`200`: Job cancelled  
+`400`: Job cannot be cancelled in its current state, or invalid `jobId`  
+`404`: Job not found
 
 ### Example Request
 
 ```shell
 curl -X DELETE \
-  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/jobs/3452 \
-  -H 'content-type: application/json' \
-  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs/3452 \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
 ```
 
 ### Example Response
@@ -156,11 +161,11 @@ curl -X DELETE \
 {
   "data": {
     "jobId": 3452,
-    "description": "Delete user sessions of userId = shekar@example.com",
+    "description": "Delete user sessions of userId = mehdi@example.com",
     "status": "cancelled",
     "projectId": 1,
     "action": "delete_user_data",
-    "referenceId": "mehdi@openreplay.com",
+    "referenceId": "mehdi@example.com",
     "createdAt": 1623912962910,
     "updatedAt": 1623913015276,
     "startAt": 1623954600000,

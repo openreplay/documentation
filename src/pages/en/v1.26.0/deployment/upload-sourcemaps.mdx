@@ -1,0 +1,49 @@
+---
+title: "Upload Source Maps"
+metaTitle: "Upload Source Maps"
+metaDescription: "Upload source maps to OpenReplay."
+---
+
+OpenReplay supports un-minifying JavaScript via source maps. By uploading them to OpenReplay, you will be able to see the source code context obtained from stack traces in their original form, which is very useful for debugging minified code (UglifyJS), or transpiled code (TypeScript, ES6).
+
+## Setup
+
+Install the sourcemap-uploader NPM module:
+
+```bash
+npm i -g @openreplay/sourcemap-uploader
+```
+
+## Prerequisites
+
+Make sure your build produces separate source map files (.map). For example, if you're on webpack, your configuration should include the below `devtool` option:
+
+```js
+{ devtool: ‘source-map’ }
+```
+
+## Upload Source Maps to OpenReplay
+
+Then, you need to set up your build process to create the various source files. Source maps can be uploaded for a **single file**:
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY file -m ./dist/index.js.map -u https://myapp.com/index.js
+```
+
+Or a **directory** including many files. In that case, the URL must correspond (exact path) to the root where you upload JS files from the directory. In other words, if you have your `app-42.js` along with  the `app-42.js.map` in the `./build` folder and then want to upload it to your OpenReplay instance so it can be reachable through the link `https://myapp.com/static/app-42.js`, then the command should be like:
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY dir -m ./build -u https://myapp.com/static
+```
+
+## Parameters
+
+- `-s`: The URL of your OpenReplay instance. Make sure to append it with /api. Do not specify this parameter if you're on OpenReplay Cloud.
+- `-k`: API Key (found in 'Preferences' > 'Account' > 'Organization API Key').
+- `-p`: Project Key (found in 'Preferences' > 'Projects').
+- `-m`: Path to source maps file(s) (can also be a directory).
+- `-u`: URL to the JavaScript asset (if single file) or base URL (in case of a directory).
+- `-l`: For displaying upload logs.
+
+## Have questions?
+If you have any questions about this process, feel free to reach out to us on our [Slack](https://slack.openreplay.com) or check out our [Forum](https://forum.openreplay.com).

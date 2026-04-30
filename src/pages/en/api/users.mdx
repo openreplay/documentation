@@ -5,38 +5,54 @@ metaDescription: "How to manage and control user data."
 ---
 import Aside from '~/components/Aside.astro'
 
-## Get user stats
+## Search users
 
-Get some high-level statistics and details about a particular user, who has been identified via the `tracker.setUserID` JavaScript function. This endpoint returns things like `firstSeen`, `lastSeen` and `numberSessions`.
+Search users in a project. Filter by attributes (user id, email, country, etc.), optionally narrow by free-text `query`, and paginate results.
 
 ### Method
-`GET`
+`POST`
 
 ### URL
-`/api/v1/:projectKey/users/:userId`
+`/public/:projectKey/users`
 
 ### Parameters
 
-| Name | Type | Description |
-|----------|-------------|-------------|
-| projectKey | string | The ID of the project you're tracking (required) |
-| userId | string | The ID of your user, set via `tracker.setUserID` (required) |
+| Name       | Type   | Description                                            |
+|------------|--------|--------------------------------------------------------|
+| projectKey | string | The project key (required)                             |
+| q          | string | Optional free-text query (URL query param). When both `q` and `query` (body) are provided, `q` overrides. |
+
+### Payload
+
+| Name           | Type       | Description                                                 |
+|----------------|------------|-------------------------------------------------------------|
+| filters        | array      | Filter list (optional)                                      |
+| query          | string     | Free-text query against user id / email / name (max 100)    |
+| startTimestamp | epoch (ms) | Start of time window (optional, min 946684800000)           |
+| endTimestamp   | epoch (ms) | End of time window (optional, > startTimestamp)             |
+| limit          | integer    | Page size, 1-200 (optional, default: 50)                    |
+| page           | integer    | Page number, starts at 1 (optional, default: 1)             |
+| sortBy         | string     | User column to sort by (optional)                           |
+| sortOrder      | string     | `asc` or `desc` (optional)                                  |
+| columns        | array      | Additional user columns to include in the response          |
 
 ### Request Headers
 
-`Authorization: {YOUR_ORGANIZATION_API_KEY}`: The key can be found in 'Preferences' > 'Account' > 'Organization API Key'.
-
-### Status Codes
-
-`200`: Response sent as JSON in body
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
 
 ### Example Request
 
 ```shell
-curl -X GET \
-  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com \
+curl -X POST \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users \
   -H 'content-type: application/json' \
-  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "query": "mickael",
+    "limit": 50,
+    "page":  1,
+    "sortOrder": "desc"
+  }'
 ```
 
 ### Example Response
@@ -44,53 +60,117 @@ curl -X GET \
 ```json
 {
   "data": {
-    "userId": "mickael@openreplay.com",
-    "sessionCount": 3,
-    "lastSeen": 1623689478617,
-    "firstSeen": 1623440822825
+    "total": 1,
+    "users": [
+      {
+        "$user_id": "mickael@openreplay.com",
+        "$email": "mickael@openreplay.com",
+        "$name": "Mickael",
+        "$first_name": "Mickael",
+        "$last_name": "",
+        "$created_at": 1623440822825,
+        "$last_seen": 1623689478617
+      }
+    ]
+  }
+}
+```
+
+## Get user
+
+Get identity attributes and high-level stats for a particular user.
+
+### Method
+`GET`
+
+### URL
+`/public/:projectKey/users/:userId`
+
+### Parameters
+
+| Name       | Type   | Description                                                |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | The project key (required)                                 |
+| userId     | string | The ID set via `tracker.setUserID` (required, max 256)     |
+
+### Request Headers
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Status Codes
+
+`200`: Response sent as JSON in body  
+`400`: Invalid `userId` (empty or > 256 chars)  
+`404`: User not found
+
+### Example Request
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Example Response
+
+```json
+{
+  "data": {
+    "$user_id": "mickael@openreplay.com",
+    "$email": "mickael@openreplay.com",
+    "$name": "Mickael",
+    "$first_name": "Mickael",
+    "$last_name": "",
+    "$phone": "",
+    "$avatar": "",
+    "$created_at": 1623440822825,
+    "distinct_ids": ["15bd70f6-aedf-4544-8ae6-57eb66398e94"],
+    "$country": "FR",
+    "$state": "",
+    "$city": "",
+    "$first_event_at": 1623440822825,
+    "$last_seen": 1623689478617
   }
 }
 ```
 
 ## Delete user
 
-Delete a user (identified via the `tracker.setUserID` JavaScript function) and all its data captured by OpenReplay. This fires up a background 1-time-job for removing all user related data, including sessions, events, metadata, custom events and recordings. The call returns a `jobID` that you can use later on to [check](/api/jobs#getjobdetails) the status of the delete operation.
-
-This comes in handy for handling GDPR requests you may receive from your end users.
+Delete a user and all associated data. Schedules a background job; the response contains the `jobId` you can poll via the [Jobs](/api/jobs) API.
 
 <Aside type="note">
-	The delete-job will remove a maximum of 1000 random session associated to the specified user.
+The delete job removes up to 1000 sessions associated with the specified user.
 </Aside>
-
 
 ### Method
 `DELETE`
 
 ### URL
-`/api/v1/:projectKey/users/:userId`
+`/public/:projectKey/users/:userId`
 
 ### Parameters
 
-| Name | Type | Description |
-|----------|-------------|-------------|
-| projectKey | string | The ID of the project you're tracking (required) |
-| userId | string | The ID of your user, set via `tracker.setUserID` (required) |
+| Name       | Type   | Description                                                |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | The project key (required)                                 |
+| userId     | string | The ID set via `tracker.setUserID` (required, max 256)     |
 
 ### Request Headers
 
-`Authorization: {YOUR_ORGANIZATION_API_KEY}`: The key can be found in 'Preferences' > 'Account' > 'Organization API Key'.
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
 
 ### Status Codes
 
-`200`: Response sent as JSON in body
+`200`: Job scheduled, returned in body  
+`400`: Invalid `userId` (empty or > 256 chars)  
+`409`: A deletion job for this user is already scheduled or running
 
 ### Example Request
 
 ```shell
 curl -X DELETE \
-  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/users/mickael@example.com \
-  -H 'content-type: application/json' \
-  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users/mickael@example.com \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
 ```
 
 ### Example Response
@@ -103,16 +183,16 @@ curl -X DELETE \
     "status": "scheduled",
     "projectId": 1,
     "action": "delete_user_data",
-    "referenceId": "mehdi@openreplay.com",
+    "referenceId": "mickael@example.com",
     "createdAt": 1623912962910,
-    "updatedAt": 1623912962910,
+    "updatedAt": null,
     "startAt": 1623954600000,
     "errors": null
   }
 }
 ```
 
-### Change the replay-file delete time ? 
+### Change the replay-file delete time ?
 
 The deletion job is a 2 step process: First, sessions and their cascading events get deleted from the database overnight. Second, replay files are scheduled to expire (in 30 days) in the object storage.
 

@@ -4,40 +4,45 @@ metaTitle: "Projects"
 metaDescription: "How to create and retrieve projects."
 ---
 
+All responses are JSON and wrapped in `{ "data": ... }`. Errors return `{ "error": "..." }` with an appropriate HTTP status code.
+
 ## Create Project
 
-Create a new project by specifying its `name`.
+Create a new project by specifying its `name` and, optionally, its `platform`.
 
 ### Method
 `POST`
 
 ### URL
-`/api/v1/projects`
+`/public/projects`
 
-### Parameters
+### Payload
 
-| Name | Type | Description |
-|----------|-------------|-------------|
-| name | string | The name of the project you're creating (i.e. MyApp, Production, Staging) (required) |
+| Name     | Type   | Description                                                  |
+|----------|--------|--------------------------------------------------------------|
+| name     | string | The name of the project (required, max 200 chars)            |
+| platform | string | Project platform: `web` (default) or `ios`                   |
 
 ### Request Headers
 
-`Authorization: {YOUR_ORGANIZATION_API_KEY}`: The key can be found in 'Preferences' > 'Account' > 'Organization API Key'.
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
 
 ### Status Codes
 
-`200`: Response sent as JSON in body
+`200`: Project created, returned in body  
+`400`: Invalid body, name missing/too long, unknown platform, or name already exists
 
 ### Example Request
 
 ```shell
 curl -X POST \
-  https://openreplay.example.com/api/v1/projects/MyFirstProject \
+  {BASE_URL}/public/projects \
   -H 'content-type: application/json' \
-  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
   --data-raw '{
-    "name": "MyFirstProject"
-}'
+    "name": "MyFirstProject",
+    "platform": "web"
+  }'
 ```
 
 ### Example Response
@@ -45,15 +50,71 @@ curl -X POST \
 ```json
 {
   "data": {
-    "projectKey": "QsLA07Oa5sqTfwnNaFwS",
+    "projectId": 42,
     "name": "MyFirstProject",
-    "gdpr": {
-      "maskEmails": true,
-      "sampleRate": 50,
-      "maskNumbers": true,
-      "defaultInputMode": "plain"
-    }
+    "projectKey": "QsLA07Oa5sqTfwnNaFwS",
+    "tenantId": 1,
+    "maxSessionDuration": 7200000,
+    "sampleRate": 100,
+    "saveRequestPayloads": false,
+    "beaconSize": 0,
+    "platform": "web",
+    "metadata1": null,
+    "metadata2": null,
+    "metadata3": null,
+    "metadata4": null,
+    "metadata5": null,
+    "metadata6": null,
+    "metadata7": null,
+    "metadata8": null,
+    "metadata9": null,
+    "metadata10": null
   }
+}
+```
+
+## List Projects
+
+Returns all projects for the current tenant.
+
+### Method
+`GET`
+
+### URL
+`/public/projects`
+
+### Request Headers
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Example Request
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/projects \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Example Response
+
+```json
+{
+  "data": [
+    {
+      "projectId": 42,
+      "name": "MyFirstProject",
+      "projectKey": "QsLA07Oa5sqTfwnNaFwS",
+      "tenantId": 1,
+      "platform": "web"
+    },
+    {
+      "projectId": 43,
+      "name": "MobileApp",
+      "projectKey": "9cACFRuQVidq0sqS7Bny",
+      "tenantId": 1,
+      "platform": "ios"
+    }
+  ]
 }
 ```
 
@@ -65,29 +126,29 @@ Returns the specified project's details.
 `GET`
 
 ### URL
-`/api/v1/projects/:projectKey`
+`/public/projects/:projectKey`
 
 ### Parameters
 
-| Name | Type | Description |
-|----------|-------------|-------------|
-| projectKey | string | The ID of the project you're tracking (required) |
+| Name       | Type   | Description                  |
+|------------|--------|------------------------------|
+| projectKey | string | The project key (required)   |
 
 ### Request Headers
 
-`Authorization: {YOUR_ORGANIZATION_API_KEY}`: The key can be found in 'Preferences' > 'Account' > 'Organization API Key'.
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
 
 ### Status Codes
 
-`200`: Response sent as JSON in body
+`200`: Returned in body  
+`404`: Project not found
 
 ### Example Request
 
 ```shell
 curl -X GET \
-  https://openreplay.example.com/api/v1/projects/7ePSXFuQVidq9pqS6Xyn \
-  -H 'content-type: application/json' \
-  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+  {BASE_URL}/public/projects/7ePSXFuQVidq9pqS6Xyn \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
 ```
 
 ### Example Response
@@ -95,50 +156,11 @@ curl -X GET \
 ```json
 {
   "data": {
+    "projectId": 42,
+    "name": "MyFirstProject",
     "projectKey": "7ePSXFuQVidq9pqS6Xyn",
-    "name": "MyFirstProject"
-  }
-}
-```
-
-## Get Projects
-
-Returns the list of existing projects.
-
-### Method
-`GET`
-
-### URL
-`/api/v1/projects`
-
-### Request Headers
-
-`Authorization: {YOUR_ORGANIZATION_API_KEY}`: The key can be found in 'Preferences' > 'Account' > 'Organization API Key'.
-
-### Status Codes
-
-`200`: Response sent as JSON in body
-
-### Example Request
-
-```shell
-curl -X GET \
-  https://openreplay.example.com/api/v1/projects \
-  -H 'content-type: application/json' \
-  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
-```
-
-### Example Response
-
-```json
-{
-  "data": {
-    "projectKey": "7ePSXFuQVidq9pqS6Xyn",
-    "name": "MyFirstProject"
-  },
-  {
-    "projectKey": "9cACFRuQVidq0sqS7Bny",
-    "name": "MySecondProject"
+    "tenantId": 1,
+    "platform": "web"
   }
 }
 ```

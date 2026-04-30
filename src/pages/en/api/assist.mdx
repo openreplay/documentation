@@ -3,12 +3,17 @@ title: "Assist"
 metaTitle: "Assist"
 metaDescription: "How to search all live sessions for a particular project."
 ---
+import Aside from '~/components/Aside.astro'
+
+<Aside type="note">
+Only available for Enterprise Edition (EE).
+</Aside>
 
 ## Retrieve live sessions
 
-Only available for Enterprise Edition (EE).
+Returns the list of live sessions for a particular project. Optionally filter by `userId` via a query parameter.
 
-Returns the list of live sessions for a particular project.
+Defaults applied server-side: `sort = timestamp`, `order = desc`, `limit = 10`, `page = 1`.
 
 ### Method
 
@@ -16,30 +21,25 @@ Returns the list of live sessions for a particular project.
 
 ### URL
 
-`/api/v1/:projectKey/assist/sessions`
+`/public/:projectKey/assist/sessions`
 
 ### Parameters
 
-| Name | Type | Description |
-|----------|-------------|-------------|
-| projectKey | string | The ID of the project you're tracking (required) |
+| Name       | Type   | Description                                             |
+|------------|--------|---------------------------------------------------------|
+| projectKey | string | The project key (required)                              |
+| userId     | string | Optional `tracker.setUserID` value (URL query param)    |
 
 ### Request Headers
 
-`Authorization: {YOUR_ORGANIZATION_API_KEY}`: The key can be found in 'Preferences' > 'Account' > 'Organization API
-Key'.
-
-### Status Codes
-
-`200`: Response sent as JSON in body
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
 
 ### Example Request
 
 ```shell
 curl -X GET \
-  https://openreplay.example.com/api/v1/aYYaFHiagqdXKEmVlmvJ/assist/sessions \
-  -H 'content-type: application/json' \
-  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+  '{BASE_URL}/public/aYYaFHiagqdXKEmVlmvJ/assist/sessions?userId=mickael@openreplay.com' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
 ```
 
 ### Example Response
@@ -53,31 +53,30 @@ curl -X GET \
         "pageTitle": "OpenReplay Blog",
         "sessionID": "6975518573799938",
         "metadata": {},
-        "userID": "",
+        "userID": "mickael@openreplay.com",
         "userUUID": "8998545b-553c-4f41-a39d-d7cba7fac2d1",
         "projectKey": "aYYaFHiagqdXKEmVlmvJ",
-        "revID": "",
         "timestamp": 1656437966459,
         "trackerVersion": "3.5.11",
-        "isSnippet": true,
         "userOs": "Mac OS",
         "userBrowser": "Chrome",
         "userBrowserVersion": "103.0.0.0",
-        "userDevice": null,
         "userDeviceType": "desktop",
         "userCountry": "FR",
-        "active": false,
         "live": true,
         "projectId": 3
       }
-    ]
+    ],
+    "live": true
   }
 }
 ```
 
 ## Search live sessions
 
-Search in the list of live sessions for a particular project.
+Search the list of live sessions for a particular project using a JSON body.
+
+Defaults applied server-side when omitted: `sort = timestamp`, `order = desc`, `limit = 10`, `page = 1`.
 
 ### Method
 
@@ -85,85 +84,58 @@ Search in the list of live sessions for a particular project.
 
 ### URL
 
-`/api/v1/:projectKey/assist/sessions`
+`/public/:projectKey/assist/sessions`
 
 ### Parameters
 
-| Name | Type | Description |
-|----------|-------------|-------------|
-| projectKey | string | The ID of the project you're tracking (required) |
+| Name       | Type   | Description                                             |
+|------------|--------|---------------------------------------------------------|
+| projectKey | string | The project key (required)                              |
 
 ### Payload
 
 | Name    | Type            | Description                                          |
 |---------|-----------------|------------------------------------------------------|
-| sort    | string          | The sort attribute (default:timestamp)               |
-| order   | string          | The sort order, can be "DESC" or "ASC" (default:DESC) |
-| page    | integer         | The page number for pagination (default:1)           |
-| limit   | integer         | The number of sessions per page (default:200)        |
-| filters | array of filter | The list of filters, check next table (default:[])   |
+| sort    | string          | The sort attribute (default: `timestamp`)            |
+| order   | string          | `asc` or `desc` (default: `desc`)                    |
+| page    | integer         | Page number for pagination (default: `1`)            |
+| limit   | integer         | Number of sessions per page (default: `10`)          |
+| filters | array of filter | The list of filters (default: `[]`)                  |
 
-filter object:
+Filter object:
 
-| Name     | Type                              | Description                                                                        |
-|----------|-----------------------------------|------------------------------------------------------------------------------------|
-| value    | array of case insensitive strings | The list of values (default:[])                                                    |
-| type     | case insensitive string           | The filter attribute (required)                                                    |
-| source   | case insensitive string           | The metadata attribue name for type=metadata (default:"")                          |
-| operator | case sensitive string           | The operator to use for each value, can be "contains" or "is" (default:"contains") |
+| Name     | Type       | Description                                                                    |
+|----------|------------|--------------------------------------------------------------------------------|
+| name     | string     | Filter attribute (required, e.g. `userId`). Use `METADATA` with `source` below |
+| operator | string     | `contains` or `is` (default: `contains`)                                       |
+| value    | string[]   | The list of values (default: `[]`)                                             |
+| source   | string     | Metadata attribute name when `name = METADATA` (default: `""`)                 |
 
-The search will look for the live-sessions that have an attribute name that contains the given `type` and have a value that contains 1 of the given `value`.
-
-
-PS: if `values=[]`; the search will look for the live-sessions that have a given attribute.
-
-For example if you are looking for sessions that have a specific metadata (any value):
-```json
-{"value": [], "type": "METADATA", "source": "myMeta"}
-```
+If `value = []`, the search matches live sessions that have the given attribute set (any value).
 
 ### Request Headers
 
-`Authorization: {YOUR_ORGANIZATION_API_KEY}`: The key can be found in 'Preferences' > 'Account' > 'Organization API
-Key'.
-
-### Status Codes
-
-`200`: Response sent as JSON in body
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
 
 ### Example Request
 
-The following example will look for the first 10 live-sessions (reverse sort by timestamp) that have
-a `userId` contains 'openreplay' and `metadata.plan` contains 'trial' or 'free'.
+The following example searches for the first 10 live sessions (sorted by timestamp descending) where `userId` contains `openreplay` and `metadata.plan` is `trial` or `free`.
 
 ```shell
 curl -X POST \
-  https://openreplay.example.com/api/v1/aYYaFHiagqdXKEmVlmvJ/assist/sessions \
+  {BASE_URL}/public/aYYaFHiagqdXKEmVlmvJ/assist/sessions \
   -H 'content-type: application/json' \
-  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
   --data-raw '{
     "filters": [
-        {
-            "value": [
-                "trial", "free"
-            ],
-            "type": "METADATA",
-            "source": "plan",
-            "operator": "is"
-        },
-        {
-            "value": [
-                "openreplay"
-            ],
-            "type": "USERID",
-            "operator": "contains"
-        }
+      { "value": ["trial", "free"], "name": "METADATA", "source": "plan", "operator": "is" },
+      { "value": ["openreplay"], "name": "userId", "operator": "contains" }
     ],
     "sort": "timestamp",
-    "order": "DESC",
+    "order": "desc",
     "limit": 10,
     "page": 1
-   }'
+  }'
 ```
 
 ### Example Response
@@ -176,28 +148,22 @@ curl -X POST \
       {
         "pageTitle": "OpenReplay Blog",
         "sessionID": "6975518573799185",
-        "metadata": {
-          "plan": "trial"
-        },
+        "metadata": { "plan": "trial" },
         "userID": "dev@openreplay.com",
         "userUUID": "8998545b-553c-4f41-a39d-d7cba7fac2d1",
         "projectKey": "aYYaFHiagqdXKEmVlmvJ",
-        "revID": "",
         "timestamp": 1656437966459,
         "trackerVersion": "3.5.11",
-        "isSnippet": true,
         "userOs": "Mac OS",
         "userBrowser": "Chrome",
         "userBrowserVersion": "103.0.0.0",
-        "userDevice": null,
         "userDeviceType": "desktop",
         "userCountry": "FR",
-        "active": false,
         "live": true,
         "projectId": 3
       }
-    ]
+    ],
+    "live": true
   }
 }
 ```
-
