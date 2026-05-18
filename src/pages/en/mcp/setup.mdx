@@ -1,0 +1,85 @@
+---
+title: "MCP Setup"
+metaTitle: "Setting up the OpenReplay MCP App"
+metaDescription: "Install the OpenReplay MCP server in Claude Desktop, ChatGPT, or Codex, point it at your OpenReplay instance, and log in through the browser-based authorization flow."
+---
+
+import Aside from '~/components/Aside.astro';
+
+This page walks through installing the OpenReplay MCP app, pointing it at your instance, and signing in.
+
+## 1. Install the MCP server
+
+Add the OpenReplay MCP server to your client's MCP configuration. 
+
+### Claude Desktop
+
+Claude Desktop installs the OpenReplay MCP as a single-click **extension** (`.mcpb` bundle):
+
+1. Download `openreplay.mcpb` from the OpenReplay [releases page](https://github.com/openreplay/openreplay/releases).
+2. Double-click the file — Claude Desktop opens and prompts you to install it as an extension.
+3. Click **Install**.
+
+That's it. There's no JSON config to edit and no Node toolchain to install.
+
+## 2. Point the MCP at your OpenReplay instance
+
+In Claude Desktop, open the extension's settings panel and set the **OpenReplay URL** field to the address you use in the browser — `https://app.openreplay.com` for Cloud, or your own domain for self-hosted. The MCP derives the API host automatically.
+
+<img src="/mcp/config-panel.png" alt="Configuring the OpenReplay URL in the MCP app settings" style={{ width: '700px', height: 'auto' }} />
+
+For ChatGPT and Codex, the URL comes from the `OPENREPLAY_BACKEND_URL` env var you set in step 1.
+
+You can also switch instances at any time from within the chat: *"use OpenReplay at https://openreplay.mycompany.com"*.
+
+## 3. Log in via the browser
+
+The MCP uses a browser-based authorization flow — you never have to paste your password into the chat.
+
+<Aside type="tip" title="The flow at a glance" >
+  1. Ask Claude to **log in to OpenReplay**.
+  2. Claude returns an authorization link and tries to open it in your browser.
+  3. You sign in to OpenReplay (if you weren't already) and click **Authorize**.
+  4. You tell Claude *"I authorized it"*.
+  5. Claude finalizes the login and confirms the token was issued.
+</Aside>
+
+### Step by step
+
+**1.** In the chat, say:
+
+```
+Log me in to OpenReplay
+```
+
+**2.** Claude calls the `login_browser` tool and replies with an `…/mcp/authorize?state=…` URL. On most systems it also opens the link automatically in your default browser.
+
+**3.** In the OpenReplay tab, confirm the access request by clicking **Authorize**.
+
+<img src="/mcp/authorize.png" alt="The OpenReplay authorization screen" style={{ width: '700px', height: 'auto' }} />
+
+**4.** Switch back to Claude and say:
+
+```
+I authorized it
+```
+
+**5.** Claude finalizes the login (via the `complete_login` tool) and confirms a token was generated. The token is persisted locally, so you don't need to repeat this on the next chat.
+
+<Aside type="caution" title="Password fallback" >
+  If your host can't open browser windows, the MCP also supports email/password login — just say *"Log me in with email `you@example.com` and password `...`"*. The browser flow is preferred whenever it's available.
+</Aside>
+
+## Verifying the connection
+
+Once logged in, ask Claude:
+
+```
+List my OpenReplay projects
+```
+
+If everything is wired up, you'll see your project names and IDs. From there, head to the [Capabilities](/mcp/capabilities) page to see what else you can ask for.
+
+## Have questions?
+
+If you run into issues, join our [Slack](https://slack.openreplay.com) or post on the [Forum](https://forum.openreplay.com).
