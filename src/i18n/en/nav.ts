@@ -296,6 +296,16 @@ const nav: NavItem = {
       ]
     },
     {
+      text: 'MCP',
+      slug: 'mcp',
+      icon: 'ai',
+      children: [
+        { text: 'Overview', slug: 'mcp', children: [] },
+        { text: 'Setup', slug: 'mcp/setup', children: [] },
+        { text: 'Capabilities', slug: 'mcp/capabilities', children: [] },
+      ]
+    },
+    {
       text: 'Plugins',
       slug: 'plugins',
       icon: 'plugins',
