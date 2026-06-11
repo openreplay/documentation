@@ -1,0 +1,53 @@
+---
+title: "JavaScript SDK - resanitize method"
+metaTitle: "JavaScript SDK - resanitize method"
+metaDescription: "Details about the resanitize method from OpenReplay's SDK"
+---
+import Aside from '~/components/Aside.astro'
+
+This method re-evaluates [sanitization](/sdk/sanitize-data) against the current DOM and re-emits whatever changed, updating already-recorded nodes mid-session.
+
+Sanitization is normally applied when a node is first recorded. If you change what should be obscured or hidden *after* a node has already been captured, that change won't be reflected in the replay on its own. Call `resanitize()` to force the tracker to re-scan and apply the updated sanitization rules to nodes that are already part of the recording.
+
+Call it after:
+
+- toggling `data-openreplay-obscured` / `data-openreplay-hidden` attributes on elements that are already on the page, or
+- changing whatever your [`domSanitizer`](/sdk/sanitize-data#using-the-domsanitizer-function) keys on (class, id, etc.).
+
+<Aside type="note">
+Sanitized elements are masked/redacted at the source (tracker) level, so anything obscured or hidden never reaches the OpenReplay instance. Like all sanitization, `resanitize()` only affects data captured from this point onward — it cannot retroactively scrub data that was already sent to the backend in plain form.
+</Aside>
+
+## Signature
+
+```js
+resanitize(el?: Element): void
+```
+
+## Parameters
+
+- `el?: Element`: The highest node you changed. The tracker re-scans this element and its subtree. Omit it to re-scan the whole document.
+
+<Aside type="tip">
+Pass the most specific element you can. Scanning the entire document is O(DOM size), so passing the changed subtree keeps the re-scan cheap on large pages.
+</Aside>
+
+## Return value
+
+This method does not return any value. The re-evaluated sanitization is applied directly to the ongoing recording and the results are visible in the OpenReplay platform.
+
+## Example
+
+```js
+// Obscure a section after the user opens sensitive content
+const panel = document.getElementById('account-details')
+panel.setAttribute('data-openreplay-obscured', '')
+
+// Tell the tracker to re-apply sanitization to that subtree
+tracker.resanitize(panel)
+```
+
+```js
+// Re-scan the whole document after changing domSanitizer rules
+tracker.resanitize()
+```
