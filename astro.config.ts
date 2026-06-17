@@ -19,6 +19,14 @@ import remarkCopy from 'remark-copy-linked-files'
 import dotenv from 'dotenv';
 
 dotenv.config();
+
+// DOCS_KEY is inlined into the client bundle (used by the AI chatbot). It comes from
+// the env (CI secret in deploy.yml / local .env loaded above). In CI, fail loudly if
+// it's missing rather than silently shipping an empty key; locally, fall back to ''.
+const docsKey = process.env.DOCS_KEY;
+if (!docsKey && process.env.CI) {
+  throw new Error('DOCS_KEY is not set in CI — refusing to build the chatbot with an empty key.');
+}
 //import remarkCopyLinkedFiles from 'remark-copy-linked-files';
 
 function addDefaultLayout() {
@@ -101,9 +109,7 @@ export default defineConfig({
   ],
   vite: {
     define: {
-      // Sourced from the DOCS_KEY env var (CI secret in deploy.yml / local .env via
-      // dotenv.config() above). Falls back to '' for local builds without the key.
-      'process.env.DOCS_KEY': JSON.stringify(process.env.DOCS_KEY ?? '')
+      'process.env.DOCS_KEY': JSON.stringify(docsKey ?? '')
     }
   }
 });
