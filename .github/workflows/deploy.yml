@@ -39,6 +39,19 @@ jobs:
        size: 10G
     - run: npm ci
     - run: npm run build
-    - run: aws s3 sync ./dist/ s3://openreplay-documentation --acl public-read --exact-timestamps
+    # Safety net for the --delete sync below: refuse to deploy a truncated build (which
+    # would wipe live pages from S3). The site emits ~13k HTML files; abort well below that.
+    # Re-tune this floor if the page count ever legitimately drops (e.g. freezing old versions).
+    - name: Guard against truncated build
+      run: |
+        count=$(find ./dist -name '*.html' | wc -l)
+        echo "dist contains $count HTML files"
+        if [ "$count" -lt 5000 ]; then
+          echo "::error::Build looks truncated ($count HTML files < 5000); aborting before --delete sync."
+          exit 1
+        fi
+    # --delete keeps the bucket in exact sync with the build output, so pages removed
+    # from source (e.g. retired pre-v1.17.0 versions) are also removed from S3.
+    - run: aws s3 sync ./dist/ s3://openreplay-documentation --acl public-read --exact-timestamps --delete
     - run: aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CF_DISTRIBUTION_ID}} --paths "/*"
 
