@@ -19,9 +19,25 @@ export async function getStaticPaths() {
 	return paths;
 }
 
+// No translation exists for this page in the requested language. Rather than
+// re-rendering the full English content under the localized URL (which produced
+// ~9k duplicate pages and dominated build time), emit a lightweight client-side
+// redirect to the English original. The URL still resolves; it just forwards.
 const { fallback } = Astro.params;
-const englishPages = await Astro.glob('../en/**/*.mdx');
-const { Content } = englishPages.find((p) => p.url.endsWith(fallback));
+const path = (fallback ?? '').replace(/\/$/, '');
+const target = path ? `/en/${path}/` : '/en/';
 ---
 
-<Content />
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta http-equiv="refresh" content={`0; url=${target}`} />
+		<link rel="canonical" href={target} />
+		<meta name="robots" content="noindex, follow" />
+		<title>Redirecting to the English documentation…</title>
+	</head>
+	<body>
+		<p>This page isn't translated yet. Redirecting to <a href={target}>the English version</a>.</p>
+	</body>
+</html>
