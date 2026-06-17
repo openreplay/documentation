@@ -1,0 +1,175 @@
+---
+title: "المهام"
+metaTitle: "المهام"
+metaDescription: "كيفية إدارة مهام حذف بيانات المستخدم."
+---
+
+قيم حالة المهمة: `scheduled`، `running`، `completed`، `failed`، `cancelled`.
+
+## عرض جميع المهام
+
+استرجاع جميع مهام مشروع ما، بما في ذلك المهام المكتملة والملغاة. مقسّم إلى صفحات.
+
+### الطريقة
+`GET`
+
+### URL
+`/public/:projectKey/jobs`
+
+### معلمات الاستعلام
+
+| Name  | Type    | Description                                                                 |
+|-------|---------|-----------------------------------------------------------------------------|
+| limit | integer | حجم الصفحة، 1-200 (القيمة الافتراضية: 50). القيم خارج النطاق تعود إلى 50.   |
+| page  | integer | رقم الصفحة، يبدأ من 1 (القيمة الافتراضية: 1). القيم < 1 تعود إلى 1.           |
+
+### رؤوس الطلب
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### مثال على الطلب
+
+```shell
+curl -X GET \
+  '{BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs?limit=50&page=1' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### مثال على الاستجابة
+
+```json
+{
+  "data": [
+    {
+      "jobId": 3451,
+      "description": "Delete user sessions of userId = shekar@example.com",
+      "status": "scheduled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "shekar@example.com",
+      "createdAt": 1623912955277,
+      "updatedAt": null,
+      "startAt": 1623954600000,
+      "errors": null
+    },
+    {
+      "jobId": 3452,
+      "description": "Delete user sessions of userId = mehdi@example.com",
+      "status": "cancelled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "mehdi@example.com",
+      "createdAt": 1623912962910,
+      "updatedAt": 1623913015276,
+      "startAt": 1623954600000,
+      "errors": null
+    }
+  ]
+}
+```
+
+## الحصول على تفاصيل المهمة
+
+إرجاع حالة المهمة وبياناتها الوصفية.
+
+### الطريقة
+`GET`
+
+### URL
+`/public/:projectKey/jobs/:jobId`
+
+### المعلمات
+
+| Name  | Type    | Description                    |
+|-------|---------|--------------------------------|
+| jobId | integer | معرّف المهمة (مطلوب)          |
+
+### رؤوس الطلب
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### رموز الحالة
+
+`200`: تم إرسال الاستجابة بصيغة JSON في النص  
+`400`: `jobId` غير صالح (ليس عدداً صحيحاً)  
+`404`: لم يتم العثور على المهمة
+
+### مثال على الطلب
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs/3451 \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### مثال على الاستجابة
+
+```json
+{
+  "data": {
+    "jobId": 3451,
+    "description": "Delete user sessions of userId = shekar@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "shekar@example.com",
+    "createdAt": 1623912955277,
+    "updatedAt": null,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+## إلغاء المهمة
+
+إلغاء مهمة لم تبدأ بعد أو لا تزال قيد التنفيذ.
+
+### الطريقة
+`DELETE`
+
+### URL
+`/public/:projectKey/jobs/:jobId`
+
+### المعلمات
+
+| Name  | Type    | Description                    |
+|-------|---------|--------------------------------|
+| jobId | integer | معرّف المهمة (مطلوب)          |
+
+### رؤوس الطلب
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### رموز الحالة
+
+`200`: تم إلغاء المهمة  
+`400`: لا يمكن إلغاء المهمة في حالتها الحالية، أو `jobId` غير صالح  
+`404`: لم يتم العثور على المهمة
+
+### مثال على الطلب
+
+```shell
+curl -X DELETE \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs/3452 \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### مثال على الاستجابة
+
+```json
+{
+  "data": {
+    "jobId": 3452,
+    "description": "Delete user sessions of userId = mehdi@example.com",
+    "status": "cancelled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@example.com",
+    "createdAt": 1623912962910,
+    "updatedAt": 1623913015276,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```

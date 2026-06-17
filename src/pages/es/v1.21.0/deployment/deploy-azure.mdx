@@ -1,0 +1,94 @@
+---
+title: "Desplegar en Azure"
+metaTitle: "Desplegar en Azure"
+metaDescription: "Guía paso a paso para desplegar OpenReplay en Azure."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="Mira cómo desplegar OpenReplay en tu infraestructura de Azure"
+  description="Si no te gusta leer, puedes seguir este tutorial en vídeo que te muestra cómo desplegar OpenReplay en Azure"
+  videoURL="https://www.youtube.com/watch?v=bkVw32UKf7Q"
+  />
+
+
+
+El stack de OpenReplay se puede instalar en una sola máquina, y Microsoft Azure es un candidato ideal. Aquí te explicamos cómo hacerlo.
+
+## Lanzar una VM
+
+1. Inicia sesión en tu portal
+2. Haz clic en 'Virtual Machine' si está disponible en la pantalla principal. De lo contrario, haz clic en 'Create a Resource' > 'Compute' > 'Virtual Machine'
+3. En la página 'Virtual Machine', haz clic en 'Add' en caso de que no se te redirija automáticamente a la página de creación
+4. Elige *Ubuntu Server 20.04 LTS* para la 'Image'
+4. Elige las especificaciones de tu VM. Los recursos **mínimos** son `2 vCPUs, 8 GB of RAM, 50 GB of storage`, de lo contrario los servicios backend de OpenReplay simplemente no arrancarán. Las especificaciones mínimas son suficientes para un volumen bajo/moderado. Si esperas mucho tráfico, deberías escalar a partir de aquí.
+5. Habilita los puertos HTTP (80), HTTPS (443) y SSH (22) y anota el `username`
+6. Haz clic en 'Review + create'
+
+## Desplegar OpenReplay
+
+1. Asegúrate de que tu VM esté `Running` y luego conéctate a ella:
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem ## only if you've previously created an SSH key
+chmod 400 $SSH_KEY
+INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
+ssh <username>@$INSTANCE_IP ## or ssh -i $SSH_KEY <username>@$INSTANCE_IP if you have a key
+```
+
+2. Instala OpenReplay indicando el dominio en el que se ejecutará (p. ej. DOMAIN_NAME=openreplay.mycompany.com):
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## Configurar TLS/SSL
+
+OpenReplay maneja datos sensibles de los usuarios y, por lo tanto, requiere HTTPS para funcionar. Esto es obligatorio; de lo contrario, el tracker simplemente no empezaría a grabar. Lo mismo ocurre con el panel: sin HTTPS no podrás reproducir las sesiones de los usuarios.
+
+Por lo tanto, debes generar (o aportar) tu propio certificado SSL.
+
+1. Primero, ve a Azure DNS (o a tu otro proveedor de servicios DNS) y crea un `A Record`. Usa el dominio que proporcionaste anteriormente durante el paso de instalación y apúntalo a la VM usando su IP pública.
+
+2. Si vas a aportar tu propio certificado, crea un secreto SSL con el siguiente comando: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
+
+> **Nota:** Si no tienes un certificado, genera uno que se renueve automáticamente para tu subdominio (el que proporcionaste durante la instalación) usando Let's Encrypt. Simplemente conéctate a la VM de OpenReplay, ejecuta `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` y sigue los pasos.
+
+3. Si deseas habilitar la redirección de http a https (recomendado), descomenta el siguiente bloque, en la sección `ingress-nginx`, dentro de `/var/lib/openreplay/vars.yaml`:
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+Vale la pena mencionar que nuestro `ingress-nginx` se ejecuta por defecto en los puertos `80|443`, pero esto se puede cambiar fácilmente, si es necesario, en `vars.yaml`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. Por último, reinstala el NGINX de OpenReplay:
+
+```bash
+openreplay -R
+```
+
+Ya está todo listo; OpenReplay debería ser accesible en tu subdominio. Puedes crear una cuenta visitando la página `/signup` (es decir, openreplay.mycompany.com/signup).
+
+> **Nota:** Para mayor seguridad, también puedes ejecutar la instancia de OpenReplay detrás de un Azure Load Balancer. Consulta la [documentación de Azure LB](https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-overview) para más detalles.
+
+## ¿Tienes preguntas?
+
+Si tienes algún problema, conéctate a nuestro [Slack](https://slack.openreplay.com) o visita nuestro [Foro](https://forum.openreplay.com) y obtén ayuda de nuestra comunidad.

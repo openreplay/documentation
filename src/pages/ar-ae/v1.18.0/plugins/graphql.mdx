@@ -1,0 +1,126 @@
+---
+title: "GraphQL"
+metaTitle: "GraphQL"
+metaDescription: "إضافة GraphQL لـ OpenReplay."
+---
+
+import Aside from '~/components/Aside.astro'
+
+تتيح لك هذه الإضافة التقاط طلبات `GraphQL` وفحصها لاحقًا أثناء إعادة تشغيل تسجيلات الجلسات. وهذا مفيد جدًا لفهم المشكلات وإصلاحها. إضافة `GraphQL` متوافقة مع تطبيقات Apollo وRelay.
+
+<Aside type="tip">
+  لدينا أيضًا شرح تفصيلي حول كيفية استخدام إضافة GraphQL لالتقاط الطلبات وتعديلها، يمكنك الاطلاع عليه [هنا](/tutorials/graphql).
+</Aside>
+
+## التثبيت
+
+```bash
+npm i @openreplay/tracker-graphql
+```
+
+## الاستخدام
+
+قم بتهيئة الحزمة `@openreplay/tracker` كالمعتاد وحمّل الإضافة فيها. سيُعيد استدعاء `plugin` الدالة التي تستقبل أربعة متغيرات هي `operationKind` و`operationName` و`variables` و`result` و`duration` (القيمة الافتراضية 0) وتُعيد `result` دون أي تغييرات.
+
+```js
+import Tracker from '@openreplay/tracker';
+import trackerGraphQL from '@openreplay/tracker-graphql';
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+export const recordGraphQL = tracker.plugin(trackerGraphQL());
+```
+
+### Relay
+
+إذا كنت تستخدم [أدوات شبكة Relay](https://github.com/relay-tools/react-relay-network-modern)، فيمكنك ببساطة [إنشاء وسيط (middleware)](https://github.com/relay-tools/react-relay-network-modern/tree/master tab=readme-ov-file#example-of-injecting-networklayer-with-middlewares-on-the-client-side)
+
+```js
+import { createRelayMiddleware } from '@openreplay/tracker-graphql'
+
+const trackerMiddleware = createRelayMiddleware(tracker)
+
+const network = new RelayNetworkLayer([
+  // your middleware
+  // ,
+  trackerMiddleware
+])
+```
+
+أو يمكنك وضع استدعاء `recordGraphQL` يدويًا في تطبيق `NetworkLayer`. إذا كنت تستخدم الطريقة القياسية `Network.create` لتطبيقه، فعليك القيام بشيء كما يلي:
+
+```js
+import { createGraphqlMiddleware } from '@openreplay/tracker-graphql'; // see above for recordGraphQL definition
+import { Environment } from 'relay-runtime';
+
+const handler = createGraphqlMiddleware(tracker)
+
+function fetchQuery(operation, variables, cacheConfig, uploadables) {
+  return fetch('www.myapi.com/resource', {
+    // ...
+  })
+    .then(response => response.json())
+    .then(result =>
+        handler(
+          // op kind, name, variables, response, duration (default 0)
+          operation.operationKind,
+          operation.name,
+          variables,
+          result,
+          duration,
+        ),
+    );
+}
+
+const network = Network.create(fetchQuery);
+```
+
+راجع [Relay Network Layer](https://relay.dev/docs/en/network-layer) لمزيد من التفاصيل.
+
+### Apollo
+
+بالنسبة إلى [Apollo](https://www.apollographql.com/) يجب عليك إنشاء `ApolloLink` جديد.
+
+```js
+import { createTrackerLink } from '@openreplay/tracker-graphql'
+
+const trackerLink = createTrackerLink(tracker);
+const yourLink = new ApolloLink(trackerLink)
+```
+
+بدلاً من ذلك، يمكنك استخدام معالج graphql العام:
+
+```js
+import { createGraphqlMiddleware } from '@openreplay/tracker-graphql'; // see above for recordGraphQL definition
+import { ApolloLink } from 'apollo-link';
+
+const handler = createGraphqlMiddleware(tracker)
+
+const trackerApolloLink = new ApolloLink((operation, forward) => {
+  return forward(operation).map(result =>
+    handler(
+      // op kind, name, variables, response, duration (default 0)
+      operation.query.definitions[0].operation,
+      operation.operationName,
+      operation.variables,
+      result,
+    ),
+  );
+});
+
+const link = ApolloLink.from([
+  trackerApolloLink,
+  // ...
+]);
+```
+
+راجع [Apollo Link](https://www.apollographql.com/docs/link/) و[Apollo Networking](https://www.apollographql.com/docs/react/networking/network-layer/) لمزيد من التفاصيل.
+
+## الشرح التعليمي
+إذا كنت تبحث عن مثال عملي حول كيفية استخدام هذه الإضافة لالتقاط بيانات العمليات (التعديلات والاستعلامات) في عمليات إعادة تشغيل الجلسات الخاصة بك، فاطلع على [شرحنا التفصيلي هنا](/tutorials/graphql).
+
+## هل لديك أسئلة؟
+
+هل تواجه صعوبة في إعداد هذه الإضافة؟ يُرجى الانضمام إلى [Slack](https://slack.openreplay.com) الخاص بنا أو الاطلاع على [المنتدى](https://forum.openreplay.com) والحصول على المساعدة من مجتمعنا.

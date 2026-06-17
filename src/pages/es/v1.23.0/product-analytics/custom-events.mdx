@@ -1,0 +1,97 @@
+---
+title: "Eventos personalizados"
+metaTitle: "Eventos personalizados"
+metaDescription: "Cómo enviar eventos específicos de tu dominio y agregar inteligencia adicional a las grabaciones de sesión."
+---
+import Aside from '~/components/Aside.astro'
+
+Los eventos personalizados son ideales para agregar más inteligencia al registrar eventos específicos de tu dominio junto con las repeticiones de sesión. OpenReplay utiliza 2 tipos de eventos: funcionales (`event`) y técnicos (`issue`). Todos los eventos se indexan para facilitar la búsqueda y se sincronizan con las grabaciones de sesión.
+
+<Aside type="tip">
+  También tenemos un tutorial detallado sobre cómo enviar eventos personalizados, puedes consultarlo [aquí](/tutorials/custom-events).
+</Aside>
+
+## Eventos funcionales
+
+Los eventos funcionales se indexan y facilitan la búsqueda de grabaciones de sesión específicas. Si OpenReplay los recibió correctamente, estarán disponibles como filtros en la barra de omnisearch.
+
+![Functional Event](/static/custom-events-1.png#center)
+
+### Con NPM
+
+Usa el método `event` para señalar eventos funcionales como *order completed* o *product added*. Toma 2 parámetros: *name* (string) y *payload* (objeto JS no recursivo).
+
+```js
+tracker.event('product_added', 'shoes'); // after tracker.start()
+```
+
+### Con el snippet de JavaScript
+
+A continuación, se muestra un ejemplo de cómo enviar un evento funcional usando el snippet.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: ""}; 
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+  ...
+  __OPENREPLAY__.event('product_added', 'shoes'); // send a functional event later in your code
+  ...
+```
+
+## Eventos técnicos
+
+Los eventos técnicos se muestran en la repetición de sesión en la pestaña *Events* de DevTools y como anotaciones en la reproducción. También se tienen en cuenta en los embudos (Funnels) para correlacionar las caídas de conversión con problemas técnicos.
+
+![Technical Event](/static/custom-events-2.png#center)
+
+### Con NPM
+
+`issue` se usa para enviar eventos técnicos, como errores, que pueden ocurrir en tu stack u otros sistemas posteriores. `issue` toma 2 parámetros: *name* (string) y *payload* (objeto JS no recursivo).
+
+```js
+tracker.issue('payment_error', {code: 500, context: 42}); // after tracker.start()
+```
+
+### Con el snippet de JavaScript
+
+A continuación, se muestra un ejemplo de cómo enviar un evento técnico usando el snippet.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" }; 
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+  ...
+  __OPENREPLAY__.issue('payment_error', {code: 500, context: 42}); // send a technical event (issue) later in your code
+  ...
+```
+
+### Con la app de iOS
+
+
+```swift
+import ORTracker
+
+ORTracker.shared.event(name: String, payload: Encodable?)
+```
+
+
+## Tutorial
+Si buscas un ejemplo práctico de cómo usar los eventos personalizados, consulta [nuestro tutorial detallado aquí](/tutorials/custom-events).
+
+## ¿Tienes preguntas?
+
+¿Tienes problemas para usar los eventos personalizados? Conéctate a nuestro [Slack](https://slack.openreplay.com) o visita nuestro [Foro](https://forum.openreplay.com) y obtén ayuda de nuestra comunidad.

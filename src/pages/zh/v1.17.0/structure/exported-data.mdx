@@ -1,0 +1,176 @@
+---
+title: "导出的数据"
+metaTitle: "导出的数据"
+metaDescription: "使用 OpenReplay 连接器（Enterprise Edition）将数据导出到您的数据仓库。"
+---
+
+OpenReplay Enterprise Edition 提供了多种连接器，用于将捕获的数据（用户行为和技术问题）导出到您的数据仓库。我们支持：
+- Amazon Redshift
+- Google BigQuery
+- PostgreSQL
+- Snowflake
+- ClickHouse
+
+## 会话
+
+|﻿列名|类型|类别|描述|
+|-----------|----|--------|-----------|
+sessionid|text|会话元数据|唯一的会话标识符
+user_agent|text|会话元数据|示例：Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0
+user_browser|text|会话元数据|用户浏览器
+user_browser_version|text|会话元数据|用户浏览器版本
+user_country|text|会话元数据|用户所在国家/地区
+user_device|text|会话元数据|用户设备
+user_device_heap_size|biginteger|会话元数据|用户设备堆大小
+user_device_memory_size|biginteger|会话元数据|设备内存的大致大小（以 GB 为单位）
+user_device_type|text|会话元数据|用户设备类型
+user_os|text|会话元数据|用户操作系统
+user_os_version|text|会话元数据|用户操作系统版本
+user_uuid|text|会话元数据|用户唯一标识符
+connection_effective_bandwidth|biginteger|会话元数据|有效带宽估计值（以兆比特每秒为单位）
+connection_type|text|会话元数据|连接类型。以下之一：bluetooth、cellular、ethernet、none、wifi、other、unknown
+metadata_key|text|会话元数据|关于用户的附加信息（也称为特征或用户变量）。详细了解 [metadata](https://docs.openreplay.com/installation/metadata)
+metadata_value|text|会话元数据|关于用户的附加信息（也称为特征或用户变量）。详细了解 [metadata](https://docs.openreplay.com/installation/metadata)
+referrer|text|会话元数据|链接到此页面的页面的 URI
+user_anonymous_id|text|会话元数据|可选的用户标识符
+user_id|text|会话元数据|会话中用户的标识符，可以使用 setUserID() 手动设置 [tracker 方法](https://docs.openreplay.com/installation/identify-user)
+session_start_timestamp|biginteger|会话元数据|在用户端生成会话的第一条消息时的时间戳
+session_end_timestamp|biginteger|会话元数据|会话的最后一条消息到达时的时间戳，随后是 2 分 30 秒的不活动状态
+session_duration|biginteger|会话元数据|session_end_timestamp 与 session_start_timestamp 之间的差值（以毫秒为单位）
+first_contentful_paint|biginteger|加载速度|浏览器首次渲染任何文本或图像的时间
+speed_index|biginteger|加载速度|Speed Index 是一项页面加载性能指标，用于显示页面内容在视觉上被填充的速度。它是页面可见部分显示的平均时间。以毫秒表示，并取决于视口（viewport）的大小，分数越低越好。
+visually_complete|biginteger|加载速度|折叠线以上区域以其最终形式完成渲染所需的时间
+timing_time_to_interactive|biginteger|加载速度|Time to Interactive 是一项非标准化的 Web 性能“进度”指标，定义为最后一个长任务（Long Task）完成且随后有 5 秒网络和主线程不活动的时间点。
+avg_cpu|biginteger|性能|用户端的平均估计 CPU
+avg_fps|biginteger|性能|用户端的最大每秒帧数
+max_cpu|biginteger|性能|用户端的最大估计 CPU
+max_fps|biginteger|性能|用户端的最大每秒帧数
+max_total_js_heap_size|biginteger|性能|最大总堆大小
+max_used_js_heap_size|biginteger|性能|已使用的最大堆大小
+js_exceptions_count|biginteger|问题和事件|会话中 JavaScript 异常事件的计数
+inputs_count|biginteger|问题和事件|会话中 Input 事件的计数
+clicks_count|biginteger|问题和事件|会话中 Click 事件的计数
+issues_count|biginteger|问题和事件|会话中 Issue 事件的计数
+urls_count|biginteger|问题和事件|会话期间访问的不同 URL 的计数
+
+## 事件
+
+|列名|类型|类别|描述|
+|----------|----|--------|-----------|
+sessionid|biginteger|技术|唯一的会话标识符
+consolelog_level|text|技术|Verbose、Info、Warning 或 Error
+consolelog_value|text|技术|控制台日志消息内容
+customevent_name|text|技术|自定义事件的名称
+customevent_payload|text|技术|自定义事件的 payload
+jsexception_message|text|技术|JS 异常消息内容
+jsexception_name|text|技术|异常的名称
+jsexception_payload|text|技术|异常的 payload
+jsexception_metadata|text|技术|异常的元数据
+networkrequest_type|text|行为和技术|请求类型（GET、PUT、FETCH,…）
+networkrequest_url|text|行为和技术|请求的 url 站点
+networkrequest_request|text|行为和技术|请求 payload
+networkrequest_response|text|行为和技术|来自服务器的响应
+networkrequest_status|biginteger|行为和技术|请求的状态
+networkrequest_timestamp|biginteger|行为和技术|请求的时间戳
+networkrequest_duration|biginteger|行为和技术|请求的总持续时间
+issueevent_message_id|biginteger|行为和技术|唯一标识符
+issueevent_timestamp|biginteger|行为和技术|事件的时间戳
+issueevent_type|text|行为和技术|问题的类型（更多信息请参见 Issue Type 文档）
+issueevent_context_string|text|行为和技术|带说明的问题消息
+issueevent_context|text|行为和技术|有关问题的相关信息
+issueevent_payload|text|行为和技术|Payload
+customissue_name|text|技术|自定义问题名称
+customissue_payload|text|技术|自定义问题 payload
+received_at|biginteger|技术|连接器接收到事件时的时间戳
+batch_order_number|biginteger|技术|批次中的顺序编号。要重建消息的顺序，请按 received_at 和 batch_order_number 排序
+
+
+## 事件详情
+
+|列名|类型|类别|描述|
+|----------|----|--------|-----------|
+sessionid|biginteger|技术|唯一的会话标识符
+clickevent_hesitationtime|biginteger|行为|在元素上悬停与点击它之间的时间
+clickevent_label|text|行为|元素文本（如果存在）
+clickevent_messageid|biginteger|行为|DOM 元素的唯一标识符
+clickevent_timestamp|biginteger|行为|点击事件的时间戳
+connectioninformation_downlink|biginteger|技术|有效带宽估计值（以兆比特每秒为单位），四舍五入到最接近的 25 千比特每秒的倍数
+connectioninformation_type|text|技术|设备用于与网络通信的连接类型。以下之一：bluetooth、cellular、ethernet、none、wifi、other、unknown。
+consolelog_level|text|技术|Verbose、Info、Warning 或 Error
+consolelog_value|text|技术|控制台日志消息内容
+customevent_name|text|技术|自定义事件的名称
+customevent_payload|text|技术|自定义事件的 payload
+fetch_duration|biginteger|技术|fetch 请求的持续时间
+fetch_request|text|技术|fetch 请求 payload
+fetch_response|text|技术|来自服务器的响应
+fetch_status|biginteger|技术|请求的状态
+fetch_timestamp|biginteger|技术|fetch 请求的时间戳
+fetch_url|text|技术|服务器的 URL
+graphql_operationkind|text|技术|GraphQL 操作种类
+graphql_operationname|text|技术|GraphQL 操作
+graphql_response|text|技术|GraphQL 响应
+graphql_variables|text|技术|GraphQL 变量
+inputevent_label|text|行为|元素文本（如果存在）
+inputevent_messageid|biginteger|行为|唯一标识符
+inputevent_timestamp|biginteger|行为|输入事件的时间戳
+inputevent_value|text|行为|输入值
+inputevent_valuemasked|boolean|行为|如果值被掩码处理则为 True
+jsexception_message|text|技术|JS 异常消息内容
+jsexception_name|text|技术|异常的名称
+jsexception_payload|text|技术|异常的 payload
+jsexception_metadata|text|技术|异常的元数据
+networkrequest_type|text|行为和技术|请求类型（GET、PUT、FETCH,…）
+networkrequest_url|text|行为和技术|请求的 url 站点
+networkrequest_request|text|行为和技术|请求 payload
+networkrequest_response|text|行为和技术|来自服务器的响应
+networkrequest_status|biginteger|行为和技术|请求的状态
+networkrequest_timestamp|biginteger|行为和技术|请求的时间戳
+networkrequest_duration|biginteger|行为和技术|请求的总持续时间
+pageevent_domcontentloadedeventend|biginteger|技术|DOM 内容加载完成时的时间戳
+pageevent_domcontentloadedeventstart|biginteger|技术|DOM 内容加载的时间戳
+pageevent_firstcontentfulpaint|biginteger|技术|浏览器首次渲染任何文本或图像时的时间戳
+pageevent_firstpaint|bginteger|技术|这是从导航到浏览器在屏幕上渲染第一批像素之间的时间，渲染任何在视觉上不同于导航前屏幕上内容的东西。它回答了这个问题：它正在发生吗？
+pageevent_loaded|boolean|技术|如果已加载则为 True
+pageevent_loadeventend|biginteger|技术|页面加载完成时的时间戳
+pageevent_loadeventstart|biginteger|技术|开始加载页面时的时间戳
+pageevent_messageid|biginteger|技术|唯一标识符
+pageevent_referrer|text|技术|链接到此页面的页面的 URI
+pageevent_requeststart|bginteger|技术|请求开始的时间戳
+pageevent_responseend|biginteger|技术|响应结束的时间戳
+pageevent_responsestart|bginteger|技术|响应开始的时间戳
+pageevent_speedindex|biginteger|技术|页面可见部分显示的平均时间。以毫秒表示
+pageevent_timestamp|biginteger|技术|事件的时间戳
+pageevent_url|text|技术|URL
+sessionend_timestamp|biginteger|技术|会话结束时的时间戳
+sessionend_encryption_key|text|技术|加密密钥
+sessionstart_projectid|biginteger|技术|会话的项目 id
+sessionstart_revid|text|技术|修订 id
+sessionstart_timestamp|biginteger|技术|会话开始时的时间戳
+sessionstart_trackerversion|text|技术|tracker 的版本
+sessionstart_useragent|text|技术|示例：Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0
+sessionstart_userbrowser|text|技术|用户浏览器
+sessionstart_userbrowserversion|text|技术|用户浏览器版本
+sessionstart_usercountry|text|技术|用户所在国家/地区
+sessionstart_userdevice|text|技术|用户的设备
+sessionstart_userdeviceheapsize|biginteger|技术|用户设备堆大小
+sessionstart_userdevicememorysize|biginteger|技术|设备内存的大致大小（以 GB 为单位）
+sessionstart_userdevicetype|text|技术|用户的设备类型
+sessionstart_useros|text|技术|用户的操作系统
+sessionstart_userosversion|text|技术|操作系统版本
+sessionstart_useruuid|text|技术|用户的唯一标识符
+setpagelocation_navigationstart|biginteger|行为和技术|导航开始的时间戳
+setpagelocation_referrer|text|行为和技术|链接到该 url 的页面的 URI
+setpagelocation_url|text|行为和技术|URL 位置
+issueevent_message_id|biginteger|行为和技术|唯一标识符
+issueevent_timestamp|biginteger|行为和技术|事件的时间戳
+issueevent_type|text|行为和技术|问题的类型（更多信息请参见 Issue Type 文档）
+issueevent_context_string|text|行为和技术|带说明的问题消息
+issueevent_context|text|行为和技术|有关问题的相关信息
+issueevent_payload|text|行为和技术|Payload
+customissue_name|text|技术|自定义问题名称
+customissue_payload|text|技术|自定义问题 payload
+received_at|biginteger|技术|连接器接收到事件时的时间戳
+batch_order_number|biginteger|技术|批次中的顺序编号。要重建消息的顺序，请按 received_at 和 batch_order_number 排序
+
+## 有疑问？
+如果您对此过程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

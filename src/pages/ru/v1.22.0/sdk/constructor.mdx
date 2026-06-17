@@ -20,43 +20,56 @@ npm i @openreplay/tracker
 Вы должны установить опцию `projectKey` в конструкторе. Вы можете получить это значение из вашей панели управления OpenReplay в разделе 'Preferences > Projects'.
 
 <Aside type="tip">
-  Обратите внимание, что если у вас несколько проектов, вам нужно внимательно выбрать ключ проекта.
+  Обратите внимание, что если у вас несколько проектов, вам нужно внимательно выбирать ключ проекта.
 </Aside>
 
 
 ### Одностраничные приложения (SPA)
-Если ваш веб-сайт является **Одностраничным приложением (SPA)**, используйте следующий код:
+Если ваш веб-сайт является **Одностраничным приложением (SPA)**, вы можете использовать трекер как синглтон:
 
 ```js
 import { tracker } from '@openreplay/tracker'
 
 tracker.configure({
 	projectKey: PROJECT_KEY,
-	ingestPoint: "https://openreplay.mydomain.com/ingest", // при использовании самоуправляемой версии
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
 })
 
-tracker.start() // возвращает промис с информацией о сессии (sessionID, sessionHash, userUUID)
+tracker.start() // returns a promise with session info (sessionID, sessionHash, userUUID)
+```
+
+Кроме того, вы можете создать новый экземпляр класса:
+
+```js
+import OpenReplay from '@openreplay/tracker';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+tracker.start(); // returns a promise with session info (sessionID, sessionHash, userUUID)
 ```
 
 ### Серверный рендеринг (SSR)
-Если ваше веб-приложение использует **Серверный рендеринг (SSR)** (например, NextJS, NuxtJS), используйте следующий код. Убедитесь, что `tracker.start()` вызывается после запуска приложения (в `useEffect` или `componentDidMount`).
+В противном случае, если ваше веб-приложение использует **Серверный рендеринг (SSR)** (например, NextJS, NuxtJS), используйте следующий фрагмент кода.
+Убедитесь, что `tracker.start()` вызывается после запуска приложения (в `useEffect` или `componentDidMount`).
 
 ```js
 import OpenReplay from '@openreplay/tracker/cjs';
 //...
 const tracker = new OpenReplay({
       projectKey: PROJECT_KEY,
+      ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
 });
 //...
 function MyApp() {
-  useEffect(() => { // используйте componentDidMount в случае классового компонента React
-    tracker.start(); // возвращает промис с информацией о сессии (sessionID, sessionHash, userUUID)
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start(); // returns a promise with session info (sessionID, sessionHash, userUUID)
   }, [])
 }
 ```
 
 <Aside type="tip">
-Если вы используете определенный веб-фреймворк, ознакомьтесь с нашим [разделом настройки трекера](/using-or), чтобы узнать, как начать.
+Если вы используете определенный веб-фреймворк, ознакомьтесь с нашим разделом [Tracker Setup](/using-or), чтобы узнать, как начать.
 </Aside>
 
 ## Пример
@@ -66,9 +79,9 @@ import OpenReplay from '@openreplay/tracker/cjs';
 //...
 const tracker = new OpenReplay({
       projectKey: PROJECT_KEY,
-      ingestPoint: "https://openreplay.mydomain.com/ingest", // при использовании самоуправляемой версии OpenReplay
+      ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
       capturePerformance: true,
-      __DISABLE_SECURE_MODE: true // для локального тестирования
+      __DISABLE_SECURE_MODE: true // for local testing
 });
 ```
 
@@ -81,10 +94,10 @@ const tracker = new OpenReplay({
 - `projectKey: string` ID проекта, который вы отслеживаете.
 - `sessionHash?: string` Хэш начальной сессии. Это полезно, когда сессии переходят через разные поддомены в вашем веб-приложении, но вы хотите объединить их в одну запись. В случае, если продолжить сессию невозможно (не существует или завершена), трекер автоматически начнет новую. Он также возвращается при вызове `stop()`. Подробнее об этом [здесь](/troubleshooting/session-recordings#replaysarebrokenacrosssubdomains).
 - `ingestPoint?: string` Ваш домен OpenReplay (например, https://openreplay.mydomain.com/ingest), на который трекер будет отправлять события. Это необязательно для пользователей OpenReplay Cloud. По умолчанию: `https://api.openreplay.com/ingest` (указывает на OpenReplay Cloud). 
-- `revID?: string` ID ревизии вашего веб-приложения. Полезно при поиске проблем, происходящих в определенной версии.
-- `resourceBaseHref?: string` Ссылается на общедоступный домен, где OpenReplay может получить доступ к ресурсам (стили, шрифты и иконки). Поскольку они необходимы для корректного воспроизведения сессии, эта опция полезна для обхода ограничения размещения вашего сайта (и, следовательно, ресурсов) в приватном домене. Пример: `https://mypublicsite.com/assets/`.
-- `captureIFrames?: boolean` Для захвата всех iframe того же домена в вашем веб-приложении. Если вы хотите отслеживать определенный iframe, просто добавьте HTML-атрибут `data-openreplay-capture` к тегу `<iframe>`. По умолчанию: `true`.
-- `disableClickmaps?: boolean` Для отключения вычисления CSS-селекторов (используется в Clickmaps). По умолчанию: `false`.
+- `revID?: string` ID ревизии вашего веб-приложения. Полезно при поиске проблем, происходящих в определенной версии выпуска.
+- `resourceBaseHref?: string` Ссылается на общедоступный домен, откуда OpenReplay может получить ресурсы (стили, шрифты и иконки). Поскольку они необходимы для корректного воспроизведения сессии, эта опция полезна для обхода ограничения размещения вашего сайта (и, следовательно, ресурсов) в приватном домене. Пример: `https://mypublicsite.com/assets/`.
+- `captureIFrames?: boolean` Для захвата всех iFrame того же домена в вашем веб-приложении. Если вы хотите отслеживать определенный iFrame, просто добавьте HTML-атрибут `data-openreplay-capture` к тегу `<iframe>`. По умолчанию: `true`.
+- `disableClickmaps?: boolean` Для отключения вычисления CSS-селекторов (используется в картах кликов). По умолчанию: `false`.
 - `__debug__: number` Для включения логов отладки. По умолчанию: `0` (выключено).
     - `2`: Ошибки.
     - `3`: Ошибки и предупреждения.
@@ -95,31 +108,23 @@ const tracker = new OpenReplay({
 - `disableStringDict: boolean` Отключает логику словаря строк (для оптимизации хранения) в записях. По умолчанию: `false`.
 - `fixedCanvasScaling: boolean` Заставляет изображения canvas рендериться с плотностью пикселей 1 вместо devicePixelRatio (снижает потенциальное качество изображения, чтобы итоговый результат был меньше по размеру). По умолчанию: `false`.
 - `disableCanvas?: boolean` Отключает запись элементов canvas. По умолчанию: `false`.
-- `assistSocketHost?: string` Может быть использован для установки определенного хоста для подключения плагина Assist. По умолчанию использует значение `ingestPoint`.
+- `assistSocketHost?: string` Может быть использован для установки определенного хоста для подключения плагина assist. По умолчанию использует значение `ingestPoint`.
 - `nodes?: { maintainer: MaintainerOptions }` Новая опция `nodes.maintainer` помогает управлять памятью и очищать DOM-узлы, которые больше не используются. Имеет следующие параметры:
-    - `interval: number`: Интервал времени (в миллисекундах) между запусками очистки. По умолчанию: 30 * 1000 (30 секунд).
-    - `batchSize: number`: Количество узлов для проверки во время каждого запуска очистки. По умолчанию: 2500.
-    - `enabled: boolean`: Включение или отключение обслуживания узлов. По умолчанию: true.
+    - `interval: number`: Интервал времени (в миллисекундах) между запусками очистки. По умолчанию: `30 * 1000` (30 секунд).
+    - `batchSize: number`: Количество узлов для проверки во время каждого запуска очистки. По умолчанию: `2500`.
+    - `enabled: boolean`: Включение или отключение обслуживания узлов. По умолчанию: `true`.
 
-#### Пример
+### Таблицы стилей
 
-```js
-
-import { tracker } from '@openreplay/tracker';
-
-tracker.configure({
-  projectKey: 'your_project_key',
-  ingestPoint: "https://openreplay.mydomain.com/ingest", // при использовании самоуправляемой версии
-  nodes: {
-    maintainer: {
-      interval: 60 * 1000, // Запускать очистку каждую минуту
-      batchSize: 2500, // Проверять узлы партиями по 2500
-      enabled: true, // Включить обслуживание узлов
-    }
-  }
-});
-
-```
+- `inlineCss: number`: Заставляет трекер записывать и отправлять удалённые таблицы стилей как обычные сообщения вместо кэширования их на бэкенде. Это полезно, когда CSS-файлы являются приватными и поэтому не могут быть закэшированы бэкендом OpenReplay. Значения могут быть:
+    - `0`: CSS-файл кэшируется бэкендом. Поведение по умолчанию.
+    - `1`: Попытается записать связанный css-файл как объект AdoptedStyleSheet.
+    - `2`: Получает файл, затем моделирует поведение AdoptedStyleSheets для воспроизведения.
+    - `3`: Получает файл, затем сохраняет его как обычный css внутри узла `<style>` -- используйте эту опцию, если в ваших CSS-файлах много сокращённых свойств (покрывает баг спецификации CSSOM).
+- `css: CssRulesOptions`: Обеспечивает лучшую поддержку приложений, построенных с использованием библиотеки emotion-js (например, компонентов MUI). Поставляется со следующими параметрами:
+    - `scanInMemoryCSS: boolean`: Включите это, если у вас возникают проблемы со стилями, созданными emotionjs. По умолчанию: `false`.
+    - `checkCssInterval: number`: Как часто сканировать отслеживаемые таблицы стилей, у которых есть пустые правила. По умолчанию: `200` (мс).
+    - `checkLimit: number`: Полезно для случаев с ограниченным количеством мутаций и/или когда таблицы стилей гидратируются на клиенте после первоначального рендеринга. Применяется к каждой таблице стилей индивидуально. Значение должно быть = X/checkCssInterval, где X — это длительность наблюдения в мс. По умолчанию: `0` (отключено). 
 
 ### Конфиденциальность
 
@@ -127,24 +132,15 @@ tracker.configure({
 - `obscureTextEmails?: boolean` Скрывает электронные почты в текстовых элементах. Электронные почты будут заменены случайной цепочкой звездочек. По умолчанию: `true`.
 - `obscureTextNumbers?: boolean` Скрывает числа в текстовых элементах. Числа будут заменены случайной цепочкой звездочек. По умолчанию: `false`.
 - `obscureInputEmails?: boolean` Скрывает электронные почты в полях ввода. Значения электронной почты будут заменены случайной цепочкой звездочек. По умолчанию: `true`.
-- `obscureInputNumbers?: boolean` Скрывает числа в полях ввода. Числовые значения будут заменены случайной цепочкой звездочек. По умолчанию: `false`.
+- `obscureInputNumbers?: boolean` Скрывает числа в полях ввода. Числовые значения будут заменены случайной цепочкой звездочек. Если отключено, обязательно [очистите поля ввода](/installation/sanitize-data/#granular-level), которые могут содержать конфиденциальные данные, такие как почтовые индексы или данные кредитных карт. По умолчанию: `true`.
 - `obscureInputDates?: boolean` Скрывает даты в полях ввода. Значения дат будут заменены случайной цепочкой звездочек. По умолчанию: `false`.
-- `defaultInputMode?: 0 | 1 | 2` Режим захвата по умолчанию для значений ввода. Соответственно: обычный, скрытый или игнорируемый. По умолчанию: `1` (скрытый).
+- `defaultInputMode?: 0 | 1 | 2` Режим захвата по умолчанию для значений ввода. Соответственно: обычный, скрытый или игнорируемый. По умолчанию: `2` (игнорируемый).
+- `urls`: Позволяет вам настроить, как записываются события местоположения страницы, с помощью следующих опций:
+	- `urlSanitizer?: (url: string) => string` Позволяет вам очистить url страницы (например, для удаления токенов использования).
+	- `titleSanitizer?: (title: string) => string` Позволяет вам очистить заголовок страницы.
+- `resourceNameSanitizer?: (url: string) => string` Позволяет вам очистить URL для записанных сетевых ресурсов.
 
-Обратите внимание, что исключенные данные скрываются или подавляются перед отправкой на серверы OpenReplay. Изменения, примененные к вышеуказанным опциям, не могут быть ретроактивными и будут применяться только к вновь собранным данным. См. [Очистка данных](/installation/sanitize-data) для получения более подробной информации.
-
-### Таблицы стилей
-
-- `inlineCss: number`: заставляет трекер записывать и отправлять удалённые CSS-файлы как обычные сообщения вместо кэширования их на сервере.
-    - `0`: Поведение по умолчанию (кэшируется).
-    - `1`: Попытаться записать файл как объект `AdoptedStyleSheet`.
-    - `2`: Сначала получить файл, затем смоделировать поведение `AdoptedStyleSheets` при воспроизведении.
-    - `3`: Получить файл и сохранить его как обычный CSS внутри `<style>` — полезно при большом количестве сокращённых свойств.
-- `css: CssRulesOptions`: улучшенная поддержка приложений на emotion-js (например, компонентов MUI).
-    - `scanInMemoryCSS: boolean`: включите, если есть проблемы со стилями emotionjs. По умолчанию `false`.
-    - `checkCssInterval: number`: интервал (мс) для сканирования отслеживаемых таблиц стилей с пустыми правилами. По умолчанию `200`.
-    - `checkLimit: number`: лимит сканирований для каждой таблицы. По умолчанию `0` (отключено).
-
+Обратите внимание, что исключенные данные скрываются или подавляются перед отправкой на серверы OpenReplay. Изменения, примененные к вышеуказанным опциям, не могут быть ретроактивными и будут применяться только к вновь собранным данным. См. [Sanitize Data](/installation/sanitize-data) для получения более подробной информации.
 
 ### Консоль
 
@@ -164,7 +160,7 @@ tracker.configure({
 ### Производительность
 
 - `capturePerformance?: boolean` Для захвата метрик производительности, таких как частота кадров, использование CPU и памяти. По умолчанию: `true`.
-- `longTasks?: boolean` Для захвата событий long-task. По умолчанию: `false`.
+- `longTasks?: boolean` Для захвата событий long-animation-frame. По умолчанию `false`.
 
 ### Сеть
 
@@ -175,16 +171,16 @@ network?: {
     failuresOnly: boolean;
     sessionTokenHeader: string;
     ignoreHeaders: Array<string> | boolean;
-    capturePayload: boolean; // убедитесь, что вы очистили ваши данные перед включением этого
+    capturePayload: boolean; // make sure you sanitize your data before enabling it
     sanitizer: (RequestResponseData) => RequestResponseData | null;
-    captureInIframes: boolean;
-    axiosInstances: AxiosInstance[];
+		captureInIframes: boolean;
+  	axiosInstances: AxiosInstance[];
     useProxy?: boolean;
-    tokenUrlMatcher?: (url: string) => boolean;
+		tokenUrlMatcher?: (url: string) => boolean;
   }
 ```
 
-См. [Сетевые опции](/sdk/network-options) для примеров и более подробной информации о том, как редактировать конфиденциальные данные. 
+См. [Network Options](/sdk/network-options) для примеров и более подробной информации о том, как скрывать конфиденциальные данные. 
 
 ### Canvas
 
@@ -199,30 +195,30 @@ canvas?: {
 }
 ```
 
-См. [Canvas и WebGL](/session-replay/canvas) для того, чтобы узнать, как включить эту функцию и получить более подробную информацию о доступных опциях.
+См. [Canvas and WebGL](/session-replay/canvas) для того, чтобы узнать, как включить эту функцию, и получить более подробную информацию о доступных опциях.
 
 ### Кросс-доменные iFrame
 
 Опция `crossdomain` относится к захвату iFrame с разных доменов. Используется в сочетании с опцией `captureIFrames`, которая должна быть установлена в `true`.
 
 ```ts 
- crossdomain?: {
-    /**
-     * Включить кросс-доменное отслеживание
-     * @default false
-     * */
-    enabled?: boolean
-    /**
-     * Используется для указания родительского домена, по умолчанию '*'
-     * (Проверьте настройки CSP)
-     * @default '*'
-     * */
-    parentDomain?: string
-}
+	crossdomain?: {
+		/**
+		 * Enable cross-domain tracking
+		 * @default false
+		 * */
+		enabled?: boolean
+		/**
+		 * Used to specify the parent domain, will be '*' by default
+		 * (Check your CSP settings)
+		 * @default '*'
+		 * */
+		parentDomain?: string
+	}
 ```
 Начиная с версии трекера [14.0.10](https://github.com/openreplay/openreplay/blob/dev/tracker/tracker/CHANGELOG.md), **атрибут `data-domain` больше не требуется** на HTML-элементах при работе с кросс-доменными iFrame.
 
-См. [Отслеживание кросс-доменных iFrame](/tutorials/crossdomain-iframe) для получения более подробной информации о том, как захватить iFrame с другого домена. 
+См. [Cross-domain iFrame Tracking](/session-replay/crossdomain-iframe) для получения более подробной информации о том, как захватить iFrame с другого домена. 
 
 ### Курсор мыши
 
@@ -240,21 +236,21 @@ mouse?:
 
 - `disableClickmaps?: boolean` Полностью отключает вычисление селекторов. По умолчанию: `false`.
 - `minSelectorDepth?: number` Минимальная длина оптимизированного селектора (по умолчанию 2). Пример: `body > div > div > p => body > p`
-- `nthThreshold?: number` Количество попыток селектора перед использованием селекторов nth-child. Это **дорогостоящая операция** и может привести к значительной нагрузке, не устанавливайте выше 2000. По умолчанию: `1000`.
+- `nthThreshold?: number` Количество попыток селектора перед использованием селекторов nth-child. Это **дорогостоящая операция**, и она может привести к значительной нагрузке, не устанавливайте выше 2000. По умолчанию: `1000`.
 - `maxOptimiseTries?: number` Количество попыток оптимизировать и сократить селектор. По умолчанию: `10 000`.
 
 ### Повторные подключения
 
 - `connAttemptCount?: number` Максимальное количество повторных попыток, когда HTTP-запросы трекера не достигают бэкенда. По умолчанию: `10`.
-- `connAttemptGap?: number` Длительность между каждой повторной попыткой (в миллисекундах). По умолчанию: `8000`.
+- `connAttemptGap?: number` Длительность между каждой повторной попыткой (выражается в мс). По умолчанию: `8000`.
 
-### Флаги функций
+### Feature Flags
 
-- `onFlagsLoad` колбэк, используемый для выполнения действия после загрузки флагов функций (каждый раз).
+- `onFlagsLoad` колбэк, используемый для выполнения действия после загрузки feature flags (каждый раз).
 
 ```ts
  flags?: {
-    onFlagsLoad?: (flags: IFeatureFlag[]) => void
+ 	onFlagsLoad?: (flags: IFeatureFlag[]) => void
  } 
 
 // ...

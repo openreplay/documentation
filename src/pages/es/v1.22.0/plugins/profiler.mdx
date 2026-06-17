@@ -1,0 +1,68 @@
+---
+title: "Profiler"
+metaTitle: "Profiler"
+metaDescription: "Plugin Profiler para OpenReplay."
+---
+
+El plugin profiler le permite medir el rendimiento de sus funciones JS y capturar tanto los argumentos como el resultado de cada llamada.
+
+## Instalación
+
+```bash
+npm i @openreplay/tracker-profiler
+```
+
+## Uso
+
+Inicialice el tracker y cargue el plugin en él. Luego, decore cualquier función dentro de su código con la función generada.
+
+### Si su sitio web es una aplicación de página única (SPA)
+
+```js
+import trackerProfiler from '@openreplay/tracker-profiler';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+const profiler = tracker.use(trackerProfiler());
+
+tracker.start();
+
+// ...
+const fn = profiler('MyFunction')(() => {
+  // Inspecting function body
+}, thisArg); // thisArg is optional
+```
+
+### Si su aplicación web se renderiza del lado del servidor (SSR)
+
+Siga el ejemplo a continuación si su aplicación es SSR. Asegúrese de que `tracker.start()` se llame una vez que la aplicación se haya iniciado (en `useEffect` o `componentDidMount`).
+
+```js
+import trackerProfiler from '@openreplay/tracker-profiler/cjs';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+const profiler = tracker.use(trackerProfiler());
+
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, [])
+}
+//...
+const fn = profiler('MyFunction')(() => {
+  // Inspecting function body
+}, thisArg); // thisArg is optional
+
+```
+
+## ¿Tiene preguntas?
+
+¿Tiene problemas para configurar este plugin? Conéctese a nuestro [Slack](https://slack.openreplay.com) o consulte nuestro [Foro](https://forum.openreplay.com) y obtenga ayuda de nuestra comunidad.

@@ -1,0 +1,102 @@
+---
+title: "Sentry"
+metaTitle: "التكامل مع Sentry"
+metaDescription: "كيفية دمج Sentry مع OpenReplay ورؤية أخطاء الواجهة الخلفية جنبًا إلى جنب مع عمليات إعادة تشغيل الجلسات."
+---
+
+كيفية دمج Sentry مع OpenReplay ورؤية أخطاء الواجهة الخلفية جنبًا إلى جنب مع تسجيلات الجلسات.
+
+## 1. إنشاء رمز مصادقة Sentry
+
+انتقل إلى [Sentry > Account > API > Auth Tokens](https://sentry.io/settings/account/api/auth-tokens/) وأنشئ الرمز مع أذونات `event:read` و`org:read` و`project:read`. سيُستخدم هذا الأخير في الخطوة التالية عند تمكين تكامل Sentry في لوحة تحكم OpenReplay.
+
+![إنشاء رمز في Sentry](/static/sentry-1.png#center)
+
+## 2. تمكين التكامل في OpenReplay
+
+انسخ `organization_slug` و`project_slug` الخاصين بك من صفحة **Projects** في لوحة تحكم Sentry.
+
+![صفحة المشاريع في Sentry](/static/sentry-2.png#center)
+
+![نموذج تكامل Sentry في OpenReplay](/static/sentry-3.png#center)
+
+ثم الصقهما في لوحة تحكم OpenReplay ضمن 'Preferences > Integration' إلى جانب الرمز الذي أنشأته سابقًا في الخطوة 1.
+
+## 3. تمرير openReplaySessionToken
+
+لكي يتمكن OpenReplay من ربط حدث Sentry بجلسة المستخدم المسجَّلة، يجب وسم حدث Sentry برمز فريد.  
+
+### Frontend
+إذا كنت تعتمد على Sentry في الواجهة الأمامية، يمكنك اتباع المثال أدناه.
+
+```javascript
+import OpenReplay from "@openreplay/tracker";
+import * as Sentry from "@sentry/browser";
+
+const tracker = new OpenReplay({
+	projectKey: MY_PROJECT_KEY,
+	onStart: ({ sessionToken }) => {
+	  Sentry.setTag("openReplaySessionToken", sessionToken);
+	},
+})
+```
+أو في حالة استخدام المقتطف البرمجي: 
+```javascript
+if (window.OpenReplay.getSessionToken()) {
+	Sentry.setTag("openReplaySessionToken", window.OpenReplay.getSessionToken());
+}
+```
+
+### Backend
+
+وإلا، إذا كنت تستخدم Sentry SDK للواجهة الخلفية، فيجب تمرير رمز الجلسة من واجهتك الأمامية مع كل طلب ترغب في تتبعه. يمكن إنجاز ذلك باستخدام ترويسة HTTP مخصصة. في المثال أدناه، نستخدم واجهة `fetch` لإرسال تلك الترويسة.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+يمكنك أيضًا استخدام [Fetch Plugin](/plugins/fetch) من OpenReplay لتعيين الترويسة تلقائيًا لكل طلب تتبُّع.
+
+بعد ذلك يمكنك استخراج `openReplaySessionToken` من الترويسة وإضافته إلى نطاق Sentry الخاص بك (يُفضَّل باستخدام برمجية وسيطة أو مُزخرِف).
+
+```python
+with configure_scope() as scope:
+  scope.set_tag('openReplaySessionToken', app.current_request.headers.get('X-OpenReplay-SessionToken'))
+```
+
+يجب أن يكون اسم الوسم تمامًا `openReplaySessionToken`.
+
+## 4. إرفاق openReplaySessionURL (اختياري لكنه مفيد جدًا)
+
+إذا كنت ترغب في ربط رابط تسجيل OpenReplay بـ Sentry وعرضه كوسم، إليك مثالًا على كيفية القيام بذلك:
+
+```javascript
+ const tracker = new OpenReplay({
+ projectKey: window.OPENREPLAY_PROJECT_KEY,
+ 
+ onStart: ({ sessionToken, sessionID }) => {
+  // This is to link from OpenReplay -> Sentry
+  Sentry.setTag("openReplaySessionToken", sessionToken);
+ 
+  // This is to link from Sentry -> OpenReplay (requires tracker v3.6.0+)
+  Sentry.setTag(
+    "openReplaySessionURL",
+    tracker.getSessionURL();
+    );
+  },
+});
+```
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات، تواصل معنا عبر [Slack](https://slack.openreplay.com) أو تفقَّد [المنتدى](https://forum.openreplay.com) واحصل على المساعدة من مجتمعنا.

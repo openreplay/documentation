@@ -1,0 +1,172 @@
+---
+title: "النشر من الكود المصدري"
+metaTitle: "النشر من الكود المصدري"
+metaDescription: "دليل خطوة بخطوة لنشر OpenReplay من الكود المصدري."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+يمكن نشر OpenReplay من الكود المصدري. يجب بناء مكوناته الرئيسية (Backend وAPI وFrontend) ودفعها إلى سجل الحاويات (container registry) الخاص بك قبل إجراء التثبيت.
+
+الحد الأدنى لمواصفات الجهاز الذي يشغّل OpenReplay هو `2 vCPUs, 8 GB of RAM, 50 GB of storage`، وإلا فإن خدمات الواجهة الخلفية (backend) في OpenReplay لن تبدأ ببساطة. ينبغي أن يكون هذا كافيًا لحجم منخفض/متوسط. إذا كنت تتوقع حركة مرور عالية، فعليك التوسّع انطلاقًا من هنا.
+
+## 1. المتطلبات الأساسية
+
+1. ثبّت docker:
+
+```bash
+sudo apt update
+sudo apt install docker.io -y
+user=`whoami`
+sudo chown $user /var/run/docker.sock
+```
+
+2. استنسخ مستودع OpenReplay:
+
+```bash
+git clone https://github.com/openreplay/openreplay
+```
+
+## 2. بناء خدمات الـ Backend
+
+1. سجّل الدخول إلى سجل الحاويات الخاص بك باستخدام `docker login <registry_url>`. إذا كان لديك حساب على docker hub، فما عليك سوى تشغيل `docker login`.
+
+2. ابنِ مكونات الواجهة الخلفية ثم ادفعها إلى سجل الحاويات الخاص بك:
+
+```bash
+cd openreplay/backend
+sudo IMAGE_TAG=<my_tag_number> PUSH_IMAGE=1 DOCKER_REPO=index.docker.io/<username> bash build.sh 
+```
+
+*لاحظ* أن اسم الوسم (tag) يمكن أن يكون أي سلسلة نصية تريدها، وسيتم إنشاؤه في سجل Docker الخاص بك وسيُستخدم لتحديد هذه النسخة المعيّنة من الكود (وهو أمر مفيد إذا كنت تعدّل الكود أيضًا).
+
+إذا سار كل شيء على ما يرام، فينبغي أن تجد في سجل Docker الخاص بك قائمة بالصور (images) التي بُنيت من الكود المصدري الذي كان لديك، جاهزة للتثبيت.
+قائمة الصور هي:
+
+- Storage
+- Sink
+- Integrations
+- HTTP
+- Heuristics
+- Ender
+- DB
+- Assets
+- Alerts
+- Chalice
+
+## 3. تحديث الصور
+
+1. أنشئ سر (secret) سجل الحاويات الخاص بك:
+
+```bash
+kubectl create secret -n app docker-registry my-registry-secret \
+        --docker-server=MY_CONTAINER_REGISTRY_URL \ # not required if docker hub
+        --docker-username=MY_CONTAINER_REGISTRY_USERNAME \
+        --docker-password=MY_CONTAINER_REGISTRY_PASSWORD \
+        --docker-email=no@email.local 
+```
+
+2. لاستخدام المكونات التي بنيتها للتوّ ودفعتها إلى سجل الحاويات الخاص بك، حدّث ملف `vars.yaml` الموجود داخل المجلد `openreplay/scripts/helmcharts`. 
+ما عليك سوى إضافة قسم لكل صورة موجودة في سجل docker الخاص بك مع المعلومات التالية:
+
+- `repository`: يجب أن يشير إلى MY_CONTAINER_REGISTRY_URL/COMPONENT_NAME (إذا كنت تستخدم Docker Hub، فاستخدم بدلاً من ذلك التنسيق `<username>/<component name>`)
+- `pullPolicy`: اضبطه على "Always"
+- `tag`: قيمة IMAGE_TAG المستخدمة عند بناء الـ Backend والـ API
+- `imagePullSecrets`: سر سجل الحاويات
+
+لاحظ أن أي صورة لا تشير إليها داخل ملف `vars.yaml` سيتم نشرها وتثبيتها من **المستودع الرسمي** لـ OpenReplay، ما يعني أنك لن تحصل على النسخة المبنية من الكود المصدري الخاص بك.
+
+في ما يلي مثال لخدمة `alerts`:
+
+```yaml
+alerts:
+  image:
+    repository: rg.fr-par.scw.cloud/foss/alerts
+    pullPolicy: Always
+    tag: "v1.4.2"
+  imagePullSecrets: 
+    - name: my-registry-secret
+```
+
+### تثبيت OpenReplay
+
+1. افتح `vars.yaml` ثم عدّل:
+- `domainName`: هذا هو المكان الذي سيكون OpenReplay متاحًا فيه (أي openreplay.mycompany.com)
+
+2. ثبّت OpenReplay:
+
+```bash
+cd openreplay/scripts/helmcharts
+helm upgrade --install databases ./databases -n db --create-namespace --wait -f ./vars.yaml --atomic
+helm upgrade --install openreplay ./openreplay -n app --create-namespace --wait -f ./vars.yaml --atomic
+```
+
+إذا قمت في أي وقت بتعديل الكود المصدري لخدمات الواجهة الخلفية أو خدمة DB، فسيتعين عليك العودة إلى الخطوة 3 ثم تشغيل الأوامر المذكورة أعلاه مرة أخرى.
+
+### إعداد TLS/SSL
+
+يتعامل OpenReplay مع بيانات حساسة للمستخدمين وبالتالي يتطلب HTTPS لكي يعمل. هذا أمر إلزامي، وإلا فإن الـ tracker لن يبدأ التسجيل ببساطة. الأمر نفسه ينطبق على الـ dashboard؛ فبدون HTTPS لن تتمكن من إعادة تشغيل جلسات المستخدمين.
+
+لذلك يجب عليك إحضار (أو إنشاء) شهادة SSL الخاصة بك.
+
+1. أولاً، اذهب إلى مزوّد خدمة DNS وأنشئ `A Record`. استخدم النطاق الذي قدّمته سابقًا أثناء خطوة التثبيت ووجّهه إلى جهازك باستخدام عنوان IP العام الخاص به.
+
+2. إذا كنت تستخدم شهادتك الخاصة، فأنشئ سر SSL الخاص بـ Kubernetes باستخدام الأمر التالي: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
+
+> **ملاحظة:** إذا لم تكن لديك شهادة، فأنشئ واحدة تتجدد تلقائيًا لنطاقك الفرعي (الذي قدّمته أثناء التثبيت) باستخدام Let's Encrypt. شغّل `cd openreplay/scripts/helmcharts && bash certmanager.sh` واتبع الخطوات.
+
+3. إذا كنت ترغب في تمكين إعادة التوجيه من http إلى https (مُوصى به)، فألغِ التعليق عن الكتلة أدناه، ضمن قسم `ingress-nginx`، في `vars.yaml`:
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+تجدر الإشارة إلى أن `ingress-nginx` الخاص بنا يعمل افتراضيًا على المنفذين `80|443`، لكن يمكن تغيير ذلك بسهولة، عند الحاجة، في `vars.yaml`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. أخيرًا، أعد تثبيت NGINX الخاص بـ OpenReplay:
+
+```bash
+ openreplay -R
+```
+
+## 4. بناء ونشر الـ Frontend
+
+أخيرًا، إذا كنت تتطلع أيضًا إلى بناء الواجهة الأمامية، فسيتعين عليك بناء الصورة باستخدام السطر التالي:
+
+```bash
+cd openreplay/frontend
+IMAGE_TAG=<your tag> PUSH_IMAGE=1 DOCKER_REPO=myDockerHubID bash build.sh
+```
+
+بمجرد الانتهاء من ذلك، عُد إلى ملف `vars.yaml` وأضف قسمًا خاصًا بالواجهة الأمامية، وينبغي أن يبدو مشابهًا للأقسام التي أضفتها سابقًا لـ `alerts` و`chalice`:
+
+```yaml
+frontend:
+  image:
+    repository: <YOUR DOCKER REGISTRY>/frontend
+    pullPolicy: Always
+    tag: <YOUR TAG>
+  imagePullSecrets: 
+    - name: <YOUR SECRET>
+```
+
+بعد إضافة القسم الجديد إلى الملف، نفّذ الأمر `openreplay -R` (الموجود داخل المجلد `scripts/helmcharts`)، وينبغي أن تعمل واجهتك الأمامية الجديدة.
+
+أصبح كل شيء جاهزًا الآن، وينبغي أن يكون OpenReplay متاحًا على نطاقك الفرعي. يمكنك إنشاء حساب بزيارة صفحة `/signup` (أي openreplay.mycompany.com/signup).
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات، تواصل معنا عبر [Slack](https://slack.openreplay.com) أو اطّلع على [المنتدى](https://forum.openreplay.com) الخاص بنا واحصل على المساعدة من مجتمعنا.

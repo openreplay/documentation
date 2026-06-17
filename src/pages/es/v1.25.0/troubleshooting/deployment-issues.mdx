@@ -1,0 +1,118 @@
+---
+title: "Problemas de despliegue"
+metaTitle: "Problemas de despliegue"
+metaDescription: "Problemas o preguntas frecuentes relacionadas con el despliegue"
+---
+
+## Instalación
+
+### Error: release openreplay failed, and has been uninstalled due to atomic being set
+
+Esto podría deberse a una instalación fallida de helm. Para depurarlo, sigue los pasos a continuación:
+
+```bash
+openreplay -s
+
+# If you see any failed pods, check the log. it should shed some light.
+openreplay -l <pod name>
+
+# If there is no pods in running/error/crashloop status, then check the status of pod using following command
+kubectl describe po -n app -n db <pod name>
+```
+
+## El registro no funciona
+
+### La comprobación de estado muestra que la verificación SSL falló
+  
+Si tienes un certificado autofirmado, puedes usar el siguiente comando para solucionarlo:
+
+```bash
+openreplay -e
+
+# Add following line to skip the SSL health check
+chalice:
+  env:
+    ...
+    # append the following line under env section
+    SKIP_H_SSL: true
+```
+
+Guarda y sal del archivo de configuración usando `:wq`
+
+## Mi instalación dejó de funcionar de repente
+   
+Puede haber varias razones para ello. Aquí te explicamos cómo puedes depurar la situación:
+
+### Comprueba el estado de la instalación, usando `openreplay -s`
+
+Revisa la sección de uso del disco. Si supera el 80 %, los servicios no se ejecutarán.
+
+## La actualización falló sin ningún error en particular
+   
+### Veo "helm or another operation (install/upgrade/rollback) is in progress"
+
+Esto normalmente significa que reintentaste la operación de instalación/actualización varias veces. Ejecuta el siguiente comando para resolver la situación:
+
+```bash
+helm rollback -n app openreplay
+```
+
+### No veo errores, solo "installation failed"
+
+```bash
+# Check for failed pods
+kubectl get pods -n app --field-selector="status.phase!=Succeeded,status.phase!=Running" -o custom-columns="POD:metadata.name"
+        
+# Check for the err logs
+openreplay -l `pod name from above`
+ ```
+
+## Errores en instalaciones autoalojadas
+
+### Error: You must be logged in to the server (Unauthorized)
+
+`openreplay -s` o `kubectl get po` lanza el error `error: You must be logged in to the server (Unauthorized)`. Es posible que k3s haya regenerado el certificado de cliente para iniciar sesión en el clúster, pero kubectl no lo haya detectado. Copia la nueva configuración con `cp /etc/rancher/k3s/k3s.yaml ~/.kube/config` y listo.
+
+## Bases de datos
+
+### Postgres no limpia los datos ni siquiera después de pg-cleanup
+
+La limpieza de Postgres la gestiona PG. Esto significa que eliminamos los datos anteriores a la fecha especificada, y PG marca esos datos para su eliminación. PG elimina los datos en un proceso llamado AutoVacuum, y su lógica de activación es interna. Por eso no tenemos una estimación de cuándo se limpiarán los datos del disco. Si quieres ver en qué tablas tienes datos, y truncar la tabla si puedes permitirte la pérdida de datos, por ejemplo la tabla `requests` que contiene los datos relacionados con las peticiones de red; si no tienes datos allí, no podrás buscar sesiones por las URL de las peticiones.
+
+Para comprobar el tamaño de la tabla
+
+```sql
+SELECT nspname AS "name_space",
+       relname AS "relation",
+       pg_size_pretty(
+               pg_total_relation_size(C.oid)
+           )   AS "total_size"
+FROM pg_class C
+         LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+WHERE nspname NOT IN ('pg_catalog','information_schema')
+  AND C.relkind <> 'i'
+  AND nspname !~ '^pg_toast'
+ORDER BY pg_total_relation_size(C.oid) DESC
+LIMIT 20;
+```
+
+## SSL
+
+### Delegar el SSL a un proxy/LB externo
+
+```bash
+openreplay -e
+
+# Under ingress-nginx block disable ssl redirection
+ingress-nginx: &ingress-nginx
+  ...
+  controller:
+    ...
+    config:
+      ...
+      ssl-redirect: false
+      force-ssl-redirect: false
+```
+## ¿Tienes preguntas?
+
+Si tienes alguna pregunta sobre este proceso, no dudes en contactarnos en nuestro [Slack](https://slack.openreplay.com) o consulta nuestro [Foro](https://forum.openreplay.com).

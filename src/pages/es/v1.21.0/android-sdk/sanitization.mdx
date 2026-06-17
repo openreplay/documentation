@@ -1,0 +1,71 @@
+---
+title: "Android SDK - Sanitizar datos sensibles"
+metaTitle: "Android SDK - Sanitizar datos sensibles"
+metaDescription: "Detalles sobre cómo sanitizar grabaciones y datos de red en el tracker de Android"
+---
+
+## Componentes de la interfaz
+
+Las vistas sanitizadas aparecerán difuminadas en la repetición resultante. Puedes añadir cualquier componente de la interfaz y se eliminará automáticamente (para ahorrar memoria) tan pronto como deje de estar en pantalla.
+
+### View
+
+```kotlin
+import com.openreplay.tracker.OpenReplay
+
+OpenReplay.addIgnoredView(view)
+```
+
+#### Jetpack Compose
+```kotlin
+import com.openreplay.tracker.Sanitize
+
+Sanitize {
+		Button(
+				modifier = Modifier
+						.fillMaxWidth()
+						.padding(top = 28.dp, bottom = 3.dp)
+						.trackTouchEvents("Continue Button"),
+				onClick = onSubmit,
+		) {
+				Text(
+						text = "Submit",
+						style = MaterialTheme.typography.titleSmall
+				)
+		}
+}
+```
+
+## Solicitudes de red
+
+Se exportan dos claves para recortar automáticamente los datos de solicitud/respuesta: `ignoredKeys` para el cuerpo e `ignoredHeaders` para las cabeceras. Tanto la solicitud como la respuesta se sanitizarán, pero el cuerpo solo se verá afectado si es un JSON válido.
+
+Simplemente asigna una lista de cadenas que quieras sanitizar:
+
+```kotlin
+val networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+También es posible modificar los datos de la respuesta antes de pasarlos al listener:
+
+```kotlin
+// ... request
+
+var sanitizedData: Any? = null
+data?.let {
+    try {
+        val json = JSONTokener(it).nextValue()
+        sanitizedData = customSanitizeFunction(it)
+        println(json)
+    } catch (error: JSONException) {
+        println("Error deserializing JSON: $error")
+    }
+}
+
+networkListener.finish(response, sanitizedData)
+```
+
+## ¿Tienes preguntas?
+Si tienes alguna pregunta sobre este proceso, no dudes en contactarnos en nuestro [Slack](https://slack.openreplay.com) o visita nuestro [Foro](https://forum.openreplay.com).

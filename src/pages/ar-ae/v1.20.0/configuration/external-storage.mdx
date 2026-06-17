@@ -1,0 +1,92 @@
+---
+title: "التخزين الخارجي"
+metaTitle: "التخزين الخارجي"
+metaDescription: "كيفية تغيير وجهة التخزين الافتراضية لتسجيلاتك."
+---
+
+تُخزَّن [تسجيلات الجلسات](/configuration/cleanup-storage#recordingstorage) في OpenReplay افتراضيًا على نسختك (instance)، لكن يمكن تغيير الوجهة إلى أي خدمة تخزين كائنات متوافقة مع S3، مما يتيح قابلية توسّع أكبر وتكاليف نشر أقل.
+
+## تغيير وجهة تخزين التسجيلات
+
+يمكن الاحتفاظ بالتسجيلات في أي وجهة تخزين كائنات طالما أنها متوافقة مع S3، وهو ما يجعل OpenReplay متوافقًا مع جميع خدمات السحابة العامة الرئيسية. فيما يلي خطوات تهيئة وجهة مختلفة لتسجيلاتك:
+
+### إنشاء الحاويات (buckets) اللازمة
+
+يجب عليك إنشاء الحاويات (buckets) أدناه في خدمة تخزين الكائنات الخاصة بك. يمكن أن تكون أسماؤها مختلفة، لكننا سنستخدم المراجع التالية في بقية هذا القسم:
+- `openreplay-recordings`: حيث سيتم الاحتفاظ بالتسجيلات
+- `openreplay-assets`: حيث سيتم نسخ الأصول (مثل css والخطوط)
+- `openreplay-sourcemaps`: لتخزين خرائط المصدر (source maps) (راجع [كيفية رفعها](/installation/upload-sourcemaps))
+- `openreplay-spots`: لتخزين تسجيلات spot
+
+بمجرد إنشاء الحاوية: 
+
+1. فعِّل CORS لكل من الحاويات أعلاه. إذا كنت على AWS، فسيكون ذلك ضمن 'Permissions > Cross-origin resource sharing (CORS)' باستخدام التهيئة التالية:
+
+```json
+[
+    {
+        "AllowedHeaders": [
+            "*"
+        ],
+        "AllowedMethods": [
+            "GET"
+        ],
+        "AllowedOrigins": [
+            "*"
+        ],
+        "ExposeHeaders": []
+    }
+]
+```
+
+2. فعِّل الوصول العام إلى حاوية `openreplay-assets` **فقط**. تحتوي هذه الأخيرة فقط على أوراق الأنماط (stylesheets) والأيقونات والخطوط اللازمة لإعادة تشغيل الجلسة بشكل صحيح. إذا كنت على AWS، انتقل أولًا إلى 'Permissions > Block public access (bucket settings)' وأوقفه، ثم اذهب إلى 'Permissions > Bucket policy' واستخدم التهيئة التالية:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AddPerm",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::openreplay-assets/*"
+        }
+    ]
+}
+```
+
+3. أخيرًا، تأكد من إنشاء مفاتيح الوصول المناسبة لـ **هذه الحاويات الأربع فقط** حتى يتمكن الواجهة الخلفية (backend) لـ OpenReplay من الوصول إليها برمجيًا لرفع الملفات. صلاحيات S3 المطلوبة هي:
+
+```json
+"s3:PutObject",
+"s3:GetObjectAcl",
+"s3:GetObject",
+"s3:GetObjectTagging",
+"s3:ListBucket",
+"s3:PutObjectTagging",
+"s3:GetBucketLocation"
+```
+
+### تحديث خدمات الواجهة الخلفية (backend)
+
+1. سجّل الدخول إلى نسخة OpenReplay الخاصة بك ونفّذ `openreplay -e` لتحديث متغيرات البيئة أدناه في قسم `s3`:
+
+| المتغير | الوصف |
+|----------|-------------|
+| accessKey | مفتاح الوصول لتخزين الكائنات الخاص بك ([معرّف مفتاح الوصول لـ IAM](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey) إذا كنت على AWS، وعلى Google Cloud سيكون [مفتاح HMAC لحساب الخدمة](https://cloud.google.com/storage/docs/authentication/managing-hmackeys)) |
+| secretKey | السر (secret) الخاص بتخزين الكائنات الخاص بك |
+| endpoint | عنوان URL (يبدأ بـ `https`) لخدمة تخزين الكائنات الخاصة بك (أي راجع قائمة [نقاط نهاية S3](https://docs.aws.amazon.com/general/latest/gr/s3.html) إذا كنت على AWS، وعلى Google Cloud Storage سيكون هذا `https://storage.googleapis.com`) |
+| region | المنطقة (region) (إن وُجدت) لحاوياتك (أي إذا كنت تستخدم AWS S3، فسيكون هذا شيئًا مثل `us-east-1`) |
+| assetsBucket | اسم حاوية الأصول (أي `openreplay-assets`)  |
+| recordingsBucket | اسم حاوية التسجيلات (أي `openreplay-recordings`) |
+| sourcemapsBucket | اسم حاوية خرائط المصدر (أي `openreplay-sourcemaps`) |
+| spotsBucket | اسم حاوية spot (أي `openreplay-spots`) |
+
+2. احفظ واخرج باستخدام `:wq` كي تدخل التغييرات حيز التنفيذ
+
+الآن يجب أن تُخزَّن الجلسات المسجلة حديثًا وتُسترجَع (عند إعادة تشغيلها) من وجهتك الجديدة/خدمة تخزين الكائنات الخاصة بك.
+
+## لديك أسئلة؟
+
+في حال واجهت أي مشكلات، يُرجى الاتصال بنا عبر [Slack](https://slack.openreplay.com) أو زيارة [المنتدى](https://forum.openreplay.com) الخاص بنا والحصول على المساعدة من مجتمعنا.

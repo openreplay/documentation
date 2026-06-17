@@ -1,0 +1,172 @@
+---
+title: "Dynatrace"
+metaTitle: "Integra Dynatrace con OpenReplay"
+metaDescription: "Aprende a integrar los registros de backend de Dynatrace con las repeticiones de sesión de OpenReplay."
+---
+
+Aprende a integrar los registros de backend de [Dynatrace](https://www.dynatrace.com/) con las repeticiones de sesión de [OpenReplay](https://www.openreplay.com/) para ampliar tus capacidades de monitoreo y depuración.
+
+> Esta integración está disponible para usuarios de **Cloud** (Serverless, Dedicated) y **Self-Host (Community, Enterprise)**.
+
+## 1. Genera tus credenciales de Dynatrace
+
+Sigue estos pasos para obtener las credenciales necesarias de Dynatrace:
+
+1. Inicia sesión en tu cuenta de Dynatrace.
+2. Ve a **Account Management**
+3. Crea un OAuth Client:
+  - Haz clic en **Identity & Access Management**
+  - Selecciona **OAuth clients**
+  - Haz clic en **Create client** para generar las credenciales requeridas.
+4. Guarda tus credenciales:
+- Después de crear el cliente, guarda lo siguiente:
+  - Client ID
+  - Client Secret
+  - Account URN
+5. Obtén tu `environment ID`:
+        ```javascript
+        // Example
+        Dynatrace URL: https://rzr85764.app.dynatrace.com/
+        Environment ID: rzr85764
+        ``` 
+
+
+
+## 2. Propaga openReplaySession.id al Backend
+
+Para vincular los registros de Dynatrace con las sesiones de OpenReplay, hay que propagar un ID de sesión único `openReplaySession.id` desde tu frontend a tu backend en cada solicitud que quieras rastrear.
+
+#### Incluye openReplaySession.id en las solicitudes API del Frontend
+
+Modifica el código de tu frontend para añadir el `openReplaySession.id` a las cabeceras de tus solicitudes API:
+
+```javascript
+
+// JavaScript Example for for Single Page Applications (SPA):
+
+// Import OpenReplay
+import { tracker } from '@openreplay/tracker';
+
+// Initialize the tracker
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+// Start the tracker and wait for it to resolve
+tracker.start().then(() => {
+  // Get the session ID after the tracker has started
+  const sessionId = tracker.getSessionID();
+
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+// Get the session ID
+const sessionId = tracker.getSessionID();
+
+const headers = {
+  'Content-Type': 'application/json',
+};
+
+if (sessionId) {
+  headers['openReplaySession.id'] = sessionId;
+}
+
+// Make the API request
+fetch('/api/endpoint', {
+  method: 'GET', // or 'POST', etc.
+  headers,
+  // ...other options
+})
+  .then(response => {
+    // Handle response
+  })
+  .catch(error => {
+    // Handle error
+  });
+
+```
+
+#### Incluye openReplaySession.id en los registros del Backend
+
+En tu aplicación de backend, extrae el `openReplaySession.id` de las solicitudes entrantes e inclúyelo en tus registros usando el formato específico de clave-valor `openReplaySession.id=<sessionId>`:
+
+```javascript
+
+//  Example.....
+// Middleware to extract the session ID
+app.use((req, res, next) => {
+  const sessionId = req.headers['openreplaysession.id'];
+  req.sessionId = sessionId; // Attach to request object
+  next();
+});
+
+// When logging events or errors
+app.get('/api/endpoint', (req, res) => {
+  // Your logic here
+
+  // Log with the session ID in the required format
+  console.log(`openReplaySession.id=${req.sessionId} - Endpoint accessed`);
+
+  res.send('Success');
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(`openReplaySession.id=${req.sessionId} - Error: ${err.message}`);
+  res.status(500).send('Internal Server Error');
+});
+
+```
+
+Al incluir el `openReplaySession.id` en los registros de tu backend, Dynatrace puede recopilar los registros asociados con sesiones específicas de OpenReplay. Esto te permite ver estos registros durante las repeticiones de sesión en OpenReplay, ofreciendo una visión completa de las interacciones del usuario y los registros del backend.
+
+
+## 3. Crea un atributo de registro personalizado en Dynatrace
+
+Crea un atributo de registro personalizado en Dynatrace para extraer el `openReplaySession.id` de tus registros.
+
+1. Accede a tu cuenta SaaS de Dynatrace.
+2. Ve a Settings.
+3. Selecciona **Log Monitoring > Custom attributes** y luego selecciona **Add custom attribute**.
+4. Introduce la clave `openReplaySession.id`.
+
+> **Referencia**: Consulta los pasos detallados en la documentación de Dynatrace: [Log custom attributes](https://docs.dynatrace.com/docs/observe-and-explore/logs/lma-analysis/logs-and-events/lma-log-custom-attributes).
+
+## 4. Configura la integración de Dynatrace en OpenReplay
+En tu cuenta de OpenReplay, sigue estos 3 pasos para completar la correlación de las repeticiones de sesión con los registros de backend de Dynatrace.
+
+#### Habilita la integración de Dynatrace
+1. Ve a **Preferences > Integrations** en OpenReplay.
+2. Selecciona la pestaña **Backend Logging**.
+3. Selecciona el proyecto en el que quieres habilitar la integración de Dynatrace: Localiza la tarjeta de integración de Dynatrace > Haz clic en ella.
+
+#### Introduce las credenciales de Dynatrace
+En la barra lateral de integración de Dynatrace introduce:
+
+1. **Environment ID**: El ID de entorno de tu Dynatrace para acceso externo.
+2. **Client ID** y **Client Secret**: Guardados en el primer paso.
+3. **Dynatrace Account URN**: Tu identificador único utilizado dentro de la plataforma de Dynatrace, también guardado en el primer paso.
+
+
+#### Verifica la conexión
+1. Haz clic en **Add** para probar la conexión: Un mensaje de éxito confirmará que la integración se ha configurado correctamente.
+
+![Dynatrace Integration in OpenReplay](/static/dynatrace-openreplay.png#center)
+
+## 5. Visualiza los registros de Dynatrace en OpenReplay
+1. Ve a Sessions en OpenReplay.
+2. Abre cualquier repetición de sesión.
+3. Haz clic en el botón **Traces**.
+4. Se mostrarán los registros de Dynatrace relacionados con la sesión.
+5. Haz clic en cualquier entrada de registro para ver información detallada.
+
+![Dynatrace Traces in OpenReplay](/static/traces-dynatrace.png#center)
+
+> Los registros de tipo `LOG` con estados `WARN`, `ERROR`, `INFO` y `NONE` se recuperan mediante la Dynatrace Log Monitoring API v2.
+
+## ¿Tienes preguntas?
+
+Si tienes algún problema, conéctate a nuestro [Slack](https://slack.openreplay.com) o visita nuestro [Foro](https://forum.openreplay.com) y obtén ayuda de nuestra comunidad.
+

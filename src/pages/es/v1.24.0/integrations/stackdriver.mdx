@@ -1,0 +1,57 @@
+---
+title: "Stackdriver"
+metaTitle: "Integración de Stackdriver"
+metaDescription: "Cómo integrar Stackdriver con OpenReplay y ver los errores del backend junto a las grabaciones de sesiones."
+---
+
+Cómo integrar Stackdriver con OpenReplay y ver los errores del backend junto a las grabaciones de sesiones.
+
+## 1. Crear una cuenta de servicio de Google Cloud
+
+1. En la Consola de GCP, ve a la página [Crear clave de cuenta de servicio](https://console.cloud.google.com/apis/credentials/serviceaccountkey).
+2. En la lista de cuentas de servicio, selecciona *New Service Account*.
+3. En el campo del nombre de la cuenta de servicio, introduce "openreplay-stackdriver".
+4. En la lista de roles, añade *Logging > Logs Viewer* y *Stackdriver > Stackdriver Accounts Viewer*.
+5. Haz clic en *Create* para descargar el archivo JSON que contiene tu clave.
+
+## 2. Habilitar Stackdriver en OpenReplay
+
+Pega tus credenciales de `Log Name` y `openreplay-stackdriver` en el panel de OpenReplay, en 'Preferences > Integration'.
+
+![Integración de Stackdriver en OpenReplay](/static/stackdriver-1.png#center)
+
+## 3. Propagar openReplaySessionToken
+
+Para vincular un evento de Stackdriver con la sesión de usuario grabada, se debe propagar un token único desde tu frontend a tu backend en cada solicitud que quieras rastrear. Esto se puede hacer usando un encabezado HTTP personalizado. En el siguiente ejemplo, usamos la función `fetch` para enviar ese encabezado.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+Para que OpenReplay pueda asociar una entrada de registro de Stackdriver con la sesión de usuario grabada, se debe propagar un token único como `label` a cada error del backend que desees rastrear.
+
+A continuación, se muestra un ejemplo con la API de Python de Stackdriver.
+
+```python
+google_logger.log_text("A LOG ENTRY", severity='ERROR', labels={"openReplaySessionToken": OPENREPLAY_SESSION_TOKEN})
+
+#or
+
+google_logger.log_struct({"message": "A LOG ENTRY"}, severity='ERROR', labels={"openReplaySessionToken": OPENREPLAY_SESSION_TOKEN})
+```
+
+El nombre de la etiqueta `openReplaySessionToken` distingue entre mayúsculas y minúsculas.
+
+## ¿Tienes preguntas?
+
+Si tienes algún problema, conéctate a nuestro [Slack](https://slack.openreplay.com) o visita nuestro [Foro](https://forum.openreplay.com) y obtén ayuda de nuestra comunidad.

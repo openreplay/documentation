@@ -1,0 +1,80 @@
+---
+title: "NgRx"
+metaTitle: "NgRx"
+metaDescription: "إضافة NgRx لـ OpenReplay."
+---
+
+تتيح لك هذه الإضافة التقاط إجراءات/حالة `NgRx` وفحصها لاحقًا أثناء إعادة تشغيل تسجيلات الجلسات. وهذا مفيد جدًا لفهم المشكلات وإصلاحها.
+
+## التثبيت
+
+```bash
+npm i @openreplay/tracker-ngrx --save
+```
+
+## الاستخدام
+
+أضِف الـ meta-reducer المُنشأ إلى `imports` الخاصة بك. راجع [وثائق NgRx](https://ngrx.io/guide/store/metareducers) لمزيد من التفاصيل.
+
+## إذا كان موقعك الإلكتروني تطبيقًا أحادي الصفحة (SPA)
+
+```js
+import { StoreModule } from '@ngrx/store';
+import OpenReplay from '@openreplay/tracker';
+import trackerNgRx from '@openreplay/tracker-ngrx';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+const metaReducers = [tracker.use(trackerNgRx(<options>))]; // check list of available options below
+
+tracker.start();
+
+//...
+@NgModule({
+  imports: [StoreModule.forRoot({}, { metaReducers })]
+})
+export class AppModule {}
+```
+
+### إذا كان تطبيق الويب الخاص بك يُعرض من جانب الخادم (SSR)
+
+اتبع المثال أدناه إذا كان تطبيقك يعمل بنمط SSR. تأكد من استدعاء `tracker.start()` بمجرد بدء تشغيل التطبيق (داخل `useEffect` أو `componentDidMount`).
+
+```js
+import { StoreModule } from '@ngrx/store';
+import OpenReplay from '@openreplay/tracker/cjs';
+import trackerNgRx from '@openreplay/tracker-ngrx/cjs';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+const metaReducers = [tracker.use(trackerNgRx(<options>))]; // check list of available options below
+//...
+  @NgModule({
+    imports: [StoreModule.forRoot({}, { metaReducers })]
+  })
+  export class AppModule {}
+}
+
+```
+
+## الخيارات
+
+يمكنك تخصيص سلوك الـ middleware لتنقية بياناتك.
+
+```js
+trackerNgRx({
+  actionFilter: action => action.type !== 'DRAW', // only actions which pass this test will be recorded
+  actionTransformer: action => action.type === 'LOGIN' ? null : action,
+  actionType: action => action.type // action type for search, that's the default one
+  stateTransformer: state => {
+    const { jwt, ..._state } = state;
+    return _state;
+  },
+})
+```
+
+## هل لديك أسئلة؟
+
+هل تواجه صعوبة في إعداد هذه الإضافة؟ تواصل معنا عبر [Slack](https://slack.openreplay.com) أو تفضّل بزيارة [المنتدى](https://forum.openreplay.com) واحصل على المساعدة من مجتمعنا.

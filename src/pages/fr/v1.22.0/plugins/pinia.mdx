@@ -1,0 +1,96 @@
+---
+title: "Pinia"
+metaTitle: "Pinia"
+metaDescription: "Plugin Pinia pour OpenReplay."
+---
+import Aside from '~/components/Aside.astro'
+
+Ce plugin vous permet de capturer les mutations/l'état de `Pinia` et de les inspecter ultérieurement lors de la relecture des enregistrements de session. C'est très utile pour comprendre et corriger les problèmes.
+
+
+<Aside type="tip">
+  Nous proposons également un tutoriel détaillé sur l'utilisation du plugin Pinia pour capturer l'état de votre application lorsque vous utilisez cette bibliothèque, vous pouvez le consulter [ici](/tutorials/pinia).
+</Aside>
+
+
+
+
+## Installation
+
+```bash
+npm i @openreplay/tracker-vuex
+```
+
+## Utilisation
+
+Initialisez le paquet `@openreplay/tracker` comme d'habitude et chargez-y le plugin. Appelez le plugin et configurez le nom du store ; cela renverra une instance nommée du tracker de store que vous pourrez appeler avec votre exemplaire de store en argument afin d'activer le suivi de ce store.
+
+### Si votre site web est une application monopage (SPA)
+
+```js
+import OpenReplay from '@openreplay/tracker';
+import trackerVuex from '@openreplay/tracker-vuex';
+```
+
+### Si votre application web est rendue côté serveur (SSR)
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+import trackerVuex from '@openreplay/tracker-vuex/cjs';
+```
+
+### Suivi du store Pinia
+
+```js
+
+//...
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+// ...
+
+const examplePiniaStore = useExamplePiniaStore()
+const vuexPlugin = tracker.use(trackerVuex(<options>)) // check list of available options below
+
+const piniaStorePlugin = vuexPlugin('STORE NAME') // add a name to your store, 
+                                                  // optional (will be randomly generated otherwise)
+piniaStorePlugin(examplePiniaStore) // start tracking state updates
+
+// now you can use examplePiniaStore as usual pinia store (destructure values or return it as a whole etc)
+```
+
+## Options
+
+Vous pouvez personnaliser le comportement du plugin avec des options pour assainir vos données. Elles sont similaires à celles du plugin standard `createLogger`.
+
+```js
+trackerVuex({
+  filter (mutation, state) {
+    // returns `true` if a mutation should be logged
+    // `mutation` is a `{ type, payload }`
+    return mutation.type !== "aBlacklistedMutation";
+  },
+  transformer (state) {
+    // transforms the state before logging it.
+    // for example return only a specific sub-tree
+    return state.subTree;
+  },
+  mutationTransformer (mutation) {
+    // mutations are logged in the format of `{ type, payload }`
+    // we can format it any way we want.
+    return mutation.type;
+  },
+})
+```
+
+## Tutoriel
+
+Si vous recherchez un exemple pratique d'utilisation de ce plugin pour capturer les changements d'état dans vos relectures de session, consultez [notre tutoriel détaillé ici](/tutorials/pinia).
+
+## Des questions ?
+
+Vous rencontrez des difficultés pour configurer ce plugin ? Rejoignez notre [Slack](https://slack.openreplay.com) ou consultez notre [Forum](https://forum.openreplay.com) et obtenez de l'aide de notre communauté.

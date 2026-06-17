@@ -3,41 +3,41 @@ layout: ~/layouts/MainLayout.astro
 i18nReady: true
 title: "使用 Docker Compose 部署"
 metaTitle: "使用 Docker Compose 部署"
-metaDescription: "逐步指南，用于使用 Docker Compose 部署 OpenReplay。"
+metaDescription: "使用 Docker Compose 部署 OpenReplay 的分步指南。"
 ---
 import Aside from '~/components/Aside.astro'
 
 <Aside type="tip">
-	这是一个实验性功能，其实现可能会在未来发展。
+	这是一项实验性功能，其实现方式未来可能会发生变化。OpenReplay 无法在本地运行，因此即使使用 Docker，你仍然需要一台服务器。请考虑我们的其他[部署选项](/deployment)。
 </Aside>
 
-OpenReplay 堆栈可以在单个带有 Docker Compose 的机器上安装。
+OpenReplay 技术栈可以使用 Docker Compose 安装在单台机器上。 
 
-## 先决条件
+## 前提条件
 
-1. Ubuntu 20.04 LTS（推荐 LTS 版本）
-2. 机器附带公共 IP 地址。意味着您的服务器可以从互联网访问。
-3. 您应该有一个附加到 IP 地址的域名。
-4. 选择您的实例类型。最小规格是 `2 vCPUs, 8 GB of RAM, 50 GB of storage`，否则 OpenReplay 后端服务根本不会启动。因此，我们建议**至少**使用 `t3.large`（或等效型号），这对于低/中等流量来说已足够。如果您预期有高流量，应从这里开始扩展。
+1. Ubuntu 20.04 LTS（推荐使用 LTS 版本）
+2. 为机器分配公网 IP。这意味着你的服务器可以从互联网访问。
+3. 你应当有一个绑定到该 IP 地址的域名。
+4. 选择你的实例类型。最低规格为 `2 vCPUs, 8 GB of RAM, 50 GB of storage`，并且需要 x86 架构，否则 OpenReplay 后端服务将根本无法启动。因此，我们建议**至少**使用 `t3.large`（或同等配置），这足以应对低/中等流量。如果你预期会有高流量，则应在此基础上进行扩展。
 
 ## 部署 OpenReplay
 
 ```bash
-## 从您的终端
-SSH_KEY=~/Downloads/openreplay-key.pem #! 无论您将 SSH 密钥保存在哪里
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem #! wherever you've saved the SSH key
 INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
-chmod 400 `SSH_KEY
-ssh -i `SSH_KEY ubuntu@`INSTANCE_IP
+chmod 400 $SSH_KEY
+ssh -i $SSH_KEY ubuntu@$INSTANCE_IP
 ```
 
-2. 通过提供将运行的域来安装 OpenReplay（例如，DOMAIN_NAME=openreplay.mycompany.com）：
+2. 通过提供 OpenReplay 将要运行的域名来安装它（例如 DOMAIN_NAME=openreplay.mycompany.com）：
 
 ```bash
-/bin/bash -c "`(curl -fsSL https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/docker-compose/docker-install.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/docker-compose/docker-install.sh)"
 ```
 
-现在一切都设置好了，OpenReplay 应该可以在您首先创建的域上安全地访问。您可以通过访问 `/signup` 页面（即 openreplay.mycompany.com/signup）来创建一个帐户。
+现在一切就绪，OpenReplay 应该可以通过你最初创建的域名安全访问。你可以访问 `/signup` 页面（即 openreplay.mycompany.com/signup）来创建账户。
 
-## 有问题吗？
+## 有疑问？
 
-如果您遇到任何问题，请连接到我们的 [Slack](https://slack.openreplay.com) 并从我们的社区获得帮助。
+如果你遇到任何问题，请加入我们的 [Slack](https://slack.openreplay.com) 或查看我们的[论坛](https://forum.openreplay.com)，从我们的社区获得帮助。

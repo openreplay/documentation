@@ -1,0 +1,87 @@
+---
+title: "Android SDK - تهيئة الـ SDK"
+metaTitle: "Android SDK - تهيئة الـ SDK"
+metaDescription: "خيارات التكوين لطريقة المُنشئ الخاصة بمتعقّب Android"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	إنّ Android SDK في مرحلة الإصدار التجريبي (Beta). لا تتردّد في إرسال ملاحظاتك إلينا أو الإبلاغ عن أي مشكلة قد تواجهها عبر [Slack](https://slack.openreplay.com) الخاص بنا أو الاطّلاع على [المنتدى](https://forum.openreplay.com) الخاص بنا.
+</Aside>
+
+## التثبيت
+
+سيقوم السطر التالي بتثبيت المتعقّب، ومعه الـ SDK، لتتمكّن من الاستفادة من جميع ميزات المتعقّب.
+
+###  تكوين Gradle
+أضِفه في ملف build.gradle الجذري في نهاية repositories:
+```
+dependencyResolutionManagement {
+		repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+		repositories {
+			mavenCentral()
+			maven { url 'https://jitpack.io' }
+		}
+}
+```
+
+أضِف الاعتمادية في ملف build.gradle الخاص بتطبيقك:
+```
+dependencies {
+		implementation("com.github.openreplay:android:Tag")
+}
+```
+
+## التهيئة
+
+عند إنشاء نسخة من متعقّب OpenReplay، تتوفّر عدّة خيارات تكوين يمكنك توفيرها لتخصيص العديد من جوانب التسجيل وتجربة التسجيل. يجب عليك تعيين الخيار `projectKey` في المُنشئ. يمكنك الحصول على هذه القيمة من لوحة تحكّم OpenReplay الخاصة بك ضمن 'Preferences > Projects'.
+
+<Aside type="tip">
+	لاحظ أنه إذا كان لديك عدّة مشاريع، فعليك توخّي الحذر عند اختيار مفتاح المشروع الذي ستستخدمه.
+</Aside>
+
+
+### إضافة شِفرة التتبّع
+
+أضِف الشِفرة التالية إلى ملف `MainActivity.kt` الخاص بك:
+
+```kotlin
+// MainActivity.kt
+import com.openreplay.tracker.OpenReplay
+
+//...
+
+class MainActivity : AppCompatActivity() {
+	override fun onCreate(savedInstanceState: Bundle?) {
+		// not required if you're using our SaaS version
+		OpenReplay.serverURL = "https://your.instance.com/ingest"
+		// check out our SDK docs to see available options
+		OpenReplay.start(
+			applicationContext,
+			"projectkey",
+			OpenReplay.Options.defaults(),
+			onStarted = {
+				println("OpenReplay Started")
+			})
+
+		// ...
+	}
+}
+```
+
+### تنقية البيانات
+
+راجع [كيفية تنقية البيانات في عمليات إعادة التشغيل على Android](/android-sdk/sanitization) لمزيد من التفاصيل.
+
+## خيارات التهيئة
+
+- `crashes: Bool` تُفعِّل crashlytics.
+- `analytics: Bool` تُفعِّل تتبّع التحليلات لطرق العرض (views) المُعلَّمة.
+- `performances: Bool` تُفعِّل مُستمِع الأداء.
+- `logs: Bool` تُفعِّل مُستمِع السجلّات.
+- `screen: Bool` تُفعِّل مُسجِّل الشاشة.
+- `wifiOnly: Bool` تُجبر المتعقّب على البدء فقط في حال كان لدى المستخدم اتصال wifi.
+
+## هل لديك أسئلة؟
+إذا كانت لديك أي أسئلة حول هذه العملية، فلا تتردّد في التواصل معنا عبر [Slack](https://slack.openreplay.com) الخاص بنا أو الاطّلاع على [المنتدى](https://forum.openreplay.com) الخاص بنا.

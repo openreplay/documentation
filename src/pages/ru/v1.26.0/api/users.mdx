@@ -1,0 +1,135 @@
+---
+title: "Пользователи"
+metaTitle: "Пользователи"
+metaDescription: "Как управлять данными пользователей и контролировать их."
+---
+import Aside from '~/components/Aside.astro'
+
+## Получить статистику пользователя
+
+Получите высокоуровневую статистику и сведения о конкретном пользователе, который был идентифицирован с помощью JavaScript-функции `tracker.setUserID`. Этот эндпоинт возвращает такие данные, как `firstSeen`, `lastSeen` и `numberSessions`.
+
+### Метод
+`GET`
+
+### URL
+`/api/v1/:projectKey/users/:userId`
+
+### Параметры
+
+| Имя | Тип | Описание |
+|----------|-------------|-------------|
+| projectKey | string | ID проекта, который вы отслеживаете (обязательно) |
+| userId | string | ID вашего пользователя, заданный через `tracker.setUserID` (обязательно) |
+
+### Заголовки запроса
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`: Ключ можно найти в 'Preferences' > 'Account' > 'Organization API Key'.
+
+### Коды состояния
+
+`200`: Ответ отправлен в виде JSON в теле
+
+### Пример запроса
+
+```shell
+curl -X GET \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Пример ответа
+
+```json
+{
+  "data": {
+    "userId": "mickael@openreplay.com",
+    "sessionCount": 3,
+    "lastSeen": 1623689478617,
+    "firstSeen": 1623440822825
+  }
+}
+```
+
+## Удалить пользователя
+
+Удалите пользователя (идентифицированного через JavaScript-функцию `tracker.setUserID`) и все его данные, собранные OpenReplay. Это запускает фоновую разовую задачу для удаления всех связанных с пользователем данных, включая сессии, события, метаданные, пользовательские события и записи. Вызов возвращает `jobID`, который вы сможете использовать позже, чтобы [проверить](/api/jobs#getjobdetails) статус операции удаления.
+
+Это удобно для обработки запросов в рамках GDPR, которые вы можете получать от ваших конечных пользователей.
+
+<Aside type="note">
+	Задача удаления удалит не более 1000 случайных сессий, связанных с указанным пользователем.
+</Aside>
+
+
+### Метод
+`DELETE`
+
+### URL
+`/api/v1/:projectKey/users/:userId`
+
+### Параметры
+
+| Имя | Тип | Описание |
+|----------|-------------|-------------|
+| projectKey | string | ID проекта, который вы отслеживаете (обязательно) |
+| userId | string | ID вашего пользователя, заданный через `tracker.setUserID` (обязательно) |
+
+### Заголовки запроса
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`: Ключ можно найти в 'Preferences' > 'Account' > 'Organization API Key'.
+
+### Коды состояния
+
+`200`: Ответ отправлен в виде JSON в теле
+
+### Пример запроса
+
+```shell
+curl -X DELETE \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/users/mickael@example.com \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Пример ответа
+
+```json
+{
+  "data": {
+    "jobId": 22345,
+    "description": "Delete user sessions of userId = mickael@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@openreplay.com",
+    "createdAt": 1623912962910,
+    "updatedAt": 1623912962910,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+### Изменить время удаления файла записи воспроизведения?
+
+Задача удаления выполняется в 2 этапа: Сначала сессии и связанные с ними каскадные события удаляются из базы данных в течение ночи. Затем для файлов записи воспроизведения планируется истечение срока (через 30 дней) в объектном хранилище.
+
+Если вы используете minio (стандартная установка) и хотите изменить политику истечения срока/жизненного цикла по умолчанию, следуйте приведённым ниже инструкциям:
+1. На вашем сервере выполните `openreplay -e`
+2. В разделе `chalice` определите новую переменную окружения с именем **SCH_DELETE_DAYS** со значением, равным числу дней, в течение которых вы хотите хранить файл записи воспроизведения до удаления (больше или равно 0)
+3. Сохраните и выйдите с помощью `:wq`
+4. Выполните `k9s -n db`
+5. С помощью стрелок клавиатуры перемещайтесь по списку и перейдите к контейнеру `minio-*`
+6. Нажмите `s`, чтобы получить доступ к оболочке контейнера Minio (объектное хранилище)
+7. Выполните `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
+8. Чтобы удалять файлы записи воспроизведения через 14 дней после выполнения задачи удаления
+
+```bash
+export EXPIRATION_DAYS=14
+mc ilm add --expiry-days $EXPIRATION_DAYS --tags "to_delete_in_days=${EXPIRATION_DAYS}" minio/mobs
+```
+
+9. Используйте `exit`, чтобы выйти из контейнера Minio
+10. Выполните `:quit`, чтобы выйти из CLI Kubernetes

@@ -1,0 +1,76 @@
+---
+title: "iOS SDK - اعتراض الشبكة"
+metaTitle: "iOS SDK - اعتراض الشبكة"
+metaDescription: "تفاصيل حول اعتراض الشبكة لمتتبع iOS"
+---
+
+## اعتراض الشبكة
+
+يُصدّر ORTracker الفئة `NetworkListener` التي تقبل المهام والطلبات معًا، وإليك كيفية القيام بذلك:
+
+```swift
+import ORTracker
+
+func fetchPokemonData(for name: String) {
+    let networkListener = NetworkListener()
+    let url = URL(string: "https://pokeapi.co/api/v2/pokemon/ditto")!
+    var request = URLRequest(url: url)
+    request.httpMethod = "GET" // This is the default, so it's optional in this case.
+
+    // Start the network listener with the request
+    networkListener.start(request: request)
+
+    // Create a data task
+    let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        if let error = error {
+            print("Error: \(error.localizedDescription)")
+            return
+        }
+        
+        if let data = data {
+            do {
+                let json = try JSONSerialization.jsonObject(with: data, options: [])
+								print(json)
+            } catch {
+                print("Error deserializing JSON: \(error)")
+            }
+        }
+        
+        networkListener.finish(response: response, data: data)
+    }
+
+    task.resume()
+
+	}
+```
+
+## تنقية الطلب
+
+يتم تصدير مفتاحين لاقتصاص بيانات الطلب/الاستجابة تلقائيًا: `ignoredKeys` لجسم الرسالة و `ignoredHeaders` للترويسات. ستتم تنقية كل من الطلب والاستجابة، لكن جسم الرسالة لن يتأثر إلا إذا كان JSON صالحًا.
+
+ما عليك سوى إسناد قائمة من السلاسل النصية التي ترغب في تنقيتها:
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+من الممكن أيضًا تغيير بيانات الاستجابة قبل تمريرها إلى المستمع (listener):
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```

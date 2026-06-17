@@ -1,0 +1,50 @@
+---
+title: "Canvas y WebGL"
+metaTitle: "Canvas y WebGL"
+metaDescription: "Cómo grabar elementos canvas y WebGL en la repetición de sesiones."
+---
+
+OpenReplay puede grabar el contenido de los elementos `<canvas>` con soporte para WebGL.
+
+> Nota: si estás usando un contexto WebGL, asegúrate de añadir `{ preserveDrawingBuffer: true }` a las opciones de .getContext para evitar fotogramas en blanco, ya que la extracción de datos de imagen del canvas normalmente depende de la capa de dibujo, que se omite de forma predeterminada.
+
+## Habilitar la grabación de canvas
+
+Para habilitar la grabación de canvas, simplemente ejecuta `openreplay -e` y luego añade el bloque siguiente para actualizar el servicio `http`.
+
+```yaml
+http:
+  env:
+    RECORD_CANVAS: true
+    CANVAS_QUALITY: low
+    CANVAS_FPS: 1
+```
+
+Una vez hecho esto, guarda y sal de la configuración usando `:wq` para que OpenReplay se encargue de aplicar los cambios.
+
+> Nota: La grabación de canvas está habilitada en todas nuestras ofertas SaaS. La configuración —que está establecida en sus valores predeterminados— no se puede cambiar.
+
+### Opciones de canvas
+
+Puedes ajustar las opciones siguientes según tus necesidades. De hecho, algunas aplicaciones pueden requerir una mayor tasa de fotogramas. Aunque la captura y codificación de instantáneas se realiza en segundo plano (web-worker) y no afecta al rendimiento de tu aplicación, optar por valores altos consumiría más ancho de banda a nivel del usuario final y requeriría más almacenamiento en disco en tu instancia de OpenReplay (backend). Las imágenes/instantáneas, capturadas por el tracker, se envían al backend y luego se procesan y convierten en un vídeo con fines de repetición de sesiones.
+
+- `CANVAS_QUALITY: 'low' | 'medium' | 'high'`: Establece la calidad de las instantáneas grabadas. El valor predeterminado es `low`.
+- `CANVAS_FPS: number`: Define el número de fotogramas por segundo a los que se graban los elementos canvas. El valor predeterminado es `1`.
+
+> Nota: Debido a las limitaciones del códec de vídeo actual, la repetición de la grabación del canvas puede tener un fondo negro (u otro color sólido), ya que es imposible codificar el canal alfa. Estamos atentos al tema y actualizaremos a versiones más recientes del códec en cuanto estén disponibles.
+
+### Saneamiento de datos
+
+En cuanto a la privacidad, el contenido de los elementos canvas no se puede sanear.
+
+## Sesiones de cobrowsing
+
+Para las sesiones en vivo (también conocidas como Assist), no es necesaria ninguna configuración particular. El canvas se habilitará y capturará de forma predeterminada y los datos se transmitirán a través del protocolo P2P. Para garantizar un uso óptimo de la red, los datos solo se transmiten cuando un agente está observando la sesión en vivo y el contenido del canvas está cambiando.
+
+## Canvas como capa de animación
+
+Si estás usando un canvas por encima de la capa de tu frontend (con un zIndex más alto), es posible que notes una pantalla negra durante la repetición de las sesiones grabadas. Eso ocurre porque la API web aún no nos permite capturar el canal alfa. Si ese es el caso de tu aplicación web, añade el atributo HTML `data-openreplay-hidden` al elemento canvas problemático para ocultarlo por completo de la grabación de la sesión.
+
+## ¿Tienes preguntas?
+
+Si tienes alguna pregunta sobre este proceso, no dudes en contactarnos en nuestro [Slack](https://slack.openreplay.com) o consulta nuestro [Foro](https://forum.openreplay.com).

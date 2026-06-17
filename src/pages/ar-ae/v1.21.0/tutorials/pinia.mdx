@@ -1,0 +1,175 @@
+---
+title: "تتبّع تغييرات الحالة باستخدام إضافة Pinia"
+metaTitle: "تتبّع تغييرات الحالة باستخدام إضافة Pinia"
+metaDescription: "تتبّع تغييرات الحالة عند استخدام Pinia من خلال إضافة Pinia"
+minVersion: "1.6.0"
+---
+import Aside from '~/components/Aside.astro'
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="شاهد كيفية تتبّع الحالة باستخدام Pinia"
+  description="إذا كنت لا تفضّل القراءة، يمكنك متابعة هذا الدرس المرئي الذي يوضّح لك كيفية تتبّع حالة تطبيقات Vue الخاصة بك عند استخدام Pinia"
+  videoURL="https://youtu.be/0TE5dfzz4-c"
+/>
+
+Pinia هي مكتبة إدارة الحالة البديلة في مشاريع Vue. ففي المواضع التي كنت تستخدم فيها VueX سابقًا، ستستخدم الآن Pinia. باستخدام [إضافة Pinia](/plugins/pinia) الخاصة بنا، يمكنك تتبّع تغييرات الحالة طوال دورة حياة تطبيقك.
+
+## تثبيت الإضافة
+
+يمكن تثبيت الإضافة بسهولة باستخدام الأمر التالي:
+
+```jsx
+npm i @openreplay/tracker-vuex
+```
+
+## استخدام الإضافة من داخل تطبيق Vue الخاص بك
+
+في هذا المثال، سنستخدم تطبيق Vue تجريبيًا لنوضّح كيف يمكنك إضافة هذه الإضافة والتفاعل معها داخل تطبيق حقيقي.
+
+**ملاحظة**: يوجد الكود المصدري الكامل لهذا المثال في [مستودع GitHub](https://github.com/deleteman/openreplay-vue-pinia-example) هذا، فاطّلع عليه إذا كنت بحاجة إلى مزيد من التفاصيل.
+
+بعد تثبيت الإضافة، سنعدّل الملف `main.js` بإضافة عبارة الاستيراد أدناه:
+
+```jsx
+import trackerVuex from '@openreplay/tracker-vuex/cjs';
+```
+
+ثم سنستخدم الدالة `startTracker` لإنشاء مثيل للمتتبّع (tracker) واستخدام الإضافة في الوقت نفسه.
+
+ستكون نتيجة استدعاء هذه الدالة كائنًا يحتوي على نتائج استخدام الطريقة `use` مع الإضافة.
+
+**لاحظ** أن اسم الخاصية المُفكَّكة (destructured) هو نفسه قيمة الخاصية `name`. وطالما أبقيت هاتين القيمتين متطابقتين، فلن تواجه أي مشكلة.
+
+```jsx
+const {piniaPlugin} = startTracker({
+    projectKey: "<your project key>",
+    plugins: [{
+        name: 'piniaPlugin',
+        fn: trackerVuex
+    }]
+})
+```
+
+الخطوة التالية هي إنشاء غلاف مخزن (store wrapper) مُسمّى سنستخدمه لاحقًا لإعداد الإضافة على المخزن المطلوب.
+
+```jsx
+const piniaStoreWrapper = piniaPlugin("products")
+saveStore(piniaStoreWrapper)
+```
+
+سيتعيّن استخدام `piniaStoreWrapper` لاحقًا مع المخزن الذي نقرّر تتبّعه. غير أن المخزن لم يُنشَأ بعد في هذه المرحلة، لذا سنحفظه عبر الدالة `saveStore`.
+
+### الدوال المساعِدة
+
+قبل المضيّ قُدُمًا، دعنا نلقي نظرة على الدالتين `saveStore` و`startTracker`.
+
+الدالة الأولى جزء من وحدة `storesManager`، وهي تبدو كالتالي:
+
+```jsx
+let storeWrapper = null;
+
+export function saveStore(s) {
+    storeWrapper = s;
+}
+
+export function getStore(store) {
+    return storeWrapper;
+}
+```
+
+ستتيح لنا هذه الوحدة استخدام `piniaStoreWrapper` الذي أنشأناه سابقًا في مكان آخر.
+
+أما بالنسبة للدالة `startTracker`، فيبدو الكود كالتالي:
+
+```jsx
+export function startTracker(config) {
+    console.log("Starting tracker...")
+
+    console.log("Project key used: ", config.projectKey)
+    const trackerConfig = {
+        projectKey: config.projectKey,
+         //ingestPoint: config.ingestPoint,
+        __DISABLE_SECURE_MODE: true
+    }
+
+    const tracker = new Tracker(trackerConfig);
+
+    const pluginReturns = {}
+    config?.plugins.forEach( p => {
+        console.log("Using plugin...", p.name)
+        pluginReturns[p.name] = tracker.use(p.fn())
+    })
+
+    tracker.start();
+    return {
+        tracker,
+        ...pluginReturns
+    }
+}
+```
+
+تنشئ هذه الدالة مثيلًا للمتتبّع بالإعدادات التي نمرّرها إليها. لاحظ كيف تركتُ الخيار `ingestPoint` معلّقًا (commented out)، وذلك لأننا نتعامل مباشرة مع إصدار SaaS؛ لكن إذا كنت تنوي استخدام هذا الكود مع إصدار مُستضاف ذاتيًا (self-hosted)، فسيتعيّن عليك تحديده، وينبغي أن يبدو بشكل مشابه لهذا: `<your-instance>.yourhost/ingest`
+
+### تتبّع مخازن Pinia الخاصة بك
+
+بمجرد أن يصبح كود الإعداد كله جاهزًا، انتقل إلى المكان الذي تستخدم فيه المخزن؛ وفي حالة مثالنا، دعنا نعدّل الملف `App.vue` لاستدعاء الدالة `getStore`، التي ستعيد غلاف المخزن الذي حفظناه سابقًا.
+
+وسنستخدمه لتغليف المخزن الذي نريد تتبّعه:
+
+```jsx
+<template>
+  <!-- template code -->
+</template>
+
+<script lang="ts">
+import { computed, defineComponent, onMounted, ref } from 'vue'
+import { Product, useProductStore } from './store/products'
+import { useCartStore } from './store/cart'
+import {getStore} from './store/storesManager.js'
+
+export default defineComponent({
+  setup() {
+
+    const productStore = useProductStore()
+    const loading = ref(true)
+    //we get the wrapper here
+	  const storeWrapper = getStore()
+
+    onMounted(async () => {
+      await productStore.fetchAll()
+      loading.value = false
+    })
+
+    const cartStore = useCartStore()
+
+		//we wrap the cart store here
+    storeWrapper(cartStore)
+    return {
+      products: computed(() => productStore.list),
+      cart: computed(() => cartStore.formattedCart),
+      total: computed(() => cartStore.total),
+      loading,
+      add: (product: Product) => cartStore.add(product),
+      remove: (product: Product) => cartStore.remove(product),
+    }
+  }
+})
+
+</script>
+```
+
+## مراقبة الحالة أثناء إعادة التشغيل
+
+لمراجعة تغييرات الحالة أثناء إعادة التشغيل (replay)، انقر على علامة التبويب الجديدة VueX في الزاوية السفلية اليمنى:
+
+![علامة التبويب الجديدة VueX](/tutorials//pinia/new-tab.png)
+
+عند النقر عليها، سترى محتوى المخزن، وستتمكّن من فهم كيفية تغيّره والبيانات المحفوظة بداخله:
+
+![تحوّلات الحالة](/tutorials//pinia/state-changes.png)
+
+لاحظ اسم المخزن، فهو الاسم الذي استخدمناه عند استدعاء إضافة Pinia للمرة الأولى.
+
+## لديك أسئلة؟
+
+يمكنك [الاطّلاع على هذا المستودع](https://github.com/deleteman/openreplay-vue-pinia-example) للحصول على **الكود المصدري الكامل** لتطبيق Pinia/Vue يعمل بإضافة Pinia. إذا واجهتك أي مشكلات في إعداد إضافة Pinia في مشروعك، فيرجى التواصل معنا عبر [مجتمع Slack](https://slack.openreplay.com/) الخاص بنا وطرح أسئلتك مباشرة على مطوّرينا!

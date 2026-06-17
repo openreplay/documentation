@@ -1,0 +1,135 @@
+---
+title: "Usuarios"
+metaTitle: "Usuarios"
+metaDescription: "Cómo gestionar y controlar los datos de los usuarios."
+---
+import Aside from '~/components/Aside.astro'
+
+## Obtener estadísticas de un usuario
+
+Obtén algunas estadísticas de alto nivel y detalles sobre un usuario en particular, que ha sido identificado mediante la función de JavaScript `tracker.setUserID`. Este endpoint devuelve datos como `firstSeen`, `lastSeen` y `numberSessions`.
+
+### Método
+`GET`
+
+### URL
+`/api/v1/:projectKey/users/:userId`
+
+### Parámetros
+
+| Nombre | Tipo | Descripción |
+|----------|-------------|-------------|
+| projectKey | string | El ID del proyecto que estás rastreando (obligatorio) |
+| userId | string | El ID de tu usuario, definido mediante `tracker.setUserID` (obligatorio) |
+
+### Encabezados de la solicitud
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`: La clave se encuentra en 'Preferences' > 'Account' > 'Organization API Key'.
+
+### Códigos de estado
+
+`200`: Respuesta enviada como JSON en el cuerpo
+
+### Ejemplo de solicitud
+
+```shell
+curl -X GET \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Ejemplo de respuesta
+
+```json
+{
+  "data": {
+    "userId": "mickael@openreplay.com",
+    "sessionCount": 3,
+    "lastSeen": 1623689478617,
+    "firstSeen": 1623440822825
+  }
+}
+```
+
+## Eliminar usuario
+
+Elimina un usuario (identificado mediante la función de JavaScript `tracker.setUserID`) y todos sus datos capturados por OpenReplay. Esto inicia una tarea en segundo plano que se ejecuta una sola vez para eliminar todos los datos relacionados con el usuario, incluyendo sesiones, eventos, metadatos, eventos personalizados y grabaciones. La llamada devuelve un `jobID` que puedes usar más adelante para [comprobar](/api/jobs#getjobdetails) el estado de la operación de eliminación.
+
+Esto resulta útil para gestionar las solicitudes de GDPR que puedas recibir de tus usuarios finales.
+
+<Aside type="note">
+	La tarea de eliminación quitará un máximo de 1000 sesiones aleatorias asociadas al usuario especificado.
+</Aside>
+
+
+### Método
+`DELETE`
+
+### URL
+`/api/v1/:projectKey/users/:userId`
+
+### Parámetros
+
+| Nombre | Tipo | Descripción |
+|----------|-------------|-------------|
+| projectKey | string | El ID del proyecto que estás rastreando (obligatorio) |
+| userId | string | El ID de tu usuario, definido mediante `tracker.setUserID` (obligatorio) |
+
+### Encabezados de la solicitud
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`: La clave se encuentra en 'Preferences' > 'Account' > 'Organization API Key'.
+
+### Códigos de estado
+
+`200`: Respuesta enviada como JSON en el cuerpo
+
+### Ejemplo de solicitud
+
+```shell
+curl -X DELETE \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/users/mickael@example.com \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Ejemplo de respuesta
+
+```json
+{
+  "data": {
+    "jobId": 22345,
+    "description": "Delete user sessions of userId = mickael@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@openreplay.com",
+    "createdAt": 1623912962910,
+    "updatedAt": 1623912962910,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+### ¿Cambiar el tiempo de eliminación del archivo de replay?
+
+La tarea de eliminación es un proceso de 2 pasos: Primero, las sesiones y sus eventos en cascada se eliminan de la base de datos durante la noche. Segundo, se programa la expiración de los archivos de replay (en 30 días) en el almacenamiento de objetos.
+
+Si estás usando minio (instalación estándar) y deseas cambiar la política de expiración/ciclo de vida predeterminada, sigue las instrucciones a continuación:
+1. En tu servidor, ejecuta `openreplay -e`
+2. En la sección `chalice`, define una nueva variable de entorno llamada **SCH_DELETE_DAYS** con un valor igual al número de días que quieres conservar el archivo de replay antes de eliminarlo (mayor o igual a 0)
+3. Guarda y sal usando `:wq`
+4. Ejecuta `k9s -n db`
+5. Usa las flechas del teclado para navegar por la lista y llegar al contenedor `minio-*`
+6. Pulsa `s` para acceder al shell del contenedor de Minio (almacenamiento de objetos)
+7. Ejecuta `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
+8. Para eliminar los archivos de replay 14 días después de la ejecución de la tarea de eliminación
+
+```bash
+export EXPIRATION_DAYS=14
+mc ilm add --expiry-days $EXPIRATION_DAYS --tags "to_delete_in_days=${EXPIRATION_DAYS}" minio/mobs
+```
+
+9. Usa `exit` para salir del contenedor de Minio
+10. Ejecuta `:quit` para salir de la CLI de Kubernetes

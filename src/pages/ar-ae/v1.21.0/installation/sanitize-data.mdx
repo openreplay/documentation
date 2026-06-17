@@ -1,0 +1,160 @@
+---
+title: "تنقية البيانات (الويب)"
+metaTitle: "تنقية البيانات (الويب)"
+metaDescription: "كيفية تنقية البيانات وضمان خصوصية المستخدمين لديك."
+---
+import Aside from '~/components/Aside.astro'
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<Aside type="tip">
+هل تبحث عن [كيفية تنقية البيانات في عمليات إعادة التشغيل على iOS](/installation/sanitize-data-ios)؟ إن لم يكن كذلك، فتابع القراءة لمزيد من التفاصيل حول كيفية القيام بذلك لتسجيلات الويب.
+</Aside>
+
+## تنقية بيانات إعادة التشغيل
+
+يمكنك تنقية ما يلتقطه OpenReplay على المستوى العام و/أو على المستوى الدقيق. لن يتم التقاط أي بيانات مُخفاة أو متجاهَلة عند المصدر. بعبارة أخرى، لن تغادر هذه البيانات متصفح المستخدم أبدًا.
+
+<YoutubeVideo title="شاهد كيفية تنقية البيانات الحساسة في عمليات إعادة التشغيل لديك"
+  description="إذا كنت لا تحب القراءة، يمكنك متابعة هذا الدرس المصوّر الذي يوضح لك كيفية تنقية البيانات في تسجيلاتك."
+  videoURL="https://youtu.be/22-UCoocy6s"
+/>
+
+### المستوى العام
+
+يمكن تنقية البيانات على مستوى المتعقّب (tracker) عند إعداد OpenReplay.
+
+#### أنا أستخدم سكربت OpenReplay
+
+![إعدادات المشروع في OpenReplay](/static/gdpr-1.png#center)
+
+1) انقر على *Tracking Code* الخاص بمشروعك ضمن 'Preferences > Projects'.
+2) من المفترض أن تظهر خيارات تسجيل البيانات قبل مقتطف الكود مباشرةً:
+- **Inputs**: لتجاهل جميع قيم الإدخال الخاصة بمستخدميك أو إخفائها أو تسجيلها.
+- **Do not record any numeric text**: لتجاهل القيم الرقمية الموجودة في العناصر النصية.
+- **Do not record email addresses**: بشكل افتراضي، يتم إخفاء جميع عناوين البريد الإلكتروني الموجودة في العناصر النصية ولن تظهر في عمليات إعادة التشغيل. يمكنك تعطيل ذلك بإلغاء تحديد المربع.
+3) يؤثر تغيير خيارات تسجيل البيانات على مقتطف الكود. تأكد من نسخ السكربت المُحدَّث ولصقه في تطبيق الويب الخاص بك.
+
+#### أنا أستخدم OpenReplay NPM
+
+هناك مجموعة من الخيارات المتعلقة بالخصوصية يمكنك تمريرها إلى المُنشئ (constructor):
+- `obscureTextEmails?: boolean` إخفاء عناوين البريد الإلكتروني في العناصر النصية. سيتم تحويل عناوين البريد الإلكتروني إلى سلسلة عشوائية من العلامات النجمية. القيمة الافتراضية: true.
+- `obscureTextNumbers?: boolean` إخفاء الأرقام في العناصر النصية. سيتم تحويل الأرقام إلى سلسلة عشوائية من العلامات النجمية. القيمة الافتراضية: false.
+- `obscureInputEmails?: boolean` إخفاء عناوين البريد الإلكتروني في حقول الإدخال. سيتم تحويل قيم البريد الإلكتروني إلى سلسلة عشوائية من العلامات النجمية. القيمة الافتراضية: true.
+- `obscureInputNumbers?: boolean` إخفاء الأرقام في حقول الإدخال. سيتم تحويل القيم الرقمية إلى سلسلة عشوائية من العلامات النجمية. القيمة الافتراضية: false.
+- `obscureInputDates?: boolean` إخفاء التواريخ في حقول الإدخال. سيتم تحويل قيم التاريخ إلى سلسلة عشوائية من العلامات النجمية. القيمة الافتراضية: false.
+- `defaultInputMode?: 0 | 1 | 2` وضع الالتقاط الافتراضي لقيم الإدخال. على التوالي: عادي، أو مُخفى، أو متجاهَل. القيمة الافتراضية: 1 (مُخفى).
+
+يتم إخفاء أو حذف النصوص وعناوين البريد الإلكتروني والأرقام المُنقّاة قبل إرسال البيانات إلى خوادم OpenReplay. ولذلك، لا يمكن أن تكون التغييرات المطبَّقة على الخيارات أعلاه بأثر رجعي، وستُطبَّق فقط على البيانات المُجمَّعة حديثًا.
+
+### المستوى الدقيق
+
+يمكنك أيضًا تنقية بياناتك على مستوى الكود للحصول على دقة أفضل. وهذا مفيد لإخفاء أو تجاهل عناصر DOM وحقول الإدخال.
+
+#### استخدام سمات HTML
+
+- `data-openreplay-obscured` لإخفاء المحتوى النصي لوسوم `<input>` و `<img>` وعناصر HTML الأخرى (مثل `<div>`) باستثناء `<svg>` و `<canvas>`.
+
+```html
+<!--Obscuring input fields-->
+<form action="/action_page.php">
+  Name: <input type="text" name="fname" data-openreplay-obscured><br>
+  <input type="submit" value="Submit">
+</form>
+<!--Obscuring a div element-->
+<div style="background-color:lightblue" data-openreplay-obscured>
+  <h3>This is a sensitive information</h3>
+  <p>This is an important paragraph</p>
+  <img src="important_image.jpg">
+</div>
+```
+
+- `data-openreplay-hidden` لحذف محتوى وسوم `<input>` و `<img>` و `<svg>` وعناصر HTML الأخرى (مثل `<div>`) باستثناء `<canvas>`. تتم إزالة محتوى العنصر (بما في ذلك مكوناته الفرعية)، لكن يتم الاحتفاظ بخصائصه ومعطياته، كما في هذا المثال:
+
+```html
+<div style="background-color:lightblue" data-openreplay-hidden>
+  <div>This is a sensitive information</div>
+  <svg>An important chart</svg>
+</div>
+```
+
+سيؤدي هذا إلى أن يسجّل المتعقّب (tracker) عنصر DOM التالي:
+
+```html
+<div style="background-color:lightblue" data-openreplay-hidden>
+</div>
+```
+
+#### استخدام دالة domSanitizer
+
+- تتيح لك دالة `domSanitizer: (node: Element) => SanitizeLevel` تجنّب الحاجة إلى توصيف كل مكوّن HTML يحتاج إلى التنقية. يمكن أن تكون قيمة `SanitizeLevel` هي `Plain` (0) أو `Obscured` (1) أو `Hidden` (2). تُمرَّر هذه الدالة إلى مُنشئ المتعقّب. فيما يلي مثال على حذف جميع عناصر HTML التي تحمل اسم فئة CSS محددًا:
+
+```js
+// Import SanitizeLevel enum
+import Tracker, { SanitizeLevel } from "@openreplay/tracker";
+
+const tracker = new Tracker({
+  projectKey: PROJECT_KEY,
+  domSanitizer: (node: Element) => {
+    const elementClassNames = node.classList
+
+    if (elementClassNames.contains('to_be_redacted_class')) {
+      return SanitizeLevel.Hidden
+    }
+
+    if (node.id === 'sensitiveData') {
+      return SanitizeLevel.Obscured
+    }
+
+    return SanitizeLevel.Plain
+  }
+})
+tracker.start()
+```
+
+> **ملاحظة:** يتم إخفاء/حذف جميع العناصر المُنقّاة على مستوى المصدر (المتعقّب) بحيث لا تصل البيانات الحساسة أبدًا إلى نسخة OpenReplay.
+
+## تنقية بيانات DevTools
+
+يمكنك استخدام OpenReplay SDK لتنقية بيانات الشبكة وحالة التطبيق.
+
+### الشبكة
+
+قد يؤدي التقاط الطلبات/الاستجابات إلى تسجيل معلومات حساسة أو خاصة للغاية قد يرسلها/يستقبلها تطبيقك. تأكد من حذف بيانات الشبكة لديك بشكل صحيح.
+
+#### Fetch/XHR
+
+استخدم خيار `sanitizer` لحذف البيانات الحساسة من طلبات/استجابات Fetch/XHR. راجع [خيارات الشبكة](/installation/network-options#options) لمزيد من التفاصيل.
+
+تحقّق أيضًا من هذا الدرس التعليمي خطوة بخطوة حول كيفية [التقاط طلبات الشبكة وتنقيتها](/tutorials/capture-request).
+
+#### GraphQL
+
+لتنقية بيانات GraphQL، عليك استنساخ المتغيرات الرئيسية ونتائج العملية قبل استدعاء المتعقّب. اطّلع على كيفية [تنقية البيانات المُسجَّلة في GraphQL](/tutorials/graphql/#sanitizing-the-recorded-data) لمزيد من التفاصيل.
+
+### إدارة الحالة
+
+قم بإزالة البيانات الحساسة من مخزن حالة الواجهة الأمامية لديك باستخدام OpenReplay SDK.
+
+#### Redux
+
+استخدم خيارات `actionFilter` و `actionTransformer` و `stateTransformer` لحذف الإجراءات والأشجار الفرعية الحساسة من مخزنك. راجع [وثائق إضافة redux](/plugins/redux/#options) لمزيد من التفاصيل.
+
+#### VueX
+
+استخدم خيارات `filter` و `transformer` و `mutationTransformer` لحذف الطفرات (mutations) والأشجار الفرعية الحساسة من مخزنك. راجع [وثائق إضافة vuex](/plugins/vuex/#options) لمزيد من التفاصيل.
+
+#### Zustand
+
+استخدم خيارات `filter` و `transformer` و `mutationTransformer` لحذف الطفرات (mutations) والأشجار الفرعية الحساسة من مخزنك. راجع [وثائق إضافة zustand](/plugins/zustand/#options) لمزيد من التفاصيل.
+
+#### Pinia
+
+استخدم خيارات `filter` و `transformer` و `mutationTransformer` لحذف الطفرات (mutations) والأشجار الفرعية الحساسة من مخزنك. راجع [وثائق إضافة pinia](/plugins/pinia/#options) لمزيد من التفاصيل.
+
+#### NgRx
+
+استخدم خيارات `actionFilter` و `actionTransformer` و `stateTransformer` لحذف الإجراءات والأشجار الفرعية الحساسة من مخزنك. راجع [وثائق إضافة ngrx](/plugins/ngrx/#options) لمزيد من التفاصيل.
+
+## هل لديك أسئلة؟
+
+نحن نعمل باستمرار على تحسين ميزاتنا المتعلقة بالخصوصية، لذا أخبرنا إذا كنت بحاجة إلى شيء لا ندعمه بعد. إذا كنت تواجه صعوبة في تنقية بياناتك، فيُرجى التواصل معنا عبر [Slack](https://slack.openreplay.com) أو الاطّلاع على [المنتدى](https://forum.openreplay.com) الخاص بنا والحصول على المساعدة من مجتمعنا.

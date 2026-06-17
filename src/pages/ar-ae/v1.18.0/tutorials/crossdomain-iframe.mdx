@@ -1,0 +1,44 @@
+---
+title: "تتبع إطارات iFrame عبر النطاقات"
+metaTitle: "تتبع إطارات iFrame عبر النطاقات"
+metaDescription: "تتبع تفاعلات المستخدم في إطارات iFrame عبر النطاقات باستخدام OpenReplay."
+---
+
+لتمكين تتبع إطارات iFrame عبر النطاقات، يلزمك إضافة الخيار `crossdomain.enabled` إلى مُنشئ المتعقب (tracker)، ثم إضافة منطقة النطاق عبر `data-domain` إلى جميع إطارات iFrame المطلوبة على النحو التالي:
+
+```html
+<iframe
+	title="test"
+	src="http://iframe1.website.com/iframe-path"
+	width="300"
+	height="300"
+	data-domain="iframe1.website.com"
+></iframe>
+``` 
+
+أضف الخيار `crossdomain` التالي إلى مُنشئ المتعقب الخاص بك:
+
+```js
+const tracker = new OpenReplay({
+	projectKey: PROJECT_KEY,
+	crossdomain: {
+		enabled: true
+	},
+	captureIFrames: true
+});
+```
+
+ثم قم بتهيئة المتعقب داخل إطار iFrame المطلوب وأضف `crossdomain.parentDomain` إلى مُنشئه:
+
+```js
+const tracker = new OpenReplay({
+	projectKey: PROJECT_KEY,
+	crossdomain: {
+	  // Specifies the domain of the parent window
+	  // If not specified, it will be set to '*'
+	  // Which means that child window will send messages to all domains inside the browser window
+	  // Consult your CSP settings to ensure that '*' is allowed or specify the parent domain
+		parentDomain: '*',
+	}
+});
+```

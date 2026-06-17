@@ -1,0 +1,213 @@
+---
+title: "Elastic"
+metaTitle: "دمج Elasticsearch مع OpenReplay"
+metaDescription: "كيفية دمج Elasticsearch مع OpenReplay ورؤية أخطاء الواجهة الخلفية جنبًا إلى جنب مع إعادة تشغيل الجلسات."
+---
+
+تعرّف على كيفية دمج سجلات الواجهة الخلفية الخاصة بـ [Elastic](https://www.elastic.co/) مع إعادة تشغيل الجلسات في [OpenReplay](https://www.openreplay.com/) لتوسيع قدرات المراقبة وتصحيح الأخطاء لديك.
+
+### 1. إنشاء مفتاح API جديد
+
+اعتمادًا على إعداداتك، يمكنك إنشاء مفتاح API باستخدام لوحة تحكم Kibana أو عبر أوامر cURL.
+
+**باستخدام لوحة تحكم Kibana**
+
+1. سجّل الدخول إلى لوحة تحكم Kibana الخاصة بك.
+
+2. انتقل إلى **Dev Tools**: توجّه إلى **Dev Tools > Console**.
+
+3. أنشئ **مفتاح API**: انسخ الكود التالي إلى وحدة التحكم وقم بتشغيله:
+
+     ```json
+     POST /_security/api_key
+     {
+       "name": "openreplay-api-key",
+       "role_descriptors": {
+         "openreplay-role": {
+           "cluster": ["all"],
+           "index": [
+             {
+               "names": ["*log*"],
+               "privileges": ["read"]
+             }
+           ]
+         }
+       }
+     }
+     ```
+
+#### **باستخدام أوامر cURL**
+
+1. نفّذ أمر cURL: شغّل الأمر التالي في الطرفية الخاصة بك:
+
+     ```shell
+     curl -X POST "https://your-elasticsearch-host:port/_security/api_key" \
+     -H 'Content-Type: application/json' \
+     -d'
+     {
+       "name": "openreplay-api-key",
+       "role_descriptors": {
+         "openreplay-role": {
+           "cluster": ["all"],
+           "index": [
+             {
+               "names": ["*log*"],
+               "privileges": ["read"]
+             }
+           ]
+         }
+       }
+     }' \
+     -u 'username:password'
+     ```
+
+     استبدل `https://your-elasticsearch-host:port` بمضيف ومنفذ Elasticsearch الخاص بك، و `username:password` ببيانات اعتمادك.
+
+**ملاحظة:**
+
+- افتراضيًا، سيبحث هذا التكامل عن السجلات داخل أي فهرس يطابق `*log*`. إذا كان لديك فهرس محدد للسجلات لا يطابق هذا النمط، فيُرجى تغيير الحقل `names` في طلب إنشاء مفتاح API.
+- لتحديد عدة فهارس، افصل بين الأسماء بفواصل، على سبيل المثال `"names": ["index1", "index2"]`.
+
+#### **نتيجة مفتاح API**
+
+بعد تشغيل الأمر، ستتلقى استجابة مثل:
+
+```json
+{
+  "id": "eQWAIG0Bo0VqB8HXFH9-",
+  "name": "openreplay-api-key",
+  "api_key": "dZ5ycVRJTU-5UW_RYfi1_w"
+}
+```
+
+**هام:** تأكد من نسخ `id` و `api_key` لأنك ستحتاج إليهما للتكامل.
+
+> **مرجع:** [Elasticsearch - Create API Key](https://www.elastic.co/guide/en/elasticsearch/reference/master/security-api-create-api-key.html)
+
+## 2. تكوين تكامل Elasticsearch في OpenReplay
+في حساب OpenReplay الخاص بك، اتبع هذه الخطوات الثلاث لإكمال ربط إعادة تشغيل الجلسات بسجلات الواجهة الخلفية الخاصة بـ Elasticsearch.
+
+### تفعيل تكامل Elasticsearch
+1. انتقل إلى **Preferences > Integrations** في OpenReplay.
+2. حدّد علامة التبويب **Backend Logging**.
+3. حدّد المشروع الذي تريد تفعيل تكامل Elasticsearch فيه: حدد موقع بطاقة تكامل Elasticsearch > انقر عليها.
+
+### إدخال بيانات اعتماد Elasticsearch
+في الشريط الجانبي لتكامل Elasticsearch، أدخل:
+   - **API KEY ID**: قيمة `id` من مفتاح API الذي أنشأته.
+   - **API Key**: قيمة `api_key` من مفتاح API الذي أنشأته.
+   - **Indexes**: إذا قمت بتغيير الفهرس عند إنشاء مفتاح API، فحدّد الاسم (الأسماء) هنا.
+
+### التحقق من الاتصال:
+   - انقر على **Add** لاختبار الاتصال.
+
+
+### 3. تمرير openReplaySession.id
+
+لربط حدث Elasticsearch بجلسة المستخدم المسجّلة، يجب تمرير معرّف جلسة فريد (`openReplaySession.id`) من الواجهة الأمامية إلى الواجهة الخلفية في كل طلب تريد تتبّعه.
+
+#### **a. تضمين `openReplaySession.id` في طلبات API الخاصة بالواجهة الأمامية**
+
+**ملاحظة:** إنّ `tracker.start()` غير متزامن ويُرجع وعدًا (Promise). تحتاج إلى انتظار اكتماله قبل استدعاء `tracker.getSessionID()` لضمان توفّر معرّف الجلسة.
+
+```javascript
+// JavaScript Example for for Single Page Applications (SPA):
+
+// Import OpenReplay
+import OpenReplay from '@openreplay/tracker';
+
+// Initialize the tracker
+const tracker = new OpenReplay({
+  projectKey: 'YOUR_PROJECT_KEY',
+});
+
+// Start the tracker and wait for it to resolve
+tracker.start().then(() => {
+  // Get the session ID after the tracker has started
+  const sessionId = tracker.getSessionID();
+
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+  if (sessionId) {
+    headers['openReplaySession.id'] = sessionId;
+  }
+
+  // Make the API request
+  fetch('https://www.your-backend.com/api/endpoint', {
+    method: 'GET', // or 'POST', 'PUT', etc.
+    headers,
+    // ...other options
+  })
+    .then(response => {
+      // Handle response
+    })
+    .catch(error => {
+      // Handle error
+    });
+});
+```
+
+#### **b. تضمين openReplaySession.id في سجلات الواجهة الخلفية**
+
+لكي يتمكّن OpenReplay من ربط إدخال سجل Elasticsearch بجلسة المستخدم المسجّلة، يجب تضمين `openReplaySession.id` في كل خطأ في الواجهة الخلفية ترغب في تتبّعه.
+
+
+```python
+import logging
+from flask import Flask, request, g
+
+app = Flask(__name__)
+
+# Configure the root logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
+
+# Create a custom logging filter
+class OpenReplayFilter(logging.Filter):
+    def filter(self, record):
+        session_id = getattr(g, 'openreplay_session_id', None)
+        if session_id:
+            record.msg = f"[openReplaySession.id={session_id}] {record.msg}"
+        return True
+
+# Add the filter to the logger
+logger.addFilter(OpenReplayFilter())
+
+@app.before_request
+def before_request():
+    # Extract the session ID from headers and store it in the Flask `g` object
+    g.openreplay_session_id = request.headers.get('openReplaySession.id')
+
+@app.route('/api/endpoint')
+def api_endpoint():
+    # Your logic here
+
+    # Log an event with the session ID automatically included
+    logger.info("Endpoint accessed")
+
+    return 'Success', 200
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Log the error with the session ID automatically included
+    logger.error(f"Error: {str(e)}")
+    return 'Internal Server Error', 500
+
+if __name__ == '__main__':
+    app.run()
+```
+
+### 4. اعتبارات خاصة
+
+افتراضيًا، يبحث OpenReplay عن كل سجل مرتبط بجلسة OpenReplay باستخدام السمتين `message` و `utc_time`. وهو يركّز على سجلات الأخطاء، التي يتم تحديدها بالتحقق مما إذا كانت السمة `tags` تحتوي على القيمة `error`.
+
+**ملاحظة:**
+
+- **بنية سجل مخصصة**: إذا كانت سجلاتك ذات بنية مختلفة، فقد تحتاج إلى تعديل تكوين التسجيل لديك أو إبلاغ فريق دعم OpenReplay لاستيعاب إعداداتك.
+- **تحديد الأخطاء**: تأكد من أن سجلات الأخطاء موسومة بشكل مناسب حتى يتمكّن OpenReplay من تحديدها.
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات، فتواصل معنا عبر [Slack](https://slack.openreplay.com) أو اطّلع على [المنتدى](https://forum.openreplay.com) الخاص بنا واحصل على المساعدة من مجتمعنا.

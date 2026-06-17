@@ -1,0 +1,105 @@
+---
+title: "元数据"
+metaTitle: "元数据"
+metaDescription: "如何向 OpenReplay 传递用户元数据。在其他平台中也称为 traits 或用户变量。"
+---
+import Aside from '~/components/Aside.astro'
+
+可以通过元数据（在其他平台中也称为 traits 或用户变量）提供有关用户的额外信息。它们采用键/值对的形式，对于筛选和搜索特定的会话回放非常有用。
+
+<Aside type="tip">
+  我们还有一份关于如何将元数据作为会话的一部分发送的详细教程，你可以在[这里](/tutorials/metadata)查看。
+</Aside>
+
+
+## 1. 显式指定元数据
+
+元数据必须从仪表盘的 'Preferences > Metadata' 处显式指定。你最多可以添加 10 个键。在下面的示例中，我们使用 `plan`。
+
+![添加元数据](/static/metadata-1.png#center)
+
+## 2. 在录制会话时注入元数据
+
+添加键之后（本示例中为 `plan`），你就可以在 tracker 启动时以键/值对（`string`）的形式注入元数据。
+
+### 使用 NPM
+
+在 tracker 启动时注入元数据（本示例中为 `plan`）。
+
+```js
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+
+tracker.start({
+  userID: "john@doe.com",
+  metadata: {
+    balance: "10M",
+    plan: "free"
+  }
+});
+```
+
+如果无法做到这一点（部分或全部元数据可能只在导航流程的后期才设置/知晓，即在 tracker 启动很久之后），那么请调用 `setMetadata` 方法来实现： 
+
+```js
+tracker.setMetadata('plan', 'free'); // after tracker.start()
+```
+
+### 使用 JavaScript 代码片段
+
+下面是一个使用代码片段注入元数据（本示例中为 `plan`）的示例。请注意新增的 `startOpts` 变量/行，以及第二行中参数的变化。
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: getUserID(), metadata: { plan: getPlan()} } // use startOpts variable to inject metadata
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})(0, "GxPpaDARdn2345fgt321", "//static.openreplay.com/3.5.0/openreplay.js",1,29);
+</script>
+```
+
+如果无法做到这一点（元数据在导航流程的后期才知晓，即在 tracker 启动很久之后），那么请改为调用 `setMetadata` 方法来标识你的用户。在会话期间，可以随时通过调用 `setMetadata` 来更改用户的身份。但是，OpenReplay 只会保留最后注入的用户 ID。
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" };
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+  ...
+  OpenReplay.setMetadata("plan", "free"); // set metadata later in your code
+  ...
+```
+
+### 使用 iOS 应用
+
+```swift
+import ORTracker
+
+ORTracker.shared.setMetadata(key: String, value: String)
+```
+
+## 3. 使用元数据搜索会话录制
+
+点击全能搜索栏将显示可用筛选条件列表，其中包括你添加的元数据键。现在你可以按任意键/值筛选会话录制。
+
+![使用元数据搜索](/static/metadata-2.png#center)
+
+## 4. 在会话回放中查看元数据
+
+元数据键/值对会显示在会话回放页面的用户识别卡片中。点击*循环*图标可以找到具有相似元数据值的会话。
+
+![会话回放中的元数据](/static/metadata-3.png#center)
+
+## 有疑问？
+如果你对此流程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

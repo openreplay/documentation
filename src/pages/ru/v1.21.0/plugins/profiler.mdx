@@ -1,0 +1,66 @@
+---
+title: "Profiler"
+metaTitle: "Profiler"
+metaDescription: "Плагин Profiler для OpenReplay."
+---
+
+Плагин profiler позволяет измерять производительность ваших JS-функций и фиксировать как аргументы, так и результат каждого вызова.
+
+## Установка
+
+```bash
+npm i @openreplay/tracker-profiler
+```
+
+## Использование
+
+Инициализируйте трекер и загрузите в него плагин. Затем оберните любую функцию в вашем коде сгенерированной функцией.
+
+### Если ваш сайт — одностраничное приложение (SPA)
+
+```js
+import OpenReplay from '@openreplay/tracker';
+import trackerProfiler from '@openreplay/tracker-profiler';
+
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+const profiler = tracker.use(trackerProfiler());
+
+tracker.start();
+
+// ...
+const fn = profiler('MyFunction')(() => {
+  // Inspecting function body
+}, thisArg); // thisArg is optional
+```
+
+### Если ваше веб-приложение рендерится на сервере (SSR)
+
+Следуйте приведённому ниже примеру, если ваше приложение использует SSR. Убедитесь, что `tracker.start()` вызывается после запуска приложения (в `useEffect` или `componentDidMount`).
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+import trackerProfiler from '@openreplay/tracker-profiler/cjs';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+const profiler = tracker.use(trackerProfiler());
+
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, [])
+}
+//...
+const fn = profiler('MyFunction')(() => {
+  // Inspecting function body
+}, thisArg); // thisArg is optional
+
+```
+
+## Остались вопросы?
+
+Возникли сложности с настройкой этого плагина? Подключайтесь к нашему [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com) и получите помощь от нашего сообщества.

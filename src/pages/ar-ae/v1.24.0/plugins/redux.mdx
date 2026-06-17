@@ -1,0 +1,100 @@
+---
+title: "Redux"
+metaTitle: "Redux"
+metaDescription: "إضافة Redux لـ OpenReplay."
+---
+import Aside from '~/components/Aside.astro'
+
+تتيح لك هذه الإضافة التقاط إجراءات/حالة `Redux` وفحصها لاحقًا أثناء إعادة تشغيل تسجيلات الجلسات. وهذا مفيد جدًا لفهم المشكلات وإصلاحها.
+
+<Aside type="tip">
+  لدينا أيضًا شرح تفصيلي حول كيفية استخدام إضافة Redux لالتقاط حالة تطبيقك عند استخدام هذه المكتبة، ويمكنك الاطلاع عليه [هنا](/tutorials/redux).
+</Aside>
+
+
+
+## التثبيت
+
+```bash
+npm i @openreplay/tracker-redux --save
+```
+
+## الاستخدام
+
+قم بتهيئة المتتبع (tracker) ثم ضع البرنامج الوسيط (middleware) المُولَّد في سلسلة Redux الخاصة بك.
+
+### إذا كان موقعك تطبيقًا أحادي الصفحة (SPA)
+
+```js
+import { applyMiddleware, createStore } from 'redux';
+import trackerRedux from '@openreplay/tracker-redux';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+tracker.start();
+const openReplayMiddleware = tracker.use(trackerRedux(<options>)); // check list of available options below
+
+//...
+const store = createStore(
+  reducer,
+  applyMiddleware(openReplayMiddleware) 
+);
+```
+
+### إذا كان تطبيق الويب الخاص بك يُعرَض من جانب الخادم (SSR)
+
+اتبع المثال أدناه إذا كان تطبيقك يستخدم العرض من جانب الخادم (SSR).
+تأكد من أن المتتبع (tracker) يعمل بمجرد أن يصبح التطبيق في بيئة المتصفح.
+
+```js
+'use client'
+import { applyMiddleware, createStore } from 'redux';
+import trackerRedux from '@openreplay/tracker-redux/cjs';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+const openReplayMiddleware = tracker.use(trackerRedux(<options>)); // check list of available options below
+
+const store = createStore( // You can define/use it anywhere in response handlers
+  reducer,
+  applyMiddleware(openReplayMiddleware)
+);
+
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, []);
+  //... Use store here
+}
+
+```
+
+## الخيارات
+
+يمكنك تخصيص سلوك البرنامج الوسيط (middleware) باستخدام الخيارات لتنقية بياناتك.
+
+```js
+trackerRedux({
+  actionFilter: action => action.type !== 'DRAW', // only actions which pass this test will be recorded
+  actionTransformer: action => action.type === 'LOGIN' ? null : action,
+  actionType: action => action.type // action type for search, that's the default one
+  stateTransformer: state => {
+    const { jwt, ..._state } = state;
+    return _state;
+  },
+})
+```
+## الشرح التعليمي
+إذا كنت تبحث عن مثال عملي حول كيفية استخدام هذه الإضافة لالتقاط تغييرات الحالة في عمليات إعادة تشغيل جلساتك، فاطلع على [الشرح التفصيلي الخاص بنا هنا](/tutorials/redux).
+
+## هل لديك أسئلة؟
+
+هل تواجه مشكلة في إعداد هذه الإضافة؟ يُرجى الانضمام إلى [Slack](https://slack.openreplay.com) الخاص بنا أو زيارة [المنتدى](https://forum.openreplay.com) للحصول على المساعدة من مجتمعنا.

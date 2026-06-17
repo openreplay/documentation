@@ -1,0 +1,76 @@
+---
+title: "Ошибки JS"
+metaTitle: "Ошибки JS"
+metaDescription: "Различные ошибки Javascript."
+---
+
+В этом разделе перечислены наиболее часто встречающиеся ошибки Javascript, о которых сообщает наше сообщество.
+
+## Require() ES-модуля
+
+Эта ошибка (как и следующая) обычно возникает при попытке импортировать трекер в серверном контексте (приложения SSR, Nuxt, Next, Remix и т. д.).
+
+Чтобы её исправить, необходимо убедиться, что трекер импортируется и запускается в контексте браузера — через динамические импорты, клиентские компоненты и т. п.
+
+## ReferenceError: Navigator is not defined
+
+Иногда эта ошибка возникает при попытке импортировать плагины `tracker-assist` или `tracker-fetch`; это происходит потому, что node пытается собрать страницу без API `window` в окружении.
+
+Исправить это довольно просто. Всё, что нужно сделать, — заменить обычный импорт проблемного плагина:
+
+```js
+import trackerAssist from '@openreplay/tracker-assist/cjs';
+```
+
+На динамический импорт внутри `componendDidMount` или его альтернативы `useEffect`:
+
+```js
+import Tracker, { Options } from "@openreplay/tracker";
+const tracker = new Tracker({ /* your options */ });
+
+class TrackerComponent extends React.Component {
+
+  componentDidMount = () => {
+    import(‘@openreplay/tracker-assist/cjs’).then(({ default: trackerAssist }) => {
+      tracker.start(/* your options */)
+      tracker.use(trackerAssist(/* your assist options */))
+    })
+   }
+
+ /* Other code */
+```
+
+Таким образом, все плагины, зависящие от API window, будут импортированы при рендеринге компонента.
+
+## Critical dependency: the request of a dependency is an expression
+
+Это может произойти со старыми версиями плагина `tracker-assist`. Вам следует применить этот [обходной путь](https://github.com/peers/peerjs/issues/630#issuecomment-910028230), если при компиляции вы сталкиваетесь со следующей ошибкой:
+
+```log
+Failed to compile.
+
+./node_modules/peerjs/dist/peerjs.min.js
+Critical dependency: the request of a dependency is an expression
+```
+
+## Uncaught DOMException: Blocked a frame with origin "X" from accessing a cross-origin frame
+
+По умолчанию трекер OpenReplay захватывает iFrame **с того же домена**. Однако он выдаёт ошибку при попытке захватить iFrame, который НЕ принадлежит тому же домену, что и ваш веб-сайт. Вы можете:
+
+- Полностью отключить эту функциональность с помощью свойства `captureIFrames`, как в примере ниже: 
+
+```js
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY,
+      captureIFrames: false
+});
+```
+
+- Продолжать захватывать iFrame (поведение по умолчанию), добавив HTML-атрибут `data-openreplay-capture` **только** к тегам `<iframe>` с того же домена. Таким образом, кросс-доменные iFrame не будут отслеживаться OpenReplay.
+
+## Моей проблемы нет в списке
+
+Если вы столкнулись с ошибками, которые не указаны на этой странице, не стесняйтесь [создать issue](https://github.com/openreplay/openreplay/issues/new/choose) или просто обратиться к нам в [Slack](https://slack.openreplay.com) либо заглянуть на наш [Форум](https://forum.openreplay.com), чтобы получить помощь от нашего сообщества.
+
+## Остались вопросы?
+Если у вас есть какие-либо вопросы об этом процессе, не стесняйтесь обращаться к нам в [Slack](https://slack.openreplay.com) или заглянуть на наш [Форум](https://forum.openreplay.com).

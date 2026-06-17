@@ -1,0 +1,91 @@
+---
+title: "Configurar OpenReplay"
+metaTitle: "Configurar OpenReplay"
+metaDescription: "Cómo configurar rápidamente OpenReplay y empezar a grabar sesiones y métricas."
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+import IconText from '~/components/Card/IconText.astro'
+
+<YoutubeVideo title="Mira cómo empezar a usar OpenReplay"
+  description="Si no te gusta leer, puedes seguir este videotutorial que te muestra cómo empezar a usar OpenReplay en 3 minutos o menos"
+  videoURL="https://www.youtube.com/watch?v=EWbtMK3qK30"
+  />
+
+
+Empezar a usar OpenReplay es sencillo. 
+
+Si quieres ver un tutorial rápido sobre cómo empezar, usa [este video de YouTube](https://www.youtube.com/watch?v=EWbtMK3qK30); de lo contrario, sigue leyendo para obtener más detalles.
+
+Hay 2 formas de poner en marcha OpenReplay: usando el script o el paquete npm.
+
+## Usando el Script
+
+Copia y pega el fragmento de código directamente en el `</head>` de tu aplicación web. El script se encuentra en el panel de OpenReplay en 'Preferences > Projects' y es único para cada proyecto.
+
+Si tu sitio web es compatible con Google Tag Manager, puedes seguir la [guía paso a paso de GTM](/integrations/google-tag-manager).
+
+## Usando NPM
+
+Primero instala el paquete npm.
+
+```bash
+npm i @openreplay/tracker
+```
+
+Luego, inicializa el paquete desde el punto de entrada de tu base de código e inicia el tracker. Debes establecer la opción `projectKey` en el constructor. Su valor se puede encontrar en tu panel de OpenReplay en 'Preferences > Projects'.
+
+### Si tu sitio web es una aplicación de página única (SPA)
+
+```js
+import OpenReplay from '@openreplay/tracker';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+tracker.start();
+```
+
+### Si tu aplicación web se renderiza en el servidor (SSR)
+
+Sigue el siguiente fragmento si tu aplicación web se renderiza en el servidor (SSR) (es decir, NextJS, NuxtJS). Asegúrate de que `tracker.start()` se llame una vez que la aplicación se haya iniciado (en `useEffect` o `componentDidMount`).
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+//...
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY
+});
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, []);
+}
+```
+
+Si quieres profundizar en la configuración del tracker, consulta el [SDK de JavaScript](/installation/javascript-sdk#options) para ver la lista de opciones disponibles.
+
+## Integración con otros frameworks
+Si no estás usando OpenReplay dentro de una aplicación básica, es probable que estés usando un framework de desarrollo web, como Next.js, Nuxt u otro.
+Consulta nuestros tutoriales personalizados para cada uno de los frameworks compatibles:
+
+<div class="grid grid-cols-1 md:grid-cols-1 gap-3 md:gap-4">
+  <IconText url="/using-or/next" title="React" />
+  <IconText url="/using-or/nuxt" title="Vue" />
+  <IconText url="/using-or/angular" title="Angular" />
+  <IconText url="/using-or/next" title="NextJS" />
+  <IconText url="/using-or/nuxt" title="Nuxt" />
+</div>
+
+## Próximos Pasos
+
+Ahora que has instalado el tracker y desplegado tu aplicación web, las grabaciones de sesiones deberían aparecer en unos pocos minutos. ¡Bien hecho!
+
+Mientras tanto, puedes avanzar en el proceso de configuración para sacar el máximo provecho de OpenReplay. Cuanto más captures, mejor para reproducir y solucionar problemas rápidamente:
+- [Identificar a un usuario](/installation/identify-user): Asocia tu ID interno de usuario con la sesión que se está grabando.
+- [Metadatos](/installation/metadata): También conocidos como traits o variables de usuario, los metadatos proporcionan información adicional sobre los usuarios mientras se graban las sesiones.
+- [Eventos personalizados](/installation/custom-events): Añade más inteligencia registrando eventos específicos de tu dominio junto con las reproducciones de sesiones.
+- [Reporte de errores](/installation/error-reporting): Reporta errores y excepciones y míralos en la pestaña ERRORS.
+- [Subir Source-Maps](/installation/upload-sourcemaps): Visualiza el contexto del código fuente obtenido de los stack traces en su forma original.
+- [Plugins](/plugins): Comprende lo que sucede internamente capturando el store de tu aplicación y monitoreando tus consultas HTTP y GraphQL.
+- [Integraciones](/integrations): Conecta OpenReplay con tus herramientas de registro y sincroniza los errores del backend con las reproducciones de sesiones.

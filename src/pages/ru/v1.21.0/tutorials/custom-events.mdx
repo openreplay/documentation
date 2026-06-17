@@ -1,0 +1,229 @@
+---
+title: "Использование пользовательских событий для улучшения отслеживания"
+metaTitle: "Расширьте возможности отслеживания с помощью пользовательских событий и пользовательских проблем"
+metaDescription: "Фиксируйте любые пользовательские события через API пользовательских событий"
+---
+Пользовательские события — это простая, но мощная концепция, которую наш Tracker предоставляет без необходимости добавлять что-либо дополнительно.
+Они позволяют дополнить отслеживаемые данные всем, что вам нужно, будь то пользовательские ошибки, связанные с вашей бизнес-логикой, или даже простые события, чтобы понимать, что делают ваши пользователи.
+
+Наш трекер по умолчанию отслеживает множество различных вещей, включая некоторые [полезные ошибки](https://docs.openreplay.com/tutorials/issues), но их может оказаться недостаточно, и именно поэтому у нас есть пользовательские события.
+
+## Добавление пользовательских событий
+
+Для этого примера возьмём типичный сайт электронной коммерции и добавим несколько событий, чтобы понимать, когда наш пользователь добавляет товар в корзину покупок.
+
+По умолчанию OpenReplay не будет отслеживать эту информацию. Однако с помощью пользовательских событий вы можете легко вести её учёт.
+
+Для этого руководства мы используем проект Next.js, настроенный по той же архитектуре, что и в [руководстве по Next.js](https://docs.openreplay.com/tutorials/next), поэтому не стесняйтесь ознакомиться с ним, если ещё этого не сделали.
+
+### Создание Tracker Provider
+
+Логика внутри этого файла полностью объясняется в [этом руководстве](https://docs.openreplay.com/tutorials/next).
+
+Всё, что вам нужно знать сейчас, — это то, что мы создаём провайдер контекста, который позволит вам взаимодействовать с трекером через несколько функций.
+
+В частности, нас будут интересовать `logIssue` и `logEvent`, которые позволяют отправлять пользовательскую проблему или событие на платформу.
+
+- **События** предназначены для регистрации действий, специфичных для пользователя. В нашем случае, например, мы зарегистрируем добавление товара в корзину.
+- **Проблемы**, с другой стороны, предназначены для регистрации ошибок, которые наш трекер не улавливает автоматически. В нашем случае мы смоделируем сетевую ошибку, мешающую нам получить доступ к стороннему API. Когда это произойдёт, мы зарегистрируем проблему на платформе.
+
+```jsx
+import { createContext, useCallback } from 'react'
+import Tracker from '@openreplay/tracker'
+import { v4 as uuidV4 } from 'uuid'
+import { useReducer } from 'react'
+
+export const TrackerContext = createContext()
+function defaultGetUserId() {
+  return uuidV4()
+}
+function newTracker(config) {
+  const getUserId =
+    config?.userIdEnabled && config?.getUserId
+      ? config.getUserId
+      : defaultGetUserId
+  let userId = null
+  const trackerConfig = {
+    projectKey:
+      config?.projectKey || process.env.NEXT_PUBLIC_OPENREPLAY_PROJECT_KEY,
+ 
+  }
+  if (config?.ingestPoint || process.env.NEXT_PUBLIC_OPENREPLAY_INGEST_POINT) {
+    trackerConfig.ingestPoint =
+      config?.ingestPoint || process.env.NEXT_PUBLIC_OPENREPLAY_INGEST_POINT
+  }
+
+  console.log('Tracker configuration: ')
+  console.log(trackerConfig)
+  const tracker = new Tracker(trackerConfig)
+  if (config?.userIdEnabled) {
+    userId = getUserId()
+    tracker.setUserID(userId)
+  }
+  return tracker
+}
+function reducer(state, action) {
+  switch (action.type) {
+    case 'init': {
+      if (!state.tracker) {
+        console.log('Instantiaing the tracker for the first time...')
+        let t = newTracker(state.config)
+        let pluginsReturnedValue = {}
+        if (state.config.plugins) {
+          state.config.plugins.forEach((p) => {
+            console.log('Using plugin...')
+            pluginsReturnedValue[p.name] = t.use(p.fn(p.config))
+          })
+        }
+        return {
+          ...state,
+          pluginsReturnedValue: pluginsReturnedValue,
+          tracker: t,
+        }
+      }
+      return state
+    }
+    case 'start': {
+      console.log('Starting tracker...')
+      state.tracker.start()
+      return state
+    }
+    case 'logEvent': {
+      console.log('Logging event')
+      state.tracker?.event(action.payload?.name, action.payload?.data)
+      return state
+    }
+    case 'logIssue': {
+      console.log('Logging issue')
+      state.tracker?.issue(action.payload?.name, action.payload?.data)
+      return state
+    }
+  }
+}
+export default function TrackerProvider({ children, config = {} }) {
+  let [state, dispatch] = useReducer(reducer, {
+    tracker: null,
+    pluginsReturnedValue: {},
+    config,
+  })
+  let value = {
+    startTracking: () => dispatch({ type: 'start' }),
+    initTracker: () => dispatch({ type: 'init' }),
+    logEvent: (evnt) => dispatch({ type: 'logEvent', payload: evnt }),
+    logIssue: (evnt) => dispatch({ type: 'logIssue', payload: evnt }),
+    pluginsReturnedValues: { ...state.pluginsReturnedValue },
+  }
+  return (
+    <TrackerContext.Provider value={value}>{children}</TrackerContext.Provider>
+  )
+}
+```
+
+Функции `logEvent` и `logIssue` имеют одинаковую сигнатуру: мы передаём объект со свойствами `name` и `data`. Свойство `name` используется для идентификации нашей записи в интерфейсе OpenReplay, а `data` будет содержать регистрируемую информацию.
+
+**Помните**: свойство `data` должно содержать сериализуемый объект. 
+
+Затем мы можем настроить этот провайдер в нашем файле `_app.tsx` следующим образом:
+
+```jsx
+
+//imports here...
+
+export default function MyApp({ Component, pageProps }: AppProps) {
+  const Layout = (Component as any).Layout || Noop
+
+  useEffect(() => {
+    document.body.classList?.remove('loading')
+  }, [])
+
+  return (
+    <TrackerProvider config={{}}>
+      <Head />
+      <ManagedUIContext>
+        <Layout pageProps={pageProps}>
+          <Component {...pageProps} />
+        </Layout>
+      </ManagedUIContext>
+    </TrackerProvider>
+  )
+}
+```
+
+Разобравшись с этим, мы можем перейти к запуску событий. 
+
+### Регистрация пользовательских проблем и событий
+
+Для этого мы воспользуемся нашим интерфейсом:
+
+![Страница товара](images/product-ui.png)
+
+Мы будем записывать новое событие каждый раз, когда пользователь добавляет товар в нашу корзину (по сути, когда он нажимает кнопку «ADD TO CART»).
+
+И мы зарегистрируем проблему, если он сделает это, не выбрав сначала размер.
+
+Вы можете ознакомиться с полным исходным кодом этого компонента [прямо здесь](https://github.com/deleteman/nextjs-commerce-example/blob/redux-store/site/components/product/ProductSidebar/ProductSidebar.tsx), но давайте сосредоточимся на логике, которую мы добавим.
+
+В начале нашего компонента мы используем хук useContext:
+
+```jsx
+//outside the component
+import { TrackerContext } from '../../../context/trackerProvider'
+
+//inside the component
+const { logEvent, logIssue } = useContext(TrackerContext)
+```
+
+ Внутри функции `addToCart` мы добавим следующую логику, чтобы проверить, не выбран ли допустимый размер:
+
+```jsx
+const validSizes = product.options
+      .filter((o) => o.id == 'option-size')
+      .map((o) => o.values)[0]
+
+    let pickedSized = validSizes.find((s) => {
+      return selectedOptions.size == s.label.toLowerCase()
+    })
+
+    if (!pickedSized) {
+      logIssue({
+        name: 'Product added without a size',
+        data: {
+          product_id: product.id,
+          added_date: new Date(),
+          available_options: validSizes,
+        },
+      })
+    }
+```
+
+Ключевая часть кода — это последний `IF`: когда мы понимаем, что не выбран допустимый размер, мы вызываем функцию `logIssue`, которую получили из предыдущего вызова `useContext`.
+
+А для события мы углубимся в ту же функцию и добавим:
+
+```jsx
+logEvent({
+        name: 'product_added',
+        data: {
+          id: product.id,
+          date_added: new Date(),
+        },
+      })
+```
+
+Это всё, что нам нужно. Затем мы можем перейти в OpenReplay, найти нашу запись сессии и изучить раздел «События»:
+
+![Панель пользовательских событий](images/product-events-section.png)
+
+А если нам нужны детали, мы можем нажать на ссылку «DETAILS», которая появляется при наведении курсора на одну из строк:
+
+![Детали пользовательского события](images/event-details.png)
+
+Это те детали, которые мы записали при добавлении товара.
+
+Не забудьте [ознакомиться с полным руководством по Next.js](https://docs.openreplay.com/tutorials/next), если вы впервые используете OpenReplay с этим фреймворком.
+
+И если вы хотите изучить полный исходный код этого примера, [вы можете найти его здесь](https://github.com/deleteman/nextjs-commerce-example/tree/redux-store).
+
+## Есть вопросы?
+
+Если у вас возникнут какие-либо проблемы с пользовательскими событиями в вашем проекте, свяжитесь с нами в нашем [сообществе Slack](https://slack.openreplay.com/) и задайте вопросы напрямую нашим разработчикам!

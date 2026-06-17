@@ -1,0 +1,63 @@
+---
+title: "iOS SDK - Очистка конфиденциальных данных"
+metaTitle: "iOS SDK - Очистка конфиденциальных данных"
+metaDescription: "Подробности об очистке записей и сетевых данных в трекере iOS"
+---
+
+## Компоненты UI
+
+Очищенные представления будут размыты в итоговой записи. Вы можете добавить любой компонент UI, и он будет автоматически удалён (для экономии памяти), как только перестанет отображаться на экране.
+
+### SwiftUI
+
+Просто добавьте модификатор `.sensitive()` к нужному компоненту
+
+```swift
+import ORTracker
+
+Text("Very important sensitive text")
+.sensitive()
+
+```
+
+### UIKit
+
+```swift
+import ORTracker
+
+ORTracker.shared.addIgnoredView(view)
+```
+
+## Сетевые запросы
+
+Экспортируются два ключа для автоматической обрезки данных запроса/ответа: `ignoredKeys` для тела и `ignoredHeaders` для заголовков. Очищаться будут как запрос, так и ответ, но тело будет затронуто только в том случае, если это корректный JSON.
+
+Просто присвойте список строк, которые вы хотите очистить:
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+Также можно изменить данные ответа перед передачей их слушателю:
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```
+
+## Остались вопросы?
+Если у вас есть вопросы по этому процессу, свяжитесь с нами в нашем [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com).

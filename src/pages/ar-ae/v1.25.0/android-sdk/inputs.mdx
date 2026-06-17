@@ -1,0 +1,43 @@
+---
+title: "Android SDK - تتبع حقول الإدخال"
+metaTitle: "Android SDK - تتبع حقول الإدخال"
+metaDescription: "تفاصيل حول تتبع حقول الإدخال باستخدام أداة تتبع Android"
+---
+
+ستستمع أداة التتبع إلى حدث تغيّر القيمة (مع التخميد debounce) وترسل القيمة الناتجة إلى الواجهة الخلفية لـ OpenReplay.
+
+## إضافة حقول الإدخال المتتبَّعة
+
+### EditText
+
+استخدم `.trackTextInput(label:masked)` لمراقبة أحداث الإدخال،
+- `label: String` - تسمية للإدخال المُسجَّل
+- `masked: Bool` - إذا كانت `true`، فستسجّل أداة التتبع حدث الإدخال نفسه فقط، وليس القيمة.
+
+```kotlin
+import com.opnereplay.tracker.OpenReplay
+
+val passwordEditText = binding.password
+passwordEditText.trackTextInput(label = "password", masked = true)
+```
+
+### View
+
+```kotlin
+import com.opnereplay.listeners.Analytics
+
+Analytics.addObservedInput(inputEl)
+```
+
+### Jetpack Compose
+
+```kotlin
+import com.openreplay.tracker.listeners.trackTextInputChanges
+
+OutlinedTextField(
+        modifier = Modifier
+            .fillMaxWidth()
+            .trackTextInputChanges("Email Field", emailState.text),
+        ...,
+    )
+```

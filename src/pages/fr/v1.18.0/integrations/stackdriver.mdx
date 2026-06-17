@@ -1,0 +1,57 @@
+---
+title: "Stackdriver"
+metaTitle: "Intégration de Stackdriver"
+metaDescription: "Comment intégrer Stackdriver à OpenReplay et voir les erreurs backend en parallèle des rejeux de sessions."
+---
+
+Comment intégrer Stackdriver à OpenReplay et voir les erreurs backend en parallèle des enregistrements de sessions.
+
+## 1. Créer un compte de service Google Cloud
+
+1. Dans la console GCP, accédez à la page [Créer une clé de compte de service](https://console.cloud.google.com/apis/credentials/serviceaccountkey).
+2. Dans la liste des comptes de service, sélectionnez *New Service Account*.
+3. Dans le champ du nom du compte de service, saisissez « openreplay-stackdriver ».
+4. Dans la liste des rôles, ajoutez *Logging > Logs Viewer* et *Stackdriver > Stackdriver Accounts Viewer*.
+5. Cliquez sur *Create* pour télécharger le fichier JSON qui contient votre clé.
+
+## 2. Activer Stackdriver dans OpenReplay
+
+Collez vos identifiants `Log Name` et `openreplay-stackdriver` dans le tableau de bord OpenReplay, sous « Preferences > Integration ».
+
+![Intégration de Stackdriver dans OpenReplay](/static/stackdriver-1.png#center)
+
+## 3. Propager openReplaySessionToken
+
+Pour lier un événement Stackdriver à la session utilisateur enregistrée, un token unique doit être propagé de votre frontend vers votre backend à chaque requête que vous souhaitez suivre. Cela peut se faire à l'aide d'un en-tête HTTP personnalisé. Dans l'exemple ci-dessous, nous utilisons la fonction `fetch` pour envoyer cet en-tête.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+Pour qu'OpenReplay puisse associer une entrée de journal Stackdriver à la session utilisateur enregistrée, un token unique doit être propagé en tant que `label` à chaque erreur backend que vous souhaitez suivre.
+
+Voici un exemple avec l'API Python de Stackdriver.
+
+```python
+google_logger.log_text("A LOG ENTRY", severity='ERROR', labels={"openReplaySessionToken": OPENREPLAY_SESSION_TOKEN})
+
+#or
+
+google_logger.log_struct({"message": "A LOG ENTRY"}, severity='ERROR', labels={"openReplaySessionToken": OPENREPLAY_SESSION_TOKEN})
+```
+
+Le nom de l'étiquette `openReplaySessionToken` est sensible à la casse.
+
+## Des questions ?
+
+Si vous rencontrez des problèmes, rejoignez notre [Slack](https://slack.openreplay.com) ou consultez notre [Forum](https://forum.openreplay.com) pour obtenir de l'aide auprès de notre communauté.

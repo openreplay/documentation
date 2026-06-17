@@ -1,0 +1,115 @@
+---
+title: "VueX"
+metaTitle: "VueX"
+metaDescription: "Плагин VueX для OpenReplay."
+---
+import Aside from '~/components/Aside.astro'
+
+Этот плагин позволяет захватывать мутации/состояние `VueX` и просматривать их позже при воспроизведении записей сессий. Это очень полезно для понимания и устранения проблем.
+
+<Aside type="tip">
+  У нас также есть подробное руководство о том, как использовать плагин VueX для захвата состояния вашего приложения при работе с этой библиотекой; вы можете ознакомиться с ним [здесь](/tutorials/vuex).
+</Aside>
+
+
+
+## Установка
+
+```bash
+npm i @openreplay/tracker-vuex
+```
+
+## Использование
+
+Инициализируйте пакет `@openreplay/tracker` как обычно и загрузите в него плагин. Затем поместите сгенерированный плагин в поле `plugins` вашего store.
+
+### Если ваш сайт является одностраничным приложением (SPA)
+
+```js
+import Vuex from 'vuex'
+import OpenReplay from '@openreplay/tracker';
+import trackerVuex from '@openreplay/tracker-vuex';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY,
+  // ... options 
+});
+```
+
+### Если ваше веб-приложение рендерится на стороне сервера (SSR)
+
+Следуйте приведённому ниже примеру, если ваше приложение использует SSR. Убедитесь, что `tracker.start()` вызывается после запуска приложения (в `useEffect` или `componentDidMount`).
+Обратитесь к разделу [Устранение неполадок](troubleshooting/js-errors), если возникнут ошибки с SSR.
+
+```js
+import Vuex from 'vuex'
+import OpenReplay from '@openreplay/tracker/cjs';
+import trackerVuex from '@openreplay/tracker-vuex/cjs';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY,
+  // ... options
+});
+```
+
+#### С версией tracker-vuex выше 4.0.0
+
+```js
+// check list of available options below
+const vuexPlugin = tracker.use(trackerVuex(<options>)); 
+
+// add a name to your store, optional (will be randomly generated otherwise)
+const storeTracker = vuexPlugin('STORE NAME') 
+
+const store = createStore({
+  state,
+  mutations,
+  plugins: [storeTracker]
+})
+```
+
+#### С версией tracker-vuex ниже 3.0.0
+
+```js
+// check list of available options below
+const vuexPlugin = tracker.use(trackerVuex(<options>));  
+
+tracker.start();
+
+const store = new Vuex.Store({
+  //...
+  plugins: [vuexPlugin],
+});
+```
+
+## Опции
+
+Вы можете настроить поведение плагина с помощью опций для очистки ваших данных. Они аналогичны опциям стандартного плагина `createLogger`.
+
+```js
+trackerVuex({
+  filter (mutation, state) {
+    // returns `true` if a mutation should be logged
+    // `mutation` is a `{ type, payload }`
+    return mutation.type !== "aBlacklistedMutation";
+  },
+  transformer (state) {
+    // transforms the state before logging it.
+    // for example return only a specific sub-tree
+    return state.subTree;
+  },
+  mutationTransformer (mutation) {
+    // mutations are logged in the format of `{ type, payload }`
+    // we can format it any way we want.
+    return mutation.type;
+  },
+})
+```
+
+## Руководство
+
+Если вы ищете практический пример того, как использовать этот плагин для захвата изменений состояния в записях сессий, ознакомьтесь с [нашим подробным руководством здесь](/tutorials/vuex).
+
+## Есть вопросы?
+
+Возникли трудности с настройкой этого плагина? Присоединяйтесь к нашему [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com) и получите помощь от нашего сообщества.

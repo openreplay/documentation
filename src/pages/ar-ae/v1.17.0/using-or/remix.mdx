@@ -1,0 +1,207 @@
+---
+title: "استخدام OpenReplay مع Remix"
+metaTitle: "استخدام الـ tracker داخل مشروع Remix"
+metaDescription: "تعلّم كيف تبدأ في تتبّع مستخدميك في مشروع Remix الخاص بك"
+---
+
+import GoDeeperFooter from '~/components/go-deeper-footer.astro'
+
+يُعدّ تثبيت tracker الخاص بـ OpenReplay في مشروع قائم على Remix أمرًا بسيطًا نسبيًا.
+
+عندما يكون مشروع Remix الخاص بك جاهزًا، ابحث عن ملف `root.jsx` داخل مجلد `app`، وأدرج كود SSR الذي قدّمه OpenReplay عند إنشائك للمشروع على المنصّة.
+
+## الخطوة 1. احصل على الكود
+
+يمكنك بالتأكيد استخدام الكود الذي تعرضه المنصّة، والذي يمثّل الحد الأدنى المطلق الذي تحتاجه للبدء. إذا فعلت ذلك، فتأكّد من اختيار خيار “Server-Side-Rendered (SSR)” كما هو موضّح أدناه.
+
+![snippet-code-screenshot.jpg](/using-or/snippet-code-screenshot.jpg)
+
+لكن في هذا المثال، سنقوم بإنشاء وحدة (module) نموذجية سنحفظها باسم `tracker.ts` داخل مجلد `app`. ستصدّر هذه الوحدة دالة تُسمّى `startTracker` تقوم بإنشاء نسخة من الـ tracker وتشغيله.
+
+```jsx
+import {v4 as uuidV4} from 'uuid'
+import Tracker from '@openreplay/tracker'
+
+function defaultGetUserId() {
+    return uuidV4()
+}
+
+type TrackerConfig = {
+    projectKey: string,
+    userIdEnabled?: boolean,
+    getUserId?: () => string
+}
+
+export function startTracker(config: TrackerConfig) {
+    let tracker = null;
+    let userId = "";
+
+    console.log("Starting tracker...")
+    console.log("Custom configuration received: ", config)
+
+    const getUserId = (config?.userIdEnabled && config?.getUserId) ? config.getUserId : defaultGetUserId
+
+    const trackerConfig: TrackerConfig = {
+        projectKey: config?.projectKey
+    }
+
+    console.log("Tracker configuration")
+    console.log(trackerConfig)
+    tracker = new Tracker(trackerConfig);
+
+    if(config?.userIdEnabled) {
+        userId = getUserId()
+        tracker.setUserID(userId)
+    }
+
+    tracker.start();
+
+    return {
+        tracker,
+        userId
+    }
+}
+```
+
+إذا واجهت مشكلات في استيراد وحدة Tracker من OpenReplay بهذه الطريقة، ففكّر في استخدام الاستيراد الديناميكي (dynamic import)، على النحو التالي:
+
+```jsx
+import {v4 as uuidV4} from 'uuid'
+
+function defaultGetUserId() {
+    return uuidV4()
+}
+
+type TrackerConfig = {
+    projectKey: string,
+    userIdEnabled?: boolean,
+    getUserId?: () => string
+}
+
+export function startTracker(config: TrackerConfig) {
+    let tracker = null;
+    let Tracker = null
+    let userId = "";
+
+    (async () => {
+				//dynamic import
+        Tracker  = (await import('@openreplay/tracker')).default
+        console.log("Starting tracker...")
+        console.log("Custom configuration received: ", config)
+
+        const getUserId = (config?.userIdEnabled && config?.getUserId) ? config.getUserId : defaultGetUserId
+
+        const trackerConfig: TrackerConfig = {
+            projectKey: config?.projectKey
+        }
+
+        console.log("Tracker configuration")
+        console.log(trackerConfig)
+        tracker = new Tracker(trackerConfig);
+
+        if(config?.userIdEnabled) {
+            userId = getUserId()
+            tracker.setUserID(userId)
+        }
+
+
+        tracker.start();
+
+    })()
+
+    return {
+        tracker,
+        userId
+    }
+}
+```
+
+💡**ملاحظة لمستخدمي الاستضافة الذاتية (self-hosted):** إذا كنت تستخدم نسخة OpenReplay ذاتية الاستضافة، فسيتعيّن عليك أيضًا تحديد خاصية الإعداد `ingestPoint`. تحدّد هذه الخاصية نقطة الاستيعاب (endpoint) لبيانات الـ tracker. لا يحتاج مستخدمو السحابة (Cloud) إلى ذلك، لأن الـ tracker سيعرف بشكل افتراضي
+أين توجد نسخة SaaS من هذه النقطة، لكن إذا كنت
+تستضيفه ذاتيًا، فسيتعيّن عليك تحديدها (يجب أن تكون شيئًا مثل `https://openreplay.mydomain.com/ingest`)
+
+## الخطوة 2.  أضف الكود والـ tracker إلى مشروعك
+
+بعد الانتهاء من ذلك، ستحتاج إلى تثبيت حزمة الـ tracker لمشروعك باستخدام:
+
+```markdown
+$ npm install @openreplay/tracker
+```
+
+ستحتاج أيضًا إلى تثبيت [حزمة uuid](https://www.npmjs.com/package/uuid) للتأكّد من أن الكود أعلاه يعمل كما هو.
+
+بمجرد الانتهاء من ذلك، نكون شبه جاهزين لبدء التتبّع، لكننا لا نزال بحاجة إلى ضبط **مفتاح المشروع (project key)** كمتغيّر بيئة (ENV) وتمريره بطريقة ما إلى الـ tracker عبر كائن `config` الذي يتم استقباله في دالة `startTracker`.
+
+### تحميل متغيّرات البيئة (ENV) في Remix
+
+متغيّرات البيئة قابلة للوصول إليها في الـ back-end، لذا سنستفيد من دالة `loader` التي يمكن استخدامها لتحميل أي بيانات خارجية، بما في ذلك متغيّرات البيئة.
+
+ثم سنستخدم الـ hook المسمّى `useLoaderData` بحيث يكون لدى مكوّننا، بعد عملية الترطيب (hydration)، إمكانية الوصول إلى البيانات التي تم تحميلها.
+
+داخل ملف root.tsx الخاص بنا (أو jsx إذا كنت لا تستخدم TypeScript)، أضف هذه الدالة:
+
+```tsx
+type LoaderData = {
+  ENV: {
+    projectKey: string | undefined
+  }
+};
+
+export const loader: LoaderFunction = async ({ }) => {
+  return json<LoaderData>({
+    ENV: {
+      projectKey: process.env.OPENREPLAY_PROJECT_KEY
+    }
+  });
+};
+```
+
+لاحظ كيف نقوم بضبط مفتاح مشروعنا داخل متغيّر البيئة `OPENREPLAY_PROJECT_KEY`.
+
+من خلال إرجاعه كجزء من تنفيذ دالة `loader`، يمكننا بعد ذلك استخدام الـ hook المسمّى `useLoaderData` داخل المكوّن الرئيسي، على النحو التالي:
+
+```tsx
+export default function App() {
+
+  let loaderData = useLoaderData()
+
+  useEffect(() => {
+    startTracker({
+      projectKey:  loaderData.ENV.projectKey
+    })
+  }, [])
+
+  return (
+    <html lang="en">
+      <head>
+        <Meta />
+        <Links />
+      </head>
+      <body>
+        <Outlet />
+        <ScrollRestoration />
+        <Scripts />
+        <LiveReload />
+      </body>
+    </html>
+  );
+}
+```
+
+قد يكون محتوى مكوّنك مختلفًا، اعتمادًا على ما تحاول تحقيقه، لكن هذا المثال هنا يتكفّل بتشغيل الـ tracker، بمفتاح المشروع الصحيح، بعد ترطيب الصفحة (hydration).
+
+## الخطوة 3. استمتع بتجربة التصحيح (debugging) الخاصة بك!
+
+بعد الانتهاء من ذلك، يمكنك الآن المتابعة لنشر تطبيقك.
+
+بمجرد أن تبدأ في اختباره، سترى عمليات إعادة التشغيل (replays) مدرجة بعد بضع دقائق من إغلاق علامة التبويب (وذلك لضمان أن علامة التبويب لم تُغلق عن طريق الخطأ).
+
+💡 **تذكّر**: لن يعمل الـ tracker محليًا، ولن ترى اختباراتك المحلية على المنصّة. سيتعيّن عليك نشر التطبيق حتى يتمكّن الـ tracker من الوصول إلى الـ back-end الخاص بـ OpenReplay.
+
+
+## هل لديك أسئلة؟
+
+للاطّلاع على **الكود الكامل** لتطبيق عملي قائم على Remix، يمكنك مراجعة [هذا المستودع](https://github.com/deleteman/openreplay-remix-example).
+
+إذا واجهت أي مشكلات في إعداد الـ tracker على مشروعك القائم على Remix، فيرجى التواصل معنا عبر [مجتمع Slack](https://slack.openreplay.com/) الخاص بنا وطرح أسئلتك مباشرةً على مطوّرينا!
+<GoDeeperFooter />

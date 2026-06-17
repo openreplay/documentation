@@ -1,0 +1,80 @@
+---
+title: "在仪表板中列出 JavaScript 错误"
+metaTitle: "在仪表板中列出 JavaScript 错误"
+metaDescription: "了解如何使用应用中发现的 JS 错误列表创建自定义仪表板"
+---
+从[版本 1.7.0](https://github.com/openreplay/openreplay/releases/tag/v1.7.0) 开始，OpenReplay 允许你将自定义指标添加到你自己的仪表板中。这种灵活性使你能够从你和你的团队所需的任何角度监控你的应用（因为仪表板可以在团队成员之间共享）。
+
+同时，作为此次新版本的一部分，你可以创建一个自定义指标，列出会话期间跟踪到的所有 JavaScript 错误。
+
+所以今天我们将探索这个指标。
+
+## 使用 tracker 捕获 JavaScript 错误
+
+JavaScript 错误会被我们的 tracker 自动捕获，所以你实际上无需担心任何事情。
+
+在真实会话期间显示在开发控制台中的所有异常，都会被跟踪到回放的 “Exceptions” 选项卡中。
+
+![JavaScript errors tab](/tutorials/js-error-dashboard/js-errors-tab.png)
+
+我们可以使用这些信息来围绕它创建一个指标，那么我们来看看吧。
+
+## 使用你的 JavaScript 错误创建自定义指标
+
+按照以下步骤创建你的自定义指标。指标准备就绪后，我们将创建一个包含它的自定义仪表板。
+
+1. 转到顶部导航栏中的 Dashboards 部分。
+2. 点击左侧菜单中的 “Metrics”。
+3. 然后点击 “Create metric”
+4. 给你的指标起一个名字，比如说 “JavaScript errors”。
+5. 在 Metric Type 中，选择 “Table”，然后选择 “JS Errors”
+
+![List of errors](/tutorials/js-error-dashboard/metric-type.png)
+
+或者，你也可以筛选出包含 JS 错误的会话。例如，我们可以将此指标设为“**产品页面的 JS 错误列表**”。这样你就可以添加一个基于路径（Path）的筛选条件，如下所示：
+
+![Filter by path](/tutorials/js-error-dashboard/filter-by-path.png)
+
+在我们的示例应用中，产品页面位于路径 `/es/product/[SLUG]` 下，因此将筛选条件设置为“**以……开头**” `/es/product`，我们就只会考虑发生在此页面内的 JS 错误。
+
+此外，为了让仪表板更有趣，你可以创建另一个指标来跟踪同一页面内的 “Rage clicks”。这个指标显示用户在没有明显原因的情况下在同一位置多次点击的时刻。
+
+像这样设置的指标就能达到目的：
+
+![Click rage filter](/tutorials/js-error-dashboard/click-rage-filter.png)
+
+统计会话数量，按 URL 筛选，并确保它们内部检测到 “Click Rage” 类型的问题。
+
+设置好筛选条件和指标本身后，你只需点击 “Create” 即可。
+
+### 创建你的仪表板
+
+指标准备就绪后，你可以点击左侧菜单中的 “**+Create**” 链接（在 Dashboards 部分内）。
+
+![Create dashboard modal](/tutorials/js-error-dashboard/create-dashboard.png)
+
+当 “Create Dashboard” 模态框出现后，给它起一个名字，然后：
+
+1. 点击 “Custom” 类别。
+2. 选择我们刚刚创建的新指标。
+3. 点击左下角的 “Create” 按钮。
+
+这应该会创建一个仪表板，向你展示在产品页面上发现的问题：
+
+![Dashboard ready](/tutorials/js-error-dashboard/dashboard-ready.png)
+
+如果你需要更多详细信息，可以点击 “**Click rage on products**” 图表，查看存在此问题的会话列表。
+
+如果你点击 “**JS Errors on product**” 列表中的某一行，你将获得有关该问题的额外详细信息：
+
+![JavaScript error details](/tutorials/js-error-dashboard/js-error-details.png)
+
+你会得到错误的堆栈跟踪（stacktrace），以及有关受其影响的最近会话的额外信息。在这种情况下，我们处理的是一个变量名中的拼写错误，但它可能是任何 JS 异常。
+
+就是这样，你已经成功地使用自己的自定义指标创建了一个新仪表板。现在继续，为你自己的应用定义你所需要的指标吧。
+
+如果你想了解有关 OpenReplay 提供的内置指标的更多详细信息，请查看[这里的另一个教程](https://docs.openreplay.com/tutorials/custom-dashboard)。
+
+## 有疑问吗？
+
+如果你在项目中创建自定义仪表板时遇到任何问题，请通过我们的 [Slack 社区](https://slack.openreplay.com/)联系我们，直接向我们的开发人员提问！

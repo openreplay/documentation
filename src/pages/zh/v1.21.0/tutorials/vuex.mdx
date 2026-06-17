@@ -1,0 +1,168 @@
+---
+title: "使用 VueX 插件捕获状态变化"
+metaTitle: "使用 VueX 插件捕获状态变化"
+metaDescription: "了解如何使用 VueX 插件捕获状态变化，并在会话回放中可视化这些变化"
+---
+如果你正在使用 VueX 来管理基于 Vue 的应用的状态，那么集成 [OpenReplay 的插件](https://docs.openreplay.com/plugins/vuex) 来追踪状态更新非常简单。
+
+如果你想跟着一起操作，请使用这里[发布的代码](https://github.com/deleteman/openreplay-vuex-example)。
+
+## 将 Tracker 集成到你的代码中
+
+我们首先需要关注的是将 OpenReplay 的 tracker 集成到项目中。我们处理的是一个基于 Vue 的项目，这意味着我们的入口点将是 `main.js` 文件。首先用以下命令安装 tracker：
+
+```tsx
+yarn add @openreplay/tracker
+```
+
+或者如果你愿意，也可以使用 npm：
+
+```tsx
+npm install @openreplay/tracker
+```
+
+完成这一步后，在你于平台内设置好项目之后，获取项目 KEY，并将其保存在位于项目根目录的 `.env` 文件中。
+
+```bash
+VUE_APP_OPENREPLAY_PROJECT_KEY=<your project key here>
+```
+
+请注意这个环境变量的名称。它以 `VUE_APP_` 开头，因为这样做之后，WebPack 会在我们使用代码 `process.env.VUE_APP_OPENREPLAY_PROJECT_KEY` 的任何地方替换它的值，从而避免我们不得不将实际的配置文件发送到客户端。
+
+现在，在你的 `src` 文件夹内，创建一个 `tracker` 文件夹，并在其中创建一个 `index.js` 文件。这个文件将导出单个函数：`startTracker`，它会配置好一切并启动 tracker。
+
+```jsx
+import Tracker from '@openreplay/tracker';
+
+import {v4 as uuidV4} from 'uuid'
+
+function defaultGetUserId() {
+   return uuidV4() 
+}
+
+export function startTracker(config) {
+
+    console.log("Starting tracker...")
+
+    const getUserId = (config?.userIdEnabled && config?.getUserId) ? config.getUserId : defaultGetUserId
+    let userId = null;
+
+    const trackerConfig = {
+        projectKey: config.projectKey
+    }
+
+    const tracker = new Tracker(trackerConfig);
+
+    const pluginReturns = {}
+    Object.keys(config?.plugins).forEach( pk => {
+        pluginReturns[pk] = tracker.use(config?.plugins[pk]())
+    })
+ 
+    if(config?.userIdEnabled) {
+        userId = getUserId()
+        tracker.setUserID(userId)
+    }
+    console.log("tracker: user id: ", userId)
+
+    tracker.start();
+    return {
+        tracker,
+        userId,
+        ...pluginReturns
+    }
+}
+```
+
+现在你需要关心的是，这个函数已经完成了你所需要的一切。你所要做的只是在调用它时传入项目密钥。就像这样（来自 `main.js` 文件）：
+
+```jsx
+import {startTracker} from './tracker/index'
+
+let {vuexTracker} = startTracker({
+    projectKey: process.env.VUE_APP_OPENREPLAY_PROJECT_KEY,
+})
+```
+
+正如我们已经看到的，`process.env.VUE_APP_OPENREPLAY_PROJECT_KEY` 这一行在渲染页面时会被替换为你的实际项目密钥。
+
+现在，让我们添加 VueX 插件，这样我们也可以开始追踪状态变化。
+
+## 添加 VueX 插件
+
+只需一行命令即可轻松安装该插件：
+
+```jsx
+yarn add @openreplay/tracker-vuex
+```
+
+之后，我们可以将它导入到代码中，并作为配置对象的一部分传递给 `startTracker` 函数。
+
+回到该函数的定义，注意我们已经有处理插件的代码了。事实上，配置中的 `plugins` 元素是一个映射，它接收插件（使用我们自己选择的键），并返回我们调用 `use` 方法所得到的内容，同样使用我们为该插件所用的相同键。
+
+让我给你看看，这同样是在 `main.js` 文件中：
+
+```jsx
+//your other imports go here...
+import trackerVuex from '@openreplay/tracker-vuex';
+import store from './store'
+
+let {vuexTracker} = startTracker({
+    userIdEnabled: true,
+    projectKey: process.env.VUE_APP_OPENREPLAY_PROJECT_KEY,
+    plugins:{
+      'vuexTracker': trackerVuex
+    } 
+})
+
+new Vue({
+  router,
+  store: store([vuexTracker]),
+  render: h => h(App)
+}).$mount('#app')
+```
+
+请注意我们是如何：
+
+1. 使用 `plugins` 映射调用 `startTracker` 函数的。字符串 “vuexTracker” 是我当时想出来的，但你在这里可以使用任意字符串。
+2. 对响应进行解构并获取键 “vuexTracker”（与我们用于映射的键相同）。只要这两个键匹配，你就可以使用任意字符串。
+3. 将 `vuexTracker` 函数作为参数传递给 `store` 函数。
+
+vuexTracker 变量本质上包含了我们的 VueX 插件，这个插件将被挂接到 VueX store 中，为此我们使用以下代码：
+
+```jsx
+import Vue from 'vue'
+import Vuex from 'vuex'
+
+import account from './account'
+import product from './product'
+
+Vue.use(Vuex)
+
+export default function (plugins = []) {
+  return function() {
+    const Store = new Vuex.Store({
+      modules: {
+        account,
+        product
+      },
+
+      strict: process.env.DEV,
+      plugins
+    })
+
+    return Store
+  }
+}
+```
+
+上面的代码片段是你设置 store 的标准代码，我们只是增加了配置插件的能力，以确保我们能够追踪应用中状态发生的变化。
+
+一切准备就绪后，你应该会在会话回放中看到一个新的 VueX 选项，就像这样：
+
+![Tracking state changes with VueX](images/vuex-ss.png)
+
+## 有疑问吗？
+
+你可以[查看这个仓库](https://github.com/deleteman/openreplay-vuex-example)，获取一个使用 VueX 配合 Tracker 的可运行应用的**完整源代码**。
+
+如果你在项目中设置 Tracker 或 VueX 插件时遇到任何问题，请通过我们的 [Slack 社区](https://slack.openreplay.com/)联系我们，直接向我们的开发人员提问！

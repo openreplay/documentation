@@ -1,0 +1,154 @@
+---
+title: "使用元数据丰富你的会话录制"
+metaTitle: "为会话回放添加元数据以增强你的洞察"
+metaDescription: "了解如何为会话回放添加元数据，以及如何使用它来改善你从平台获得的洞察"
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="观看如何从你的 Next.js 应用程序发送元数据"
+  description="如果你不喜欢阅读，可以跟随这个视频教程，它会向你展示如何将元数据从你的应用程序发送到 OpenReplay 平台"
+  videoURL="https://www.youtube.com/watch?v=ITcJCeKWQGU"
+  />
+
+默认情况下，我们的 tracker 会向平台发送大量有用的信息，但所有这些信息都是标准的。只要某个数据点属于 Web API 的一部分，我们很可能就会追踪它。
+
+但是，如果你还想用专属于你应用程序的数据来丰富你的会话录制，会发生什么呢？
+
+比如在查看用户回放时，了解该用户处于哪个付费套餐？这些信息可以为你的开发者提供额外的上下文，所以仅仅因为它不是标准信息，并不意味着我们就应该忽略它，对吧？
+
+这就是元数据发挥作用的地方。
+
+**请注意**，我们的 YouTube 频道上有[本教程的视频版本](https://www.youtube.com/watch?v=ITcJCeKWQGU)。所以如果你更倾向于通过视觉方式学习，欢迎前往观看。
+
+## 什么是元数据？
+
+在会话回放的语境中，元数据是指你的用户不会生成、但又以某种方式与该用户相关的所有信息。
+
+换句话说，如果用户点击某个特定链接，或执行某个特定操作，那不是元数据，而是自定义事件（如果你想了解更多，请查看[关于自定义事件的文档](/installation/custom-events)）。
+
+但如果有一个标志告诉你某个用户处于免费套餐还是付费套餐。又或者有一个追踪代码向你展示该用户来自哪里？这些都是元数据，你可以轻松地将它们添加到你的会话中。
+
+## 如何为会话添加元数据？
+
+首先要做的是直接在平台中设置元数据字段。
+
+如果你跳过这一步，你将无法记录任何信息，所以不要跳过它！
+
+为此，请点击顶部菜单右上角的齿轮图标，进入你项目的配置页面：
+
+![项目设置图标](/tutorials//metadata/metadata1.png)
+
+进入后，点击屏幕最左侧的 Metadata 菜单项：
+
+![左侧菜单中的 Metadata 选项](/tutorials//metadata/metadata2.png)
+
+这会将你带到元数据配置界面。请确保从下拉菜单中选择正确的项目，并根据需要创建任意数量的字段。
+
+![添加新的元数据](/tutorials//metadata/metadata3.png)
+
+在本示例中，我们为 “e-commerce test” 项目创建了 3 个字段：
+
+- “plan” 将包含用户的当前套餐。
+- “utm_source” 包含一个标识用户来源的代码。
+- 最后，“items_in_cart” 包含用户购物车中商品的总数。
+
+最后一个是依赖于用户操作的数据，这与我们的推荐做法有所不同。不过，在本示例中，你会看到元数据字段的局限性，以及为什么这条特定信息本应改用自定义事件。
+
+完成此设置后，下一步就是添加所需的代码，以便真正将数据作为会话的一部分发送出去。
+
+### 添加发送元数据的代码
+
+要将元数据添加到会话中，我们将使用 tracker 的 `setMetadata` 方法。你可以在整个用户会话期间随时使用此方法，只需牢记以下两点注意事项：
+
+1. 如果你对同一个元数据字段应用多个值，则只有最后一个会作为会话的一部分被保存。
+2. 所有值都必须是字符串。否则，它们将不会被保存。tracker 不会将值转换为字符串，所以请务必小心这一点。
+
+在本示例中，我们使用的是为 NextJs 教程构建的、采用 Next.js 的电子商务网站，请务必[查看那个教程，以](https://docs.openreplay.com/tutorials/next)了解下方截图中所示 context provider 的底层架构：
+
+![添加的代码](/tutorials//metadata/metadata4.png)
+
+红色箭头标示了进行相关更新的位置。这个 context provider 导出了一个名为 `setMetadata` 的函数，该函数转而调用 tracker 的 `setMetadata` 方法。
+
+如果你想要一个可运行的示例，可以查看[这个仓库](https://github.com/deleteman/nextjs-commerce-example/tree/redux_metadata/site)。
+
+现在我们要做的，就是在想要配置元数据字段时使用这个导出的函数。
+
+### 从我们的代码中设置元数据
+
+为了本示例的目的，我们将决定直接从主页设置 `utm_source` 和 `plan` 字段，然后每当用户将商品添加到购物车时，我们就会更新最后剩下的那个字段。
+
+在 `pages/index.tsx` 文件中，我们将添加以下代码：
+
+```jsx
+// inside the main component
+const { startTracking, setMetadata } = useContext(TrackerContext)
+//...
+useEffect(() => {
+    async function getProds() {
+      await startTracking()
+      setMetadata('plan', getPlan()) //addition
+      setMetadata('utm_source', getUTMSource()) //addition
+      dispatch(getMakeUpProducts() as any)
+    }
+
+    getProds()
+  }, [dispatch])
+```
+
+该 hook 的大部分内容原本就已存在，但我们添加了对 `setMetadata` 函数的引用，然后又添加了对它的两次调用。这两个函数 `getPlan` 和 `getUTMSource` 在本示例中返回随机数据。对于你的具体用例，你需要相应地实现它们。
+
+这段代码会在主页加载时设置这些元数据值。
+
+现在我们需要添加最后一个值，即购物车中商品的数量。为此，我们将转到 `ProductSidebar` 组件，它负责控制我们点击 “Add to cart” 时所发生的事情，我们将添加另一个 hook，以响应购物车商品数量的变化。
+
+```jsx
+useEffect(() => {
+    setMetadata('items_in_cart', productsInCart)
+  }, [productsInCart])
+```
+
+当然，你还需要像之前一样从 context provider 中获取 `setMetadata` 函数，不过一旦完成这一步，就大功告成了。
+
+现在数据正在被保存。我们也可以通过会话列表在平台上看到这一点。
+
+## 使用元数据
+
+现在你已经让元数据被保存到所有会话回放中，那么你可以用它来做什么呢？
+
+首先，你可以直接从回放中查看它：
+
+![在播放器中查看元数据](/tutorials//metadata/metadata5.png)
+
+你应该会开始在播放器屏幕的右上角看到元数据字段。在本示例中，我们看到该用户拥有 Enterprise Edition 套餐，来自 Reddit，并且只向购物车中添加了一件商品。
+
+### 按元数据字段搜索
+
+你可以用元数据做的另一件强大的事情，就是将其用作搜索参数。使用 omnisearch 栏，你可以选择你创建的自定义元数据字段作为搜索参数：
+
+![使用你的元数据字段进行搜索](/tutorials//metadata/metadata6.png)
+
+因此，如果你只想查看 Enterprise Edition 的回放，你可以直接选择 Plan 字段并按 “ee” 进行筛选，如下所示：
+
+![按用户套餐搜索](/tutorials//metadata/metadata7.png)
+
+在为你的 dashboard 创建小组件时，你也可以使用同一个 omnisearch 栏。所以继续以 EE 为例，如果你想专门为 Enterprise 客户创建一个 dashboard，你可以使用 “Plan” 属性来筛选每个自定义小组件。
+
+例如，下面的小组件显示了有多少 Enterprise 客户在点击 “Add to cart” 按钮：
+
+![使用元数据创建时间序列](/tutorials//metadata/metadata8.png)
+
+得到的小组件看起来像这样：
+
+![结果](/tutorials//metadata/metadata9.png)
+
+借助元数据字段，你可以随心所欲地定制和扩展你从会话回放中获得的洞察。
+
+---
+
+元数据可以显著增强你从会话回放中获得的洞察，而且设置它们相对简单。
+
+请记住，无论你想保存什么信息，它始终必须以字符串的形式存在，否则就会被忽略。
+
+[使用元数据的示例项目的完整源代码可以在这里查看](https://github.com/deleteman/nextjs-commerce-example/tree/redux_metadata/site)。
+
+如果你在此过程的任何步骤中遇到任何问题，请通过我们的 [Slack 社区](https://slack.openreplay.com/)联系我们，直接向我们的开发者提问！

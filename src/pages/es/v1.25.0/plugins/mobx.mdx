@@ -1,0 +1,63 @@
+---
+title: "MobX"
+metaTitle: "MobX"
+metaDescription: "Plugin de MobX para OpenReplay."
+---
+
+Este plugin te permite capturar las mutaciones de `MobX` e inspeccionarlas más tarde mientras reproduces las grabaciones de las sesiones. Esto resulta útil para entender y solucionar problemas. 
+
+
+## Instalación
+
+```bash
+npm i @openreplay/tracker-mobx
+```
+
+## Uso
+
+Inicializa el paquete `@openreplay/tracker` como de costumbre y carga el plugin en él.
+Luego usa el valor devuelto para rastrear los observables de MobX.
+
+```js
+import { observable, observe } from 'mobx';
+import Tracker from '@openreplay/tracker';
+import trackerMobX from '@openreplay/tracker-mobx';
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+// this instance can be exported and used for multiple stores
+const mobxObserver = tracker.use(trackerMobX({ ...options }));
+
+const myArray = observable(['foo', 'bar', 42]);
+
+observe(myArray, mobxObserver)
+
+myArray.push("Hello world"); // This mutation will be tracked
+```
+
+## Opciones
+
+Puedes personalizar el comportamiento del middleware para sanear tus datos.
+
+```js
+interface Options {
+    predicate?: (observeEvent: { type: string; name: string; object: any; debugObjectName: string }) => boolean;
+    sanitize?: (resultAction: { state: any; type: string; property: string }) => { state: any; type: string; property: string };
+    update?: boolean;
+    add?: boolean;
+    delete?: boolean;
+}
+
+trackerMobX({
+  predicate: () => true,
+  sanitize: (event) => event
+})
+```
+
+Donde predicate puede usarse para desactivar dinámicamente la captura y sanitize puede usarse para modificar el payload antes de enviarlo al backend. La mayoría de las acciones son del tipo update; consulta la documentación de mobx para obtener más detalles sobre add y delete (principalmente para Maps)
+
+## ¿Tienes preguntas?
+
+¿Tienes problemas para configurar este plugin? Conéctate a nuestro [Slack](https://slack.openreplay.com) o visita nuestro [Foro](https://forum.openreplay.com) y obtén ayuda de nuestra comunidad.

@@ -1,0 +1,140 @@
+---
+title: "Сетевые параметры (Мобильные)"
+metaTitle: "Сетевые параметры (Мобильные)"
+metaDescription: "Плагин сетевых параметров для мобильных SDK OpenReplay (iOS и Android)."
+---
+
+На этой странице описано, как перехватывать и очищать сетевые запросы и ответы с помощью мобильных SDK OpenReplay для iOS и Android. Сбор сетевых данных помогает разработчикам эффективно разбираться в проблемах и устранять их.
+
+## iOS SDK — Перехват сети
+
+iOS SDK предоставляет класс `NetworkListener` для захвата сетевых запросов и ответов, включая заголовки и тела сообщений. Вот как его можно использовать:
+
+```swift
+import ORTracker
+
+func fetchPokemonData(for name: String) {
+    let networkListener = NetworkListener()
+    let url = URL(string: "https://pokeapi.co/api/v2/pokemon/ditto")!
+    var request = URLRequest(url: url)
+    request.httpMethod = "GET" // This is the default, so it's optional in this case.
+
+    // Start the network listener with the request
+    networkListener.start(request: request)
+
+    // Create a data task
+    let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        if let error = error {
+            print("Error: \(error.localizedDescription)")
+            return
+        }
+        
+        if let data = data {
+            do {
+                let json = try JSONSerialization.jsonObject(with: data, options: [])
+                print(json)
+            } catch {
+                print("Error deserializing JSON: \(error)")
+            }
+        }
+        
+        networkListener.finish(response: response, data: data)
+    }
+
+    task.resume()
+}
+```
+
+### Очистка запроса
+
+Вы можете очищать данные запроса и ответа, задавая игнорируемые ключи для тел JSON и игнорируемые заголовки. Поддерживается очистка как запроса, так и ответа. Очистка тела применяется только к корректным полезным нагрузкам JSON.
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+Чтобы изменить данные ответа перед передачей их слушателю:
+
+```swift
+var sanitizedData
+if let data = data {
+    do {
+        let json = try JSONSerialization.jsonObject(with: data, options: [])
+        sanitizedData = customSanitizeFunction(data)
+        print(json)
+    } catch {
+        print("Error deserializing JSON: \(error)")
+    }
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```
+
+## Android SDK — Перехват сети
+
+Android SDK также предоставляет класс `NetworkListener` для захвата сетевых запросов и ответов. Вот пример реализации:
+
+```java
+import com.openreplay.tracker.NetworkListener;
+
+public void makeSampleRequest() {
+    new Thread(() -> {
+        try {
+            URL url = new URL("https://jsonplaceholder.typicode.com/posts/1");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+
+            // Optionally set request headers
+            connection.setRequestProperty("Content-Type", "application/json");
+
+            // Initialize the network listener for this connection
+            NetworkListener networkListener = new NetworkListener(connection);
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+            reader.close();
+
+            // Using the network listener to log the finish event
+            networkListener.finish(connection, response.toString().getBytes());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }).start();
+}
+```
+
+### Очистка запроса
+
+Подобно iOS SDK, Android SDK позволяет очищать данные запроса и ответа, задавая игнорируемые ключи для тел JSON и игнорируемые заголовки.
+
+```java
+NetworkListener networkListener = new NetworkListener(connection);
+networkListener.setIgnoredHeaders(Arrays.asList("mySecretToken"));
+networkListener.setIgnoredKeys(Arrays.asList("password"));
+```
+
+Чтобы изменить данные ответа перед передачей их слушателю:
+
+```java
+String sanitizedData = null;
+if (responseData != null) {
+    sanitizedData = customSanitizeFunction(responseData);
+}
+
+// Pass the sanitized data to the NetworkListener
+if (sanitizedData != null) {
+    networkListener.finish(connection, sanitizedData.getBytes());
+} else {
+    networkListener.finish(connection, new byte[0]); // Handle cases where sanitized data is null
+}
+```
+
+## Остались вопросы?
+
+Если у вас есть вопросы об очистке сетевых запросов, свяжитесь с нами в нашем [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com).

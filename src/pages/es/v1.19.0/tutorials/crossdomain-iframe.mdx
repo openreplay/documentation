@@ -1,0 +1,48 @@
+---
+title: "Seguimiento de iFrames entre dominios"
+metaTitle: "Seguimiento de iFrames entre dominios"
+metaDescription: "Realiza el seguimiento de las interacciones de los usuarios en iFrames entre dominios con OpenReplay."
+---
+
+Para habilitar el seguimiento de iFrames entre dominios, debes añadir la opción `crossdomain.enabled` al constructor del tracker y, a continuación, añadir el área de dominio mediante `data-domain` a todos los iFrames deseados, de la siguiente manera:
+
+```html
+<iframe
+	title="test"
+	src="http://iframe1.website.com/iframe-path"
+	width="300"
+	height="300"
+	data-domain="iframe1.website.com"
+></iframe>
+``` 
+
+Añade la opción `crossdomain` siguiente al constructor de tu tracker:
+
+```js
+const tracker = new OpenReplay({
+	projectKey: PROJECT_KEY,
+	crossdomain: {
+		enabled: true
+	},
+	captureIFrames: true
+});
+```
+
+A continuación, inicializa el tracker dentro del iFrame deseado y añade `crossdomain.parentDomain` a su constructor:
+
+```js
+const tracker = new OpenReplay({
+	projectKey: PROJECT_KEY,
+	crossdomain: {
+	  // Specifies the domain of the parent window
+	  // If not specified, it will be set to '*'
+	  // Which means that child window will send messages to all domains inside the browser window
+	  // Consult your CSP settings to ensure that '*' is allowed or specify the parent domain
+		parentDomain: '*',
+	}
+});
+```
+
+## ¿Tienes preguntas?
+
+Si encuentras algún problema, conéctate a nuestro [Slack](https://slack.openreplay.com) o consulta nuestro [Foro](https://forum.openreplay.com) y obtén ayuda de nuestra comunidad.

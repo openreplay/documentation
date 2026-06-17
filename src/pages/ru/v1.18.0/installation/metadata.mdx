@@ -1,0 +1,105 @@
+---
+title: "Метаданные"
+metaTitle: "Метаданные"
+metaDescription: "Как передавать метаданные пользователя в OpenReplay. На других платформах также известны как traits или пользовательские переменные."
+---
+import Aside from '~/components/Aside.astro'
+
+Дополнительную информацию о пользователях можно передавать с помощью метаданных (также известных как traits или пользовательские переменные). Они представлены в виде пар ключ/значение и полезны для фильтрации и поиска конкретных повторов сессий.
+
+<Aside type="tip">
+  У нас также есть подробное руководство о том, как отправлять метаданные в составе вашей сессии, вы можете ознакомиться с ним [здесь](/tutorials/metadata).
+</Aside>
+
+
+## 1. Явно укажите Метаданные
+
+Метаданные необходимо явно указать в панели управления в разделе 'Preferences > Metadata'. Вы можете добавить до 10 ключей. В приведённом ниже примере мы используем `plan`.
+
+![Добавить Метаданные](/static/metadata-1.png#center)
+
+## 2. Внедряйте Метаданные при записи сессий
+
+После того как ключ(и) добавлен(ы) (в этом примере `plan`), вы можете внедрить метаданные при запуске трекера в виде пары ключ/значение (`string`).
+
+### С помощью NPM
+
+Внедрите метаданные при запуске трекера (в этом примере `plan`).
+
+```js
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+
+tracker.start({
+  userID: "john@doe.com",
+  metadata: {
+    balance: "10M",
+    plan: "free"
+  }
+});
+```
+
+Если это невозможно (некоторые или все метаданные могут быть установлены/известны только позже в процессе навигации, то есть намного позже запуска трекера), то для этого вызовите метод `setMetadata`: 
+
+```js
+tracker.setMetadata('plan', 'free'); // after tracker.start()
+```
+
+### С помощью JavaScript-сниппета
+
+Ниже приведён пример того, как внедрить метаданные (в этом примере `plan`) с помощью сниппета. Обратите внимание на добавленную переменную/строку `startOpts`, а также на изменение параметров во второй строке.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: getUserID(), metadata: { plan: getPlan()} } // use startOpts variable to inject metadata
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})(0, "GxPpaDARdn2345fgt321", "//static.openreplay.com/3.5.0/openreplay.js",1,29);
+</script>
+```
+
+Если это невозможно (метаданные становятся известны позже в процессе навигации, то есть намного позже запуска трекера), то вместо этого вызовите метод `setMetadata`, чтобы идентифицировать ваших пользователей. Личность пользователя можно изменить в любой момент во время сессии, вызвав `setMetadata`. Однако OpenReplay сохранит только последний внедрённый идентификатор пользователя.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" };
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+  ...
+  OpenReplay.setMetadata("plan", "free"); // set metadata later in your code
+  ...
+```
+
+### С помощью приложения для iOS
+
+```swift
+import ORTracker
+
+ORTracker.shared.setMetadata(key: String, value: String)
+```
+
+## 3. Ищите Записи Сессий с помощью Метаданных
+
+При нажатии на панель омни-поиска отобразится список доступных фильтров, включая добавленные вами ключи метаданных. Теперь вы можете фильтровать записи сессий по любому ключу/значению.
+
+![Поиск с помощью Метаданных](/static/metadata-2.png#center)
+
+## 4. Просматривайте Метаданные в Повторе Сессии
+
+Пары ключ/значение метаданных отображаются на странице повтора сессии в карточке идентификации пользователя. Сессии со схожими значениями метаданных можно найти, нажав на значок *петли*.
+
+![Метаданные в Повторе Сессии](/static/metadata-3.png#center)
+
+## Остались вопросы?
+Если у вас есть вопросы по этому процессу, свяжитесь с нами в нашем [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com).

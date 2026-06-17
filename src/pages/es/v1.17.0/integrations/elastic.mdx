@@ -1,0 +1,123 @@
+---
+title: "Elastic"
+metaTitle: "Integración con Elasticsearch"
+metaDescription: "Cómo integrar Elasticsearch con OpenReplay y ver los errores del backend junto a las repeticiones de sesión."
+---
+
+Cómo integrar Elasticsearch con OpenReplay y ver los errores del backend junto a las grabaciones de sesión.
+
+## 1. Crear una nueva clave de API
+
+Si estás usando el panel de Kibana:
+1. Inicia sesión en tu panel de Kibana.
+2. Ve a Dev *Tools > Console*.
+3. Copia el siguiente código de consola en tu consola y ejecútalo.
+
+Si estás usando comandos CURL:
+1. Ejecuta el siguiente comando cURL en tu terminal.
+
+**Nota:** de forma predeterminada, esta integración buscará registros dentro de cualquier índice que coincida con `*log*`. Si tienes un índice específico para los registros que no coincide con este patrón, cambia el nombre del índice en la línea 12 del siguiente comando. Si quieres especificar más de 1 índice, puedes separar los nombres con `,`.
+
+```shell
+POST /_security/api_key
+{
+  "name": "openreplay-api-key",
+  "role_descriptors": {
+    "openreplay-role": {
+      "cluster": [
+        "all"
+      ],
+      "index": [
+        {
+          "names": [
+            "*log*"
+          ],
+          "privileges": [
+            "read"
+          ]
+        }
+      ]
+    }
+  }
+}
+```
+
+Si has usado alguno de los métodos anteriores para generar una clave de API, obtendrás un resultado como el siguiente:
+
+```json
+{
+  "id" : "eQWAIG0Bo0VqB8HXFH9-",
+  "name" : "openreplay-api-key",
+  "api_key" : "dZ5ycVRJTU-5UW_RYfi1_w"
+}
+```
+
+Asegúrate de copiar el `id` y la `api_key`, ya que los necesitamos para nuestra integración. Para obtener más información sobre cómo crear una clave de API, consulta esta [documentación](https://www.elastic.co/guide/en/elasticsearch/reference/master/security-api-create-api-key.html).
+
+## 2. Habilitar Elasticsearch en OpenReplay
+
+Coloca tu dirección `host`, el `port`, el `id` y la `api_key` en el panel de OpenReplay en 'Preferences > Integration'.
+Si cambiaste el índice al generar la `api_key`, especifica el nombre en `indexes`.
+
+![Integración de Elasticsearch en OpenReplay](/static/elastic-1.png#center)
+
+## 3. Propagar openReplaySessionToken
+
+Para vincular un evento de Elasticsearch con la sesión de usuario grabada, se debe propagar un token único desde tu frontend hacia tu backend en cada solicitud que quieras rastrear. Esto se puede hacer mediante un encabezado HTTP personalizado. En el siguiente ejemplo, usamos la función `fetch` para enviar ese encabezado.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+Para que OpenReplay asocie una entrada de registro de Elasticsearch con la sesión de usuario grabada, se debe propagar un token único como parte de cada error del backend que desees rastrear.
+
+A continuación se muestra un ejemplo en Python usando Monkey Patching.
+
+```python
+import sys
+import traceback
+#...
+old_tb = traceback.print_exception
+old_f = sys.stdout
+old_e = sys.stderr
+OPENREPLAY_SESSION_TOKEN = None
+
+class F:
+    def write(self, x):
+        if OPENREPLAY_SESSION_TOKEN is not None and x != '\n':
+            old_f.write(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] {x}")
+        else:
+            old_f.write(x)
+
+    def flush(self):
+        pass
+
+def tb_print_exception(etype, value, tb, limit=None, file=None, chain=True):
+    if OPENREPLAY_SESSION_TOKEN is not None:
+        value = type(value)(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] " + str(value))
+    old_tb(etype, value, tb, limit, file, chain)
+
+traceback.print_exception = tb_print_exception
+
+sys.stderr = F()
+```
+
+El nombre de la etiqueta `openReplaySessionToken` distingue entre mayúsculas y minúsculas.
+
+## Consideraciones especiales
+
+De forma predeterminada, buscamos cada registro asociado a una sesión de OpenReplay usando los atributos `message` y `utc_time`. Solo nos interesan los registros de error; para identificar los registros de error comprobamos que el atributo `tags` contenga el valor `error`.
+
+## ¿Tienes preguntas?
+
+Si encuentras algún problema, conéctate a nuestro [Slack](https://slack.openreplay.com) o consulta nuestro [Foro](https://forum.openreplay.com) y obtén ayuda de nuestra comunidad.

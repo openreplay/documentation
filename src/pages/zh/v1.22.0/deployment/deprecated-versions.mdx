@@ -1,0 +1,71 @@
+---
+title: "已弃用的版本"
+metaTitle: "已弃用的版本"
+metaDescription: "早于 v1.4.0 的版本已被弃用。"
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+如果你希望将 OpenReplay 实例升级到最新版本，请确保你当前运行的版本高于或等于 `v1.4.0`。如果不是，那么你正处于一个已弃用的版本，你应当先升级到 `v1.4.0`，然后才能将其升级到任何较新的版本（v1.8.0+）。
+
+## 将后端从 v1.3.6 或更早版本升级到 v1.4.0
+
+首先，确保你当前处于 `v1.3.6` 或更早的版本。如果已经是这样，则忽略以下命令并转到步骤 1）。如果不是，请将你的 OpenReplay 安装更新到 `v1.3.6`：
+   
+```bash 
+# Copy/backup the current openreplay folder to _version-number
+mv openreplay openreplay_v1.3.5
+git clone https://github.com/openreplay/openreplay -b v1.3.6
+cd openreplay/scripts/helm
+# bash upgrade.sh <old openreplay path>
+bash upgrade.sh ~/openreplay_v1.3.5
+```
+
+一旦你处于 `v1.3.6`，请继续执行以下步骤：
+
+1. 将当前的 openreplay 文件夹复制/备份到 `_version-number`，如下所示：
+   
+  ```bash 
+  mv openreplay openreplay_v1.3.6
+  ```
+
+2. 克隆新的 OpenReplay 版本。在此示例中，我们将升级到 v1.4.0：
+   
+  ```bash 
+  git clone https://github.com/openreplay/openreplay -b v1.4.0
+  ```
+
+3. 运行以下脚本，将你的 `vars.yaml` 自动升级到新格式：
+  
+  ```bash
+  cd openreplay/scripts/helmcharts
+  ansible localhost -m template -a "src=vars_template.yaml dest=vars.yaml" -e @~/openreplay_v1.3.6/scripts/helm/vars.yaml
+  ```
+
+4. 升级 OpenReplay：
+
+  ```bash
+  cd openreplay/scripts/helmcharts
+  helm ls -n app | tail -n +2 | awk '{print $1}' | xargs -I{} helm uninstall {} -n app
+  helm uninstall nginx-ingress -n nginx-ingress
+  helm upgrade --install openreplay ./openreplay -n app -f vars.yaml --atomic --set forceMigration=true
+  ```
+  
+5. 如果你没有使用负载均衡器，并且已通过 `certmanager.sh` 脚本生成了 SSL 证书：
+
+  ```
+  cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh
+  ```
+
+6. 更新 `/openreplay/scripts/helmcharts/vars.yaml` 中的 `fromVersion` 变量以反映新版本。例如，如果你正从 `v1.3.6` 升级到 `v1.4.0`，那么按如下方式更新 `fromVersion`：
+  
+  ```yaml
+  fromVersion: "v1.4.0"
+  ```
+
+> **注意：** 
+对任何服务配置文件（即 `openreplay/scripts/helm/app/<app>.yaml`）所做的手动覆盖将被重置。因此，如果你有任何自定义覆盖，例如为录制内容使用[外部对象存储服务](/configuration/recordings-storage)，或提升服务容量（cpu/内存），请确保在运行升级脚本（步骤 4）之前将它们应用到新版本（在 `/openreplay/scripts/helmcharts/vars.yaml` 中）。
+
+## 有疑问？
+
+如果你在上述过程中遇到任何问题，请通过 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)并从我们的社区获得帮助。

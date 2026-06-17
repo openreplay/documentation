@@ -1,0 +1,226 @@
+---
+title: "Assist"
+metaTitle: "Assist"
+metaDescription: "كيفية إعداد OpenReplay Assist ودعم المستخدمين النهائيين من خلال الشاشة المباشرة وWebRTC."
+---
+
+import Aside from '~/components/Aside.astro'
+
+يتيح لك OpenReplay Assist دعم مستخدميك من خلال رؤية شاشتهم المباشرة والانضمام فوراً إلى مكالمة (WebRTC) معهم دون الحاجة إلى أي برنامج مشاركة شاشة تابع لجهة خارجية.
+
+<Aside type="tip">
+  لدينا أيضاً درس تعليمي مفصّل حول كيفية استخدام Assist للتفاعل المباشر مع مستخدميك، يمكنك الاطلاع عليه [هنا](/tutorials/assist).
+</Aside>
+
+## التثبيت
+
+```bash
+npm i @openreplay/tracker-assist
+```
+
+## الاستخدام
+
+### باستخدام مقتطف JavaScript
+
+إذا كان متتبّع OpenReplay الخاص بك مُعدّاً باستخدام مقتطف JS، فما عليك سوى استبدال ظهور `.../openreplay.js` بـ `.../openreplay-assist.js`. فيما يلي مثال على الشكل الذي يجب أن يبدو عليه السكربت بعد التغيير:
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" };
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay-assist.js", 1, 0, initOpts, startOpts);
+</script>
+```
+
+### باستخدام NPM
+
+قم بتهيئة المتتبّع ثم حمّل الإضافة `@openreplay/tracker-assist`.
+
+#### إذا كان موقعك تطبيقاً ذا صفحة واحدة (SPA)
+
+```js
+import trackerAssist from '@openreplay/tracker-assist';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+tracker.use(trackerAssist(options)); // check the list of available options below
+
+tracker.start();
+
+```
+
+#### إذا كان تطبيق الويب الخاص بك يُعرَض من جانب الخادم (SSR)
+
+اتّبع المثال أدناه إذا كان تطبيقك يستخدم SSR. تأكّد من استدعاء `tracker.start()`
+بمجرد أن يكون التطبيق في بيئة المتصفح (أي عبر `useEffect` أو `componentDidMount`).
+
+```js
+import trackerAssist from '@openreplay/tracker-assist';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+tracker.use(trackerAssist(options)); // check the list of available options below
+
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, [])
+//...
+}
+```
+
+## الخيارات
+
+تدعم إضافة assist الخيارات التالية:
+
+```js
+trackerAssist({
+  callConfirm?: string|ConfirmOptions;
+  controlConfirm?: string|ConfirmOptions;
+  config?: object;
+  onAgentConnect?: () => (()=>void | void);
+  onCallStart?: () => (()=>void | void);
+  onRemoteControlStart?: () => (()=>void | void);
+  onCallDeny?: () => any;
+  onRemoteControlDeny?: (agentInfo: Record<string, any>) => any;
+  onRecordingDeny?: (agentInfo: Record<string, any>) => any;
+  onDragCamera?: (dx: number, dy: number) => any;
+  callUITemplate?: string
+  /** 
+   * enables gzip compression for big batches on client side
+   * */
+  compressionEnabled: boolean;
+  /**
+   * Minimum amount of MESSAGES in a batch to trigger compression run
+   * @default 5000
+   * */
+   compressionMinBatchSize: number
+})
+```
+
+### تخصيص عناصر الواجهة (Widgets)
+
+يمكن تخصيص كل من التحكم عن بُعد وعناصر واجهة المكالمة، تلك التي يراها المستخدم النهائي، تخصيصاً كاملاً.
+
+#### عنصر واجهة التحكم عن بُعد
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
+
+#### عنصر واجهة المكالمة
+
+من الممكن تخصيص كل جانب من جوانب عنصر الواجهة هذا عبر مجموعة `ids` و`classes` التالية. تُستخدم `Ids` كنقاط ربط للأزرار/العناصر الفردية، بينما يمكن استخدام `classes` لحاويات المجموعات.
+
+| نوع HTML | الاسم/الأسماء | الوصف |
+|----------|-------------|-------------|
+|id | `or-assist` | حاوية عنصر الواجهة |
+|class | `card` و`border-dark` و`shadow` و`drag-area` | أنماط حدود البطاقة وظلّها |
+|id | `controls`  | حاوية الجزء الخاص بالمكالمة داخل عنصر الواجهة |
+|class | `card-header` | أنماط رأس بطاقة عنصر واجهة المكالمة (تلك التي تعرض اسم الوكيل بجوار المؤقّت) |
+|id | `agent-name` | حاوية اسم الوكيل |
+|id | `duration` | حاوية المؤقّت |
+|id | `video-container` | حاوية بثّ الفيديو الخاص بالمستخدم نفسه |
+|id | `remote-stream` | بثّ الفيديو الخاص بالوكيل |
+|class | `card-footer` | حاوية أزرار كتم الصوت والفيديو وإنهاء المكالمة |
+|id | `audio-btn` | زر كتم الصوت |
+|id | `video-btn` | زر الفيديو |
+|id | `end-call-btn` | زر إنهاء المكالمة |
+|id | `remote-control-row` | صفّ عناصر التحكم عن بُعد |
+|id | `end-control-btn` | معرّف زر إنهاء التحكم |
+
+### دوال الاستدعاء (Callbacks)
+
+فيما يلي قائمة بجميع دوال الاستدعاء:
+
+- `callConfirm`: تخصيص نص و/أو تخطيط النافذة المنبثقة لطلب المكالمة. 
+- `controlConfirm`: تخصيص نص و/أو تخطيط النافذة المنبثقة لطلب التحكم عن بُعد.
+- `config`: يحتوي على إعدادات مخصّصة لخادم ICE/TURN. القيمة الافتراضية هي `{ 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }], 'sdpSemantics': 'unified-plan' }`.
+- `onAgentConnect: () => (()=>void | void)`: تُستدعى دالة الاستدعاء هذه بمجرد بدء جلسة مباشرة وتعيد تفاصيل الوكيل (email والاسم وquery). يمكنها أيضاً إعادة `onAgentDisconnect` التي سيتم استدعاؤها عند قطع اتصال الجلسة. في حال وجود اتصال غير مستقر، قد تُستدعى عدة مرات. فيما يلي مثال:
+
+```js
+onAgentConnect = ({ email, name, query }) => {
+  console.log("Live session started")
+  const onAgentDisconnect =  () => console.log("Live session stopped")
+  return onAgentDisconnect
+}
+```
+
+- `onCallStart: ({ email, name, query }) => (()=>void | void)`: تُستدعى دالة الاستدعاء هذه بمجرد بدء مكالمة (webRTC) وتعيد تفاصيل الوكيل (email والاسم وquery). يمكنها أيضاً إعادة `onCallEnd` التي سيتم استدعاؤها عند انتهاء المكالمة. في حال وجود اتصال غير مستقر، قد تُستدعى عدة مرات. فيما يلي مثال:
+
+```js
+onCallStart: () => {
+  console.log("Call started")
+  const onCallEnd = () => console.log("Call ended")
+  return onCallEnd
+}
+```
+
+- `onRemoteControlStart: ({ email, name, query }) => (()=>void | void)`: تُستدعى دالة الاستدعاء هذه بمجرد بدء جلسة تحكم عن بُعد وتعيد تفاصيل الوكيل (email والاسم وquery). يمكنها أيضاً إعادة `onRemoteControlEnd` التي سيتم استدعاؤها عند إلغاء أذونات التحكم عن بُعد. فيما يلي مثال:
+
+```js
+onRemoteControlStart: () => {
+  console.log("Remote control started")
+  const onControlEnd = () => console.log("Remote control ended")
+  return onControlEnd
+}
+```
+
+- `onCallDeny?: () => any;`: تُستدعى دالة الاستدعاء هذه عندما يرفض المستخدم المكالمة أثناء مرحلة الطلب.
+
+```js
+onCallDeny: () => {
+  console.log("Call denied")
+}
+```
+
+- `onRemoteControlDeny?: (agentInfo: Record<string, any>) => any;`: تُستدعى دالة الاستدعاء هذه عندما يرفض المستخدم جلسة التحكم عن بُعد أثناء مرحلة الطلب وتعيد تفاصيل الوكيل (email والاسم وquery).
+
+```js
+onRemoteControlDeny: ({ email, name, query }) => {
+  console.log("Remote control request denied for", email)
+}
+```
+
+- `onRecordingDeny?: (agentInfo: Record<string, any>) => any;`: تُستدعى دالة الاستدعاء هذه عندما يرفض المستخدم جلسة التسجيل أثناء مرحلة الطلب وتعيد تفاصيل الوكيل (email والاسم وquery).
+
+```js
+onRecordingDeny: ({ email, name, query }) => {
+  console.log("Recording session denied")
+ 
+}
+```
+
+- `onDragCamera?: (dx: number, dy: number) => any;`: تتوقّع هذه الدالة معالِجاً يحدّد سلوك زر الفأرة المضغوط داخل لوحة Three.js canvas للتحكم عن بُعد. يستقبل المعالِج dx وdy، اللذين يشيران إلى مقادير حركة الفأرة.
+
+```js
+onDragCamera: (dx, dy) => {
+  moveCamera(dx, dy)
+}
+```
+
+## هل لديك أسئلة؟
+
+هل تواجه مشكلة في إعداد هذه الإضافة؟ يُرجى الانضمام إلى [Slack](https://slack.openreplay.com) الخاص بنا أو الاطلاع على [المنتدى](https://forum.openreplay.com) والحصول على المساعدة من مجتمعنا.

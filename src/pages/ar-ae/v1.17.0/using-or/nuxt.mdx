@@ -1,0 +1,126 @@
+---
+title: "استخدام OpenReplay مع Nuxt"
+metaTitle: "إضافة متتبّع OpenReplay إلى تطبيق Nuxt.js الخاص بك"
+metaDescription: "تعرّف على كيفية تشغيل المتتبّع في تطبيق Nuxt الخاص بك"
+---
+import GoDeeperFooter from '~/components/go-deeper-footer.astro'
+
+تشغيل المتتبّع في تطبيق Nuxt أمر بسيط للغاية. 
+
+## إضافة كود التتبّع
+
+بينما يمكنك الحصول على نسخة جاهزة للنسخ واللصق من الكود مباشرةً من المنصّة عند إنشاء مشروع جديد، فإن هذا الكود أساسي للغاية وقد لا يتّبع أفضل الممارسات التي يتوقّعها فريقك أو شركتك.
+
+لذا، بدلاً من ذلك، يمكنك محاولة تقسيم الكود المقدَّم إلى وحدات على النحو التالي:
+
+```jsx
+import Tracker from '@openreplay/tracker';
+import {v4 as uuidV4} from 'uuid'
+
+function defaultGetUserId() {
+   return uuidV4() 
+}
+
+export function startTracker(config) {
+
+    console.log("Starting tracker...")
+
+    const getUserId = (config?.userIdEnabled && config?.getUserId) ? config.getUserId : defaultGetUserId
+    let userId = null;
+
+    const trackerConfig = {
+        projectKey: config?.projectKey
+    }
+
+    const tracker = new Tracker(trackerConfig);
+
+    if(config?.userIdEnabled) {
+        userId = getUserId()
+        tracker.setUserID(userId)
+    }
+
+    tracker.start();
+    return {
+        tracker,
+        userId
+    }
+}
+```
+
+تتولّى هذه الدالة إنشاء كائن من Tracker واستدعاء الطريقة `start`، وهو ما يجعل الأمور تنطلق.
+
+كما تستقبل هذه الدالة كائن "تهيئة" يمكنك توسيعه من أجل ميزات مستقبلية. يوضّح لك هذا المثال كيفية تمكين القدرة، بشكل اختياري، على تعريف المستخدمين بشكل فريد. يمكنك استخدام UUID افتراضي يكون فريدًا لكل مستخدم في كل مرة يزور فيها الصفحة. وبدلاً من ذلك، يمكنك تقديم دالة `getUserId` مخصّصة كجزء من التهيئة. 
+
+من خلال دالتك المخصّصة، يمكنك تقديم معرّف العميل الخاص بمتجرك، أو عنوان البريد الإلكتروني للمستخدم، أو أي شيء يعرّف المستخدم بشكل فريد داخل تطبيقك. وبهذه الطريقة، يمكنك تتبّع إعادات تشغيل جلساتهم عبر الزمن في حال واجهوا مشكلة معيّنة لا يبلّغ عنها الآخرون.
+
+في هذا المثال، يُتوقَّع تمرير مفتاح المشروع، الذي يمكنك الحصول عليه من واجهة المشروع في OpenReplay، داخل الكائن `config` ضمن المفتاح `projectKey`.
+
+## كتابة إضافة (plugin) خاصة بالعميل فقط
+
+لاستخدام هذه الدالة `startTracker`، ستحتاج إلى إنشاء إضافة خاصة بالعميل فقط داخل مجلد `plugins` في مشروع Nuxt الخاص بك.
+
+تأكّد من إضافة اللاحقة `.client` إلى اسم ملف الإضافة الخاص بك. وذلك للتأكّد من أن Nuxt يحمّله على العميل فقط.
+
+قد يبدو كود الإضافة على النحو التالي:
+
+```jsx
+import {startTracker} from '../utils/tracker'
+
+export default defineNuxtPlugin( (nuxtApp) => {
+    
+    return {
+        provide: {
+            startTracking: () => {
+                let config = useRuntimeConfig().public
+                
+                let {userId} = startTracker({
+                    userIdEnabled: true,
+                    projectKey: config.openreplayProjectKey
+                })
+                //Optional if you need it
+                let uid = useUserId()
+                uid.value = userId
+            }
+        }
+    }
+})
+```
+
+إذا كنت ترغب في قراءة المزيد عن إنشاء إضافات Nuxt، يمكنك الاطّلاع على [توثيقهم](https://v3.nuxtjs.org/guide/directory-structure/plugins).
+
+الآن، توفّر هذه الإضافة دالة تُسمّى `startTracking`، وهي تتولّى استدعاء الدالة `startTracker` التي عرّفناها سابقًا. ولكن الأهم من ذلك، أنه داخل كود الإضافة، يمكنك الحصول على متغيّر البيئة الذي خزّنت فيه مفتاح المشروع. تذكّر أن هذه المعلومات يجب ألّا تكون مضمّنة بشكل ثابت (hard-coded) داخل مشروعك لأسباب أمنية.
+
+من خلال الدالة `useRuntimeConfig`، يمكنك الوصول إلى متغيّرات البيئة العامة. في هذا المثال، أصل إلى `openreplayProjectKey` الذي عُرِّف باسم `NUXT_PUBLIC_OPENREPLAY_PROJECT_KEY`. 
+
+💡 **لاحظ** البادئة `NUXT_PUBLIC`، فهي تضمن أن يشارك Nuxt المتغيّر مع الواجهة الأمامية (front-end)؛ وإلا، فلن يكون الوصول إليه ممكنًا إلا للكود الذي يعمل حصرًا على الواجهة الخلفية (back-end) الخاصة بك.
+
+يوضّح لك المثال أعلاه أيضًا كيفية استخدام قيمة معرّف المستخدم المُعادة مع composable لمشاركة القيمة بين المكوّنات. هذان السطران اختياريان تمامًا.
+
+## استخدام المتتبّع
+
+بعد حفظ الإضافة في ملف، يمكنك استخدامها على النحو التالي من ملف `app.vue` الخاص بك.
+
+```jsx
+<script setup>
+onMounted( () => {
+  const {$startTracking} = useNuxtApp()
+  $startTracking()
+})
+</script>
+
+<template>
+  <div>
+    <NuxtPage />
+  </div>
+</template>
+```
+
+تأكّد من استدعاء المتتبّع بعد إطلاق حدث mounted. يمكنك القيام بذلك باستخدام composable المسمّى `onMounted`.
+
+بعد ذلك، ينبغي أن يبدأ المتتبّع في إرسال البيانات إلى المنصّة بمجرّد النشر.
+## هل لديك أسئلة؟
+
+للاطّلاع على **الكود الكامل** لتطبيق فعّال مبني على Nuxt، يمكنك الاطّلاع على [هذا المستودع](https://github.com/deleteman/openreplay-nuxt-example).
+
+إذا واجهت أي مشكلات في إعداد المتتبّع على مشروعك المبني على Nuxt، فيُرجى التواصل معنا عبر [مجتمع Slack](https://slack.openreplay.com/) الخاص بنا واطرح أسئلتك على مطوّرينا مباشرةً!
+<GoDeeperFooter />

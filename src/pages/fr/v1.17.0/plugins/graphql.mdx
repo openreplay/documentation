@@ -1,0 +1,124 @@
+---
+title: "GraphQL"
+metaTitle: "GraphQL"
+metaDescription: "Plugin GraphQL pour OpenReplay."
+---
+
+import Aside from '~/components/Aside.astro'
+
+Ce plugin vous permet de capturer les requêtes `GraphQL` et de les inspecter ultérieurement lors de la relecture des enregistrements de sessions. C'est très utile pour comprendre et corriger les problèmes. Le plugin `GraphQL` est compatible avec les implémentations Apollo et Relay.
+
+<Aside type="tip">
+  Nous proposons également un tutoriel détaillé sur la façon d'utiliser le plugin GraphQL pour capturer et modifier les requêtes, vous pouvez le consulter [ici](/tutorials/graphql).
+</Aside>
+
+## Installation
+
+```bash
+npm i @openreplay/tracker-graphql
+```
+
+## Utilisation
+
+L'appel à `plugin` renverra la fonction, qui reçoit quatre variables `operationKind`, `operationName`, `variables` et `result`. Elle renvoie `result` sans modifications.
+
+### Si votre site web est une application monopage (SPA)
+
+```js
+import OpenReplay from '@openreplay/tracker';
+import trackerGraphQL from '@openreplay/tracker-graphql';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY,
+});
+
+export const recordGraphQL = tracker.use(trackerGraphQL());
+
+tracker.start();
+```
+
+### Si votre application web est rendue côté serveur (SSR)
+
+Suivez l'exemple ci-dessous si votre application est en SSR. Assurez-vous que `tracker.start()` est appelé une fois l'application démarrée côté client (dans `useEffect` ou `componentDidMount`).
+
+```js
+// openreplay.js
+import OpenReplay from '@openreplay/tracker/cjs';
+import trackerGraphQL from '@openreplay/tracker-graphql/cjs';
+
+export const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+export const recordGraphQL = tracker.use(trackerGraphQL());
+
+// MyApp.js
+import { tracker } from './openreplay';
+
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, [])
+}
+//...
+```
+
+### Relay
+
+Pour [Relay](https://relay.dev/), vous devez placer manuellement l'appel à `recordGraphQL` dans l'implémentation de `NetworkLayer`. Si vous utilisez la méthode standard `Network.create` pour l'implémenter, vous devez alors suivre l'exemple ci-dessous.
+
+```js
+import { Environment } from 'relay-runtime';
+import { recordGraphQL } from './openreplay'; // see above for recordGraphQL definition
+
+//...
+function fetchQuery(operation, variables, cacheConfig, uploadables) {
+  return fetch('ENDPOINT', {
+  //...
+  })
+    .then(response => response.json())
+    .then(result =>
+      recordGraphQL(operation.operationKind, operation.name, variables, result)
+    );
+}
+//...
+const network = Network.create(fetchQuery);
+```
+
+Consultez [Relay Network Layer](https://relay.dev/docs/en/network-layer) pour plus de détails.
+
+### Apollo
+
+Pour [Apollo](https://www.apollographql.com/), vous devez créer un nouveau `ApolloLink` avec l'appel à `recordGraphQL` et l'ajouter à votre chaîne. Voici un exemple de la façon de procéder.
+
+```js
+import { ApolloLink } from '@apollo/client';
+import { recordGraphQL } from './openreplay'; // see above for recordGraphQL definition
+
+const trackerApolloLink = new ApolloLink((operation, forward) => {
+  return forward(operation).map((result) => {
+    const operationDefinition = operation.query.definitions[0];
+    return recordGraphQL(
+      operationDefinition.kind === 'OperationDefinition' ? operationDefinition.operation : 'unknown?',
+      operation.operationName,
+      operation.variables,
+      result
+    );
+  });
+});
+//...
+const link = ApolloLink.from([
+  trackerApolloLink,
+  //...
+]);
+```
+
+Consultez [Apollo Link](https://www.apollographql.com/docs/link/) et
+[Apollo Networking](https://www.apollographql.com/docs/react/networking/network-layer/)
+pour plus de détails.
+
+## Tutoriel
+Si vous recherchez un exemple pratique de l'utilisation de ce plugin pour capturer les données d'opérations (mutations et requêtes) dans vos relectures de sessions, consultez [notre tutoriel détaillé ici](/tutorials/graphql).
+
+## Des questions ?
+
+Vous rencontrez des difficultés pour configurer ce plugin ? Rejoignez notre [Slack](https://slack.openreplay.com) ou consultez notre [Forum](https://forum.openreplay.com) et obtenez de l'aide auprès de notre communauté.

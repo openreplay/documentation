@@ -1,0 +1,175 @@
+---
+title: "使用 Pinia 插件跟踪状态变化"
+metaTitle: "使用 Pinia 插件跟踪状态变化"
+metaDescription: "在使用 Pinia 时，通过 Pinia 插件跟踪你的状态变化"
+minVersion: "1.6.0"
+---
+import Aside from '~/components/Aside.astro'
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="观看如何使用 Pinia 跟踪状态"
+  description="如果你不喜欢阅读，可以观看这个视频教程，它会向你展示在使用 Pinia 时如何跟踪 Vue 应用的状态"
+  videoURL="https://youtu.be/0TE5dfzz4-c"
+/>
+
+Pinia 是 Vue 项目中用于替代旧方案的状态管理库。过去你使用 VueX 的地方，现在将改用 Pinia。借助我们的 [Pinia 插件](/plugins/pinia)，你可以在应用的整个生命周期中跟踪状态的变化。
+
+## 安装插件
+
+可以使用以下命令轻松安装该插件：
+
+```jsx
+npm i @openreplay/tracker-vuex
+```
+
+## 在你的 Vue 应用中使用该插件
+
+在本示例中，我们将使用一个示例 Vue 应用来展示如何在真实应用中添加该插件并与之交互。
+
+**注意**：本示例的完整源代码位于这个 [GitHub 仓库](https://github.com/deleteman/openreplay-vue-pinia-example) 中，如果你需要更多细节，可以去查看一下。
+
+安装插件后，我们将通过添加下面的导入语句来修改 `main.js` 文件：
+
+```jsx
+import trackerVuex from '@openreplay/tracker-vuex/cjs';
+```
+
+然后，我们将使用 `startTracker` 函数来实例化 tracker，并一次性使用该插件。
+
+调用此函数的结果将是一个对象，其中包含对该插件使用 `use` 方法的结果。
+
+**请注意**，解构出的属性名与 `name` 属性的值相同。只要你保持这两者一致，就不会有问题。
+
+```jsx
+const {piniaPlugin} = startTracker({
+    projectKey: "<your project key>",
+    plugins: [{
+        name: 'piniaPlugin',
+        fn: trackerVuex
+    }]
+})
+```
+
+接下来要做的是创建一个具名的 store 包装器，稍后我们将用它在所需的 store 上设置插件。
+
+```jsx
+const piniaStoreWrapper = piniaPlugin("products")
+saveStore(piniaStoreWrapper)
+```
+
+`piniaStoreWrapper` 稍后需要与我们决定跟踪的 store 一起使用。然而，此时 store 尚未创建，因此我们将通过 `saveStore` 函数将其保存起来。
+
+### 实用函数
+
+在继续之前，让我们来看一下 `saveStore` 和 `startTracker` 函数。
+
+第一个函数是 `storesManager` 模块的一部分，它看起来像这样：
+
+```jsx
+let storeWrapper = null;
+
+export function saveStore(s) {
+    storeWrapper = s;
+}
+
+export function getStore(store) {
+    return storeWrapper;
+}
+```
+
+这个模块可以让我们在其他地方使用之前创建的 `piniaStoreWrapper`。
+
+至于 `startTracker` 函数，代码看起来像这样：
+
+```jsx
+export function startTracker(config) {
+    console.log("Starting tracker...")
+
+    console.log("Project key used: ", config.projectKey)
+    const trackerConfig = {
+        projectKey: config.projectKey,
+         //ingestPoint: config.ingestPoint,
+        __DISABLE_SECURE_MODE: true
+    }
+
+    const tracker = new Tracker(trackerConfig);
+
+    const pluginReturns = {}
+    config?.plugins.forEach( p => {
+        console.log("Using plugin...", p.name)
+        pluginReturns[p.name] = tracker.use(p.fn())
+    })
+
+    tracker.start();
+    return {
+        tracker,
+        ...pluginReturns
+    }
+}
+```
+
+这个函数会使用我们提供的配置来实例化 tracker。请注意我把 `ingestPoint` 选项注释掉了，这是因为我们直接使用的是 SaaS 版本；但如果你想在自托管版本中使用这段代码，就必须指定它，它应该类似于这样：`<your-instance>.yourhost/ingest`
+
+### 跟踪你的 Pinia store
+
+当所有设置代码都准备好后，前往你使用 store 的地方；以我们的示例为例，让我们编辑 `App.vue` 文件以调用 `getStore` 函数，它会返回我们之前保存的 store 包装器。
+
+然后我们将用它来包装我们想要跟踪的 store：
+
+```jsx
+<template>
+  <!-- template code -->
+</template>
+
+<script lang="ts">
+import { computed, defineComponent, onMounted, ref } from 'vue'
+import { Product, useProductStore } from './store/products'
+import { useCartStore } from './store/cart'
+import {getStore} from './store/storesManager.js'
+
+export default defineComponent({
+  setup() {
+
+    const productStore = useProductStore()
+    const loading = ref(true)
+    //we get the wrapper here
+	  const storeWrapper = getStore()
+
+    onMounted(async () => {
+      await productStore.fetchAll()
+      loading.value = false
+    })
+
+    const cartStore = useCartStore()
+
+		//we wrap the cart store here
+    storeWrapper(cartStore)
+    return {
+      products: computed(() => productStore.list),
+      cart: computed(() => cartStore.formattedCart),
+      total: computed(() => cartStore.total),
+      loading,
+      add: (product: Product) => cartStore.add(product),
+      remove: (product: Product) => cartStore.remove(product),
+    }
+  }
+})
+
+</script>
+```
+
+## 在回放中观察状态
+
+要查看回放过程中的状态变化，请点击右下角新增的 VueX 选项卡：
+
+![新增的 VueX 选项卡](/tutorials/pinia/new-tab.png)
+
+点击它后，你将看到 store 的内容，并能够了解它是如何变化的以及其中保存的数据：
+
+![状态变更](/tutorials/pinia/state-changes.png)
+
+请留意 store 的名称，它就是我们第一次调用 Pinia 插件时所使用的名称。
+
+## 有疑问吗？
+
+你可以[查看这个仓库](https://github.com/deleteman/openreplay-vue-pinia-example)，获取一个使用 Pinia 插件的可运行 Pinia/Vue 应用的**完整源代码**。如果你在项目中设置 Pinia 插件时遇到任何问题，请在我们的 [Slack 社区](https://slack.openreplay.com/)联系我们，直接向我们的开发者提问吧！

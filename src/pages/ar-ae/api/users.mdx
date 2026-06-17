@@ -1,0 +1,215 @@
+---
+title: "المستخدمون"
+metaTitle: "المستخدمون"
+metaDescription: "كيفية إدارة بيانات المستخدمين والتحكم فيها."
+---
+import Aside from '~/components/Aside.astro'
+
+## البحث عن المستخدمين
+
+ابحث عن المستخدمين في مشروع ما. قم بالتصفية حسب السمات (معرّف المستخدم، البريد الإلكتروني، الدولة، إلخ)، ويمكنك اختياريًا تضييق النطاق باستخدام `query` نصي حر، وتقسيم النتائج إلى صفحات.
+
+### الطريقة
+`POST`
+
+### URL
+`/public/:projectKey/users`
+
+### المعاملات
+
+| Name       | Type   | Description                                            |
+|------------|--------|--------------------------------------------------------|
+| projectKey | string | مفتاح المشروع (مطلوب)                                   |
+| q          | string | استعلام نصي حر اختياري (معامل استعلام في عنوان URL). عند توفير كل من `q` و`query` (في الجسم)، يكون لـ `q` الأولوية. |
+
+### Payload
+
+| Name           | Type       | Description                                                 |
+|----------------|------------|-------------------------------------------------------------|
+| filters        | array      | قائمة عوامل التصفية (اختياري)                                |
+| query          | string     | استعلام نصي حر على معرّف المستخدم / البريد الإلكتروني / الاسم (بحد أقصى 100) |
+| startTimestamp | epoch (ms) | بداية النافذة الزمنية (اختياري، الحد الأدنى 946684800000)    |
+| endTimestamp   | epoch (ms) | نهاية النافذة الزمنية (اختياري، > startTimestamp)           |
+| limit          | integer    | حجم الصفحة، 1-200 (اختياري، الافتراضي: 50)                   |
+| page           | integer    | رقم الصفحة، يبدأ من 1 (اختياري، الافتراضي: 1)                |
+| sortBy         | string     | عمود المستخدم المراد الترتيب حسبه (اختياري)                  |
+| sortOrder      | string     | `asc` أو `desc` (اختياري)                                   |
+| columns        | array      | أعمدة مستخدم إضافية لتضمينها في الاستجابة                    |
+
+### ترويسات الطلب
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### مثال على الطلب
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "query": "mickael",
+    "limit": 50,
+    "page":  1,
+    "sortOrder": "desc"
+  }'
+```
+
+### مثال على الاستجابة
+
+```json
+{
+  "data": {
+    "total": 1,
+    "users": [
+      {
+        "$user_id": "mickael@openreplay.com",
+        "$email": "mickael@openreplay.com",
+        "$name": "Mickael",
+        "$first_name": "Mickael",
+        "$last_name": "",
+        "$created_at": 1623440822825,
+        "$last_seen": 1623689478617
+      }
+    ]
+  }
+}
+```
+
+## الحصول على مستخدم
+
+احصل على سمات الهوية والإحصاءات العامة لمستخدم معيّن.
+
+### الطريقة
+`GET`
+
+### URL
+`/public/:projectKey/users/:userId`
+
+### المعاملات
+
+| Name       | Type   | Description                                                |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | مفتاح المشروع (مطلوب)                                       |
+| userId     | string | المعرّف المعيَّن عبر `tracker.setUserID` (مطلوب، بحد أقصى 256) |
+
+### ترويسات الطلب
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### رموز الحالة
+
+`200`: تُرسَل الاستجابة بصيغة JSON في الجسم  
+`400`: `userId` غير صالح (فارغ أو > 256 حرفًا)  
+`404`: المستخدم غير موجود
+
+### مثال على الطلب
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### مثال على الاستجابة
+
+```json
+{
+  "data": {
+    "$user_id": "mickael@openreplay.com",
+    "$email": "mickael@openreplay.com",
+    "$name": "Mickael",
+    "$first_name": "Mickael",
+    "$last_name": "",
+    "$phone": "",
+    "$avatar": "",
+    "$created_at": 1623440822825,
+    "distinct_ids": ["15bd70f6-aedf-4544-8ae6-57eb66398e94"],
+    "$country": "FR",
+    "$state": "",
+    "$city": "",
+    "$first_event_at": 1623440822825,
+    "$last_seen": 1623689478617
+  }
+}
+```
+
+## حذف مستخدم
+
+احذف مستخدمًا وجميع البيانات المرتبطة به. يؤدي هذا إلى جدولة مهمة في الخلفية؛ وتحتوي الاستجابة على `jobId` الذي يمكنك استطلاعه عبر واجهة برمجة التطبيقات [Jobs](/api/jobs).
+
+<Aside type="note">
+تزيل مهمة الحذف ما يصل إلى 1000 جلسة مرتبطة بالمستخدم المحدد.
+</Aside>
+
+### الطريقة
+`DELETE`
+
+### URL
+`/public/:projectKey/users/:userId`
+
+### المعاملات
+
+| Name       | Type   | Description                                                |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | مفتاح المشروع (مطلوب)                                       |
+| userId     | string | المعرّف المعيَّن عبر `tracker.setUserID` (مطلوب، بحد أقصى 256) |
+
+### ترويسات الطلب
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### رموز الحالة
+
+`200`: تمت جدولة المهمة، ويتم إرجاعها في الجسم  
+`400`: `userId` غير صالح (فارغ أو > 256 حرفًا)  
+`409`: توجد بالفعل مهمة حذف لهذا المستخدم مجدولة أو قيد التشغيل
+
+### مثال على الطلب
+
+```shell
+curl -X DELETE \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users/mickael@example.com \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### مثال على الاستجابة
+
+```json
+{
+  "data": {
+    "jobId": 22345,
+    "description": "Delete user sessions of userId = mickael@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mickael@example.com",
+    "createdAt": 1623912962910,
+    "updatedAt": null,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+### تغيير وقت حذف ملف إعادة التشغيل؟
+
+مهمة الحذف عبارة عن عملية من خطوتين: أولًا، تُحذف الجلسات وأحداثها المتتالية من قاعدة البيانات أثناء الليل. ثانيًا، تُجدوَل ملفات إعادة التشغيل لكي تنتهي صلاحيتها (خلال 30 يومًا) في تخزين الكائنات.
+
+إذا كنت تستخدم minio (التثبيت الافتراضي) وترغب في تغيير سياسة انتهاء الصلاحية/دورة الحياة الافتراضية، فاتبع التعليمات أدناه:
+1. على خادمك، نفّذ `openreplay -e`
+2. ضمن قسم `chalice`، عرّف متغير بيئة جديدًا باسم **SCH_DELETE_DAYS** بقيمة تساوي عدد الأيام التي تريد الاحتفاظ فيها بملف إعادة التشغيل قبل الحذف (أكبر من أو يساوي 0)
+3. احفظ واخرج باستخدام `:wq`
+4. نفّذ `k9s -n db`
+5. استخدم مفاتيح الأسهم في لوحة المفاتيح للتنقل عبر القائمة والوصول إلى حاوية `minio-*`
+6. اضغط `s` للوصول إلى shell الخاص بحاوية Minio (تخزين الكائنات)
+7. نفّذ `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
+8. لحذف ملفات إعادة التشغيل بعد 14 يومًا من تنفيذ مهمة الحذف
+
+```bash
+export EXPIRATION_DAYS=14
+mc ilm add --expiry-days $EXPIRATION_DAYS --tags "to_delete_in_days=${EXPIRATION_DAYS}" minio/mobs
+```
+
+9. استخدم `exit` للخروج من حاوية Minio
+10. نفّذ `:quit` للخروج من واجهة سطر أوامر Kubernetes

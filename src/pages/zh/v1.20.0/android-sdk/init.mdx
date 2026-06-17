@@ -1,0 +1,87 @@
+---
+title: "Android SDK - 初始化 SDK"
+metaTitle: "Android SDK - 初始化 SDK"
+metaDescription: "Android 跟踪器构造方法的配置选项"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	Android SDK 处于 Beta 阶段。欢迎在我们的 [Slack](https://slack.openreplay.com) 上向我们提供反馈或报告您可能遇到的任何问题，或者查看我们的[论坛](https://forum.openreplay.com)。
+</Aside>
+
+## 安装
+
+以下这一行将为您安装跟踪器以及随附的 SDK，让您能够使用跟踪器的所有功能。
+
+###  Gradle 配置
+将其添加到您的根目录 build.gradle 文件中 repositories 的末尾：
+```
+dependencyResolutionManagement {
+		repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+		repositories {
+			mavenCentral()
+			maven { url 'https://jitpack.io' }
+		}
+}
+```
+
+在您应用的 build.gradle 文件中添加依赖项：
+```
+dependencies {
+		implementation("com.github.openreplay:android:v1.1.7")
+}
+```
+
+## 初始化
+
+在实例化 OpenReplay 的跟踪器时，您可以提供多个配置选项，以自定义录制及录制体验的诸多方面。您必须在构造方法中设置 `projectKey` 选项。您可以在 OpenReplay 仪表盘的 “Preferences > Projects” 下获取该值。
+
+<Aside type="tip">
+	请注意，如果您有多个项目，需要谨慎选择使用哪个项目密钥。
+</Aside>
+
+
+### 添加跟踪代码
+
+将以下代码添加到您的 `MainActivity.kt` 文件中：
+
+```kotlin
+// MainActivity.kt
+import com.openreplay.tracker.OpenReplay
+
+//...
+
+class MainActivity : AppCompatActivity() {
+	override fun onCreate(savedInstanceState: Bundle?) {
+		// not required if you're using our SaaS version
+		OpenReplay.serverURL = "https://your.instance.com/ingest"
+		// check out our SDK docs to see available options
+		OpenReplay.start(
+			applicationContext,
+			"projectkey",
+			OpenReplay.Options.defaults(),
+			onStarted = {
+				println("OpenReplay Started")
+			})
+
+		// ...
+	}
+}
+```
+
+### 数据脱敏
+
+有关更多详细信息，请参阅[如何在 Android 回放中对数据进行脱敏](/android-sdk/sanitization)。
+
+## 初始化选项
+
+- `crashes: Bool` 启用 crashlytics。
+- `analytics: Bool` 启用对已标记视图的分析跟踪。
+- `performances: Bool` 启用性能监听器。
+- `logs: Bool` 启用日志监听器。
+- `screen: Bool` 启用屏幕录制器。
+- `wifiOnly: Bool` 强制跟踪器仅在用户有 wifi 连接时启动。
+
+## 有疑问吗？
+如果您对此过程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或者查看我们的[论坛](https://forum.openreplay.com)。

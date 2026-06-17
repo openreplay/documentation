@@ -1,0 +1,60 @@
+---
+title: "New Relic"
+metaTitle: "New Relic 集成"
+metaDescription: "如何将 New Relic 与 OpenReplay 集成，并在会话回放旁查看后端错误。"
+---
+
+如何将 New Relic 与 OpenReplay 集成，并在会话录制旁查看后端错误。
+
+## 1. 创建 Query Key
+
+1. 登录你的 [New Relic](https://newrelic.com) 账户。
+2. 在左上角，选择 *INSIGHTS* 仪表板。
+3. 在 *INSIGHTS* 仪表板中，进入 “Manage Data”，然后选择 *API Keys*。
+4. 点击 *Query Keys* 的 *+* 按钮。
+
+![New Relic API Keys](/static/newrelic-1.png#center)
+
+5. 在 Notes 中填写 `openreplay`。
+6. 复制 `Account ID` 和 `Key`。
+7. 点击 *Save your notes*。
+
+![New Relic Query Key](/static/newrelic-2.png#center)
+
+## 2. 在 OpenReplay 中启用 NewRelic
+
+将你的 `Application ID` 和 `Key` 粘贴到 OpenReplay 仪表板的 “Preferences > Integration” 下。
+
+![OpenReplay 中的 New Relic 集成](/static/newrelic-3.jpg#center)
+
+## 3. 传递 openReplaySessionToken
+
+为了将 New Relic 事件与录制的用户会话关联起来，需要在你想要跟踪的每个请求中，将一个唯一的令牌从你的前端传递到后端。这可以通过自定义 HTTP 头来实现。在下面的示例中，我们使用 `fetch` 函数来发送该头。
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+为了让 OpenReplay 能够将 New Relic 日志条目与录制的用户会话关联起来，需要将一个唯一的令牌作为 `custom_parameter` 传递到你想要跟踪的每个后端错误中。
+
+下面是一个使用 NewRelic Python API 的示例。
+
+```python
+newrelic.agent.add_custom_parameter("openReplaySessionToken", OPENREPLAY_SESSION_TOKEN)
+```
+
+标签名称 `openReplaySessionToken` 区分大小写。
+
+## 有疑问？
+
+如果你遇到任何问题，请加入我们的 [Slack](https://slack.openreplay.com)，或查看我们的[论坛](https://forum.openreplay.com)，从我们的社区获得帮助。

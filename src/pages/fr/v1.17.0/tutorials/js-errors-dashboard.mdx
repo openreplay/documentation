@@ -1,0 +1,80 @@
+---
+title: "Lister les erreurs JavaScript dans votre tableau de bord"
+metaTitle: "Lister les erreurs JavaScript dans votre tableau de bord"
+metaDescription: "Apprenez à créer un tableau de bord personnalisé à partir de la liste des erreurs JS détectées dans votre application"
+---
+Depuis la [version 1.7.0](https://github.com/openreplay/openreplay/releases/tag/v1.7.0), OpenReplay vous permet d’ajouter vos métriques personnalisées à vos propres tableaux de bord. Ce niveau de flexibilité vous permet de surveiller votre application sous tous les angles dont vous et votre équipe avez besoin (puisque les tableaux de bord peuvent être partagés entre les membres de votre équipe).
+
+En même temps, dans le cadre de cette nouvelle version, vous pouvez créer une métrique personnalisée qui liste toutes les erreurs JavaScript suivies au cours d’une session.
+
+Alors aujourd’hui, nous allons explorer cette métrique.
+
+## Capturer les erreurs JavaScript avec le tracker
+
+Les erreurs JavaScript sont capturées automatiquement par notre tracker, vous n’avez donc vraiment pas à vous soucier de quoi que ce soit.
+
+Toutes les exceptions qui apparaissent dans la console de développement au cours d’une vraie session seront suivies dans l’onglet « Exceptions » de la relecture.
+
+![JavaScript errors tab](/tutorials/js-error-dashboard/js-errors-tab.png)
+
+Nous pouvons utiliser ces informations pour créer une métrique autour d’elles, alors voyons cela.
+
+## Créer une métrique personnalisée avec vos erreurs JavaScript
+
+Suivez ces étapes pour créer votre métrique personnalisée. Une fois la métrique prête, nous créerons un tableau de bord personnalisé qui la contiendra.
+
+1. Allez dans la section Dashboards de la barre de navigation supérieure.
+2. Cliquez sur « Metrics » dans le menu latéral gauche.
+3. Cliquez ensuite sur « Create metric »
+4. Donnez un nom à votre métrique, disons « JavaScript errors ».
+5. Pour Metric Type, sélectionnez « Table », puis « JS Errors »
+
+![List of errors](/tutorials/js-error-dashboard/metric-type.png)
+
+Vous pouvez également filtrer les sessions qui comportent des erreurs JS. Par exemple, nous pourrions faire de cette métrique la « **Liste des erreurs JS de la page Produit** ». Vous pourriez ainsi ajouter un filtre basé sur le chemin (Path), comme ceci :
+
+![Filter by path](/tutorials/js-error-dashboard/filter-by-path.png)
+
+Dans notre application d’exemple, les pages produit se trouvent sous le chemin `/es/product/[SLUG]`, donc en configurant le filtre pour qu’il « **commence par** » `/es/product`, nous ne prendrons en compte que les erreurs JS qui se produisent à l’intérieur de cette page.
+
+De plus, et pour garder le tableau de bord intéressant, vous pourriez créer une autre métrique qui suivrait les « Rage clicks » au sein de la même page. Il s’agit d’une métrique qui montre les moments où l’utilisateur clique plusieurs fois au même endroit sans raison apparente.
+
+Une métrique configurée de cette manière ferait l’affaire :
+
+![Click rage filter](/tutorials/js-error-dashboard/click-rage-filter.png)
+
+En comptant les sessions, filtrées par URL et en s’assurant qu’elles présentent le type de problème « Click Rage » détecté en leur sein.
+
+Une fois que vous avez configuré les filtres et la métrique elle-même, il vous suffit de cliquer sur « Create ».
+
+### Créer votre tableau de bord
+
+Une fois la métrique prête, vous pouvez cliquer sur le lien « **+Create** » dans le menu de gauche (à l’intérieur de la section Dashboards).
+
+![Create dashboard modal](/tutorials/js-error-dashboard/create-dashboard.png)
+
+Une fois que la fenêtre modale « Create Dashboard » apparaît, donnez-lui un nom, puis :
+
+1. Cliquez sur la catégorie « Custom ».
+2. Sélectionnez les nouvelles métriques que nous venons de créer.
+3. Cliquez sur le bouton « Create » situé en bas à gauche.
+
+Cela devrait créer un tableau de bord qui vous montre les problèmes détectés sur la page produit :
+
+![Dashboard ready](/tutorials/js-error-dashboard/dashboard-ready.png)
+
+Et si vous avez besoin de plus de détails, vous pouvez cliquer sur le graphique « **Click rage on products** » pour voir la liste des sessions concernées par ce problème.
+
+Et si vous cliquez sur l’une des lignes de la liste « **JS Errors on product** », vous obtiendrez des détails supplémentaires sur le problème :
+
+![JavaScript error details](/tutorials/js-error-dashboard/js-error-details.png)
+
+Vous obtenez la stacktrace de l’erreur, ainsi que des informations supplémentaires sur les dernières sessions affectées par celle-ci. Dans ce cas, nous avons affaire à une faute de frappe dans le nom d’une variable, mais il pourrait s’agir de n’importe quelle exception JS.
+
+Et voilà, vous avez réussi à créer un nouveau tableau de bord à l’aide de vos propres métriques personnalisées. À vous maintenant de définir les métriques dont vous avez besoin pour votre propre application.
+
+Si vous souhaitez en savoir plus sur les métriques intégrées fournies par OpenReplay, veuillez consulter [cet autre tutoriel ici](https://docs.openreplay.com/tutorials/custom-dashboard).
+
+## Vous avez des questions ?
+
+Si vous rencontrez des problèmes lors de la création d’un tableau de bord personnalisé dans votre projet, contactez-nous sur notre [communauté Slack](https://slack.openreplay.com/) et posez vos questions directement à nos développeurs !

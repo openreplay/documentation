@@ -1,0 +1,101 @@
+---
+title: "iOS SDK - تهيئة الـ SDK"
+metaTitle: "iOS SDK - تهيئة الـ SDK"
+metaDescription: "خيارات الإعداد لطريقة المُنشئ (constructor) الخاصة بمتتبّع iOS"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	إن iOS SDK في مرحلة بيتا. لا تتردد في تزويدنا بملاحظاتك أو الإبلاغ عن أي مشكلة قد تواجهها على [Slack](https://slack.openreplay.com) الخاص بنا أو الاطلاع على [المنتدى](https://forum.openreplay.com) الخاص بنا.
+</Aside>
+
+## التثبيت
+
+سيقوم السطر التالي بتثبيت المتتبّع ومعه الـ SDK لتتمكن من الاستفادة من جميع ميزات المتتبّع.
+
+### Cocoapods
+
+```ruby
+  pod 'OpenReplay', '~> 1.0.17'
+```
+
+### Swift Package Manager
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/openreplay/ios-tracker.git", from: "1.0.17"),
+]
+```
+
+## التهيئة
+
+عند إنشاء نسخة من متتبّع OpenReplay، تتوفر لديك عدة خيارات إعداد يمكنك توفيرها لتخصيص العديد من جوانب التسجيل وتجربة التسجيل. يجب عليك تعيين الخيار `projectKey` في المُنشئ. يمكنك الحصول على هذه القيمة من لوحة تحكم OpenReplay الخاصة بك ضمن 'Preferences > Projects'.
+
+<Aside type="tip">
+	لاحظ أنه إذا كان لديك عدة مشاريع، فعليك توخّي الحذر في اختيار مفتاح المشروع الذي تستخدمه.
+</Aside>
+
+
+### إضافة كود التتبّع
+
+أضف الكود التالي إلى ملف `AppDelegate.swift` الخاص بك:
+
+```swift
+// AppDelegate.swift
+import OpenReplay
+
+//...
+
+class AppDelegate: UIResponder, UIApplicationDelegate {
+
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+
+			  // not required if you're using our SaaS version
+        OpenReplay.shared.serverURL = "https://your.instance.com/ingest"
+				// check out our SDK docs to see available options
+        OpenReplay.shared.start(projectKey: "projectkey", options: .defaults)
+
+        // ...
+        return true
+			}
+```
+
+### إعداد مُستمِع اللمسات
+
+```swift
+// SceneDelegate.Swift
+import OpenReplay
+
+// ...
+func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+	let contentView = ContentView()
+	.environmentObject(TodoStore())
+
+	if let windowScene = scene as? UIWindowScene {
+		let window = TouchTrackingWindow(windowScene: windowScene) // <<<< here
+		window.rootViewController = UIHostingController(rootView: contentView)
+		self.window = window
+		window.makeKeyAndVisible()
+	}
+}
+```
+
+### تنقية البيانات
+
+اطّلع على [كيفية تنقية البيانات في تسجيلات iOS](/ios-sdk/sanitization) لمزيد من التفاصيل.
+
+## خيارات التهيئة
+
+- `crashes: Bool` يُفعّل crashlytics.
+- `analytics: Bool` يُفعّل تتبّع التحليلات لطرق العرض المُعلَّمة.
+- `performances: Bool` يُفعّل مُستمِع الأداء.
+- `logs: Bool` يُفعّل مُستمِع السجلات.
+- `screen: Bool` يُفعّل مُسجِّل الشاشة.
+- `wifiOnly: Bool` يُجبر المتتبّع على البدء فقط إذا كان المستخدم متصلاً بشبكة wifi.
+
+## الطرق (Methods)
+
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="تعرّف على طرق ووحدات iOS SDK" url="/ios-sdk/modules" hideIcon={true} width="100"/>
+</div>

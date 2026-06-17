@@ -1,0 +1,79 @@
+---
+title: "الإبلاغ عن الأخطاء"
+metaTitle: "الإبلاغ عن الأخطاء"
+metaDescription: "كيفية عمل الإبلاغ عن الأخطاء، وما الذي يُرسَل إلى علامة التبويب 'Errors'، وكيفية الإبلاغ عن الأخطاء والاستثناءات يدويًا"
+---
+
+يُعد الإبلاغ عن الأخطاء أمرًا بالغ الأهمية لمراقبة استقرار تطبيقك، واكتشاف حالات التراجع مسبقًا، ومعرفة المشكلات التي تواجه المستخدمين أكثر من غيرها. بشكل افتراضي، يُسجَّل أي استثناء غير مُلتقَط ضمن علامة التبويب 'Errors':
+
+![Errors Tab](/static/errors-tab.jpg#center)
+
+بالإضافة إلى ذلك، ستظهر الأخطاء المُسجَّلة أيضًا في تسجيل الجلسة ضمن علامة التبويب 'Console' في DevTools:
+
+![Exceptions Tab](/static/exceptions-tab-in-recording.jpg#center)
+
+## تسجيل الاستثناءات يدويًا
+
+يدعم متتبّع OpenReplay تسجيل 3 أنواع من الأخطاء:
+* الاستثناءات المُلتقَطة - [Error](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error)
+* الوعود المرفوضة - [PromiseRejectionEvent](https://developer.mozilla.org/en-US/docs/Web/API/PromiseRejectionEvent)
+* أحداث الأخطاء (onError) - [ErrorEvent](https://developer.mozilla.org/en-US/docs/Web/API/ErrorEvent)
+
+يمكن الإبلاغ عن جميع الأنواع المذكورة أعلاه باستخدام طريقة واحدة:
+
+```js
+tracker.handleError(error, metaObject); // metaObject is optional and is a flat object
+```
+
+لنراجع مثالًا لكل نوع من أنواع الأخطاء:
+
+### الاستثناءات المُلتقَطة (Error)
+
+بشكل افتراضي، لا تُسجَّل الاستثناءات المُلتقَطة في علامة التبويب 'Console'. للإبلاغ عن خطأ، يمكننا القيام بما يلي:
+
+```js
+try {
+    // application code
+}
+catch(err) {
+    // application code that handles the error
+    tracker.handleError(error, metaObject); // metaObject is optional and is a flat object
+}
+```
+### الوعود المرفوضة (PromiseRejectionEvent)
+
+إذا تم رفض وعد (Promise) وأردنا الإبلاغ عن الخطأ إلى OpenReplay، يمكننا القيام بما يلي:
+
+```js
+function myFunc() {
+    doSomeAsyncStuff()
+    .then((result) => {
+        // application code
+    })
+    .catch(promiseRejectionErr => {
+        // application code to handle the error
+        tracker.handleError(promiseRejectionErr, metaObject); // metaObject is optional and is a flat object     
+    })
+}
+```
+
+### onError (ErrorEvent)
+
+سيوضّح هذا المثال كيفية الإبلاغ عن خطأ في حال فشل تحميل عنصر ```<img>```:  
+
+```html
+<img id="myImg" src="image.gif">
+<p id="demo"></p>
+```
+
+```js
+document.getElementById("myImg").addEventListener("error", myFunction);
+
+function myFunction(errorEvent) {
+  document.getElementById("demo").innerHTML = "The image could not be loaded.";
+  tracker.handleError(errorEvent, { context: "demo" });
+}
+```
+
+## هل لديك أسئلة؟
+إذا كانت لديك أي أسئلة حول هذه العملية، فلا تتردد في التواصل معنا عبر [Slack](https://slack.openreplay.com) الخاص بنا أو زيارة [المنتدى](https://forum.openreplay.com) الخاص بنا.

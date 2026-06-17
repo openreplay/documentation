@@ -1,0 +1,49 @@
+---
+title: "رفع Source Maps"
+metaTitle: "رفع Source Maps"
+metaDescription: "ارفع source maps إلى OpenReplay."
+---
+
+يدعم OpenReplay إلغاء تصغير JavaScript عبر source maps. من خلال رفعها إلى OpenReplay، ستتمكن من رؤية سياق الكود المصدري المستخرج من تتبعات المكدس (stack traces) في صورته الأصلية، وهو أمر مفيد جدًا في تصحيح أخطاء الكود المُصغَّر (UglifyJS) أو الكود المُترجَم (TypeScript، ES6).
+
+## الإعداد
+
+ثبّت وحدة NPM المسماة sourcemap-uploader:
+
+```bash
+npm i -g @openreplay/sourcemap-uploader
+```
+
+## المتطلبات المسبقة
+
+تأكد من أن عملية البناء (build) لديك تنتج ملفات source map منفصلة (.map). على سبيل المثال، إذا كنت تستخدم webpack، فيجب أن يتضمن إعدادك خيار `devtool` التالي:
+
+```js
+{ devtool: ‘source-map’ }
+```
+
+## رفع Source Maps إلى OpenReplay
+
+بعد ذلك، تحتاج إلى إعداد عملية البناء لديك لإنشاء ملفات المصدر المختلفة. يمكن رفع source maps لـ **ملف واحد**:
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY file -m ./dist/index.js.map -u https://myapp.com/index.js
+```
+
+أو لـ **مجلد** يحتوي على ملفات متعددة. في هذه الحالة، يجب أن يتوافق الـ URL (المسار الدقيق) مع الجذر الذي ترفع منه ملفات JS الموجودة في المجلد. بعبارة أخرى، إذا كان لديك ملف `app-42.js` بجانب ملف `app-42.js.map` في مجلد `./build` وأردت بعد ذلك رفعه إلى نسخة OpenReplay الخاصة بك بحيث يمكن الوصول إليه عبر الرابط `https://myapp.com/static/app-42.js`، فيجب أن يكون الأمر كالتالي:
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY dir -m ./build -u https://myapp.com/static
+```
+
+## المعاملات
+
+- `-s`: عنوان URL لنسخة OpenReplay الخاصة بك. تأكد من إلحاقه بـ /api. لا تحدد هذا المعامل إذا كنت تستخدم OpenReplay Cloud.
+- `-k`: API Key (يوجد في 'Preferences' > 'Account' > 'Organization API Key').
+- `-p`: Project Key (يوجد في 'Preferences' > 'Projects').
+- `-m`: المسار إلى ملف (ملفات) source map (يمكن أن يكون أيضًا مجلدًا).
+- `-u`: عنوان URL لأصل JavaScript (في حالة ملف واحد) أو عنوان URL الأساسي (في حالة المجلد).
+- `-l`: لعرض سجلات الرفع.
+
+## هل لديك أسئلة؟
+إذا كانت لديك أي أسئلة حول هذه العملية، فلا تتردد في التواصل معنا عبر [Slack](https://slack.openreplay.com) أو الاطلاع على [المنتدى](https://forum.openreplay.com) الخاص بنا.

@@ -1,0 +1,80 @@
+---
+title: "Datadog"
+metaTitle: "Datadog 集成"
+metaDescription: "如何将 Datadog 与 OpenReplay 集成，并在会话回放旁查看后端错误。"
+---
+
+如何将 Datadog 与 OpenReplay 集成，并在会话录制旁查看后端错误。
+
+## 1. 生成 Datadog API Key 和 Application Key
+
+前往 [Datadog > Integrations > APIs](https://app.datadoghq.com/account/settings#api) 生成 API Key，或使用现有的 API Key。
+
+![Datadog API Key](/static/datadog-1.png#center)
+
+在同一页面上，点击 Application Keys 并生成一个新的 application key。
+
+![Datadog Application Key](/static/datadog-2.png#center)
+
+## 2. 在 OpenReplay 中启用集成
+
+在 OpenReplay 控制台的 'Preferences > Integration' 下，将你的 Datadog `API Key` 和 `Application Key` 粘贴进去。
+
+![Datadog Integration in OpenReplay](/static/datadog-3.png#center)
+
+## 3. 传播 openReplaySessionToken
+
+为了将 Datadog 事件与录制的用户会话关联起来，需要在每个你想要追踪的请求中，将一个唯一的令牌从前端传播到后端。这可以通过自定义 HTTP 头来实现。在下面的示例中，我们使用 `fetch` 函数来发送该请求头。
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+为了让 OpenReplay 能够将 Datadog 日志条目与录制的用户会话关联起来，需要将一个唯一的令牌传播到你希望追踪的每个后端错误中。
+
+下面是一个使用 Monkey Patching 的 Python 示例。
+
+```python
+import sys
+import traceback
+#...
+old_tb = traceback.print_exception
+old_f = sys.stdout
+old_e = sys.stderr
+OPENREPLAY_SESSION_TOKEN = None
+
+class F:
+    def write(self, x):
+        if OPENREPLAY_SESSION_TOKEN is not None and x != '\n':
+            old_f.write(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] {x}")
+        else:
+            old_f.write(x)
+
+    def flush(self):
+        pass
+
+def tb_print_exception(etype, value, tb, limit=None, file=None, chain=True):
+    if OPENREPLAY_SESSION_TOKEN is not None:
+        value = type(value)(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] " + str(value))
+    old_tb(etype, value, tb, limit, file, chain)
+
+traceback.print_exception = tb_print_exception
+
+sys.stderr = F()
+```
+
+标签名称 `openReplaySessionToken` 区分大小写。
+
+## 有疑问？
+
+如果你遇到任何问题，请加入我们的 [Slack](https://slack.openreplay.com)，或查看我们的[论坛](https://forum.openreplay.com)，从我们的社区获取帮助。

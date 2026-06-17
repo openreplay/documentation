@@ -1,0 +1,35 @@
+---
+title: "捕获 WebSockets"
+metaTitle: "捕获 WebSockets"
+metaDescription: "如何在会话回放中记录 WebSockets。"
+---
+
+OpenReplay 可以记录你选定的 WebSocket 通道，并将其显示在会话回放中。这在排查某些问题时非常有用，因为它能提供额外的上下文信息。
+
+## 启用 WebSockets 记录
+
+要启用 WebSockets 记录，你需要创建一个用于监听消息的 hook：
+
+```ts
+const wsHook = tracker.trackWs('my_ws_channel')
+
+myWsChannel.on('important_message', (data) => {
+  wsHook('important_message', data, 'down')
+  /** your code */
+})
+myWsChannel.onAnyOutgoing((event, data) => {
+  wsHook(event, data, 'up')
+})
+```
+
+示例基于 [socket-io 文档](https://socket.io/docs/v4/listening-to-events/)构建
+
+> 注意：这只是一个基本示例，请务必阅读如何监听消息事件，并据此规划你实际需要捕获的内容。大量/繁重的流量会导致回放体积增大。
+
+### 数据清理
+
+你可以在通过 hook 发送数据之前对其进行清理。
+
+## 有疑问？
+
+如果你对此流程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 与我们联系，或查看我们的[论坛](https://forum.openreplay.com)。

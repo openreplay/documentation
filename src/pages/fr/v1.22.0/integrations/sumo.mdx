@@ -1,0 +1,81 @@
+---
+title: "SumoLogic"
+metaTitle: "Intégration SumoLogic"
+metaDescription: "Comment intégrer SumoLogic à OpenReplay et voir les erreurs backend aux côtés des relectures de session."
+---
+
+Comment intégrer SumoLogic à OpenReplay et voir les erreurs backend aux côtés des enregistrements de session.
+
+## 1. Créer un nouvel Access ID et une nouvelle Access Key
+
+1. Connectez-vous à votre compte [SumoLogic](https://service.eu.sumologic.com/ui/#/login).
+2. Accédez à la page [Access Keys](https://service.eu.sumologic.com/ui/#/security/access-keys).
+3. Cliquez sur *+ Add Access Key*.
+4. Dans le nom, saisissez « openreplay » et cliquez sur *Create Key*.
+5. Copiez le nouvel `Access ID` et l'`Access Key`, car nous en aurons besoin pour notre intégration.
+6. Cliquez sur *Done*.
+
+Pour plus d'informations sur la création d'un Access ID et d'une Access Key, veuillez consulter cette [documentation](https://help.sumologic.com/Manage/Security/Access-Keys).
+
+## 2. Activer SumoLogic dans OpenReplay
+
+Saisissez votre `Access ID` et votre `Access Key` dans le tableau de bord OpenReplay, sous « Preferences > Integration ».
+
+![Intégration SumoLogic dans OpenReplay](/static/sumo-1.png#center)
+
+## 3. Propager openReplaySessionToken
+
+Pour relier un événement SumoLogic à la session utilisateur enregistrée, un token unique doit être propagé de votre frontend vers votre backend à chaque requête que vous souhaitez suivre. Cela peut se faire à l'aide d'un en-tête HTTP personnalisé. Dans l'exemple ci-dessous, nous utilisons la fonction `fetch` pour envoyer cet en-tête.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+Pour qu'OpenReplay puisse associer un message SumoLogic à la session utilisateur enregistrée, un token unique doit être propagé dans le cadre de chaque erreur backend que vous souhaitez suivre.
+
+Voici un exemple en Python utilisant le Monkey Patching.
+
+```python
+import sys
+import traceback
+#...
+old_tb = traceback.print_exception
+old_f = sys.stdout
+old_e = sys.stderr
+OPENREPLAY_SESSION_TOKEN = None
+
+class F:
+    def write(self, x):
+        if OPENREPLAY_SESSION_TOKEN is not None and x != '\n':
+            old_f.write(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] {x}")
+        else:
+            old_f.write(x)
+
+    def flush(self):
+        pass
+
+def tb_print_exception(etype, value, tb, limit=None, file=None, chain=True):
+    if OPENREPLAY_SESSION_TOKEN is not None:
+        value = type(value)(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] " + str(value))
+    old_tb(etype, value, tb, limit, file, chain)
+
+traceback.print_exception = tb_print_exception
+
+sys.stderr = F()
+```
+
+Le nom du tag `openReplaySessionToken` est sensible à la casse.
+
+## Vous avez des questions ?
+
+Si vous rencontrez des problèmes, rejoignez notre [Slack](https://slack.openreplay.com) ou consultez notre [Forum](https://forum.openreplay.com) et obtenez de l'aide auprès de notre communauté.

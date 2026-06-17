@@ -1,0 +1,71 @@
+---
+title: "الإصدارات المهملة"
+metaTitle: "الإصدارات المهملة"
+metaDescription: "الإصدارات السابقة لـ v1.4.0 مهملة."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+إذا كنت ترغب في ترقية نسخة OpenReplay الخاصة بك إلى أحدث إصدار، فتأكد من أنك تشغّل إصدارًا أعلى من `v1.4.0` أو مساويًا له. إذا لم يكن الأمر كذلك، فأنت على إصدار مهمل، وينبغي عليك أولًا الترقية إلى `v1.4.0` قبل أن تتمكن من الانتقال إلى أي إصدار حديث (v1.8.0+).
+
+## ترقية الواجهة الخلفية (من v1.3.6 أو إصدار سابق) إلى v1.4.0
+
+أولًا وقبل كل شيء، تأكد من أنك على `v1.3.6` أو إصدار سابق. إذا كان هذا هو الحال بالفعل، فتجاهل الأوامر التالية وانتقل إلى الخطوة 1). إذا لم يكن كذلك، فحدّث تثبيت OpenReplay الخاص بك إلى `v1.3.6`:
+   
+```bash 
+# Copy/backup the current openreplay folder to _version-number
+mv openreplay openreplay_v1.3.5
+git clone https://github.com/openreplay/openreplay -b v1.3.6
+cd openreplay/scripts/helm
+# bash upgrade.sh <old openreplay path>
+bash upgrade.sh ~/openreplay_v1.3.5
+```
+
+بمجرد أن تصبح على `v1.3.6`، تابع الخطوات التالية:
+
+1. انسخ/احتفظ بنسخة احتياطية من مجلد openreplay الحالي في `_version-number` كما هو موضح أدناه:
+   
+  ```bash 
+  mv openreplay openreplay_v1.3.6
+  ```
+
+2. استنسخ إصدار OpenReplay الجديد. في هذا المثال، نقوم بالترقية إلى v1.4.0:
+   
+  ```bash 
+  git clone https://github.com/openreplay/openreplay -b v1.4.0
+  ```
+
+3. شغّل النص البرمجي التالي لترقية ملف `vars.yaml` الخاص بك تلقائيًا إلى التنسيق الجديد:
+  
+  ```bash
+  cd openreplay/scripts/helmcharts
+  ansible localhost -m template -a "src=vars_template.yaml dest=vars.yaml" -e @~/openreplay_v1.3.6/scripts/helm/vars.yaml
+  ```
+
+4. قم بترقية OpenReplay:
+
+  ```bash
+  cd openreplay/scripts/helmcharts
+  helm ls -n app | tail -n +2 | awk '{print $1}' | xargs -I{} helm uninstall {} -n app
+  helm uninstall nginx-ingress -n nginx-ingress
+  helm upgrade --install openreplay ./openreplay -n app -f vars.yaml --atomic --set forceMigration=true
+  ```
+  
+5. إذا لم تكن تستخدم موازِن تحميل وقمت بإنشاء شهادة SSL الخاصة بك عبر النص البرمجي `certmanager.sh`:
+
+  ```
+  cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh
+  ```
+
+6. حدّث المتغير `fromVersion` في `/openreplay/scripts/helmcharts/vars.yaml` ليعكس الإصدار الجديد. على سبيل المثال، إذا كنت تنتقل من `v1.3.6` إلى `v1.4.0`، فحدّث `fromVersion` كما هو موضح أدناه:
+  
+  ```yaml
+  fromVersion: "v1.4.0"
+  ```
+
+> **ملاحظة:** 
+سيتم إعادة تعيين أي تجاوزات يدوية أُجريت على أي ملف تكوين خدمة (أي `openreplay/scripts/helm/app/<app>.yaml`). لذا إذا كانت لديك أي تجاوزات مخصصة، مثل استخدام [خدمة تخزين كائنات خارجية](/configuration/recordings-storage) لتسجيلاتك، أو زيادة سعة الخدمة (cpu/الذاكرة)، فتأكد من تطبيقها على الإصدار الجديد (في `/openreplay/scripts/helmcharts/vars.yaml`) قبل تشغيل نص الترقية البرمجي (الخطوة 4).
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلة أثناء العملية المذكورة أعلاه، فتواصل معنا عبر [Slack](https://slack.openreplay.com) أو اطّلع على [المنتدى](https://forum.openreplay.com) الخاص بنا واحصل على المساعدة من مجتمعنا.

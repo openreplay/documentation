@@ -1,0 +1,88 @@
+---
+title: "Desplegar en Scaleway"
+metaTitle: "Desplegar en Scaleway"
+metaDescription: "Guía paso a paso para desplegar OpenReplay en Scaleway Elements."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+El stack de OpenReplay se puede instalar en una sola instancia y Scaleway Elements es un candidato ideal. Aquí te explicamos cómo hacerlo.
+
+## Lanzar una instancia
+
+1. Ve al panel de control de Scaleway
+2. Navega a 'Compute > Instances' y luego haz clic en 'Create an instance'
+3. Elige tu zona de disponibilidad preferida
+4. Selecciona una imagen. Para esta guía, usaremos *Ubuntu Server 20.04 Focal Fossa*
+5. Elige el tipo de instancia. Las especificaciones mínimas son `2 vCPUs, 8 GB of RAM, 50 GB of storage`, de lo contrario los servicios backend de OpenReplay simplemente no se iniciarán. Por lo tanto, recomendamos **al menos** la `DEV1-L` (o una equivalente), que es suficiente para un volumen bajo/moderado. Si esperas un tráfico elevado, deberías escalar a partir de aquí.
+6. Añade volúmenes: establece el tamaño en al menos 50 GB (ya sea almacenamiento local o por bloques)
+7. Dale a tu instancia un buen nombre (por ejemplo, openreplay)
+8. Claves SSH: asegúrate de tener ya una clave asociada a tu proyecto para poder conectarte a tu instancia
+9. Haz clic en 'Create a new instance'
+
+> **Nota:** Los puertos SMTP (25, 465, 587) están bloqueados por defecto en Scaleway. Tu instancia de OpenReplay no podrá enviar correos electrónicos a menos que habilites SMTP desde la configuración de tu grupo de seguridad. Para ello, consulta este [tutorial rápido](https://www.scaleway.com/en/faq/why-can-i-not-send-any-email/).
+
+## Desplegar OpenReplay
+
+1. Asegúrate de que tu instancia esté `Started` y luego conéctate a ella:
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem #! wherever you've saved the SSH key
+INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
+chmod 400 $SSH_KEY
+ssh -i $SSH_KEY root@$INSTANCE_IP
+```
+
+2. Instala OpenReplay indicando el dominio en el que se ejecutará (por ejemplo, DOMAIN_NAME=openreplay.mycompany.com):
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## Configurar TLS/SSL
+
+OpenReplay maneja datos sensibles de los usuarios y, por lo tanto, requiere HTTPS para funcionar. Esto es obligatorio, de lo contrario el tracker simplemente no comenzaría a grabar. Lo mismo ocurre con el panel de control: sin HTTPS no podrás reproducir las sesiones de los usuarios.
+
+Por lo tanto, debes aportar (o generar) tu propio certificado SSL.
+
+1. Primero, ve a 'Network' > 'DNS' (o tu otro proveedor de servicios DNS) y crea un `A Record`. Usa el dominio que proporcionaste anteriormente durante el paso de instalación y apúntalo a la instancia mediante su IP pública (que puedes encontrar en 'Compute' > 'Instances').
+
+2. Si vas a aportar tu propio certificado, crea un secreto SSL con el siguiente comando: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
+
+> **Nota:** Si no tienes un certificado, genera uno, con renovación automática, para tu subdominio (el que proporcionaste durante la instalación) usando Let's Encrypt. Simplemente conéctate a la instancia de OpenReplay, ejecuta `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` y sigue los pasos.
+
+3. Si deseas habilitar la redirección de http a https (recomendado), descomenta el siguiente bloque, bajo la sección `ingress-nginx`, en `/var/lib/openreplay/vars.yaml`:
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+Cabe mencionar que nuestro `ingress-nginx` se ejecuta por defecto en los puertos `80|443`, pero esto puede cambiarse fácilmente, si es necesario, en `vars.yaml`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. Por último, reinstala el NGINX de OpenReplay:
+
+```bash
+openreplay -R
+```
+
+Ya está todo listo, OpenReplay debería ser accesible en tu subdominio. Puedes crear una cuenta visitando la página `/signup` (por ejemplo, openreplay.mycompany.com/signup).
+
+## ¿Tienes preguntas?
+
+Si encuentras algún problema, conéctate a nuestro [Slack](https://slack.openreplay.com) o consulta nuestro [Foro](https://forum.openreplay.com) y obtén ayuda de nuestra comunidad.

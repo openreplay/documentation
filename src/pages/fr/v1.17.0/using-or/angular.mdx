@@ -1,0 +1,244 @@
+---
+title: "Utiliser OpenReplay avec Angular"
+metaTitle: "Ajouter le Tracker OpenReplay à votre application Angular"
+metaDescription: "Apprenez à faire fonctionner le tracker sur votre application Angular"
+---
+import GoDeeperFooter from '~/components/go-deeper-footer.astro'
+
+
+Il est important de garder à l'esprit que le suivi **doit** s'exécuter en dehors des hooks Zone.js d'Angular afin d'éviter les chevauchements et les vérifications inutiles.
+
+Voici un exemple simple de configuration du tracker :
+
+```tsx
+import { Injectable, NgZone } from '@angular/core';
+
+import Tracker from '@openreplay/tracker';
+import trackerAssist from '@openreplay/tracker-assist';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class OpenReplayService {
+  public tracker?: Tracker | null;
+
+  constructor(private zone: NgZone) {
+    this.zone.runOutsideAngular(() => {
+      this.tracker = new Tracker({
+        projectKey: 'abc123',
+        ingestPoint: 'https://someurl/',
+      });
+
+      this.tracker.use(
+        trackerAssist({
+          confirmText: `You have an incoming call from <Company> Support. Do you want to answer?`,
+        })
+      );
+    });
+  }
+
+  public async start() {
+    this.zone.runOutsideAngular(() => {
+      if (this.tracker) {
+        return this.tracker.start();
+      } else {
+        return {
+          sessionID: null,
+          sessionToken: null,
+          userUUID: null,
+        };
+      }
+    });
+  }
+
+  public setUserData(user: { id: string }): void {
+    this.zone.runOutsideAngular(() => {
+      if (this.tracker && user.id) {
+        this.tracker.setUserID(String(user.id));
+      }
+    });
+  }
+}
+
+```
+
+## Suivi des requêtes HTTP
+
+Si vous essayez de suivre les requêtes envoyées par votre application Angular, OpenReplay ne fournit pas de plugin comme il le fait pour Fetch ou Axios.
+
+Cela dit, vous pouvez tout de même le configurer pour suivre vos requêtes avec les informations souhaitées à l'aide d'un [HTTPInterceptor](https://angular.io/api/common/http/HttpInterceptor).
+
+Dans ce tutoriel, je vais vous montrer comment créer un HTTPInterceptor capable d'enregistrer à la fois les requêtes et les réponses envoyées par votre HTTPClient.
+
+## Création de l'intercepteur
+
+L'intercepteur est un type particulier d'objet que vous pouvez injecter dans le code de votre application pour capturer chacune des requêtes envoyées avec le client HTTP par défaut d'Angular et en capturer la réponse.
+
+Grâce à cette logique, nous tirerons parti des événements personnalisés d'OpenReplay, qui vous permettent d'envoyer n'importe quel événement que vous souhaitez capturer dans votre session ; nous imiterons donc ce que feraient les plugins Fetch ou Axios dans d'autres configurations.
+
+Le code de l'intercepteur est le suivant :
+
+```tsx
+import { Injectable } from '@angular/core';
+import {
+  HttpInterceptor,
+  HttpRequest,
+  HttpHandler,
+  HttpEvent,
+  HttpResponse,
+} from '@angular/common/http';
+
+import { Observable } from 'rxjs';
+import { filter, map } from 'rxjs/operators';
+import { ReplaySessionService } from '../replay-session.service';
+
+@Injectable({providedIn: 'root'})
+export class HttpConfigInterceptor implements HttpInterceptor {
+  constructor(
+    private replaySessionService: ReplaySessionService,
+  ) { }
+  intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+
+		//This function will be called with the response a few lines below
+		const handleResponse = (request: HttpRequest<any>, response: HttpResponse<any>, event: string) => {
+	     //we forward our data to the service, which will create the custom event and send it
+			this.replaySessionService.sendEventToReplaySession(event, { request, response })
+    }
+    return next.handle(request).pipe(
+      //filter out events that aren't http reponses
+      filter( (event: any) => event instanceof HttpResponse),
+      map( (resp: HttpResponse<any>) => { //for each response, call handleResponse
+        handleResponse(request, resp, `${request.url}`)
+        return resp
+      }),
+      map((event: HttpEvent<any>) => {
+        return event;
+      })
+    );
+  }
+}
+```
+
+Nous examinerons le service de replay dans un instant, mais pour le moment, partez du principe qu'il est là. Enregistrez ce fichier dans votre dossier `app`.
+
+Modifiez ensuite le fichier `app.module` pour ajouter ce qui suit à l'intérieur de la directive @ngModule :
+
+```tsx
+providers: [
+    {provide: HTTP_INTERCEPTORS, useClass: HttpConfigInterceptor, multi: true}
+  ]
+```
+
+Le fichier `app.module` devrait donc ressembler à quelque chose comme ceci :
+
+```tsx
+import { NgModule } from '@angular/core';
+
+/*
+imports...
+*/
+import { HttpConfigInterceptor } from './interceptor/index';
+
+@NgModule({
+  imports: [
+   /*...*/
+  ],
+  providers: [
+    {provide: HTTP_INTERCEPTORS, useClass: HttpConfigInterceptor, multi: true}
+  ],
+  declarations: [
+    /*...*/
+  ],
+  bootstrap: [ AppComponent ]
+})
+export class AppModule { }
+```
+
+Une fois cela réglé, votre application sait désormais qu'elle doit injecter votre intercepteur sur chaque requête HTTP effectuée.
+
+Examinons maintenant le service de session replay proprement dit.
+
+## Création du SessionReplayService
+
+Ajoutez d'abord votre nouveau service avec la commande suivante :
+
+```tsx
+$ ng generate service replay-session
+```
+
+Cela créera un nouveau service Angular à la racine de votre application appelé `replay-session.service.ts`
+
+Le contenu de ce fichier devrait ressembler à ceci :
+
+```tsx
+import { Injectable } from '@angular/core';
+import {
+  HttpInterceptor,
+  HttpRequest,
+  HttpHandler,
+  HttpResponse,
+} from '@angular/common/http';
+import OpenReplay from '@openreplay/tracker'
+
+type ReqRespType = {
+  request: HttpRequest<any>,
+  response: HttpResponse<any>
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ReplaySessionService {
+  tracker: OpenReplay|null = null
+
+  constructor() {
+
+    this.tracker = new OpenReplay({
+        projectKey: "<YOUR PROJECT KEY>",
+    })
+		//you can set up any other OR plugins here as well
+
+    this.tracker.start()
+   }
+
+  sendEventToReplaySession(event: string, params: ReqRespType): void {
+    const {request, response} = params
+
+    this.tracker?.event(event + "[request]", {
+      method: request.method,
+      url: request.url,
+      params: request.params
+    })
+    this.tracker?.event(event + "[response]", {
+      body: response.body,
+      status: response.status,
+      headers: response.headers
+    })
+  }
+}
+```
+
+Le constructeur de la classe, qui — puisqu'il s'agit d'un service — ne sera, nous le savons, appelé qu'une seule fois, se charge d'instancier le tracker et de le démarrer.
+
+Ensuite, dans notre méthode `sendEventToReplaySession`, nous utilisons la méthode `event` pour envoyer deux événements personnalisés.
+
+Si vous revenez à la classe de l'intercepteur, vous remarquerez que « event » (le premier paramètre que nous recevons dans cette méthode) est en réalité l'URL ; j'y ajoute donc les mots « [response] » et « [request] » pour identifier ce qui est enregistré et où.
+
+Ensuite, je crée les charges utiles (payloads) de chaque événement en n'enregistrant que les informations que je souhaite conserver.
+
+Une fois cela en place, voici ce que vous pouvez voir dans l'onglet Events de votre replay :
+
+![List of events](/images/list-of-events.png)
+
+Et si vous cliquez sur les détails de l'une de ces lignes, vous obtenez la charge utile que nous avons enregistrée :
+
+![Event details](/images/event-details.png)
+
+En fait, vous pouvez même reprendre ce code et masquer (sanitize) n'importe quel champ de la requête ou de la réponse que vous ne souhaitez pas voir apparaître dans le replay avant d'appeler la méthode `event`.
+
+Vous pouvez [consulter ce dépôt](https://github.com/deleteman/openreplay-angular-example) pour obtenir le **code source complet** d'une application Angular fonctionnelle utilisant le Tracker.
+
+## Des questions ?
+
+Si vous rencontrez des problèmes pour configurer le Tracker sur votre projet Angular, contactez-nous sur notre [communauté Slack](https://slack.openreplay.com/) et posez vos questions directement à nos développeurs.
+<GoDeeperFooter />

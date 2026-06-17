@@ -27,11 +27,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js 20
-      uses: actions/setup-node@v4
+    - uses: actions/checkout@v6
+    - name: Use Node.js 24
+      uses: actions/setup-node@v6
       with:
-        node-version: 20
+        node-version: 24
         cache: 'npm'
     - name: Set Swap Space
       uses: actionhippie/swap-space@v1
@@ -50,11 +50,8 @@ jobs:
           echo "::error::Build looks truncated ($count HTML files < 5000); aborting before --delete sync."
           exit 1
         fi
-    # --size-only: a fresh CI build rewrites every file's mtime, so the default mtime comparison
-    # re-uploads all ~15k objects every deploy. Comparing by size instead uploads only files whose
-    # byte size actually changed. Caveat: a same-length edit (e.g. a typo fix that keeps the length)
-    # won't be re-uploaded — trigger a one-off full deploy if that ever bites. (--size-only ignores
-    # timestamps, so --exact-timestamps is dropped.) --delete still prunes objects no longer built.
-    - run: aws s3 sync ./dist/ s3://openreplay-documentation --acl public-read --delete --size-only
+    # --delete keeps the bucket in exact sync with the build output, so pages removed
+    # from source (e.g. retired pre-v1.17.0 versions) are also removed from S3.
+    - run: aws s3 sync ./dist/ s3://openreplay-documentation --acl public-read --exact-timestamps --delete
     - run: aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CF_DISTRIBUTION_ID}} --paths "/*"
 

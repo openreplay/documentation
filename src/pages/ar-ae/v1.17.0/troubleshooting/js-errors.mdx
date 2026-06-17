@@ -1,0 +1,70 @@
+---
+title: "أخطاء JS"
+metaTitle: "أخطاء JS"
+metaDescription: "جميع أنواع أخطاء Javascript."
+---
+
+يسرد هذا القسم أكثر أخطاء Javascript شيوعًا التي أبلغ عنها مجتمعنا.
+
+## ReferenceError: Navigator is not defined
+
+يحدث هذا الخطأ أحيانًا عند محاولة استيراد المكوّنين الإضافيين `tracker-assist` أو `tracker-fetch`، ويحدث ذلك لأن node يحاول بناء الصفحة دون وجود واجهة برمجة التطبيقات `window` في البيئة.
+
+الحل بسيط إلى حد ما. كل ما عليك فعله هو تغيير الاستيراد المعتاد للمكوّن الإضافي الذي يسبب المشكلة:
+
+```js
+import trackerAssist from '@openreplay/tracker-assist/cjs';
+```
+
+إلى بديل الاستيراد الديناميكي داخل `componendDidMount` أو `useEffect`:
+
+```js
+import Tracker, { Options } from "@openreplay/tracker";
+const tracker = new Tracker({ /* your options */ });
+
+class TrackerComponent extends React.Component {
+
+  componentDidMount = () => {
+    import(‘@openreplay/tracker-assist/cjs’).then(({ default: trackerAssist }) => {
+      tracker.start(/* your options */)
+      tracker.use(trackerAssist(/* your assist options */))
+    })
+   }
+
+ /* Other code */
+```
+
+بهذه الطريقة سيتم استيراد جميع المكوّنات الإضافية التي تعتمد على واجهة برمجة التطبيقات window عند عرض المكوّن.
+
+## Critical dependency: the request of a dependency is an expression
+
+قد يحدث هذا مع الإصدارات القديمة من المكوّن الإضافي `tracker-assist`. ينبغي عليك تطبيق هذا [الحل البديل](https://github.com/peers/peerjs/issues/630#issuecomment-910028230) إذا واجهت الخطأ أدناه أثناء التصريف (compiling):
+
+```log
+Failed to compile.
+
+./node_modules/peerjs/dist/peerjs.min.js
+Critical dependency: the request of a dependency is an expression
+```
+
+## Uncaught DOMException: Blocked a frame with origin "X" from accessing a cross-origin frame
+
+يلتقط متعقّب OpenReplay افتراضيًا إطارات iFrame **من النطاق نفسه**. ومع ذلك، فإنه يُطلق خطأً عندما يحاول التقاط إطار iFrame ليس من النطاق نفسه الخاص بموقعك الإلكتروني. يمكنك إما:
+
+- تعطيل الوظيفة بالكامل باستخدام الخاصية `captureIFrames` كما في المثال أدناه: 
+
+```js
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY,
+      captureIFrames: false
+});
+```
+
+- متابعة التقاط إطارات iFrame (السلوك الافتراضي) عن طريق إضافة سمة HTML المسماة `data-openreplay-capture` إلى وسوم `<iframe>` من النطاق نفسه **فقط**. بهذه الطريقة، لن يتم تعقّب إطارات iFrame عبر النطاقات (cross-origin) بواسطة OpenReplay.
+
+## مشكلتي غير مدرجة
+
+إذا واجهت أي أخطاء غير مدرجة في هذه الصفحة، فلا تتردد في [فتح مشكلة (issue)](https://github.com/openreplay/openreplay/issues/new/choose) أو ببساطة تواصل معنا عبر [Slack](https://slack.openreplay.com) الخاص بنا، أو اطّلع على [المنتدى](https://forum.openreplay.com) للحصول على المساعدة من مجتمعنا.
+
+## لديك أسئلة؟
+إذا كانت لديك أي أسئلة حول هذه العملية، فلا تتردد في التواصل معنا عبر [Slack](https://slack.openreplay.com) الخاص بنا أو الاطّلاع على [المنتدى](https://forum.openreplay.com).

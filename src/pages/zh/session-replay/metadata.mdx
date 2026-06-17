@@ -1,0 +1,115 @@
+---
+title: "发送元数据"
+metaTitle: "元数据"
+metaDescription: "如何将用户元数据传递给 OpenReplay。在其他平台中也称为 traits 或用户变量。"
+---
+import Aside from '~/components/Aside.astro'
+
+元数据允许你以键值对的形式向会话回放中添加有关用户的额外信息。此功能增强了你筛选和搜索会话录制的能力，使识别相关会话更加容易。  有关如何发送元数据的更多详情，请参阅此[教程](/tutorials/metadata)。
+
+<Aside type="caution">
+
+元数据键是项目专属的，并且元数据键必须在发送之前进行设置。
+
+</Aside>
+
+## 向项目添加元数据键
+
+要设置元数据键：
+
+1. 在 OpenReplay 中导航到 **Preferences > Projects**。
+2. 选择你想要添加元数据的项目。
+3. 导航到 Metadata 选项卡。
+4. 点击 **Add Metadata**。
+5. 在 **Field Name** 输入框中输入所需的键名。
+6. 点击 **Add** 以保存元数据键。
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/send-metadata/send_metadata.gif" alt="发送元数据" style={{ width: '700px', height: 'auto' }} />
+</div>
+
+
+> **限制：** 每个项目最多可以添加 10 个元数据键。
+
+## 将元数据注入会话回放
+
+定义元数据键后，你可以在录制会话时发送元数据。以下是可用的实现方法：
+
+### 1. 使用 NPM
+
+在启动 tracker 时注入元数据：
+
+```js
+tracker.start({
+  userID: "john@doe.com",
+  metadata: {
+    balance: "10M",
+    plan: "free"
+  }
+});
+```
+
+如果元数据仅在 tracker 启动后才可用，请使用 `setMetadata` 方法：
+
+```javascript
+tracker.setMetadata('plan', 'free'); // after tracker.start()
+```
+
+### 2. 使用 JavaScript 代码片段
+
+要在代码片段中包含元数据，请修改 `startOpts` 变量：
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+  var initOpts = {
+    projectKey: "project_key",
+    defaultInputMode: 2,
+    obscureTextNumbers: false,
+    obscureTextEmails: true,
+  };
+  const yourMetadata = { yourKey: 'yourValue' };
+  var startOpts = { userID: "", metadata: yourMetadata };
+  (function(A,s,a,y,e,r){
+    r=window.OpenReplay=[e,r,y,[s-1, e]];
+    s=document.createElement('script');s.src=A;s.async=!a;
+    ...
+  })("//static.openreplay.com/latest/openreplay.js",1,0,initOpts,startOpts);
+
+</script>
+```
+
+如果元数据稍后才可用：
+
+```html
+<script>
+  OpenReplay.setMetadata("plan", "free");
+</script>
+```
+
+### 3. 使用 iOS SDK
+
+在你的 iOS 应用中注入元数据：
+
+```swift
+import ORTracker
+
+ORTracker.shared.setMetadata(key: String, value: String)
+```
+
+## 使用元数据筛选和搜索会话
+
+元数据键允许你在 OpenReplay 中筛选和搜索会话：
+
+1. 在 Sessions 视图中打开 **Omni-Search**。
+2. 选择你的元数据键（例如 `plan`）。
+3. 输入元数据值（例如 `free`）以筛选会话录制。
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/send-metadata/filter_metadata.gif" alt="筛选元数据" style={{ width: '700px', height: 'auto' }} />
+</div>
+
+此功能可根据用户特定的详细信息快速、精确地识别会话。
+
+## 有疑问吗？
+如果你对此流程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

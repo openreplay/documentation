@@ -1,0 +1,227 @@
+---
+title: "Очистка хранилища"
+metaTitle: "Очистка хранилища"
+metaDescription: "Массовое удаление записей из базы данных и очистка хранилища."
+---
+import Aside from '~/components/Aside.astro'
+
+Каждая запись существует в виде файла и записи в базе данных. OpenReplay сохраняет всё необходимое для воспроизведения сессии (мутации DOM, координаты мыши, логи консоли, сетевую активность и многое другое) в 3 файла (2 для самого воспроизведения и 1 для данных DevTools). По умолчанию эти файлы хранятся в вашем экземпляре, поэтому именно они занимают большую часть хранилища. Метаданные сессии будут храниться в базе данных PostgreSQL вечно, но через 180 дней файл, содержащий запись, будет просрочен/удалён с помощью политики жизненного цикла minio.
+
+## Очистка временного хранилища
+
+OpenReplay хранит временные данные в файловой системе перед обработкой и загрузкой в сервис объектного хранилища (minIO или S3). После завершения обработки данные устаревают, и cronjob будет удалять эти файлы каждый 2-й день недели.
+
+Если вы хотите изменить cronjob:
+1. Отредактируйте конфигурацию:
+
+```bash
+openreplay -e
+```
+
+2. Измените расписание cronjob, добавив следующую строку:
+
+```yaml
+utilities:
+  # Cleanup data everyday morning 3:05 am, server time.
+	cron: "5 3 * * *"
+```
+
+
+Существует 2 способа очистки хранилища в вашем экземпляре OpenReplay: автоматизированный (CLI) и ручной.
+
+## Очистка данных (CLI)
+
+Этот процесс полностью автоматизирован с помощью нашего CLI. Просто выполните приведённую ниже команду, чтобы очистить хранилище, удалив данные как из Postgres (где хранятся события), так и из minio (где сохраняются записи):
+
+```bash
+# To clean data older than 14 days
+openreplay --cleanup 14
+```
+
+## Очистка данных (вручную)
+
+Данные можно удалить как из базы данных (где хранятся события), так и из minio (где сохраняются записи).
+
+### Очистка записей
+
+Если вам когда-нибудь понадобится освободить место, войдите в свой экземпляр OpenReplay и выполните следующие шаги:
+
+1. Выполните `k9s -n db`
+2. Используйте стрелки на клавиатуре, чтобы перемещаться по списку и перейти к контейнеру `minio-*`
+3. Нажмите `s`, чтобы получить доступ к shell контейнера Minio (объектного хранилища)
+4. Выполните `mc alias set minio http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD`
+5. Выполните `mc rm --recursive --dangerous --force --older-than 7d minio/mobs` (то есть удалите файлы старше 7 дней)
+6. Используйте `exit`, чтобы выйти из контейнера Minio
+7. Выполните `:quit`, чтобы выйти из CLI Kubernetes
+
+#### Изменение политики жизненного цикла по умолчанию
+
+Если вы используете minio (стандартная установка), вы можете изменить политику жизненного цикла по умолчанию следующим образом:
+
+1. Выполните `k9s -n db`
+2. Используйте стрелки на клавиатуре, чтобы перемещаться по списку и перейти к контейнеру `minio-*`
+3. Нажмите `s`, чтобы получить доступ к shell контейнера Minio (объектного хранилища)
+6. Выполните `mc alias set minio http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD`
+7. Чтобы автоматически очищать записи через 14 дней после создания
+
+```bash
+export EXPIRATION_DAYS=14
+export DELETE_JOB_DAYS=$((EXPIRATION_DAYS>30 ? 30 : EXPIRATION_DAYS))
+cat <<EOF > /tmp/lifecycle.json
+{
+  "Rules": [
+    {
+      "Expiration": {
+        "Days": $EXPIRATION_DAYS
+      },
+      "ID": "Delete old mob files",
+      "Status": "Enabled"
+    },
+    {
+      "Expiration": {
+        "Days": $DELETE_JOB_DAYS
+      },
+      "ID": "Delete flagged mob files after ${DELETE_JOB_DAYS} days",
+      "Filter": {
+        "Tag": {
+          "Key": "to_delete_in_days",
+          "Value": "${DELETE_JOB_DAYS}"
+        }
+      },
+      "Status": "Enabled"
+    }
+  ]
+}
+EOF
+mc ilm import minio/mobs < /tmp/lifecycle.json
+```
+
+8. Используйте `exit`, чтобы выйти из контейнера Minio
+9. Выполните `:quit`, чтобы выйти из CLI Kubernetes
+
+### Очистка базы данных (PostgeSQL)
+
+В зависимости от вашего использования данные можно удалять из различных таблиц и разными способами.
+
+#### Подключение к PostgreSQL
+
+Подключитесь к своему экземпляру OpenReplay, затем:
+
+1. Выполните `k9s -n db`
+2. Используйте стрелки на клавиатуре, чтобы перемещаться по списку и перейти к контейнеру `postgresql-*`
+3. Нажмите `s`, чтобы получить доступ к shell контейнера Postgres
+4. Выполните `PGPASSWORD=MY_PG_PASSWORD psql -U postgres` (замените `MY_PG_PASSWORD` значением переменной `postgresqlPassword` из файла `/var/lib/openreplay/vars.yaml`)
+5. Выполните свой запрос на удаление (или любой другой)
+6. Введите `exit`, чтобы выйти из клиента postgresql
+7. Используйте `exit`, чтобы выйти из контейнера Postgres
+8. Выполните `:quit`, чтобы выйти из CLI Kubernetes
+
+#### Проверка размера таблиц
+
+Чтобы проверить размер таблиц, вы можете выполнить следующий запрос:
+
+```sql
+SELECT nspname AS "name_space",
+       relname AS "relation",
+       pg_size_pretty(
+               pg_total_relation_size(C.oid)
+           )   AS "total_size"
+FROM pg_class C
+         LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+WHERE nspname NOT IN ('pg_catalog','information_schema')
+  AND C.relkind <> 'i'
+  AND nspname !~ '^pg_toast'
+ORDER BY pg_total_relation_size(C.oid) DESC
+LIMIT 20;
+```
+
+#### Удаление определённых событий
+
+Мы заметили, что большинство пользователей OpenReplay, изучив результаты предыдущего раздела, решили удалять определённые события вместо очистки сессий (особенно `events.resources` и `events_common.requests`).
+
+Чтобы удалить все данные событий, вы можете выполнить любой из следующих запросов, но имейте в виду, что это повлияет на значения cards, click-maps, список событий и другие функции.
+
+<Aside type="caution">
+	Это делается на ваш страх и риск, поэтому будьте предельно осторожны при выполнении подобных действий в базе данных, так как они необратимы и могут затронуть несколько функций OpenReplay.
+</Aside>
+
+```sql
+--- To delete all data related to a specific event
+
+-- The next 2 tables are usually the biggest ones, and they affect some cards only
+TRUNCATE TABLE events.resources;
+TRUNCATE TABLE events_common.requests;
+
+-- The next table will affect click-maps and events list of session's replay
+TRUNCATE TABLE events.clicks;
+TRUNCATE TABLE events.errors;
+TRUNCATE TABLE events.graphql;
+TRUNCATE TABLE events.inputs;
+TRUNCATE TABLE events.pages;
+TRUNCATE TABLE events.performance;
+TRUNCATE TABLE events.state_actions;
+TRUNCATE TABLE events_common.customs;
+TRUNCATE TABLE events_common.issues;
+```
+
+#### Удаление определённых сессий по времени
+
+Если вы хотите очистить все сессии, перейдите к [следующей части](#delete-all-sessions), так как она быстрее и мгновенно освобождает место в хранилище.
+
+Используйте приведённый ниже SQL-запрос, если хотите очистить данные из своей базы данных (PostgreSQL). Замените `2021-01-01` датой, начиная с которой следует сохранять записи. Это каскадное удаление, поэтому из базы данных будут удалены как все записи, так и соответствующие им события.
+
+<Aside type="caution">
+	Это делается на ваш страх и риск, поэтому будьте предельно осторожны при выполнении подобных действий в базе данных, так как они необратимы.
+</Aside>
+
+```sql
+--- Cascade delete all sessions and their related events captured before Jan 1st, 2021
+DELETE FROM public.sessions WHERE start_ts < extract(epoch from '2021-01-01'::date) * 1000;
+```
+
+После выполнения предыдущего запроса база данных не освободит место в хранилище сразу же, так как запланирует очистку на потом. Чтобы вручную заставить её освободить хранилище, вы можете выполнить следующие запросы:
+
+<Aside type="note">
+	Эти запросы заблокируют каждую таблицу, поэтому она будет недоступна, и их выполнение может занять часы
+	в зависимости от вашей базы данных. Если у вас всё ещё достаточно свободного места в хранилище, вы можете оставить очистку для Auto-Vacuum PostgreSQL.
+	
+	Кроме того, для работы потребуется некоторое количество свободного места, поэтому мы настоятельно рекомендуем выполнять эти запросы в порядке возрастания [размера таблиц](#check-tables-size)
+</Aside>
+
+```sql
+--- Recreate indexes and free unused storage
+VACUUM FULL public.sessions;
+VACUUM FULL events_common.customs;
+VACUUM FULL events_common.issues;
+VACUUM FULL events_common.requests;
+VACUUM FULL events.pages;
+VACUUM FULL events.state_actions;
+VACUUM FULL events.errors;
+VACUUM FULL events.graphql;
+VACUUM FULL events.performance;
+VACUUM FULL events.resources;
+VACUUM FULL events.inputs;
+VACUUM FULL events.clicks;
+```
+
+#### Удаление всех сессий
+
+Используйте приведённый ниже SQL-запрос, если хотите очистить все данные сессий из своей базы данных (PostgreSQL). Это каскадное удаление, поэтому из базы данных будут удалены как все записи, так и соответствующие им события.
+
+<Aside type="caution">
+	Это делается на ваш страх и риск, поэтому будьте предельно осторожны при выполнении подобных действий в базе данных, так как они необратимы.
+	
+	Для OpenReplay Enterprise Edition эти запросы также удалят vault-sessions.
+</Aside>
+
+```sql
+--- Cascade delete all sessions and their related events 
+TRUNCATE TABLE public.sessions CASCADE;
+TRUNCATE TABLE public.errors CASCADE;
+TRUNCATE TABLE public.issues CASCADE;
+TRUNCATE TABLE public.autocomplete;
+```
+
+## Есть вопросы?
+
+Если у вас есть какие-либо вопросы об этом процессе, свяжитесь с нами в нашем [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com).

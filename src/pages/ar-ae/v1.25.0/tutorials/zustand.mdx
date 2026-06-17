@@ -1,0 +1,183 @@
+---
+title: "تتبع تغييرات الحالة باستخدام إضافة Zustand"
+metaTitle: "Zustand"
+metaDescription: "تتبع تغييرات الحالة باستخدام إضافة Zustand"
+---
+يُعد Zustand بديلاً سريعاً للغاية وبسيطاً لحلول إدارة الحالة مثل Redux. باستخدام [إضافة Zustand](https://www.npmjs.com/package/@openreplay/tracker-zustand) الخاصة بنا، يمكنك تتبع تغييرات الحالة طوال دورة حياة تطبيقك.
+
+## تثبيت الإضافة
+
+يمكن تثبيت الإضافة بسهولة باستخدام الأمر التالي:
+
+```jsx
+npm i @openreplay/tracker-zustand
+```
+
+## استخدام الإضافة في تطبيق Next.js
+
+**ملاحظة**: يوجد الكود المصدري الكامل لهذا المثال في [مستودع Github](https://github.com/deleteman/nextjs-commerce-example/tree/zustand-store) هذا، فألقِ نظرة عليه إذا كنت بحاجة إلى مزيد من التفاصيل.
+
+يتيح موفّر Context الذي أستخدمه تكوين Tracker Plugins، لذلك بعد تثبيت الإضافة، سنقوم بتعديل ملف _app.tsx بإضافة عبارة الاستيراد أدناه:
+
+```jsx
+import trackerZustand from '@openreplay/tracker-zustand'
+```
+
+وبعد ذلك، يجب أن تبدو دالة App الرئيسية على النحو التالي:
+
+```jsx
+export default function MyApp({ Component, pageProps }: AppProps) {
+  const Layout = (Component as any).Layout || Noop
+
+  useEffect(() => {
+    document.body.classList?.remove('loading')
+  }, [])
+
+  let plugins = [
+    {
+      fn: trackerZustand,
+      name: 'zustand',
+    },
+  ]
+
+  return (
+    <TrackerProvider
+      config={{
+        plugins
+      }}
+    >
+      <Head />
+      <ManagedUIContext>
+        <Layout pageProps={pageProps}>
+          <Component {...pageProps} />
+        </Layout>
+      </ManagedUIContext>
+    </TrackerProvider>
+  )
+}
+```
+
+سيؤدي هذا تلقائياً إلى تهيئة الإضافة مع المتتبّع (tracker)، كما سيتيح أيضاً البيانات المُعادة من تنفيذ الدالة الرئيسية للإضافة.
+
+الخطوة التالية هي إنشاء store، وسنقوم بعد قليل بإضافة منتجات من موقع التجارة الإلكترونية إلى هذا الـ store.
+
+### إنشاء store باستخدام إضافة Zustand
+
+يتطلب استخدام الإضافة منك تغيير الطريقة التي تنشئ بها عادةً نسخة store في Zustand، لذا لا تتردد في نسخ الكود التالي ولصقه كقالب:
+
+```jsx
+import create from 'zustand'
+
+const productStore = null
+export const useProductsStore = (logger) => {
+  if (!productStore) {
+    //use a singleton pattern to make sure we only create the store the first time around
+    productStore = createProductStore(logger)
+  }
+  return productStore
+}
+
+function createProductStore(logger) {
+  return create(
+    logger((set) => ({
+      products: [],
+      addProduct: (p) =>
+        set((state) => {
+          const prodFound = state.products.find((prod) => {
+            return p.id == prod.id
+          })
+          if (prodFound) {
+            p.amount = prodFound.amount + 1
+          } else {
+            p.amount = 1
+          }
+
+          return {
+            products: [...state.products.filter((prod) => p.id != prod.id), p],
+          }
+        }),
+    }))
+  )
+}
+```
+
+ستقوم الدالة المُصدَّرة بإنشاء الـ store في المرة الأولى التي تُستخدم فيها، لكنها بعد ذلك ستعيد ببساطة الـ store الموجود مسبقاً.
+
+من ناحية أخرى، ستقوم دالة createProductStore بإنشاء الـ store، وتعيين المنطق الخاص بطريقة addProduct، واستخدام دالة logger التي نوفّرها لها. وكما خمّنت على الأرجح، فإن هذا الـ logger هو ذاته الذي حصلنا عليه من استخدام إضافة Zustand.
+
+وبعد أن أصبح الـ store جاهزاً، يمكننا البدء بإضافة المنتجات إليه.
+
+## إضافة المنتجات إلى الـ store الخاص بنا
+
+يُصدِّر الـ store طريقة addProduct، التي تتولى تتبع المنتجات في سلة التسوق لدينا.
+
+لاستيراد الدالة إلى الكود الخاص بك، عليك القيام بما يلي:
+
+1. استيراد موفّر السياق (context provider) الخاص بالمتتبّع واستخدامه.
+2. الحصول على السمة pluginsReturnedValue من السياق.
+3. استخدامها لاستدعاء طريقة zustand (لاحظ أن الطريقة تحمل اسم السمة name عند تكوين الإضافة أعلاه)، وتمرير سمة من نوع string لإعطاء الـ store اسماً (سيُستخدَم هذا الاسم أثناء إعادة التشغيل).
+4. ستُعيد طريقة zustand الـ logger الذي سنستخدمه عند استدعاء الـ hook المسمى useProductStore من zustand (الذي أنشأناه للـ store).
+
+يبدو هذا كله كثيراً، لكنه في جوهره يتلخص في الآتي:
+
+```jsx
+const { pluginsReturnedValues } = useContext(TrackerContext)
+
+const useProductStoreTracked = useProductsStore(
+  pluginsReturnedValues.zustand('products_store')
+)
+const { addProduct } = useProductStoreTracked()
+```
+
+الآن، يمكنك ببساطة استدعاء طريقة addProduct، وستقوم بإضافة منتجات السلة إلى الـ store.
+
+## قراءة البيانات من الـ store
+
+كما يمكنك أن تتوقع على الأرجح، إذا أردت قراءة البيانات من store الخاص بـ Zustand، فعليك اتباع المجموعة نفسها من الخطوات. لكن بدلاً من أخذ طريقة addProduct، سنقوم بتفكيك مصفوفة products.
+
+هكذا:
+
+```jsx
+const { pluginsReturnedValues } = useContext(TrackerContext)
+
+const useProductStoreTracked = useProductsStore(
+  pluginsReturnedValues.zustand('products_store')
+)
+const { products } = useProductStoreTracked()
+```
+
+بعد ذلك يمكنك التكرار على المنتجات بشكل اعتيادي:
+
+```jsx
+<div>
+  {products.map((p: Product, idx: Number) => {
+    return (
+      <div key={+idx}>
+        {p.name}({p.amount})
+      </div>
+    )
+  })}
+</div>
+```
+
+يقوم الكود أعلاه بالتكرار على قائمة المنتجات وعرضها على الشاشة. وكلما أضفت منتجاً آخر إلى الـ store، سيتم تحديثه هنا أيضاً.
+
+## مزامنة الحالة مع session replay
+
+لمراجعة تغييرات الحالة أثناء إعادة التشغيل، ما عليك سوى النقر على علامة التبويب الجديدة Zustand في الزاوية السفلية اليمنى:
+
+![New tab for the Zustand tracked data](/tutorials/zustand/zustand-tab.png)
+
+عند النقر عليها، سترى محتوى الـ store، وستتمكن من فهم كيفية تغيره والبيانات المحفوظة بداخله:
+
+![State data shown during the replay](/tutorials/zustand/state-replay.png)
+
+لاحظ اسم الـ store، فهو في الواقع الاسم الذي استخدمناه عند استدعاء طريقة zustand لأول مرة.
+
+## لديك أسئلة؟
+
+إذا كنت لا تستخدم Next.js بل إطار عمل آخر، فمن المفترض أن تكون طريقة الاستخدام مشابهة، والمفتاح هو الطريقة التي تنشئ بها الـ store. وما دمت تجد طريقة لاستخدام دالة logger عند إنشائه، فستتمكن من تتبع الحالة أثناء إعادة التشغيل.
+
+يمكنك [الاطلاع على هذا المستودع](https://github.com/deleteman/nextjs-commerce-example/tree/zustand-store) للحصول على **الكود المصدري الكامل** لتطبيق Next.js يعمل باستخدام إضافة Zustand.
+
+إذا واجهت أي مشكلات في إعداد إضافة Zustand في مشروعك، فيرجى التواصل معنا عبر [مجتمع Slack](https://slack.openreplay.com/) الخاص بنا وطرح أسئلتك مباشرةً على مطوّرينا!

@@ -1,0 +1,154 @@
+---
+title: "Enrichir vos enregistrements de session avec des métadonnées"
+metaTitle: "Ajouter des métadonnées à vos rejeux de session pour enrichir vos insights"
+metaDescription: "Apprenez à ajouter des métadonnées à vos rejeux de session et à les utiliser pour améliorer les insights que vous obtenez de la plateforme"
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="Découvrez comment envoyer des métadonnées depuis votre application Next.js"
+  description="Si vous n'aimez pas lire, vous pouvez suivre ce tutoriel vidéo qui vous montre comment envoyer des métadonnées depuis votre application vers la plateforme OpenReplay"
+  videoURL="https://www.youtube.com/watch?v=ITcJCeKWQGU"
+  />
+
+Par défaut, notre tracker enverra beaucoup d'informations utiles à notre plateforme, mais toutes ces informations sont standard. Du moment qu'une donnée fait partie de la Web API, il y a de fortes chances que nous la suivions.
+
+Mais que se passe-t-il si vous souhaitez également enrichir vos enregistrements de session avec des données spécifiques à votre application ?
+
+Comme comprendre sous quel plan payant se trouve votre utilisateur lorsque vous examinez son rejeu ? Cette information peut apporter un contexte supplémentaire à vos développeurs, donc ce n'est pas parce qu'elle n'est pas standard que nous devrions l'ignorer, n'est-ce pas ?
+
+C'est là que les métadonnées entrent en jeu.
+
+**Notez** qu'il existe une [version vidéo de ce tutoriel](https://www.youtube.com/watch?v=ITcJCeKWQGU) sur notre chaîne YouTube. N'hésitez donc pas à la consulter si vous êtes plutôt un apprenant visuel.
+
+## Que sont les métadonnées ?
+
+Dans le contexte d'un rejeu de session, les métadonnées sont toutes les informations que votre utilisateur ne génère pas, mais qui se rapportent d'une manière ou d'une autre à cet utilisateur.
+
+En d'autres termes, si l'utilisateur clique sur un lien spécifique ou effectue une action particulière, ce ne sont pas des métadonnées, c'est un événement personnalisé (consultez [la documentation sur les Événements Personnalisés](/installation/custom-events) si vous voulez en savoir plus à leur sujet).
+
+Mais s'il existe un indicateur qui vous dit qu'un utilisateur est sous le plan gratuit ou le plan payant. Ou peut-être un code de suivi vous montrant d'où vient cet utilisateur ? Ce sont toutes des métadonnées et vous pouvez facilement les ajouter à vos sessions.
+
+## Comment ajouter des métadonnées à une session ?
+
+La première chose à faire est de configurer les champs de métadonnées directement dans la plateforme.
+
+Si vous sautez cette étape, vous ne pourrez enregistrer aucune information, alors ne la sautez pas !
+
+Pour ce faire, vous vous rendrez sur la page de configuration de votre projet en cliquant sur la roue dentée en haut à droite du menu supérieur :
+
+![L'icône des paramètres du projet](/tutorials/metadata/metadata1.png)
+
+Une fois là-bas, cliquez sur l'élément de menu Metadata à l'extrême gauche de votre écran :
+
+![L'option Metadata dans le menu de gauche](/tutorials/metadata/metadata2.png)
+
+Cela vous amènera à l'écran de configuration des métadonnées. Assurez-vous de sélectionner le bon projet dans le menu déroulant et créez autant de champs que nécessaire.
+
+![Ajout de nouvelles métadonnées](/tutorials/metadata/metadata3.png)
+
+Pour cet exemple, nous avons créé 3 champs pour le projet « e-commerce test » :
+
+- Le « plan » qui contiendra le plan actuel de l'utilisateur.
+- Le « utm_source » contenant un code identifiant d'où vient l'utilisateur.
+- Et enfin, le « items_in_cart » contient le nombre total d'articles dans le panier de l'utilisateur.
+
+Ce dernier est une donnée qui dépend de l'action de l'utilisateur, ce qui diffère de ce que nous recommandons. Cependant, dans cet exemple, vous verrez les limites des champs de métadonnées et pourquoi cette information particulière aurait plutôt dû être un événement personnalisé.
+
+Cette configuration étant prête, l'étape suivante consiste à ajouter le code nécessaire pour réellement envoyer les données dans le cadre de votre session.
+
+### Ajouter le code pour envoyer les métadonnées
+
+Pour ajouter les métadonnées à la session, nous utiliserons la méthode `setMetadata` du tracker. Vous pouvez utiliser cette méthode à tout moment au cours de la session de l'utilisateur, gardez simplement à l'esprit les deux considérations suivantes :
+
+1. Si vous appliquez plusieurs valeurs au même champ de métadonnées, seule la dernière sera enregistrée dans la session.
+2. Toutes les valeurs doivent être des chaînes de caractères. Sinon, elles ne seront pas enregistrées. Le tracker ne convertira pas les valeurs en chaînes, alors faites-y attention.
+
+Pour cet exemple, nous utilisons le site e-commerce construit avec Next.js que nous avons utilisé pour le tutoriel sur NextJs, assurez-vous de [consulter celui-ci pour](https://docs.openreplay.com/tutorials/next) comprendre l'architecture sous-jacente du fournisseur de contexte montré dans la capture d'écran suivante :
+
+![Code ajouté](/tutorials/metadata/metadata4.png)
+
+Les flèches rouges montrent où les mises à jour pertinentes ont été effectuées. Ce fournisseur de contexte exporte une fonction appelée `setMetadata` qui, à son tour, appelle la méthode `setMetadata` du tracker.
+
+Si vous voulez un exemple fonctionnel, vous pouvez consulter [ce dépôt](https://github.com/deleteman/nextjs-commerce-example/tree/redux_metadata/site).
+
+Maintenant, tout ce que nous avons à faire est d'utiliser la fonction exportée chaque fois que nous voulons configurer les champs de métadonnées.
+
+### Définir les métadonnées depuis notre code
+
+Pour les besoins de cet exemple, nous allons décider de définir les champs `utm_source` et `plan` directement depuis la page d'accueil, puis chaque fois que l'utilisateur ajoute un article au panier, nous mettrons à jour le dernier champ restant.
+
+Dans le fichier `pages/index.tsx`, nous allons ajouter le code suivant :
+
+```jsx
+// inside the main component
+const { startTracking, setMetadata } = useContext(TrackerContext)
+//...
+useEffect(() => {
+    async function getProds() {
+      await startTracking()
+      setMetadata('plan', getPlan()) //addition
+      setMetadata('utm_source', getUTMSource()) //addition
+      dispatch(getMakeUpProducts() as any)
+    }
+
+    getProds()
+  }, [dispatch])
+```
+
+La majeure partie de ce hook était déjà présente, mais nous avons ajouté la référence à la fonction `setMetadata` puis les deux appels à celle-ci. Les deux fonctions, `getPlan` et `getUTMSource`, renvoient des données aléatoires pour cet exemple. Pour votre cas d'usage particulier, vous devrez les implémenter en conséquence.
+
+Ce code définira ces valeurs de métadonnées lors du chargement de la page d'accueil.
+
+Maintenant, nous devons ajouter la dernière valeur, le nombre d'articles dans le panier. Pour cela, nous irons dans le composant `ProductSidebar`, qui est celui chargé de contrôler ce qui se passe lorsque nous cliquons sur « Add to cart », et nous ajouterons un autre hook pour réagir à un changement du nombre d'articles du panier.
+
+```jsx
+useEffect(() => {
+    setMetadata('items_in_cart', productsInCart)
+  }, [productsInCart])
+```
+
+Bien sûr, vous devez également obtenir la fonction `setMetadata` du fournisseur de contexte comme précédemment, mais une fois cela fait, vous avez terminé.
+
+Maintenant, les données sont enregistrées. Nous pouvons également le constater sur la plateforme via la liste des sessions.
+
+## Utiliser les métadonnées
+
+Maintenant que vos métadonnées sont enregistrées dans tous les rejeux de session, qu'est-ce que vous pouvez en faire ?
+
+Eh bien, pour commencer, vous pouvez les visualiser directement depuis le rejeu :
+
+![Examiner les métadonnées dans le lecteur](/tutorials/metadata/metadata5.png)
+
+Vous devriez commencer à voir les champs de métadonnées dans le coin supérieur droit de l'écran de votre lecteur. Dans cet exemple, nous voyons que l'utilisateur a un plan Enterprise Edition, qu'il vient de Reddit et qu'il n'a qu'un seul article ajouté au panier.
+
+### Rechercher par champs de métadonnées
+
+L'autre chose puissante que vous pouvez faire avec les métadonnées est de les utiliser comme paramètre de recherche. À l'aide de la barre d'omnisearch, vous pouvez sélectionner les champs de métadonnées personnalisés que vous avez créés comme paramètres de recherche :
+
+![Rechercher en utilisant vos champs de métadonnées](/tutorials/metadata/metadata6.png)
+
+Ainsi, si vous voulez consulter uniquement les rejeux Enterprise Edition, vous pouvez simplement sélectionner le champ Plan et le filtrer par « ee », comme ceci :
+
+![Rechercher par plan utilisateur](/tutorials/metadata/metadata7.png)
+
+Vous pouvez également utiliser la même barre d'omnisearch lors de la création d'un widget pour votre dashboard. Donc, pour continuer avec l'exemple EE, si vous vouliez créer un dashboard uniquement pour les clients Enterprise, vous pourriez filtrer chaque widget personnalisé à l'aide de l'attribut « Plan ».
+
+Par exemple, le widget suivant montre combien de clients Enterprise cliquent sur le bouton « Add to cart » :
+
+![Créer une série temporelle à l'aide des métadonnées](/tutorials/metadata/metadata8.png)
+
+Ce qui donne un widget qui ressemble à ceci :
+
+![Les résultats](/tutorials/metadata/metadata9.png)
+
+Avec les champs de métadonnées, vous pouvez personnaliser et étendre autant que vous le souhaitez les insights que vous obtenez de vos rejeux de session.
+
+---
+
+Les métadonnées peuvent considérablement enrichir les insights que vous pouvez tirer de vos rejeux de session, et leur configuration est relativement facile.
+
+N'oubliez pas que toute information que vous souhaitez enregistrer doit toujours être sous forme de chaînes de caractères, sinon elles seront ignorées.
+
+Le code source complet du [projet d'exemple utilisant les métadonnées peut être consulté ici](https://github.com/deleteman/nextjs-commerce-example/tree/redux_metadata/site).
+
+Si vous rencontrez des problèmes avec l'une des étapes de ce processus, contactez-nous sur notre [communauté Slack](https://slack.openreplay.com/) et posez vos questions directement à nos développeurs !

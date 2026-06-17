@@ -1,0 +1,56 @@
+---
+title: "Bugsnag"
+metaTitle: "Bugsnag 集成"
+metaDescription: "如何将 Bugsnag 与 OpenReplay 集成，并在会话回放旁查看后端错误。"
+---
+
+如何将 Bugsnag 与 OpenReplay 集成，并在会话录制旁查看后端错误。
+
+## 1. 创建授权令牌
+
+1. 登录你的 [Bugsnag](https://app.bugsnag.com) 账户。
+2. 前往 *Settings > My account > Personal auth tokens*。
+3. 点击 *Generate new token +* 按钮。
+4. 在描述中填写 `openreplay`。
+5. 点击 *Generate* 按钮。
+6. 复制该令牌，然后点击 *Done* 按钮。
+
+![Bugsnag 个人身份验证令牌](/static/bugsnag-1.jpg#center)
+
+## 2. 在 OpenReplay 中启用 Bugsnag
+
+在 OpenReplay 仪表盘的 'Preferences > Integration' 中填入你的 `Authorization token`，并从下拉列表中选择你想要跟踪的项目。
+
+![OpenReplay 中的 Bugsnag 集成](/static/bugsnag-2.jpg#center)
+
+## 3. 传播 openReplaySessionToken
+
+为了将 Bugsnag 事件与录制的用户会话关联起来，必须在你想要跟踪的每个请求中，将一个唯一令牌从你的前端传播到后端。这可以通过自定义 HTTP 头来实现。在下面的示例中，我们使用 `fetch` 函数来发送该头部。
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // use window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+为了让 OpenReplay 能够将 Bugsnag 日志条目与录制的用户会话关联起来，必须将一个唯一令牌作为 `meta_data > special_info` 传播到你希望跟踪的每个后端错误中。
+
+下面是一个使用 Bugsnag Python API 的示例。
+
+```python
+bugsnag.notify(EXCEPTION_OBJECT,  meta_data={"special_info":{"openReplaySessionToken": OPENREPLAY_SESSION_TOKEN}})
+```
+
+标签名称 `openReplaySessionToken` 区分大小写。
+
+## 有疑问？
+
+如果你遇到任何问题，请加入我们的 [Slack](https://slack.openreplay.com) 或查看我们的[论坛](https://forum.openreplay.com)，从我们的社区获取帮助。

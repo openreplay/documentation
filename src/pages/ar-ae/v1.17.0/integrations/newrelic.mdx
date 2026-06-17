@@ -1,0 +1,60 @@
+---
+title: "New Relic"
+metaTitle: "تكامل New Relic"
+metaDescription: "كيفية دمج New Relic مع OpenReplay ورؤية أخطاء الواجهة الخلفية إلى جانب عمليات إعادة تشغيل الجلسات."
+---
+
+كيفية دمج New Relic مع OpenReplay ورؤية أخطاء الواجهة الخلفية إلى جانب تسجيلات الجلسات.
+
+## 1. إنشاء Query Key
+
+1. سجّل الدخول إلى حساب [New Relic](https://newrelic.com) الخاص بك.
+2. في الأعلى إلى اليسار، اختر لوحة التحكم *INSIGHTS*.
+3. في لوحة التحكم *INSIGHTS*، انتقل إلى "Manage Data" ثم اختر *API Keys*.
+4. انقر على زر *+* الخاص بـ *Query Keys*.
+
+![New Relic API Keys](/static/newrelic-1.png#center)
+
+5. في حقل Notes اكتب `openreplay`.
+6. انسخ `Account ID` و`Key`.
+7. انقر على *Save your notes*.
+
+![New Relic Query Key](/static/newrelic-2.png#center)
+
+## 2. تفعيل NewRelic في OpenReplay
+
+الصق `Application ID` و`Key` الخاصين بك في لوحة تحكم OpenReplay ضمن 'Preferences > Integration'.
+
+![تكامل New Relic في OpenReplay](/static/newrelic-3.jpg#center)
+
+## 3. تمرير openReplaySessionToken
+
+لربط حدث New Relic بجلسة المستخدم المسجّلة، يجب تمرير رمز مميز فريد من الواجهة الأمامية إلى الواجهة الخلفية في كل طلب تريد تتبّعه. يمكن القيام بذلك باستخدام ترويسة HTTP مخصّصة. في المثال أدناه، نستخدم الدالة `fetch` لإرسال تلك الترويسة.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+لكي يتمكّن OpenReplay من ربط إدخال سجلّ New Relic بجلسة المستخدم المسجّلة، يجب تمرير رمز مميز فريد بوصفه `custom_parameter` إلى كل خطأ في الواجهة الخلفية تريد تتبّعه.
+
+فيما يلي مثال باستخدام واجهة برمجة التطبيقات الخاصة بـ NewRelic بلغة Python.
+
+```python
+newrelic.agent.add_custom_parameter("openReplaySessionToken", OPENREPLAY_SESSION_TOKEN)
+```
+
+اسم الوسم `openReplaySessionToken` حسّاس لحالة الأحرف.
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات، تواصل معنا عبر [Slack](https://slack.openreplay.com) أو اطّلع على [المنتدى](https://forum.openreplay.com) الخاص بنا واحصل على المساعدة من مجتمعنا.

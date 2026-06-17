@@ -1,0 +1,146 @@
+---
+title: "Sentry"
+metaTitle: "将 Sentry 与 OpenReplay 集成"
+metaDescription: "如何将 Sentry 与 OpenReplay 集成，并在会话回放旁边查看后端错误。"
+---
+
+了解如何将 [Sentry](https://sentry.io/auth/login/) 后端日志与 [OpenReplay](https://www.openreplay.com/) 会话回放集成，以扩展您的监控和调试能力。
+
+### 1. 生成 Sentry 身份验证令牌
+
+前往 [Sentry > Account > API > Auth Tokens](https://sentry.io/settings/account/api/auth-tokens/)，并生成具有以下权限的身份验证令牌：
+
+- `event:read`
+- `org:read`
+- `project:read`
+
+您将在下一步中在 OpenReplay 仪表板中启用 Sentry 集成时使用此令牌。
+
+### 2. 在 OpenReplay 中启用 Sentry 集成
+
+1. 复制您的 **组织** 和 **项目 Slug**：
+
+  - 前往 Sentry 仪表板中的 **Projects** 页面。
+  - 复制您的 `organization_slug` 和 `project_slug`。
+
+2. 在 OpenReplay 中配置集成：
+
+  - 在 OpenReplay 中，导航至 **Preferences > Integrations**。
+  - 找到 Sentry 集成卡片。
+  - 输入您的 `organization_slug`、`project_slug` 以及您在第 1 步中生成的身份验证令牌。
+
+### 3. 传递 openReplaySession.id
+
+为了让 OpenReplay 能够将 Sentry 事件与录制的用户会话关联起来，该事件应使用唯一的会话 ID `openReplaySession.id` 进行标记。
+
+#### **前端**
+
+如果您在前端应用中使用 Sentry，可以参考以下示例。
+
+**注意**：`tracker.start()` 是异步的，并返回一个 Promise。您需要等待其完成后，才能尝试获取会话 ID。
+
+```javascript
+// JavaScript Example for for Single Page Applications (SPA):
+
+import OpenReplay from "@openreplay/tracker";
+import * as Sentry from "@sentry/browser";
+
+const tracker = new OpenReplay({
+  projectKey: 'YOUR_PROJECT_KEY',
+});
+
+tracker.start().then(() => {
+  const sessionId = tracker.getSessionID();
+  if (sessionId) {
+    Sentry.setTag("openReplaySession.id", sessionId);
+  }
+  // Your application code
+});
+```
+
+##### 使用 OpenReplay 代码片段
+
+```javascript
+if (window.OpenReplay) {
+  window.OpenReplay.start().then(() => {
+    const sessionId = window.OpenReplay.getSessionID();
+    if (sessionId) {
+      Sentry.setTag("openReplaySession.id", sessionId);
+    }
+    // Your application code
+  });
+}
+```
+
+#### 后端
+
+如果您在后端使用 Sentry SDK，则需要在每个要跟踪的请求中将会话 ID 从前端传递到后端。这可以通过自定义 HTTP 标头来实现。
+
+**用于发送会话 ID 的前端代码**
+
+```javascript
+import OpenReplay from "@openreplay/tracker";
+
+const tracker = new OpenReplay({
+  projectKey: 'YOUR_PROJECT_KEY',
+});
+
+tracker.start().then(() => {
+  const sessionId = tracker.getSessionID();
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+  if (sessionId) {
+    headers['openReplaySession.id'] = sessionId;
+  }
+
+  fetch('https://www.your-backend.com/api/endpoint', {
+    method: 'GET', // or 'POST', 'PUT', etc.
+    headers,
+    // ...other options
+  })
+    .then(response => {
+      // Handle response
+    })
+    .catch(error => {
+      // Handle error
+    });
+});
+```
+
+### 4. 附加 openReplaySessionURL（可选但有用）
+
+如果您希望将 OpenReplay 录制的 URL 与 Sentry 关联并将其显示为标签，可以通过添加 `openReplaySessionURL` 标签来实现。
+
+#### 前端示例
+
+```javascript
+import OpenReplay from "@openreplay/tracker";
+import * as Sentry from "@sentry/browser";
+
+const tracker = new OpenReplay({
+  projectKey: 'YOUR_PROJECT_KEY',
+});
+
+tracker.start().then(() => {
+  const sessionId = tracker.getSessionID();
+  const sessionURL = tracker.getSessionURL();
+
+  if (sessionId) {
+    // Tag Sentry events with the session ID
+    Sentry.setTag("openReplaySession.id", sessionId);
+  }
+
+  if (sessionURL) {
+    // Tag Sentry events with the session URL (requires OpenReplay Tracker v3.6.0+)
+    Sentry.setTag("openReplaySessionURL", sessionURL);
+  }
+
+  // Your application code
+});
+```
+
+## 有疑问吗？
+
+如果您遇到任何问题，请加入我们的 [Slack](https://slack.openreplay.com) 或查看我们的 [论坛](https://forum.openreplay.com)，并从我们的社区获得帮助。

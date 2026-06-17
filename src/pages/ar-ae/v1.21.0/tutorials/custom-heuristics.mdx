@@ -1,0 +1,227 @@
+---
+title: "الاستدلالات المخصصة"
+metaTitle: "الاستدلالات المخصصة"
+metaDescription: "كيفية توسيع خدمة الاستدلالات باستخدام الخوارزمية الخاصة بك"
+---
+نستخدم مصطلح الاستدلالات (heuristics) للإشارة إلى الخوارزميات البسيطة والقوية المستخدمة للكشف عن المشكلات مثل ارتفاع استهلاك وحدة المعالجة المركزية (CPU) أو نقرات الغضب (click rage). سنستخدم هنا مثالاً واحداً لفهم كيفية عمل الاستدلالات وكيفية إنشاء أداة الكشف الخاصة بك ورؤية نتائجها في DevTools.
+
+## القوالب
+
+يوجد قالب للاستدلالات في المسار `openreplay/backend/pkg/handlers/custom`.
+
+```tsx
+package custom
+
+import . "openreplay/backend/pkg/messages"
+
+type CustomHandler struct {
+	lastTimestamp uint64
+}
+
+func (h *CustomHandler) Handle(message Message, messageID uint64, timestamp uint64) Message {
+	h.lastTimestamp = timestamp
+	return nil
+}
+
+func (h *CustomHandler) Build() Message {
+	return nil
+}
+```
+
+بعد إنشاء طريقة الاستدلال، يمكن إضافتها عن طريق تعديل الملف `main.go` في المسار
+`openreplay/backend/cmd/heuristics` باستيراد الوحدة المخصصة وإضافة الدالة المخصصة إلى معالِج معالجة الرسائل (message processor handler).
+```tsx
+package main
+
+import (
+        "log"
+        "openreplay/backend/internal/config/heuristics"
+        "openreplay/backend/pkg/handlers"
+        web2 "openreplay/backend/pkg/handlers/web"
+        "openreplay/backend/pkg/intervals"
+        logger "openreplay/backend/pkg/log"
+        "openreplay/backend/pkg/messages"
+        "openreplay/backend/pkg/queue"
+        "openreplay/backend/pkg/queue/types"
+        "openreplay/backend/pkg/sessions"
+        "os"
+        "os/signal"
+        "syscall"
+        "time"
+        // Import custom modules here
+)
+
+func main() {
+        log.SetFlags(log.LstdFlags | log.LUTC | log.Llongfile)
+
+        // Load service configuration
+        cfg := heuristics.New()
+
+        // HandlersFabric returns the list of message handlers we want to be applied to each incoming message.
+        handlersFabric := func() []handlers.MessageProcessor {
+                return []handlers.MessageProcessor{
+                        // web handlers
+                        &web2.ClickRageDetector{},
+                        &web2.CpuIssueDetector{},
+                        &web2.DeadClickDetector{},
+                        &web2.MemoryIssueDetector{},
+                        &web2.NetworkIssueDetector{},
+                        &web2.PerformanceAggregator{},
+                        // Add custom handlers here
+                }
+        }
+        ...
+}
+```
+
+## مثال Quick Return
+
+في هذا المثال، سننشئ الاستدلال **Quick Return**، الذي سيرسل إشارة في كل مرة نعود فيها إلى نفس الـ url خلال أقل من خمس ثوانٍ. ستستفيد الطريقة المُنفَّذة للكشف عن مثل هذا الحدث من الحدثين `SetPageLocation` و`MouseClick`. في كل مرة تحدث فيها نقرة بالماوس نقوم بتحديث الطابع الزمني الحالي، وإذا تم استلام رسالة `SetPageEvent` خلال الثواني الخمس التالية تشير إلى صفحة الويب الحالية، فإننا نُرجِع حدث QuickReturn.
+
+للبدء، لننشئ الملف `quickreturn.go` في المسار `openreplay/backend/pkg/handlers/custom` المحتوي على الكود الموضح أدناه
+
+```go
+package custom
+import (
+    "log"
+    "encoding/json"
+    . "openreplay/backend/pkg/messages"
+)
+type QuickReturnDetector struct {
+    timestamp   uint64
+    currentPage string
+    lastPage    string
+}
+
+type CustomPayload struct {
+        Timestamp   uint64 `json:"timestamp"`
+        CurrentPage string `json:"current_page"`
+}
+
+// If received SetPageLocation on same
+func (h *QuickReturnDetector) HandleSetPageLocation(msg *SetPageLocation, messageID uint64, timestamp uint64) Message {
+    if (h.timestamp + 5000 >= msg.NavigationStart && h.lastPage == msg.URL) {
+        h.timestamp = msg.NavigationStart
+        return h.Build()
+    }
+    h.lastPage = h.currentPage
+    h.currentPage = msg.URL
+    h.timestamp = msg.NavigationStart
+    return nil
+}
+// detect when a button is clicked (selector must have string 'button' in it)
+func (h *QuickReturnDetector) HandleMouseClick(msg *MouseClick, messageID uint64, timestamp uint64) {
+    h.timestamp = timestamp
+}
+func (h *QuickReturnDetector) Handle(message Message, messageID uint64, timestamp uint64) Message {
+    switch msg := message.(type) {
+    case *SetPageLocation:
+        if msg.NavigationStart != 0 {
+            return h.HandleSetPageLocation(msg, messageID, timestamp)
+        }
+    case *MouseClick:
+        h.HandleMouseClick(msg, messageID, timestamp)
+    }
+    return nil
+}
+func (h *QuickReturnDetector) Build() Message {
+    payload := &CustomPayload{
+        CurrentPage: h.currentPage,
+        Timestamp: h.timestamp,
+    }
+    payloadData, err := json.Marshal(payload)
+    if err != nil {
+            log.Println("JSON encoding error", err)
+            return nil
+    }
+    payloadString := string(payloadData)
+    event := &CustomEvent {
+        MessageID: 122,
+        Timestamp: h.timestamp,
+        Name:      "quickreturn",
+        Payload:   payloadString,
+    }
+    return event
+}
+```
+
+الآن وقد تم إنشاء الاستدلال، لم يبقَ سوى تفعيله. للقيام بذلك، علينا إضافة الاستدلال إلى الملف `main.go` في المسار `openreplay/backend/cmd/heuristics` كما يلي:
+
+```tsx
+package main
+
+import (
+        "log"
+        "openreplay/backend/internal/config/heuristics"
+        "openreplay/backend/pkg/handlers"
+        web2 "openreplay/backend/pkg/handlers/web"
+        "openreplay/backend/pkg/intervals"
+        logger "openreplay/backend/pkg/log"
+        "openreplay/backend/pkg/messages"
+        "openreplay/backend/pkg/queue"
+        "openreplay/backend/pkg/queue/types"
+        "openreplay/backend/pkg/sessions"
+        "os"
+        "os/signal"
+        "syscall"
+        "time"
+        // Add custom module
+        custom "openreplay/backend/pkg/custom"
+)
+
+func main() {
+        log.SetFlags(log.LstdFlags | log.LUTC | log.Llongfile)
+
+        // Load service configuration
+        cfg := heuristics.New()
+
+        // HandlersFabric returns the list of message handlers we want to be applied to each incoming message.
+        handlersFabric := func() []handlers.MessageProcessor {
+                return []handlers.MessageProcessor{
+                        // web handlers
+                        &web2.ClickRageDetector{},
+                        &web2.CpuIssueDetector{},
+                        &web2.DeadClickDetector{},
+                        &web2.MemoryIssueDetector{},
+                        &web2.NetworkIssueDetector{},
+
+                        // The new handler
+                        &custom.QuickReturnDetector{},
+                }
+        }
+        ...
+}
+```
+
+أصبح الاستدلال الآن متاحاً ويتم إرسال الرسائل على شكل **حدث مخصص (Custom Event)**.
+لاحظ أنك ستحتاج إلى إعادة نشر الواجهة الخلفية (back-end) الخاصة بك قبل أن تتمكن من الاستفادة من الاستدلال الجديد. للقيام بذلك، اتبع الخطوات الواردة في قسم *build and deploy* من صفحة [**deploy from source**](https://docs.openreplay.com/deployment/deploy-source).
+
+## الاستفادة من الحدث المخصص
+الآن وقد أصبح الاستدلال المخصص الخاص بك يرسل حدثاً مخصصاً جديداً، فإن الشيء التالي الذي عليك القيام به هو استخدام هذا الحدث بطريقة ما.
+مع المثال السابق، لديك خياران:
+
+1. يمكنك تصفية الجلسات حسب الحدث المخصص، مع التأكد من أنك تُدرج فقط تلك التي تعاني من هذه "المشكلة" (في حالتنا، مشكلة quick return).
+2. يمكنك العثور على الحدث داخل علامة التبويب Events في قسم DevTools في المشغّل. بهذه الطريقة يمكنك تحديد اللحظة الدقيقة التي يتم فيها تشغيل الحدث.
+
+### تصفية الجلسات حسب الحدث المخصص
+
+لتصفية الجلسات حسب حدثك المخصص الجديد، ما عليك سوى استخدام ميزة [Omnisearch](/tutorials/omnisearch)، عن طريق النقر على شريط البحث واختيار "Custom Events" كنوع للتصفية.
+بمجرد القيام بذلك، ستتمكن من إدخال اسم الحدث، ومن المفترض أن يكتمل الاسم تلقائياً بمجرد أن تبدأ بالكتابة، كما يمكنك أن ترى في الصورة أدناه:
+
+![Custom event filter](/tutorials//heuristics/custom-events.png)
+
+**لاحظ** أنه إذا لم يعمل الإكمال التلقائي أو لم يُرجِع اسم الحدث الذي تبحث عنه، فهذا يعني أنه لا يوجد حدث بهذا الاسم في قاعدة البيانات. في هذه الحالة، عليك التحقق مرة أخرى من منطقك للتأكد من أنك تُشغِّل إرسال الحدث المخصص بشكل صحيح.
+
+### العثور على الحدث المخصص في DevTools
+
+إذا كنت ترغب في فهم اللحظة التي يتم فيها تشغيل الحدث المخصص بالضبط، فسيتعين عليك إعادة تشغيل جلسة والنقر على علامة التبويب "Events" في DevTools.
+ستجدها موجودة في الزاوية السفلية اليمنى من الشاشة.
+بمجرد النقر عليها، ستُفتح وسترى قائمة الأحداث، بما في ذلك حدثك المخصص، كما هو موضح في الصورة أدناه:
+
+![Events listed in devTools](/tutorials//heuristics/devtools.png)
+
+من خلال هذه العملية البسيطة، قمنا بإنشاء أداة كشف جديدة. وبالطبع، يمكن أن تكون خوارزميتك أكثر تطوراً وأن تتضمن مزيجاً من أنواع مختلفة من الأحداث.
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات، تواصل معنا عبر [Slack](https://slack.openreplay.com) أو تفقّد [المنتدى](https://forum.openreplay.com) الخاص بنا واحصل على المساعدة من مجتمعنا.

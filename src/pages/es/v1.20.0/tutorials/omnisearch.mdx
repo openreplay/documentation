@@ -1,0 +1,161 @@
+---
+title: "Cómo usar OmniSearch"
+metaTitle: "Sacar partido de OmniSearch"
+metaDescription: "Aprovecha la potente función de búsqueda de OpenReplay"
+---
+## Sacar partido de Omnisearch
+
+La barra de búsqueda superior que ves en la interfaz de OpenReplay es mucho más que una simple barra de búsqueda; te permite construir consultas de búsqueda muy complejas con muy poco esfuerzo.
+
+Para los ejemplos que se muestran aquí, vamos a hablar de la aplicación de prueba llamada "I'm bored", que te sugiere actividades para ti y tu grupo de amigos basándose en diferentes parámetros de búsqueda.
+
+Aquí tienes una captura de pantalla de la interfaz con la que interactuarían nuestros usuarios ficticios:
+
+![](https://i.imgur.com/6BtPzTs.png)
+
+## Realizar una búsqueda sencilla
+El caso de uso más básico de la barra de búsqueda es buscar sesiones de un usuario concreto. Ya sea porque es tu usuario de pruebas o porque estás buscando la sesión de un cliente que se queja de tu producto.
+Si estableces el ID de usuario cuando instancias el tracker, podrás ver los distintos IDs en la lista de sesiones.
+
+Para ello, cuando hagas clic en la barra de búsqueda, selecciona la opción "User Id", como se muestra a continuación:
+
+![](https://i.imgur.com/jZU6hwG.png)
+
+Cuando lo hagas, verás la opción de especificar el id de usuario como parte de los filtros.
+
+![](https://i.imgur.com/6Ac5cDB.png)
+
+Como nota, la lista completa de filtros a los que tienes acceso es la siguiente:
+
+- **Click**: filtra por _dónde_ está haciendo clic el usuario.
+- **Input**: filtra por la entrada utilizada por el usuario.
+- **Page**: filtra por el URI de la página utilizada durante la sesión de reproducción.
+- **RevId**: filtra por el ID de revisión de tu aplicación (solo si se usa con el SDK).
+- **Referrer**: La URL desde la que el usuario llega a tu aplicación.
+- **Duration**: filtra las reproducciones por su duración.
+- **User** Country: filtra por el país del usuario que interactúa con tu aplicación (calculado a partir de su dirección IP pública).
+- **Custom Events**: filtra por el evento personalizado lanzado desde el SDK.
+- **Network Request**: filtra por las propiedades de la solicitud emitida por la UI (payload, URL, etc).
+- **GraphQL**: filtra por las propiedades de la consulta GraphQL (nombre, método y payload).
+- **StateAction**: filtra por la acción sobre el almacén de estado (es decir, Redux, VueX, etc).
+- **Error**: filtra por el mensaje de error (es decir, el mensaje utilizado al lanzar una excepción).
+- **Issue**: filtra por tipo de incidencia (Click Rage, Dead Click, Excessive Scrolling, Bad Request, Missing Resources y Memory).
+- **User OS**: filtra por el sistema operativo de tus usuarios.
+- **User Browser**: filtra por el nombre del navegador utilizado por tu usuario (solo filtra por datos reales, así que si no encuentras resultados buscando "Chrome" significa que ninguno de tus usuarios lo está usando).
+- **User Device**: filtra por la versión móvil del dispositivo utilizado por el usuario.
+- **Platform**: filtra por la plataforma utilizada por tu usuario (ya sea Mobile, Tablet o Desktop).
+- **User Id**: filtra por el ID de tu usuario (establecido con el método `setUserID`).
+- **DOM complete**: filtra por el tiempo que tarda en lanzarse el evento DOM Complete.
+- **Largest contentful paint**: filtra por el tiempo que tarda en lanzarse el evento DOM Complete.
+- **Time to First Byte**: filtra por el tiempo que tarda en lanzarse el [evento TTFB](https://fr.wikipedia.org/wiki/Time_to_first_byte).
+- **AVG CPU Load**: filtra por la carga media de CPU durante la sesión.
+- **AVG Memory Usage**: filtra por el uso medio de memoria durante la sesión.
+- **Failed Request**: Booleano, filtra las sesiones que no tienen solicitudes fallidas.
+
+ 
+
+Continuando, por defecto el filtro intentará coincidir exactamente con la palabra que pongas ahí. Eso se debe al modificador "is" que está junto al campo de entrada. Puedes cambiarlo por otros comportamientos, como:
+
+- is any
+- is not
+- starts with
+- ends with
+- contains
+- not contains
+- is undefined
+
+Para nuestro ejemplo, lo vamos a dejar en "is" ya que conocemos la dirección de correo electrónico exacta de nuestro usuario.
+Como puedes ver en la siguiente imagen, cuando filtramos por el id "thisisatest@gmail.com" obtenemos solo esos resultados:
+
+![](https://i.imgur.com/kAjALWs.png)
+
+¿Pero qué pasa si queremos más?
+
+## Añadir varios pasos a nuestra búsqueda
+¿Qué pasa si queremos buscar sesiones en las que el usuario hace clic en un enlace concreto, y luego la aplicación envía una solicitud a un endpoint concreto y finalmente recibimos del servidor un código de respuesta específico?
+
+Individualmente, cada condición no es tan compleja, pero las estamos buscando todas juntas.
+Eso no es problema para nuestro Omnisearch.
+En la esquina inferior izquierda de la sección de filtros, tienes la opción "+ADD STEP" para añadir varios factores a los filtros.
+
+Cuando hagas clic en ella, verás las mismas opciones que ves al hacer clic en la barra de búsqueda.
+Aquí podrás elegir todas las opciones según consideres que debes construir la búsqueda.
+
+En nuestro caso, queremos buscar:
+
+- Un id de usuario concreto.
+- Todas las sesiones con un clic en un enlace específico.
+    - Todas las sesiones con solicitudes a una URL concreta.
+- Por último, todas las sesiones que comparten la misma familia de códigos de estado.
+
+Cuando juntas todos estos filtros, obtienes un filtro de búsqueda complejo que coincide con tus sesiones concretas.
+Veamos cómo se vería esto en la interfaz:
+
+![](https://i.imgur.com/RX9PeH3.png)
+
+Aquí hay varias cosas que conviene destacar:
+
+1. El id de usuario se trata como un filtro normal, mientras que el resto de los parámetros se tratan como eventos. Esto se debe a que también puedes especificar el orden en el que tienen lugar estos eventos (y el id de usuario siempre estará presente).
+2. El evento de clic especifica el texto del botón en el que estamos haciendo clic (fíjate en la cadena "Get me something!"). Esto se **autocompletará** una vez que empieces a escribir.
+3. El modificador de la URL se cambia de "is" a "contains". Esto es importante porque el autocompletado no tendrá en cuenta los parámetros de la URL, pero como parte de esta solicitud estamos enviando todos los atributos del formulario como parámetros de la URL (es decir, es una solicitud GET). De esa manera podemos abarcar todas las solicitudes, sin importar la combinación utilizada.
+4. Hemos cambiado el modificador del valor "status code" de `=` a `<` porque estoy buscando todos los códigos de respuesta de éxito (2XX).
+5. Fíjate en el "AND" resaltado en la esquina superior derecha junto a "OR" y "THEN". Ese modificador hace que todos los pasos y filtros se evalúen con un AND. Podríamos cambiarlos a un OR (por ejemplo), si quisiéramos que todos se evaluaran individualmente.
+
+Puedes cambiar los filtros, o incluso las condiciones booleanas, para dejar tu filtro exactamente como lo necesitas.
+
+¿Pero qué pasa si tu búsqueda requiere varios pasos? ¿Qué pasa si estás buscando sesiones que se ajustan a un determinado embudo? Veamos cómo puedes configurar un embudo de varios pasos con los filtros de búsqueda.
+
+## Crear un embudo a partir de los filtros de búsqueda
+
+Un embudo no es más que un conjunto de pasos que tus usuarios tienen que atravesar para llegar a algún punto. Normalmente, cuando eso sucede, algunos usuarios no llegarán hasta el final, quizá porque perdieron el interés o quizá debido a errores en tu aplicación.
+Y es para el segundo escenario para el que OpenReplay puede ayudarte a identificar problemas.
+
+Lo primero que hay que hacer es definir el embudo usando OmniSearch. Para ello, simplemente indica los pasos necesarios usando los numerosos filtros enumerados arriba.
+
+Para nuestro ejemplo, voy a buscar sesiones en las que ocurra lo siguiente:
+
+- El usuario visita la página de inicio de mi aplicación (el URI es "/").
+- El usuario interactúa con el campo de entrada "first name".
+- El usuario hace clic en el enlace "second page".
+- El usuario es llevado a una página diferente con el URI "/second-page".
+- El usuario luego hace clic en el enlace "Home page".
+
+Como puedes ver, la lista de pasos puede ser cualquier combinación aleatoria que tenga sentido dentro de tu aplicación.
+Este ejemplo en particular se vería así:
+
+![](https://i.imgur.com/uEx2yGZ.png)
+
+Por sí sola, esta búsqueda enumeraría las sesiones que coinciden con el patrón. Sin embargo, podemos ir un poco más lejos guardándola como un embudo y luego analizando la información recopilada por OpenReplay.
+
+Al hacer clic en "Save funnel" se te pedirá que añadas un nombre a tu embudo y aparecerá en la esquina inferior izquierda de la pantalla.
+
+![](https://i.imgur.com/bt5O08M.png)
+
+Y una vez que entres en el embudo, obtendrás una visión general de lo que sucede durante el embudo:
+
+![](https://i.imgur.com/cgyJaKO.png)
+
+Como puedes apreciar, en este ejemplo podemos ver problemas con Dead Clicks y Click Rages en 3 sesiones diferentes.
+
+## Guardar tus filtros
+Esta funcionalidad se asegura de que no tengas que volver a crear tus filtros complejos cada vez que quieras usarlos.
+Y hacerlo es extremadamente fácil.
+
+Supongamos que tenemos un filtro que solo muestra sesiones con dead clicks (clics que no hacen nada) en la página de inicio. Queremos conservar esa búsqueda para poder comprobar constantemente si en el futuro aparecen nuevos problemas como este.
+Todo lo que tenemos que hacer es configurarlo y hacer clic en el enlace "SAVE SEARCH" en la esquina inferior derecha del cuadro de búsqueda.
+Como se ve en la siguiente imagen:
+
+![](https://i.imgur.com/b3GP8xh.png)
+
+Dale un nombre y haz clic en el botón "Create".
+
+![](https://i.imgur.com/TONFroV.png)
+
+Después de eso, tu búsqueda guardada aparecerá junto a la barra de búsqueda, así:
+
+![](https://i.imgur.com/n1GsndD.png)
+
+Omnisearch te proporciona superpoderes de búsqueda, pero para aprovecharlos tienes que elegir las opciones adecuadas.
+## ¿Tienes preguntas?
+
+Si todavía tienes preguntas, no dudes en contactar con nuestros desarrolladores en nuestra [comunidad de Slack](https://slack.openreplay.com/).

@@ -1,0 +1,50 @@
+---
+title: "Canvas et WebGL"
+metaTitle: "Canvas et WebGL"
+metaDescription: "Comment enregistrer les éléments canvas et WebGL dans la relecture de session."
+---
+
+OpenReplay peut enregistrer le contenu des éléments `<canvas>` avec prise en charge de WebGL.
+
+> Remarque : si vous utilisez un contexte WebGL, veillez à ajouter `{ preserveDrawingBuffer: true }` aux options de .getContext afin d'éviter les images vides, car l'extraction des données d'image du canvas repose généralement sur la couche de dessin, qui est omise par défaut.
+
+## Activer l'enregistrement du canvas
+
+Pour activer l'enregistrement du canvas, exécutez simplement `openreplay -e` puis ajoutez le bloc ci-dessous pour mettre à jour le service `http`.
+
+```yaml
+http:
+  env:
+    RECORD_CANVAS: true
+    CANVAS_QUALITY: low
+    CANVAS_FPS: 1
+```
+
+Une fois cela fait, enregistrez et quittez la configuration à l'aide de `:wq` afin qu'OpenReplay puisse se charger d'appliquer les modifications.
+
+> Remarque : L'enregistrement du canvas est activé dans toutes nos offres SaaS. Les paramètres — qui sont définis sur leurs valeurs par défaut — ne peuvent pas être modifiés.
+
+### Options du canvas
+
+Vous pouvez affiner les options ci-dessous en fonction de vos besoins. En effet, certaines applications peuvent nécessiter une fréquence d'images plus élevée. Même si la capture et l'encodage des instantanés se font en arrière-plan (web-worker) et n'affectent pas les performances de votre application, opter pour des valeurs élevées consommerait davantage de bande passante au niveau de l'utilisateur final et nécessiterait davantage d'espace de stockage sur disque sur votre instance OpenReplay (backend). Les images/instantanés, capturés par le tracker, sont envoyés au backend, puis traités et convertis en une vidéo destinée à la relecture de session.
+
+- `CANVAS_QUALITY: 'low' | 'medium' | 'high'` : Définit la qualité des instantanés enregistrés. La valeur par défaut est `low`.
+- `CANVAS_FPS: number` : Définit le nombre d'images par seconde auquel les éléments canvas sont enregistrés. La valeur par défaut est `1`.
+
+> Remarque : En raison des limitations du codec vidéo actuel, la relecture de l'enregistrement du canvas peut avoir un arrière-plan noir (ou d'une autre couleur unie), car il est impossible d'encoder le canal alpha. Nous suivons ce sujet de près et nous passerons à des versions plus récentes du codec dès qu'elles seront disponibles.
+
+### Assainissement des données
+
+Du point de vue de la confidentialité, le contenu des éléments canvas ne peut pas être assaini.
+
+## Sessions de cobrowsing
+
+Pour les sessions en direct (aussi appelées Assist), aucun paramètre particulier n'est nécessaire. Le canvas sera activé et capturé par défaut et les données seront transmises via le protocole P2P. Pour garantir une utilisation optimale du réseau, les données ne sont diffusées que lorsqu'un agent regarde la session en direct et que le contenu du canvas change.
+
+## Le canvas comme couche d'animation
+
+Si vous utilisez un canvas au-dessus de la couche de votre frontend (avec un zIndex plus élevé), il se peut que vous remarquiez un écran noir lors de la relecture des sessions enregistrées. Cela se produit parce que l'API web ne nous permet pas encore de capturer le canal alpha. Si c'est le cas pour votre application web, ajoutez l'attribut HTML `data-openreplay-hidden` à l'élément canvas problématique afin de le masquer complètement de l'enregistrement de la session.
+
+## Vous avez des questions ?
+
+Si vous avez des questions sur ce processus, n'hésitez pas à nous contacter sur notre [Slack](https://slack.openreplay.com) ou à consulter notre [Forum](https://forum.openreplay.com).

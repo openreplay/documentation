@@ -1,0 +1,140 @@
+---
+title: "Options réseau (Mobile)"
+metaTitle: "Options réseau (Mobile)"
+metaDescription: "Plugin d'options réseau pour les SDK mobiles d'OpenReplay (iOS et Android)."
+---
+
+Cette page décrit comment intercepter et assainir les requêtes et réponses réseau à l'aide des SDK mobiles d'OpenReplay pour iOS et Android. La capture des données réseau peut aider les développeurs à comprendre et à résoudre efficacement les problèmes.
+
+## SDK iOS - Interception du réseau
+
+Le SDK iOS fournit une classe `NetworkListener` permettant de capturer les requêtes et réponses réseau, y compris les en-têtes et les charges utiles. Voici comment l'utiliser :
+
+```swift
+import ORTracker
+
+func fetchPokemonData(for name: String) {
+    let networkListener = NetworkListener()
+    let url = URL(string: "https://pokeapi.co/api/v2/pokemon/ditto")!
+    var request = URLRequest(url: url)
+    request.httpMethod = "GET" // This is the default, so it's optional in this case.
+
+    // Start the network listener with the request
+    networkListener.start(request: request)
+
+    // Create a data task
+    let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        if let error = error {
+            print("Error: \(error.localizedDescription)")
+            return
+        }
+        
+        if let data = data {
+            do {
+                let json = try JSONSerialization.jsonObject(with: data, options: [])
+                print(json)
+            } catch {
+                print("Error deserializing JSON: \(error)")
+            }
+        }
+        
+        networkListener.finish(response: response, data: data)
+    }
+
+    task.resume()
+}
+```
+
+### Assainissement de la requête
+
+Vous pouvez assainir les données de requête et de réponse en définissant des clés à ignorer pour les corps JSON ainsi que des en-têtes à ignorer. L'assainissement est pris en charge à la fois pour la requête et pour la réponse. L'assainissement du corps ne s'applique qu'aux charges utiles JSON valides.
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+Pour modifier les données de réponse avant de les transmettre au listener :
+
+```swift
+var sanitizedData
+if let data = data {
+    do {
+        let json = try JSONSerialization.jsonObject(with: data, options: [])
+        sanitizedData = customSanitizeFunction(data)
+        print(json)
+    } catch {
+        print("Error deserializing JSON: \(error)")
+    }
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```
+
+## SDK Android - Interception du réseau
+
+Le SDK Android fournit également une classe `NetworkListener` pour capturer les requêtes et réponses réseau. Voici un exemple d'implémentation :
+
+```java
+import com.openreplay.tracker.NetworkListener;
+
+public void makeSampleRequest() {
+    new Thread(() -> {
+        try {
+            URL url = new URL("https://jsonplaceholder.typicode.com/posts/1");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+
+            // Optionally set request headers
+            connection.setRequestProperty("Content-Type", "application/json");
+
+            // Initialize the network listener for this connection
+            NetworkListener networkListener = new NetworkListener(connection);
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+            reader.close();
+
+            // Using the network listener to log the finish event
+            networkListener.finish(connection, response.toString().getBytes());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }).start();
+}
+```
+
+### Assainissement de la requête
+
+Comme pour le SDK iOS, le SDK Android vous permet d'assainir les données de requête et de réponse en définissant des clés à ignorer pour les corps JSON ainsi que des en-têtes à ignorer.
+
+```java
+NetworkListener networkListener = new NetworkListener(connection);
+networkListener.setIgnoredHeaders(Arrays.asList("mySecretToken"));
+networkListener.setIgnoredKeys(Arrays.asList("password"));
+```
+
+Pour modifier les données de réponse avant de les transmettre au listener :
+
+```java
+String sanitizedData = null;
+if (responseData != null) {
+    sanitizedData = customSanitizeFunction(responseData);
+}
+
+// Pass the sanitized data to the NetworkListener
+if (sanitizedData != null) {
+    networkListener.finish(connection, sanitizedData.getBytes());
+} else {
+    networkListener.finish(connection, new byte[0]); // Handle cases where sanitized data is null
+}
+```
+
+## Des questions ?
+
+Si vous avez des questions concernant l'assainissement des requêtes réseau, n'hésitez pas à nous contacter sur notre [Slack](https://slack.openreplay.com) ou à consulter notre [Forum](https://forum.openreplay.com).

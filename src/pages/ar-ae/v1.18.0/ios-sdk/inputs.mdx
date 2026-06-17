@@ -1,0 +1,35 @@
+---
+title: "iOS SDK - تتبّع المدخلات"
+metaTitle: "iOS SDK - تتبّع المدخلات"
+metaDescription: "تفاصيل حول تتبّع المدخلات باستخدام أداة تتبّع iOS"
+---
+
+ستستمع أداة التتبّع إلى حدث تغيّر القيمة (مع debounce) وترسل القيمة الناتجة إلى الواجهة الخلفية لـ OpenReplay.
+
+## إضافة المدخلات المتتبَّعة
+
+### SwiftUI
+
+استخدم `.observeInput(text:label:masked)` لمراقبة أحداث الإدخال،
+
+- `text: String` - القيمة النصية للمدخل
+- `label: String` - التسمية الخاصة بالمدخل المُسجَّل
+- `masked: Bool` - إذا كانت `true`، فستُسجّل أداة التتبّع حدث الإدخال نفسه فقط دون القيمة، ولا تنسَ إضافة `.sensitive` لتمويه المدخل في التسجيل.
+
+```swift
+import ORTracker
+
+TextField("Input", text: $text)
+.observeInput(text: $text, label: "tracker input #1", masked: Bool)
+
+```
+
+### UIKit
+
+سيستخدم UIKit الـ placeholder كتسمية و sender.isSecureTextEntry لإخفاء المدخل
+
+```swift
+import ORTracker
+
+Analytics.shared.addObservedInput(inputEl)
+```

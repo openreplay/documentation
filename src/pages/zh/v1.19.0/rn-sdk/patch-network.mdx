@@ -1,0 +1,34 @@
+---
+title: "React Native SDK - patchNetwork 方法"
+metaTitle: "React Native SDK - patchNetwork 方法"
+metaDescription: "关于 OpenReplay React Native SDK 中 patchNetwork 方法的详细信息"
+---
+
+此方法对 XHR 和 Fetch API 进行补丁，以拦截网络请求。
+
+## 签名
+
+```js
+import OR from '@openreplay/react-native'
+
+OR.patchNetwork(
+    global,
+		(url) => url.includes('openreplaydomain'),
+    { mode: 'fetch' }
+)
+```
+
+## 参数
+
+- `context: globalThis`：应用的当前上下文（用于从中获取 fetch/xhr）
+- `isServiceURL: (url: string) => boolean`：用于检查当前请求应被跟踪（false）还是被跳过（true）的函数
+- `options: Partial<Options>`：选项对象
+
+## 选项
+
+- `ignoreHeaders: Array<string> | boolean`：要忽略的请求头（默认值：`['cookie', 'set-cookie', 'authorization']`）
+- `capturePayload: boolean`：是否捕获请求负载（默认值：`false`）
+- `sanitizer: data: RequestResponseData) => RequestResponseData`：用于清理请求/响应的函数（默认值：`undefined`）
+- `mode: 'fetch' | 'xhr' | 'all'`：要进行补丁的 API（默认值：`'fetch'`）
+
+> 注意：React-Native 的 fetch 在底层使用 XHR（截至撰写本文时），因此使用 "all" 可能会导致录制中出现重复的请求

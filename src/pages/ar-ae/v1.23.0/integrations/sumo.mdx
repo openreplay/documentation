@@ -1,0 +1,81 @@
+---
+title: "SumoLogic"
+metaTitle: "تكامل SumoLogic"
+metaDescription: "كيفية دمج SumoLogic مع OpenReplay ورؤية أخطاء الواجهة الخلفية إلى جانب عمليات إعادة تشغيل الجلسات."
+---
+
+كيفية دمج SumoLogic مع OpenReplay ورؤية أخطاء الواجهة الخلفية إلى جانب تسجيلات الجلسات.
+
+## 1. إنشاء Access ID و Access Key جديدين
+
+1. سجّل الدخول إلى حسابك في [SumoLogic](https://service.eu.sumologic.com/ui/#/login).
+2. انتقل إلى صفحة [Access Keys](https://service.eu.sumologic.com/ui/#/security/access-keys).
+3. انقر على *+ Add Access Key*.
+4. في حقل الاسم اكتب "openreplay" ثم انقر على *Create Key*.
+5. انسخ الـ `Access ID` والـ `Access Key` الجديدين لأننا سنحتاجهما لإجراء التكامل.
+6. انقر على *Done*.
+
+لمزيد من المعلومات حول إنشاء Access ID و Access Key، يُرجى الرجوع إلى هذه [الوثائق](https://help.sumologic.com/Manage/Security/Access-Keys).
+
+## 2. تفعيل SumoLogic في OpenReplay
+
+ضع الـ `Access ID` والـ `Access Key` الخاصين بك في لوحة تحكم OpenReplay ضمن 'Preferences > Integration'.
+
+![تكامل SumoLogic في OpenReplay](/static/sumo-1.png#center)
+
+## 3. نشر openReplaySessionToken
+
+لربط حدث SumoLogic بجلسة المستخدم المسجّلة، يجب نشر رمز فريد من الواجهة الأمامية إلى الواجهة الخلفية في كل طلب ترغب في تتبّعه. يمكن القيام بذلك باستخدام ترويسة HTTP مخصصة. في المثال أدناه، نستخدم الدالة `fetch` لإرسال تلك الترويسة.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+لكي يتمكّن OpenReplay من ربط رسالة SumoLogic بجلسة المستخدم المسجّلة، يجب نشر رمز فريد كجزء من كل خطأ في الواجهة الخلفية ترغب في تتبّعه.
+
+فيما يلي مثال بلغة Python باستخدام Monkey Patching.
+
+```python
+import sys
+import traceback
+#...
+old_tb = traceback.print_exception
+old_f = sys.stdout
+old_e = sys.stderr
+OPENREPLAY_SESSION_TOKEN = None
+
+class F:
+    def write(self, x):
+        if OPENREPLAY_SESSION_TOKEN is not None and x != '\n':
+            old_f.write(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] {x}")
+        else:
+            old_f.write(x)
+
+    def flush(self):
+        pass
+
+def tb_print_exception(etype, value, tb, limit=None, file=None, chain=True):
+    if OPENREPLAY_SESSION_TOKEN is not None:
+        value = type(value)(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] " + str(value))
+    old_tb(etype, value, tb, limit, file, chain)
+
+traceback.print_exception = tb_print_exception
+
+sys.stderr = F()
+```
+
+اسم الوسم `openReplaySessionToken` حساس لحالة الأحرف.
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات، انضمّ إلى [Slack](https://slack.openreplay.com) الخاص بنا أو تفقّد [المنتدى](https://forum.openreplay.com) واحصل على المساعدة من مجتمعنا.

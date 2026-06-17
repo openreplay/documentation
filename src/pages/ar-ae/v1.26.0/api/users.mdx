@@ -1,0 +1,135 @@
+---
+title: "المستخدمون"
+metaTitle: "المستخدمون"
+metaDescription: "كيفية إدارة بيانات المستخدمين والتحكم فيها."
+---
+import Aside from '~/components/Aside.astro'
+
+## الحصول على إحصائيات المستخدم
+
+احصل على بعض الإحصائيات والتفاصيل العامة حول مستخدم معيّن، تم تحديده عبر دالة JavaScript المسماة `tracker.setUserID`. تُرجع نقطة النهاية هذه بيانات مثل `firstSeen` و`lastSeen` و`numberSessions`.
+
+### الطريقة
+`GET`
+
+### عنوان URL
+`/api/v1/:projectKey/users/:userId`
+
+### المعاملات
+
+| الاسم | النوع | الوصف |
+|----------|-------------|-------------|
+| projectKey | string | معرّف المشروع الذي تتتبعه (مطلوب) |
+| userId | string | معرّف المستخدم الخاص بك، الذي يُضبط عبر `tracker.setUserID` (مطلوب) |
+
+### رؤوس الطلب
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`: يمكن العثور على المفتاح في 'Preferences' > 'Account' > 'Organization API Key'.
+
+### رموز الحالة
+
+`200`: تم إرسال الاستجابة بصيغة JSON في النص الأساسي
+
+### مثال على الطلب
+
+```shell
+curl -X GET \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### مثال على الاستجابة
+
+```json
+{
+  "data": {
+    "userId": "mickael@openreplay.com",
+    "sessionCount": 3,
+    "lastSeen": 1623689478617,
+    "firstSeen": 1623440822825
+  }
+}
+```
+
+## حذف مستخدم
+
+احذف مستخدمًا (يتم تحديده عبر دالة JavaScript المسماة `tracker.setUserID`) وجميع بياناته التي التقطها OpenReplay. يؤدي ذلك إلى تشغيل مهمة في الخلفية تُنفَّذ مرة واحدة لإزالة جميع البيانات المتعلقة بالمستخدم، بما في ذلك الجلسات والأحداث والبيانات الوصفية والأحداث المخصصة والتسجيلات. يُرجع هذا الاستدعاء معرّف `jobID` يمكنك استخدامه لاحقًا [للتحقق](/api/jobs#getjobdetails) من حالة عملية الحذف.
+
+يُعد هذا مفيدًا في التعامل مع طلبات اللائحة العامة لحماية البيانات (GDPR) التي قد تتلقاها من مستخدميك النهائيين.
+
+<Aside type="note">
+	ستُزيل مهمة الحذف ما يصل إلى 1000 جلسة عشوائية مرتبطة بالمستخدم المحدد.
+</Aside>
+
+
+### الطريقة
+`DELETE`
+
+### عنوان URL
+`/api/v1/:projectKey/users/:userId`
+
+### المعاملات
+
+| الاسم | النوع | الوصف |
+|----------|-------------|-------------|
+| projectKey | string | معرّف المشروع الذي تتتبعه (مطلوب) |
+| userId | string | معرّف المستخدم الخاص بك، الذي يُضبط عبر `tracker.setUserID` (مطلوب) |
+
+### رؤوس الطلب
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`: يمكن العثور على المفتاح في 'Preferences' > 'Account' > 'Organization API Key'.
+
+### رموز الحالة
+
+`200`: تم إرسال الاستجابة بصيغة JSON في النص الأساسي
+
+### مثال على الطلب
+
+```shell
+curl -X DELETE \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/users/mickael@example.com \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### مثال على الاستجابة
+
+```json
+{
+  "data": {
+    "jobId": 22345,
+    "description": "Delete user sessions of userId = mickael@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@openreplay.com",
+    "createdAt": 1623912962910,
+    "updatedAt": 1623912962910,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+### تغيير وقت حذف ملف إعادة التشغيل؟
+
+مهمة الحذف هي عملية مكوّنة من خطوتين: أولًا، تُحذف الجلسات وأحداثها المتتالية من قاعدة البيانات أثناء الليل. ثانيًا، تُجدوَل ملفات إعادة التشغيل لتنتهي صلاحيتها (بعد 30 يومًا) في تخزين الكائنات.
+
+إذا كنت تستخدم minio (التثبيت القياسي)، وترغب في تغيير سياسة انتهاء الصلاحية/دورة الحياة الافتراضية، فاتبع التعليمات أدناه:
+1. على خادمك، شغّل `openreplay -e`
+2. ضمن قسم `chalice`، عرّف متغير بيئة جديدًا باسم **SCH_DELETE_DAYS** بقيمة تساوي عدد الأيام التي ترغب في الاحتفاظ بملف إعادة التشغيل خلالها قبل الحذف (أكبر من أو يساوي 0)
+3. احفظ واخرج باستخدام `:wq`
+4. شغّل `k9s -n db`
+5. استخدم أسهم لوحة المفاتيح للتنقل في القائمة والوصول إلى حاوية `minio-*`
+6. اضغط `s` للحصول على وصول shell إلى حاوية Minio (تخزين الكائنات)
+7. شغّل `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
+8. لحذف ملفات إعادة التشغيل بعد 14 يومًا من تنفيذ مهمة الحذف
+
+```bash
+export EXPIRATION_DAYS=14
+mc ilm add --expiry-days $EXPIRATION_DAYS --tags "to_delete_in_days=${EXPIRATION_DAYS}" minio/mobs
+```
+
+9. استخدم `exit` للخروج من حاوية Minio
+10. شغّل `:quit` للخروج من واجهة سطر أوامر Kubernetes

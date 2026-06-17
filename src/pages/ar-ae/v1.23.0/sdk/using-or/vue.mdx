@@ -1,0 +1,52 @@
+---
+title: "استخدام OpenReplay مع Vue"
+metaTitle: "إضافة Tracker الخاص بـ OpenReplay إلى تطبيق Vue الخاص بك"
+metaDescription: "تعلّم كيفية تشغيل الـ tracker في تطبيق Vue الخاص بك"
+---
+import Aside from '~/components/Aside.astro'
+
+تشغيل الـ tracker في تطبيق Vue أمر بسيط للغاية. 
+
+## إضافة كود التتبع
+
+بافتراض أنك تقوم ببناء تطبيق SPA (تطبيق ذو صفحة واحدة)، فكل ما عليك فعله هو إضافة الكود التالي إلى سكربت setup في ملفك الرئيسي.
+
+```html
+<script setup>
+// note that you can manually import Tracker class if you want to handle the instance manually
+import { tracker } from '@openreplay/tracker'
+//... your code here
+tracker.configure({
+  projectKey: "<your project key>",
+  ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
+});
+
+tracker.start();
+//... more code here
+</script>
+```
+
+<Aside type="tip">
+بينما يمكنك الحصول على [نسخة الـ snippet بلغة JS](/using-or/snippet#getting-the-snippet) من الـ tracker الخاص بنا مباشرةً من الـ CDN عند إنشاء مشروع جديد، فإن الكود بسيط للغاية وسيجعل من الصعب تخصيصه وإضافة إضافات (plugins) أخرى.
+</Aside>
+
+### التعامل مع "projectKey" في الكود الخاص بك
+
+لأسباب أمنية، تجنّب كتابة الـ `projectKey` الخاص بك بشكل مباشر (hardcoding) في كود تطبيقك. بدلاً من ذلك، قم بتخزينه في ملف إعدادات أو في نظام بيئة (environment system).
+
+أحد الخيارات هو إضافة متغير بيئة (environment variable) في ملف `.env` في جذر مشروعك مع إضافة البادئة `VITE_` إلى المتغير، مما يجعله متاحًا لك في كود Vue الخاص بك. يمكنك استخدامه لاحقًا عبر `import.meta.env.<your variable name>`.
+
+إليك مثالًا:
+```javascript
+tracker.configure({
+  projectKey: import.meta.env.VITE_VUE_APP_PROJECT_KEY,
+});
+ ```
+
+## هل تبني شيئًا أكثر تعقيدًا؟
+
+إذا كنت تبني تطبيقًا معقدًا باستخدام Vue، فمن المرجّح أنك تستخدم [Nuxt](/using-or/nuxt) أو شيئًا مشابهًا له. تأكّد من الاطلاع على قسم [Tracker Setup](/using-or) للعثور على إطار العمل (framework) الذي تعمل به.
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات في إعداد الـ tracker في مشروع Vue الخاص بك، فيرجى التواصل معنا عبر [مجتمعنا على Slack](https://slack.openreplay.com/) وطرح أسئلتك على مطورينا مباشرةً!

@@ -1,0 +1,59 @@
+---
+title: "حزمة JavaScript SDK - طريقة 'start'"
+metaTitle: "حزمة JavaScript SDK - طريقة 'start'"
+metaDescription: "تفاصيل حول طريقة 'start' في حزمة SDK الخاصة بـ OpenReplay"
+---
+
+تُستخدم هذه الطريقة لبدء تشغيل الـ tracker. وبمجرد بدء تشغيل الـ tracker، يبدأ تسجيل الجلسة.
+
+## التوقيع (Signature)
+
+```js
+start(startOpts?: Partial<StartOptions>): Promise<StartPromiseReturn>
+```
+
+### المعاملات
+تقبل طريقة `start` معاملاً اختيارياً يمكنك من خلاله تخصيص جوانب مختلفة من التسجيل:
+- `userID: string`: تُستخدم لتعيين معرّف المستخدم يدوياً من أجل تتبعه عبر الجلسات. وهي قيمة نصية (string) ويمكن أن تكون أي شيء تريده.
+- `metadata: Record<string, string>`: لتعيين قيم البيانات الوصفية (metadata) يدوياً. راجع [قسم البيانات الوصفية](/installation/metadata/) لمعرفة المزيد عن هذه الميزة.
+- `forceNew: boolean`: تُستخدم لفرض جلسة جديدة بعد إعادة تحميل الصفحة. القيمة الافتراضية لها هي `false`، لذا تظل الجلسة محفوظة بعد إعادة التحميل.
+- `sessionToken: string`: تُستخدم في بعض عمليات الدمج (integrations).
+- `assistOnly: boolean`: تُشغّل الـ tracker في وضع المساعدة فقط (assist-only)، وهو ما يؤدي إلى تخطي إرسال بيانات الجلسة إلى الـ backend (ميزة في إصدار EE)
+- `startCallback?: (result: StartPromiseReturn) => void`: دالة استدعاء (callback) يتم تشغيلها عند بدء تشغيل الـ tracker أو فشله في البدء. تُعيد إما معلومات النجاح أو معلومات الفشل.
+
+
+### القيمة المُعادة
+
+بمجرد بدء التشغيل، ستُعيد الطريقة وعداً (promise) مع كائن يحتوي على معلومات الجلسة يتضمن:
+
+- `sessionID: string`: قيمة نصية تمثل معرّف الجلسة التي بدأت.
+- `sessionToken: string`: رمز (token) الجلسة.
+- `userUUID: string`: معرّف فريد للمستخدم.
+
+يمكن أن تكون قيمة `StartPromiseReturn` إحدى الحالتين:
+
+```js
+// Successful start
+interface OnStartInfo {
+  sessionID: string;
+  sessionToken: string;
+  userUUID: string;
+}
+
+const SuccessfulStart = (body: OnStartInfo): SuccessfulStart => ({
+  ...body,
+  success: true,
+});
+
+// Unsuccessful start
+const UnsuccessfulStart = (reason: string): UnsuccessfulStart => ({
+  reason,
+  success: false,
+});
+
+// Type for start promise return
+export type StartPromiseReturn = SuccessfulStart | UnsuccessfulStart;
+```
+
+- **حالة النجاح**: في حالة النجاح، سيُعيد الوعد (promise) قيم sessionID وsessionToken وuserUUID.
+- **حالة الفشل**: في حالة الفشل، سيُعيد reason وsuccess: false.

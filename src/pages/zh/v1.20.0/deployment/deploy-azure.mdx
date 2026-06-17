@@ -1,0 +1,94 @@
+---
+title: "部署到 Azure"
+metaTitle: "部署到 Azure"
+metaDescription: "在 Azure 上部署 OpenReplay 的分步指南。"
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="观看如何在你的 Azure 基础设施中部署 OpenReplay"
+  description="如果你不喜欢阅读，可以跟随这个视频教程，了解如何在 Azure 中部署 OpenReplay"
+  videoURL="https://www.youtube.com/watch?v=bkVw32UKf7Q"
+  />
+
+
+
+OpenReplay 技术栈可以安装在单台机器上，而 Microsoft Azure 是一个理想的选择。以下是具体操作方法。
+
+## 启动一台虚拟机
+
+1. 登录你的门户
+2. 如果主屏幕上有 'Virtual Machine'，请点击它。否则，点击 'Create a Resource' > 'Compute' > 'Virtual Machine'
+3. 在 'Virtual Machine' 页面上，如果没有自动跳转到创建页面，请点击 'Add'
+4. 在 'Image' 中选择 *Ubuntu Server 20.04 LTS*
+4. 选择你的虚拟机规格。**最低**资源为 `2 vCPUs, 8 GB of RAM, 50 GB of storage`，否则 OpenReplay 后端服务根本无法启动。最低规格足以应对低/中等流量。如果你预计会有高流量，则应在此基础上进行扩展。
+5. 启用 HTTP (80)、HTTPS (443) 和 SSH (22) 端口，并记下 `username`
+6. 点击 'Review + create'
+
+## 部署 OpenReplay
+
+1. 确保你的虚拟机处于 `Running` 状态，然后连接到它：
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem ## only if you've previously created an SSH key
+chmod 400 $SSH_KEY
+INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
+ssh <username>@$INSTANCE_IP ## or ssh -i $SSH_KEY <username>@$INSTANCE_IP if you have a key
+```
+
+2. 通过提供运行 OpenReplay 的域名来安装它（例如 DOMAIN_NAME=openreplay.mycompany.com）：
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## 配置 TLS/SSL
+
+OpenReplay 处理敏感的用户数据，因此需要 HTTPS 才能运行。这是强制性的，否则 tracker 根本不会开始录制。仪表板也是如此，没有 HTTPS，你将无法回放用户会话。
+
+因此，你必须生成（或自带）你自己的 SSL 证书。
+
+1. 首先，前往 Azure DNS（或你的其他 DNS 服务提供商）并创建一条 `A Record`。使用你之前在安装步骤中提供的域名，并通过虚拟机的公网 IP 将其指向该虚拟机。
+
+2. 如果你要自带证书，请使用以下命令创建一个 SSL secret：`kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`。
+
+> **注意：** 如果你没有证书，可以使用 Let's Encrypt 为你的子域名（即安装期间提供的那个）生成一个可自动续期的证书。只需连接到 OpenReplay 虚拟机，运行 `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` 并按照步骤操作即可。
+
+3. 如果你希望启用 http 到 https 的重定向（推荐），请取消注释 `/var/lib/openreplay/vars.yaml` 中 `ingress-nginx` 部分下方的以下代码块：
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+值得一提的是，我们的 `ingress-nginx` 默认运行在 `80|443` 端口上，但如果需要，可以在 `vars.yaml` 中轻松更改：
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. 最后，重新安装 OpenReplay NGINX：
+
+```bash
+openreplay -R
+```
+
+现在一切就绪，OpenReplay 应该可以在你的子域名上访问了。你可以通过访问 `/signup` 页面（即 openreplay.mycompany.com/signup）来创建账户。
+
+> **注意：** 为了增强安全性，你还可以将 OpenReplay 实例运行在 Azure Load Balancer 之后。有关更多详细信息，请查看 [Azure LB 文档](https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-overview)。
+
+## 有疑问？
+
+如果你遇到任何问题，请加入我们的 [Slack](https://slack.openreplay.com)，或查看我们的[论坛](https://forum.openreplay.com)，并从我们的社区获得帮助。

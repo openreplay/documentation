@@ -1,0 +1,77 @@
+---
+title: "Uso de OpenReplay con Gatsby"
+metaTitle: "Añadir el Tracker de OpenReplay a tu aplicación Gatsby"
+metaDescription: "Aprende cómo poner en marcha el tracker en tu aplicación Gatsby"
+---
+Instalar el tracker de OpenReplay en un proyecto basado en Gatsby es relativamente sencillo. Teniendo en cuenta que Gatsby utiliza React por debajo, todo lo que tenemos que hacer es añadir el código del tracker dentro de la página principal y llamar al método `start` mediante el hook `useEffect`. 
+
+Echemos un vistazo.
+
+## ¿Por qué configurar el Tracker en un sitio estático?
+
+La falta de contenido dinámico dentro de tu aplicación no significa que no quieras aprovechar algunas de las otras funciones de OpenReplay.
+
+Aunque no utilizarás las repeticiones de sesión para encontrar errores, podrás capturar métricas interesantes y crear [tus propios dashboards personalizados](https://docs.openreplay.com/tutorials/custom-dashboard) en torno a estas métricas.
+
+Puedes usar métricas de rendimiento, web vitals e incluso métricas relacionadas con los recursos para hacerte una idea general de cuál es la experiencia de tus usuarios con tu sitio.
+
+## Configurar el Tracker dentro de Gatsby
+
+Dado un sitio Gatsby estático cuyo punto de entrada es el archivo `index.tsx` dentro de la carpeta `pages`, querrás añadirle el siguiente código.
+
+Puedes usar el tracker como una instancia singleton, que es la forma recomendada de usarlo. 
+De esta manera, puedes acceder al tracker desde cualquier parte de tu aplicación:
+
+```js
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+const Index = ({data, location }) => {
+
+	React.useEffect(() => {
+		tracker.start();
+	}, [])
+
+	 //the rest of your code here...
+}
+```
+
+O puedes usar la clase `Tracker` directamente para gestionar su instancia manualmente:
+
+```jsx
+import Tracker from '@openreplay/tracker';
+const tracker = new Tracker({
+  projectKey: process.env.GATSBY_OPENREPLAY_PROJECT_KEY
+});
+
+const Index = ({data, location }) => {
+
+  React.useEffect(() => {
+    tracker.start();
+  }, [])
+
+   //the rest of your code here...
+}
+```
+
+El tracker se instancia cuando la página se compila (ya sea SSR o renderizado del lado del cliente), pero el método start solo se puede llamar desde el navegador, así que debemos asegurarnos de que se llame después de que el componente esté montado (de ahí el hook `useEffect` aquí). El array vacío como segundo argumento del hook `useEffect` garantiza que el callback se ejecute solo una vez.
+
+💡**Una nota para los usuarios self-hosted:** si estás usando la versión self-hosted de OpenReplay, también tendrás que especificar la propiedad de configuración `ingestPoint` al instanciar el tracker. Esta propiedad especifica el endpoint de ingesta para los datos del tracker. Los usuarios de la nube no lo necesitan, porque, por defecto, el tracker sabrá dónde está la versión SaaS de este endpoint, pero si lo estás alojando tú mismo, tendrás que especificarlo (debería ser algo como `https://openreplay.mydomain.com/ingest`)
+
+## Manejo de la variable de entorno en Gatsby
+
+Como medida de seguridad, recomendamos no codificar la project key directamente dentro de tu código. Eso significa que tendrás que exportarla como una variable de entorno para que Gatsby pueda leerla.
+
+La project key de OpenReplay vivirá entonces dentro de una variable llamada `GATSBY_OPENREPLAY_PROJECT_KEY`
+
+Observa cómo el nombre lleva el prefijo `GATSBY_`, que le indica a Gatsby que se asegure de que la variable también esté disponible en el código del front-end. De lo contrario, no podrás leer el valor a menos que estés ejecutando código de Node.js.
+
+## ¿Tienes preguntas?
+
+Puedes [consultar este repositorio](https://github.com/deleteman/openreplay-gatsby-example) para ver el **código fuente completo** de una aplicación basada en Gatsby que funciona con el Tracker.
+
+Si tienes cualquier problema al configurar el Tracker en tu proyecto Gatsby, contáctanos en nuestra [comunidad de Slack](https://slack.openreplay.com/) ¡y pregúntale directamente a nuestros desarrolladores!

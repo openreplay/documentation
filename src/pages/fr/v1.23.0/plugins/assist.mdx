@@ -1,0 +1,226 @@
+---
+title: "Assist"
+metaTitle: "Assist"
+metaDescription: "Comment configurer OpenReplay Assist et assister vos utilisateurs finaux grâce à l'écran en direct et au WebRTC."
+---
+
+import Aside from '~/components/Aside.astro'
+
+OpenReplay Assist vous permet d'assister vos utilisateurs en voyant leur écran en direct et en démarrant instantanément un appel (WebRTC) avec eux, sans nécessiter aucun logiciel de partage d'écran tiers.
+
+<Aside type="tip">
+  Nous avons également un tutoriel détaillé sur la façon d'utiliser Assist pour interagir en direct avec vos utilisateurs, vous pouvez le consulter [ici](/tutorials/assist).
+</Aside>
+
+## Installation
+
+```bash
+npm i @openreplay/tracker-assist
+```
+
+## Utilisation
+
+### Avec le snippet JavaScript
+
+Si votre tracker OpenReplay est configuré à l'aide du snippet JS, remplacez simplement l'occurrence `.../openreplay.js` par `.../openreplay-assist.js`. Voici un exemple de l'apparence que devrait avoir le script après la modification :
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" };
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay-assist.js", 1, 0, initOpts, startOpts);
+</script>
+```
+
+### Avec NPM
+
+Initialisez le tracker puis chargez le plugin `@openreplay/tracker-assist`.
+
+#### Si votre site web est une Single Page Application (SPA)
+
+```js
+import trackerAssist from '@openreplay/tracker-assist';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+tracker.use(trackerAssist(options)); // check the list of available options below
+
+tracker.start();
+
+```
+
+#### Si votre application web est rendue côté serveur (SSR)
+
+Suivez l'exemple ci-dessous si votre application est en SSR. Assurez-vous que `tracker.start()`
+est appelé une fois que l'application se trouve dans l'environnement du navigateur (c'est-à-dire via `useEffect` ou `componentDidMount`).
+
+```js
+import trackerAssist from '@openreplay/tracker-assist';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+tracker.use(trackerAssist(options)); // check the list of available options below
+
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, [])
+//...
+}
+```
+
+## Options
+
+Le plugin assist prend en charge les options suivantes :
+
+```js
+trackerAssist({
+  callConfirm?: string|ConfirmOptions;
+  controlConfirm?: string|ConfirmOptions;
+  config?: object;
+  onAgentConnect?: () => (()=>void | void);
+  onCallStart?: () => (()=>void | void);
+  onRemoteControlStart?: () => (()=>void | void);
+  onCallDeny?: () => any;
+  onRemoteControlDeny?: (agentInfo: Record<string, any>) => any;
+  onRecordingDeny?: (agentInfo: Record<string, any>) => any;
+  onDragCamera?: (dx: number, dy: number) => any;
+  callUITemplate?: string
+  /** 
+   * enables gzip compression for big batches on client side
+   * */
+  compressionEnabled: boolean;
+  /**
+   * Minimum amount of MESSAGES in a batch to trigger compression run
+   * @default 5000
+   * */
+   compressionMinBatchSize: number
+})
+```
+
+### Personnalisation des widgets
+
+Le contrôle à distance ainsi que les widgets d'appel, ceux que voit l'utilisateur final, peuvent être entièrement personnalisés.
+
+#### Widget de contrôle à distance
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
+
+#### Widget d'appel
+
+Il est possible de personnaliser tous les aspects de ce widget grâce à l'ensemble de `ids` et `classes` ci-dessous. Les `Ids` servent d'ancres pour les boutons/éléments individuels, tandis que les `classes` peuvent être utilisées pour les conteneurs de groupe.
+
+| Type HTML | Nom(s) | Description |
+|----------|-------------|-------------|
+|id | `or-assist` | Conteneur du widget |
+|class | `card`, `border-dark`, `shadow` et `drag-area` | Styles pour la bordure et l'ombre de la carte |
+|id | `controls`  | Conteneur de la partie appel à l'intérieur du widget |
+|class | `card-header` | Styles pour l'en-tête de carte du widget d'appel (celui qui affiche le nom de l'agent à côté d'un minuteur) |
+|id | `agent-name` | Conteneur du nom de l'agent |
+|id | `duration` | Conteneur du minuteur |
+|id | `video-container` | Conteneur du flux vidéo de l'utilisateur lui-même |
+|id | `remote-stream` | Flux vidéo de l'agent |
+|class | `card-footer` | Conteneur pour les boutons Muet, Vidéo, Terminer l'appel |
+|id | `audio-btn` | Bouton Muet |
+|id | `video-btn` | Bouton Vidéo |
+|id | `end-call-btn` | Bouton Terminer l'appel |
+|id | `remote-control-row` | Ligne pour les contrôles à distance |
+|id | `end-control-btn` | Id pour le bouton de fin de contrôle |
+
+### Callbacks
+
+Voici la liste de tous les callbacks :
+
+- `callConfirm` : Personnalisez le texte et/ou la mise en page de la popup de demande d'appel. 
+- `controlConfirm` : Personnalisez le texte et/ou la mise en page de la popup de demande de contrôle à distance.
+- `config` : Contient une configuration personnalisée du serveur ICE/TURN. Par défaut `{ 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }], 'sdpSemantics': 'unified-plan' }`.
+- `onAgentConnect: () => (()=>void | void)` : Cette fonction de callback est déclenchée dès qu'une session en direct démarre et renvoie les détails de l'agent (email, nom et query). Elle peut également renvoyer `onAgentDisconnect`, qui sera appelée lorsque la session est déconnectée. En cas de connexion instable, elle peut être appelée plusieurs fois. Voici un exemple :
+
+```js
+onAgentConnect = ({ email, name, query }) => {
+  console.log("Live session started")
+  const onAgentDisconnect =  () => console.log("Live session stopped")
+  return onAgentDisconnect
+}
+```
+
+- `onCallStart: ({ email, name, query }) => (()=>void | void)` : Cette fonction de callback est déclenchée dès qu'un appel (webRTC) démarre et renvoie les détails de l'agent (email, nom et query). Elle peut également renvoyer `onCallEnd`, qui sera appelée lorsque l'appel se termine. En cas de connexion instable, elle peut être appelée plusieurs fois. Voici un exemple :
+
+```js
+onCallStart: () => {
+  console.log("Call started")
+  const onCallEnd = () => console.log("Call ended")
+  return onCallEnd
+}
+```
+
+- `onRemoteControlStart: ({ email, name, query }) => (()=>void | void)` : Cette fonction de callback est déclenchée dès qu'une session de contrôle à distance démarre et renvoie les détails de l'agent (email, nom et query). Elle peut également renvoyer `onRemoteControlEnd`, qui sera appelée lorsque les permissions de contrôle à distance sont révoquées. Voici un exemple :
+
+```js
+onRemoteControlStart: () => {
+  console.log("Remote control started")
+  const onControlEnd = () => console.log("Remote control ended")
+  return onControlEnd
+}
+```
+
+- `onCallDeny?: () => any;` : Cette fonction de callback est déclenchée lorsque l'appel a été refusé par un utilisateur pendant la phase de demande.
+
+```js
+onCallDeny: () => {
+  console.log("Call denied")
+}
+```
+
+- `onRemoteControlDeny?: (agentInfo: Record<string, any>) => any;` : Cette fonction de callback est déclenchée lorsque la session de contrôle à distance a été refusée par un utilisateur pendant la phase de demande et renvoie les détails de l'agent (email, nom et query).
+
+```js
+onRemoteControlDeny: ({ email, name, query }) => {
+  console.log("Remote control request denied for", email)
+}
+```
+
+- `onRecordingDeny?: (agentInfo: Record<string, any>) => any;` : Cette fonction de callback est déclenchée lorsque la session d'enregistrement a été refusée par un utilisateur pendant la phase de demande et renvoie les détails de l'agent (email, nom et query).
+
+```js
+onRecordingDeny: ({ email, name, query }) => {
+  console.log("Recording session denied")
+ 
+}
+```
+
+- `onDragCamera?: (dx: number, dy: number) => any;` : Cette fonction attend un handler qui définit le comportement d'un bouton de souris maintenu enfoncé à l'intérieur d'un canvas Three.js pour le contrôle à distance. Le handler reçoit dx et dy, indiquant les deltas de mouvement de la souris.
+
+```js
+onDragCamera: (dx, dy) => {
+  moveCamera(dx, dy)
+}
+```
+
+## Des questions ?
+
+Vous rencontrez des difficultés pour configurer ce plugin ? Rejoignez notre [Slack](https://slack.openreplay.com) ou consultez notre [Forum](https://forum.openreplay.com) et obtenez de l'aide auprès de notre communauté.

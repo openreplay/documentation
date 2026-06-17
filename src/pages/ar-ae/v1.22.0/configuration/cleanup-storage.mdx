@@ -1,0 +1,227 @@
+---
+title: "تنظيف التخزين"
+metaTitle: "تنظيف التخزين"
+metaDescription: "احذف التسجيلات بشكل مجمّع من قاعدة البيانات ونظّف مساحة التخزين لديك."
+---
+import Aside from '~/components/Aside.astro'
+
+يوجد كل تسجيل على هيئة ملف وإدخال في قاعدة البيانات. يقوم OpenReplay بتفريغ كل ما هو ضروري لإعادة تشغيل جلسة (تغييرات DOM، وإحداثيات الماوس، وسجلات وحدة التحكم، ونشاط الشبكة وغير ذلك الكثير) في 3 ملفات (2 لإعادة التشغيل نفسها و1 لبيانات DevTools). تُخزَّن هذه الملفات افتراضيًا على نسختك (instance)، لذا فهي تشكّل معظم مساحة تخزينها. ستُخزَّن البيانات الوصفية للجلسة في قاعدة بيانات PostgreSQL إلى الأبد، ولكن بعد 180 يومًا ستنتهي صلاحية الملف الذي يحتوي على التسجيل أو سيُحذف من خلال سياسة دورة حياة في minio.
+
+## تنظيف التخزين المؤقت
+
+يخزّن OpenReplay البيانات المؤقتة في نظام الملفات قبل معالجتها ورفعها إلى خدمة تخزين الكائنات (minIO أو S3). بمجرد اكتمال المعالجة، تصبح البيانات مهملة، وستقوم مهمة cronjob بحذف هذه الملفات في اليوم الثاني من كل أسبوع.
+
+إذا كنت ترغب في تعديل مهمة cronjob:
+1. حرّر الإعدادات:
+
+```bash
+openreplay -e
+```
+
+2. غيّر توقيت مهمة cronjob بإضافة السطر التالي:
+
+```yaml
+utilities:
+  # Cleanup data everyday morning 3:05 am, server time.
+	cron: "5 3 * * *"
+```
+
+
+هناك طريقتان لتنظيف التخزين في نسخة OpenReplay لديك: تلقائية (CLI) ويدوية.
+
+## تنظيف البيانات (CLI)
+
+هذه العملية مؤتمتة بالكامل من خلال واجهة سطر الأوامر (CLI) الخاصة بنا. ما عليك سوى تشغيل الأمر أدناه لتنظيف مساحة التخزين عبر إزالة البيانات من كل من Postgres (حيث تُخزَّن الأحداث) ومن minio (حيث تُحفظ التسجيلات):
+
+```bash
+# To clean data older than 14 days
+openreplay --cleanup 14
+```
+
+## تنظيف البيانات (يدويًا)
+
+يمكن إزالة البيانات من كل من قاعدة البيانات (حيث تُخزَّن الأحداث) ومن minio (حيث تُحفظ التسجيلات).
+
+### تنظيف التسجيلات
+
+إذا احتجت في أي وقت إلى تحرير بعض المساحة، فسجّل الدخول إلى نسخة OpenReplay لديك واتبع الخطوات أدناه:
+
+1. شغّل `k9s -n db`
+2. استخدم أسهم لوحة المفاتيح للتنقل في القائمة والوصول إلى الحاوية `minio-*`
+3. اضغط `s` للحصول على وصول shell إلى حاوية Minio (تخزين الكائنات)
+4. شغّل `mc alias set minio http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD`
+5. شغّل `mc rm --recursive --dangerous --force --older-than 7d minio/mobs` (أي حذف الملفات الأقدم من 7 أيام)
+6. استخدم `exit` للخروج من حاوية Minio
+7. شغّل `:quit` للخروج من واجهة سطر أوامر Kubernetes
+
+#### تغيير سياسة دورة الحياة الافتراضية
+
+إذا كنت تستخدم minio (التثبيت القياسي)، فيمكنك تغيير سياسة دورة الحياة الافتراضية بهذه الطريقة:
+
+1. شغّل `k9s -n db`
+2. استخدم أسهم لوحة المفاتيح للتنقل في القائمة والوصول إلى الحاوية `minio-*`
+3. اضغط `s` للحصول على وصول shell إلى حاوية Minio (تخزين الكائنات)
+6. شغّل `mc alias set minio http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD`
+7. لتنظيف التسجيلات تلقائيًا بعد 14 يومًا من إنشائها
+
+```bash
+export EXPIRATION_DAYS=14
+export DELETE_JOB_DAYS=$((EXPIRATION_DAYS>30 ? 30 : EXPIRATION_DAYS))
+cat <<EOF > /tmp/lifecycle.json
+{
+  "Rules": [
+    {
+      "Expiration": {
+        "Days": $EXPIRATION_DAYS
+      },
+      "ID": "Delete old mob files",
+      "Status": "Enabled"
+    },
+    {
+      "Expiration": {
+        "Days": $DELETE_JOB_DAYS
+      },
+      "ID": "Delete flagged mob files after ${DELETE_JOB_DAYS} days",
+      "Filter": {
+        "Tag": {
+          "Key": "to_delete_in_days",
+          "Value": "${DELETE_JOB_DAYS}"
+        }
+      },
+      "Status": "Enabled"
+    }
+  ]
+}
+EOF
+mc ilm import minio/mobs < /tmp/lifecycle.json
+```
+
+8. استخدم `exit` للخروج من حاوية Minio
+9. شغّل `:quit` للخروج من واجهة سطر أوامر Kubernetes
+
+### تنظيف قاعدة البيانات (PostgeSQL)
+
+بحسب استخدامك، يمكن إزالة البيانات من جداول مختلفة وبطرق مختلفة.
+
+#### الاتصال بـ PostgreSQL
+
+اتصل بنسخة OpenReplay لديك، ثم:
+
+1. شغّل `k9s -n db`
+2. استخدم أسهم لوحة المفاتيح للتنقل في القائمة والوصول إلى الحاوية `postgresql-*`
+3. اضغط `s` للحصول على وصول shell إلى حاوية Postgres
+4. شغّل `PGPASSWORD=MY_PG_PASSWORD psql -U postgres` (استبدل `MY_PG_PASSWORD` بقيمة المتغير `postgresqlPassword` من الملف `/var/lib/openreplay/vars.yaml`)
+5. نفّذ استعلام الحذف (أو أي استعلام آخر)
+6. اكتب `exit` للخروج من عميل postgresql
+7. استخدم `exit` للخروج من حاوية Postgres
+8. شغّل `:quit` للخروج من واجهة سطر أوامر Kubernetes
+
+#### التحقق من حجم الجداول
+
+للتحقق من حجم الجداول، يمكنك تشغيل الاستعلام التالي:
+
+```sql
+SELECT nspname AS "name_space",
+       relname AS "relation",
+       pg_size_pretty(
+               pg_total_relation_size(C.oid)
+           )   AS "total_size"
+FROM pg_class C
+         LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+WHERE nspname NOT IN ('pg_catalog','information_schema')
+  AND C.relkind <> 'i'
+  AND nspname !~ '^pg_toast'
+ORDER BY pg_total_relation_size(C.oid) DESC
+LIMIT 20;
+```
+
+#### حذف أحداث محددة
+
+لاحظنا أن معظم مستخدمي OpenReplay، بعد الاطلاع على نتائج القسم السابق، قرروا إزالة أحداث محددة بدلًا من تنظيف الجلسات (خصوصًا `events.resources` و`events_common.requests`).
+
+لتجاهل جميع بيانات الأحداث يمكنك تشغيل أي من الاستعلامات التالية، لكن ضع في اعتبارك أن هذا سيؤثر على قيم cards، وclick-maps، وقائمة الأحداث وميزات أخرى.
+
+<Aside type="caution">
+	يتم ذلك على مسؤوليتك الخاصة، لذا توخَّ الحذر الشديد عند تنفيذ مثل هذه الإجراءات في قاعدة البيانات لأنها لا يمكن التراجع عنها وقد تؤثر على ميزات متعددة في OpenReplay.
+</Aside>
+
+```sql
+--- To delete all data related to a specific event
+
+-- The next 2 tables are usually the biggest ones, and they affect some cards only
+TRUNCATE TABLE events.resources;
+TRUNCATE TABLE events_common.requests;
+
+-- The next table will affect click-maps and events list of session's replay
+TRUNCATE TABLE events.clicks;
+TRUNCATE TABLE events.errors;
+TRUNCATE TABLE events.graphql;
+TRUNCATE TABLE events.inputs;
+TRUNCATE TABLE events.pages;
+TRUNCATE TABLE events.performance;
+TRUNCATE TABLE events.state_actions;
+TRUNCATE TABLE events_common.customs;
+TRUNCATE TABLE events_common.issues;
+```
+
+#### حذف جلسات محددة حسب الوقت
+
+إذا كنت تريد تنظيف جميع الجلسات، فانتقل إلى [الجزء التالي](#delete-all-sessions) لأنه أسرع ويحرّر مساحة التخزين على الفور.
+
+استخدم استعلام SQL أدناه إذا كنت ترغب في تنظيف البيانات من قاعدة بياناتك (PostgreSQL). استبدل `2021-01-01` بالتاريخ الذي تريد الاحتفاظ بالتسجيلات اعتبارًا منه. إنه حذف متتالٍ (cascade)، لذا ستُزال جميع التسجيلات وكذلك الأحداث المقابلة لها من قاعدة البيانات.
+
+<Aside type="caution">
+	يتم ذلك على مسؤوليتك الخاصة، لذا توخَّ الحذر الشديد عند تنفيذ مثل هذه الإجراءات في قاعدة البيانات لأنها لا يمكن التراجع عنها.
+</Aside>
+
+```sql
+--- Cascade delete all sessions and their related events captured before Jan 1st, 2021
+DELETE FROM public.sessions WHERE start_ts < extract(epoch from '2021-01-01'::date) * 1000;
+```
+
+بعد تشغيل الاستعلام السابق، لن تحرّر قاعدة البيانات مساحة التخزين على الفور، إذ ستجدول عملية تنظيف لوقت لاحق، ولإجبارها يدويًا على تحرير التخزين، يمكنك تشغيل الاستعلامات التالية:
+
+<Aside type="note">
+	ستقفل هذه الاستعلامات كل جدول بحيث لن يكون متاحًا، وقد يستغرق إنجازها ساعات
+	بحسب قاعدة بياناتك، وإذا كان لا يزال لديك مساحة تخزين حرة كافية، فيمكنك ترك عملية التنظيف لميزة Auto-Vacuum في PostgreSQL.
+	
+	إضافة إلى ذلك، ستتطلب بعض المساحة الحرة لكي تعمل، ولهذا نوصي بشدة بتشغيل هذه الاستعلامات بترتيب تصاعدي وفق [حجم الجداول](#check-tables-size)
+</Aside>
+
+```sql
+--- Recreate indexes and free unused storage
+VACUUM FULL public.sessions;
+VACUUM FULL events_common.customs;
+VACUUM FULL events_common.issues;
+VACUUM FULL events_common.requests;
+VACUUM FULL events.pages;
+VACUUM FULL events.state_actions;
+VACUUM FULL events.errors;
+VACUUM FULL events.graphql;
+VACUUM FULL events.performance;
+VACUUM FULL events.resources;
+VACUUM FULL events.inputs;
+VACUUM FULL events.clicks;
+```
+
+#### حذف جميع الجلسات
+
+استخدم استعلام SQL أدناه إذا كنت ترغب في تنظيف جميع بيانات الجلسات من قاعدة بياناتك (PostgreSQL). إنه حذف متتالٍ (cascade)، لذا ستُزال جميع التسجيلات وكذلك الأحداث المقابلة لها من قاعدة البيانات.
+
+<Aside type="caution">
+	يتم ذلك على مسؤوليتك الخاصة، لذا توخَّ الحذر الشديد عند تنفيذ مثل هذه الإجراءات في قاعدة البيانات لأنها لا يمكن التراجع عنها.
+	
+	بالنسبة إلى OpenReplay Enterprise Edition، ستحذف هذه الاستعلامات أيضًا vault-sessions.
+</Aside>
+
+```sql
+--- Cascade delete all sessions and their related events 
+TRUNCATE TABLE public.sessions CASCADE;
+TRUNCATE TABLE public.errors CASCADE;
+TRUNCATE TABLE public.issues CASCADE;
+TRUNCATE TABLE public.autocomplete;
+```
+
+## هل لديك أسئلة؟
+
+إذا كانت لديك أي أسئلة حول هذه العملية، فلا تتردد في التواصل معنا عبر [Slack](https://slack.openreplay.com) الخاص بنا أو الاطلاع على [المنتدى](https://forum.openreplay.com) الخاص بنا.

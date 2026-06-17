@@ -1,0 +1,123 @@
+---
+title: "Elastic"
+metaTitle: "Elasticsearch 集成"
+metaDescription: "如何将 Elasticsearch 与 OpenReplay 集成，并在会话回放旁查看后端错误。"
+---
+
+如何将 Elasticsearch 与 OpenReplay 集成，并在会话录制旁查看后端错误。
+
+## 1. 创建新的 API 密钥
+
+如果你正在使用 Kibana 仪表板：
+1. 登录你的 Kibana 仪表板。
+2. 进入 Dev *Tools > Console*。
+3. 将以下控制台代码复制到你的控制台并运行它。
+
+如果你正在使用 CURL 命令：
+1. 在你的终端中执行以下 cURL 命令。
+
+**注意：** 默认情况下，此集成会在任何匹配 `*log*` 的索引中搜索日志。如果你有一个不符合此模式的专用日志索引，请在以下命令的第 12 行更改索引名称。如果你想指定多个索引，可以用 `,` 分隔这些名称。
+
+```shell
+POST /_security/api_key
+{
+  "name": "openreplay-api-key",
+  "role_descriptors": {
+    "openreplay-role": {
+      "cluster": [
+        "all"
+      ],
+      "index": [
+        {
+          "names": [
+            "*log*"
+          ],
+          "privileges": [
+            "read"
+          ]
+        }
+      ]
+    }
+  }
+}
+```
+
+如果你使用了上述任一方法生成 API 密钥，你将得到如下结果：
+
+```json
+{
+  "id" : "eQWAIG0Bo0VqB8HXFH9-",
+  "name" : "openreplay-api-key",
+  "api_key" : "dZ5ycVRJTU-5UW_RYfi1_w"
+}
+```
+
+请务必复制 `id` 和 `api_key`，因为我们的集成需要它们。有关创建 API 密钥的更多信息，请参阅此[文档](https://www.elastic.co/guide/en/elasticsearch/reference/master/security-api-create-api-key.html)。
+
+## 2. 在 OpenReplay 中启用 Elasticsearch
+
+在 OpenReplay 仪表板的 “Preferences > Integration” 下填入你的 `host` 地址、`port`、`id` 和 `api_key`。
+如果你在生成 `api_key` 时更改了索引，请在 `indexes` 中指定其名称。
+
+![OpenReplay 中的 Elasticsearch 集成](/static/elastic-1.png#center)
+
+## 3. 传播 openReplaySessionToken
+
+要将 Elasticsearch 事件与录制的用户会话关联起来，必须在你希望跟踪的每个请求中，将一个唯一令牌从你的前端传播到后端。这可以通过自定义 HTTP 标头来实现。在下面的示例中，我们使用 `fetch` 函数来发送该标头。
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+为了让 OpenReplay 将 Elasticsearch 日志条目与录制的用户会话关联起来，必须在你希望跟踪的每个后端错误中传播一个唯一令牌。
+
+下面是一个使用 Monkey Patching 的 Python 示例。
+
+```python
+import sys
+import traceback
+#...
+old_tb = traceback.print_exception
+old_f = sys.stdout
+old_e = sys.stderr
+OPENREPLAY_SESSION_TOKEN = None
+
+class F:
+    def write(self, x):
+        if OPENREPLAY_SESSION_TOKEN is not None and x != '\n':
+            old_f.write(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] {x}")
+        else:
+            old_f.write(x)
+
+    def flush(self):
+        pass
+
+def tb_print_exception(etype, value, tb, limit=None, file=None, chain=True):
+    if OPENREPLAY_SESSION_TOKEN is not None:
+        value = type(value)(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] " + str(value))
+    old_tb(etype, value, tb, limit, file, chain)
+
+traceback.print_exception = tb_print_exception
+
+sys.stderr = F()
+```
+
+标签名称 `openReplaySessionToken` 区分大小写。
+
+## 特别说明
+
+默认情况下，我们使用 `message` 和 `utc_time` 属性查找与 OpenReplay 会话关联的每条日志。我们只关注错误日志；为了识别错误日志，我们会检查 `tags` 属性是否包含值 `error`。
+
+## 有疑问？
+
+如果你遇到任何问题，请加入我们的 [Slack](https://slack.openreplay.com) 或查看我们的[论坛](https://forum.openreplay.com)，并从我们的社区获得帮助。

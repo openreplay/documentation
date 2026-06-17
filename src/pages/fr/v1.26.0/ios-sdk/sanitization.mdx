@@ -1,0 +1,63 @@
+---
+title: "iOS SDK - Nettoyer les données sensibles"
+metaTitle: "iOS SDK - Nettoyer les données sensibles"
+metaDescription: "Détails sur le nettoyage des enregistrements et des données réseau dans le tracker iOS"
+---
+
+## Composants d'interface
+
+Les vues nettoyées seront floutées dans le replay généré. Vous pouvez ajouter n'importe quel composant d'interface et il sera automatiquement supprimé (afin de préserver la mémoire) dès qu'il n'est plus à l'écran.
+
+### SwiftUI
+
+Ajoutez simplement le modificateur `.sensitive()` au composant souhaité
+
+```swift
+import ORTracker
+
+Text("Very important sensitive text")
+.sensitive()
+
+```
+
+### UIKit
+
+```swift
+import ORTracker
+
+ORTracker.shared.addIgnoredView(view)
+```
+
+## Requêtes réseau
+
+Deux clés sont exportées pour réduire automatiquement les données de la requête/réponse : `ignoredKeys` pour le corps et `ignoredHeaders` pour les en-têtes. La requête et la réponse seront toutes deux nettoyées, mais le corps ne sera affecté que s'il s'agit d'un JSON valide.
+
+Assignez simplement une liste de chaînes que vous souhaitez nettoyer :
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+Il est également possible de modifier les données de la réponse avant de les transmettre au listener :
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```
+
+## Des questions ?
+Si vous avez des questions sur ce processus, n'hésitez pas à nous contacter sur notre [Slack](https://slack.openreplay.com) ou consultez notre [Forum](https://forum.openreplay.com).

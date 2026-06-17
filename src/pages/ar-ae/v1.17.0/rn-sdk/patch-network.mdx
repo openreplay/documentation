@@ -1,0 +1,34 @@
+---
+title: "React Native SDK - الطريقة patchNetwork"
+metaTitle: "React Native SDK - الطريقة patchNetwork"
+metaDescription: "تفاصيل حول الطريقة patchNetwork في React Native SDK من OpenReplay"
+---
+
+تقوم هذه الطريقة بترقيع واجهتي XHR وFetch لاعتراض طلبات الشبكة.
+
+## التوقيع
+
+```js
+import OR from '@openreplay/react-native'
+
+OR.tracker.patchNetwork(
+    global,
+		(url) => url.includes('openreplaydomain'),
+    { mode: 'fetch' }
+)
+```
+
+## المعاملات
+
+- `context: globalThis`: السياق الحالي للتطبيق (للحصول على fetch/xhr منه)
+- `isServiceURL: (url: string) => boolean`: دالة تتحقق مما إذا كان ينبغي تتبّع الطلب الحالي (false) أو تخطّيه (true)
+- `options: Partial<Options>`: كائن الخيارات
+
+## الخيارات
+
+- `ignoreHeaders: Array<string> | boolean`: الترويسات المراد تجاهلها (القيمة الافتراضية: `['cookie', 'set-cookie', 'authorization']`)
+- `capturePayload: boolean`: ما إذا كان ينبغي التقاط حمولة الطلب (القيمة الافتراضية: `false`)
+- `sanitizer: data: RequestResponseData) => RequestResponseData`: دالة تقوم بتعقيم الطلب/الاستجابة (القيمة الافتراضية: `undefined`)
+- `mode: 'fetch' | 'xhr' | 'all'`: أي واجهة سيتم ترقيعها (القيمة الافتراضية: `'fetch'`)
+
+> ملاحظة: تستخدم طلبات fetch في React-Native واجهة XHR داخليًا (في وقت كتابة هذا المستند)، لذا فإن استخدام "all" قد يؤدي إلى تكرار الطلبات في التسجيل

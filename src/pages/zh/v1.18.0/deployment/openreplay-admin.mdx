@@ -1,0 +1,110 @@
+---
+title: "OpenReplay 管理"
+metaTitle: "OpenReplay 管理"
+metaDescription: "如何轻松管理和维护你的 OpenReplay 实例。"
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+## CLI
+
+CLI 有助于管理 OpenReplay 实例的基本方面，比如重启或重新安装服务、访问某个组件的日志，或者只是检查后端服务的状态。
+
+使用 `-h` 选项运行 CLI：
+
+```bash
+openreplay -h
+```
+
+即可查看所有可用选项的列表：
+
+```shellsession
+  ___                   ____            _
+ / _ \ _ __   ___ _ __ |  _ \ ___ _ __ | | __ _ _   _
+| | | | '_ \ / _ \ '_ \| |_) / _ \ '_ \| |/ _` | | | |
+| |_| | |_) |  __/ | | |  _ <  __/ |_) | | (_| | |_| |
+ \___/| .__/ \___|_| |_|_| \_\___| .__/|_|\__,_|\__, |
+      |_|                        |_|            |___/
+
+[INFO]
+  Usage: openreplay [ -h | --help ]
+                    [ -s | --status ]
+                    [ -i | --install DOMAIN_NAME ]
+                    [ -u | --upgrade ]
+                    [ -U | --deprecated-upgrade /path/to/old_vars.yaml]
+                    [ -r | --restart ]
+                    [ -R | --Reload ]
+                    [ -c | --cleanup N (in days) ]
+                    [ -e | --edit ]
+                    [ -p | --install-packages ]
+                    [ -l | --logs SERVICE ]
+         Services: alerts assets assist chalice
+                   db ender frontend heuristics
+                   http integrations nginx-controller
+                   peers sink sourcemapreader storage
+```
+
+OpenReplay 后端依赖以下组件/服务：
+
+| 服务 | 说明 |
+|---------|-------------|
+| http | 摄取事件和会话录制 |
+| sink | 从流式管道（企业版为 Redis 或 Kafka）读取数据并插入临时存储（NFS） |
+| storage | 将临时会话录制文件移至对象存储服务 |
+| assets | 用于缓存资源（CSS、字体和图标）以正确渲染录制 |
+| db | 读写各种数据库（企业版为 Postgres + ClickHouse） |
+| ender | 当用户会话处于非活动或断开连接状态时将其终止 |
+| chalice | 用于为前端提供服务的 API |
+| alerts | 当任一性能指标达到用户设定的阈值时发送通知（电子邮件、slack、应用内、webhook） |
+| integrations |  从受支持的第三方 API（Sentry、Elastic、GitHub、Jira 等）推送和拉取数据 |
+
+## 实用命令
+
+- 检查 OpenReplay 的健康状态
+
+```sh
+openreplay -s
+```
+
+- 检查服务日志
+
+```sh
+openreplay -l <service name>
+```
+
+## 提升服务容量
+
+可以通过覆盖默认的 cpu/内存分配值来提升任何服务的容量。这些值是在安装过程中根据你的实例容量确定的，应当能满足大多数安装的需求。
+
+ 如果你的访问量很大并且拥有一台高配机器，只需运行 `openreplay -e` 文件并覆盖该服务的资源。在下面的示例中，我们针对 `http` worker 进行操作。但这可以对任何服务（即 sink、storage、postgresql、redis 等）进行，方法是取消注释并更新下面的代码块。如果你需要对多个服务进行此操作，只需复制并重命名/更新相同的代码块（注意重复项）。
+
+```yaml
+http:
+  resources:
+    limits:
+      cpu: 4096m
+      memory: 8192Mi
+    requests:
+      cpu: 1024m
+      memory: 2056Mi
+```
+
+最后，重新安装该服务以使新的限制生效（你的数据不会丢失）：
+
+```bash
+openreplay -R
+```
+
+## 卸载 OpenReplay
+
+运行以下命令卸载 OpenReplay：
+
+```bash
+sudo k3s-uninstall.sh
+```
+
+所有配置都存储在 `/var/lib/openreplay/` 中。
+
+```
+sudo rm -rf /var/lib/openreplay/openreplay
+```

@@ -1,0 +1,166 @@
+---
+title: "Администрирование OpenReplay"
+metaTitle: "Администрирование OpenReplay"
+metaDescription: "Как легко администрировать и управлять вашим экземпляром OpenReplay."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+## CLI
+
+CLI удобен для управления базовыми аспектами вашего экземпляра OpenReplay, такими как перезапуск или переустановка сервиса, доступ к журналам компонента или просто проверка состояния ваших backend-сервисов.
+
+Запустите CLI с опцией `-h`:
+
+```bash
+openreplay -h
+```
+
+И ознакомьтесь со списком всех доступных опций:
+
+```shellsession
+  ___                   ____            _
+ / _ \ _ __   ___ _ __ |  _ \ ___ _ __ | | __ _ _   _
+| | | | '_ \ / _ \ '_ \| |_) / _ \ '_ \| |/ _` | | | |
+| |_| | |_) |  __/ | | |  _ <  __/ |_) | | (_| | |_| |
+ \___/| .__/ \___|_| |_|_| \_\___| .__/|_|\__,_|\__, |
+      |_|                        |_|            |___/
+
+[INFO]
+  Usage: openreplay [ -h | --help ]
+                    [ -s | --status ]
+                    [ -i | --install DOMAIN_NAME ]
+                    [ -u | --upgrade ]
+                    [ -U | --deprecated-upgrade /path/to/old_vars.yaml]
+                    [ -r | --restart ]
+                    [ -R | --Reload ]
+                    [ -c | --cleanup N (in days) ]
+                    [ -e | --edit ]
+                    [ -p | --install-packages ]
+                    [ -l | --logs SERVICE ]
+         Services: alerts assets assist chalice
+                   db ender frontend heuristics
+                   http integrations nginx-controller
+                   peers sink sourcemapreader storage
+```
+
+Backend OpenReplay опирается на следующие компоненты/сервисы:
+
+| Сервис | Описание |
+|---------|-------------|
+| http | Принимает события и записи сессий |
+| sink | Считывает данные из потокового конвейера (Redis или Kafka для редакции enterprise) и вставляет их во временное хранилище (NFS) |
+| storage | Перемещает временные файлы записей сессий в сервис объектного хранилища |
+| assets | Для кэширования ресурсов (CSS, шрифты и иконки) с целью корректного отображения записей |
+| db | Считывает и записывает данные в различные базы данных (Postgres + ClickHouse для редакции enterprise) |
+| ender | Завершает пользовательские сессии при бездействии или отключении |
+| chalice | API для обслуживания frontend |
+| alerts | Отправляет уведомления (электронная почта, slack, в приложении, webhook) при достижении заданного пользователем порога по любой из метрик производительности |
+| integrations |  Отправляет и извлекает данные из поддерживаемых сторонних API (Sentry, Elastic, GitHub, Jira и т. д.) |
+
+## Полезные команды
+
+- Проверить состояние работоспособности OpenReplay
+
+```sh
+openreplay -s
+```
+
+- Проверить журналы сервисов
+
+```sh
+openreplay -l <service name>
+```
+
+## Увеличение ёмкости сервиса
+
+Можно увеличить ёмкость любого сервиса, переопределив значения выделения cpu/памяти по умолчанию. Последние определяются в процессе настройки на основе ёмкости вашего экземпляра и должны соответствовать потребностям большинства установок.
+
+ Если у вас большой объём данных и мощная машина, просто запустите файл `openreplay -e` и переопределите ресурсы сервиса. В приведённом ниже примере мы делаем это для worker `http`. Но это можно сделать для любого сервиса (т. е. sink, storage, postgresql, redis и т. д.), раскомментировав и обновив приведённый ниже блок. Если вам нужно сделать это для более чем одного сервиса, просто скопируйте и переименуйте/обновите тот же блок (следите за дублированием).
+
+```yaml
+http:
+  resources:
+    limits:
+      cpu: 4096m
+      memory: 8192Mi
+    requests:
+      cpu: 1024m
+      memory: 2056Mi
+```
+
+Наконец, переустановите сервис, чтобы новые лимиты вступили в силу (ваши данные не будут потеряны):
+
+```bash
+openreplay -R
+```
+
+## Обновление PostgreSQL
+
+Ниже приведены инструкции по обновлению PostgreSQL до версии 1.16 или более поздней:
+
+1. Сделайте дамп БД в постоянном томе:
+
+   Если вы используете обычную установку, выполните следующую команду, чтобы сделать дамп базы данных:
+
+   > Примечание. Можно ожидать, что данные сожмутся в соотношении 3:1 (например: если у вас 15G данных postgres, то в дампе будет 5G). Поэтому убедитесь, что у вас достаточно места на диске.
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'PGPASSWORD=$POSTGRES_PASSWORD PGUSER=postgres pg_dumpall -v > /bitnami/postgresql/dumpall.sql'
+   ```
+
+2. Удалите существующий каталог данных:
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'rm -rf /bitnami/postgresql/data'
+   ```
+
+3. Масштабируйте StatefulSet PostgreSQL до нуля, чтобы остановить текущие поды:
+
+   ```sh
+   kubectl scale sts postgresql --replicas=0 -n db
+   ```
+
+4. Обновите образ PostgreSQL до версии 16.3.0 или более поздней:
+
+   ```sh
+   kubectl set image statefulset/postgresql postgresql=bitnamilegacy/postgresql:16.3.0-debian-12-r9 -n db
+   ```
+
+5. Масштабируйте StatefulSet обратно до единицы, чтобы запустить обновлённый под:
+
+   ```sh
+   kubectl scale sts postgresql --replicas=1 -n db
+   ```
+
+6. Убедитесь, что под запущен и операция масштабирования завершена:
+
+   ```sh
+   kubectl get pod -n db -l app.kubernetes.io/name=postgresql
+   ```
+
+7. Восстановите базу данных из дампа:
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'PGPASSWORD=$POSTGRES_PASSWORD PGUSER=postgres psql -f /bitnami/postgresql/dumpall.sql'
+   ```
+
+8. После завершения обновления вы можете удалить файл дампа из пода PostgreSQL:
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'rm /bitnami/postgresql/dumpall.sql'
+   ```
+
+## Удаление OpenReplay
+
+Выполните приведённые ниже команды, чтобы удалить OpenReplay:
+
+```bash
+sudo k3s-uninstall.sh
+```
+
+Вся конфигурация хранится в `/var/lib/openreplay/`.
+
+```
+sudo rm -rf /var/lib/openreplay/openreplay
+```

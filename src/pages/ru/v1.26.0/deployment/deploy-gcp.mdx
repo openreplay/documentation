@@ -1,0 +1,111 @@
+---
+title: "Развёртывание в Google Cloud"
+metaTitle: "Развёртывание в Google Cloud"
+metaDescription: "Пошаговое руководство по развёртыванию OpenReplay в Google Cloud."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="Посмотрите, как развернуть OpenReplay в вашей инфраструктуре GCP"
+  description="Если вы не любите читать, можете посмотреть это видеоруководство, в котором показано, как развернуть OpenReplay в GCP"
+  videoURL="https://youtu.be/t31fj-0t3Dw"
+  />
+
+
+Стек OpenReplay можно установить на одну машину, и Google Cloud — идеальный кандидат для этого.
+
+
+## Запуск виртуальной машины
+
+1. Перейдите на панель 'Compute Engine' и выберите 'VM Instances' в меню слева
+2. Нажмите 'Create Instance'
+3. Выберите предпочитаемые 'region' и 'zone'
+4. Выберите тип машины. Минимальные характеристики — `2 vCPUs, 8 GB of RAM, 50 GB of storage`, на архитектуре x86, иначе бэкенд-сервисы OpenReplay просто не запустятся. Поэтому мы рекомендуем **как минимум** `n2-standard-2` (или эквивалент — обратите внимание, что `e2-standard-2`, как известно, вызывает проблемы при развёртывании), которой достаточно для низкого/умеренного объёма. Если вы ожидаете высокий трафик, вам следует масштабироваться отсюда.
+5. Измените загрузочный диск на *Ubuntu 20.04 LTS* или выше, затем выберите *SSD persistent disk* в качестве типа загрузочного диска и установите размер 50 GB.
+6. Установите оба флажка — 'Allow HTTP traffic' и 'Allow HTTPS traffic' в разделе Firewall
+7. Нажмите 'Create'
+
+## Развёртывание OpenReplay
+
+Как только ваш экземпляр перейдёт в состояние `Running`, подключитесь к нему, нажав кнопку `SSH`, затем установите OpenReplay, указав домен, на котором он будет работать (например, DOMAIN_NAME=openreplay.mycompany.com):
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## Настройка TLS/SSL
+
+OpenReplay работает с конфиденциальными данными пользователей и поэтому требует HTTPS для работы. Это обязательно, иначе трекер просто не начнёт запись. То же самое касается панели управления: без HTTPS вы не сможете воспроизводить пользовательские сессии.
+
+Самый простой способ работать с SSL в Google Cloud — настроить балансировщик нагрузки (Google Load Balancing) и запустить OpenReplay за ним. Другой вариант — сгенерировать или использовать собственный SSL-сертификат и направить ваш субдомен (то есть openreplay.mycompany.com) на экземпляр OpenReplay. Подробнее об обоих вариантах ниже.
+
+### Настройка балансировщика нагрузки Google (вариант 1)
+
+Первым шагом является добавление группы экземпляров, которая понадобится позже для балансировщика нагрузки:
+
+1. Перейдите в 'Compute Engine' > 'Instance Groups'
+2. 'Create Instance Group' и выберите *New unmanaged instance group*
+3. Выберите предпочитаемое 'Location', затем выберите 'Network' и выберите экземпляр виртуальной машины OpenReplay
+4. Нажмите 'Create'
+
+Теперь пора создать балансировщик нагрузки:
+
+1. Перейдите в 'Network Services' > 'Load Balancing'
+2. 'Create Load Balancer' и выберите *HTTP(S) Load Balancing*
+3. Выберите 'From Internet to my VMs', затем нажмите 'Continue'
+4. Начните с 'Backend configuration' и нажмите 'Backend services' > 'Create a backend service'
+5. Выберите *Instance group* для 'Backend type'. В 'Backends' > 'New backend' выберите группу экземпляров, которую вы создали ранее, установите порт `80`, затем нажмите 'Done'.
+6. Прокрутите вниз до 'Health Check' и 'Create a health check'. Выберите HTTP для 'Protocol', установите 'Port' на `80`, затем измените 'Request path' на `/healthz`. Оставьте остальные значения по умолчанию, затем нажмите 'Save'.
+7. Нажмите 'Create'
+8.  В 'Frontend configuration' выберите HTTPS для 'Protocol', затем в 'Certificate' создайте новый сертификат (управляемый Google) или используйте свой. Нажмите 'Done'.
+9. Проверьте, затем нажмите 'Create'
+
+После создания перейдите в Cloud DNS (или к вашему поставщику услуг DNS) и создайте `A Record`, который указывает на балансировщик нагрузки, используя его IP (его можно найти на панели Load Balancing).
+
+Теперь всё готово, OpenReplay должен быть безопасно доступен на субдомене, который вы только что настроили. Вы можете создать учётную запись, посетив страницу `/signup` (то есть openreplay.mycompany.com/signup).
+
+### Использование/генерация вашего SSL-сертификата (вариант 2)
+
+В качестве альтернативы созданию балансировщика нагрузки вы можете использовать (или сгенерировать) собственный SSL-сертификат.
+
+1. Сначала перейдите в Cloud DNS (или к другому вашему поставщику услуг DNS) и создайте `A Record`. Используйте домен, который вы указали ранее на этапе установки, и направьте его на виртуальную машину, используя её публичный IP (его можно найти на панели Compute Engine).
+
+2. Если вы используете собственный сертификат, создайте SSL-секрет с помощью следующей команды: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
+
+> **Примечание:** Если у вас нет сертификата, сгенерируйте автоматически обновляемый сертификат для вашего субдомена (того, что был указан при установке) с помощью Let's Encrypt. Просто подключитесь к экземпляру OpenReplay, выполните `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` и следуйте инструкциям.
+
+3. Если вы хотите включить перенаправление с http на https (рекомендуется), раскомментируйте приведённый ниже блок в разделе `ingress-nginx` в файле `/var/lib/openreplay/vars.yaml`:
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+Стоит отметить, что наш `ingress-nginx` по умолчанию работает на портах `80|443`, но при необходимости это можно легко изменить в `vars.yaml`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. Наконец, переустановите OpenReplay NGINX:
+
+```bash
+openreplay -R
+```
+
+Теперь всё готово, OpenReplay должен быть доступен на вашем субдомене. Вы можете создать учётную запись, посетив страницу `/signup` (то есть openreplay.mycompany.com/signup).
+
+## Есть вопросы?
+
+Если у вас возникнут какие-либо проблемы, присоединяйтесь к нашему [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com) и получите помощь от нашего сообщества.

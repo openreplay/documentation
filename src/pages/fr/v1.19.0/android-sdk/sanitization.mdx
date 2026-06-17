@@ -1,0 +1,71 @@
+---
+title: "Android SDK - Assainir les données sensibles"
+metaTitle: "Android SDK - Assainir les données sensibles"
+metaDescription: "Détails sur l'assainissement des enregistrements et des données réseau dans le tracker Android"
+---
+
+## Composants d'interface
+
+Les vues assainies seront floutées dans la relecture résultante. Vous pouvez ajouter n'importe quel composant d'interface et il sera automatiquement supprimé (afin de préserver la mémoire) dès qu'il n'est plus à l'écran.
+
+### View
+
+```kotlin
+import com.openreplay.tracker.OpenReplay
+
+OpenReplay.addIgnoredView(view)
+```
+
+#### Jetpack Compose
+```kotlin
+import com.openreplay.tracker.Sanitize
+
+Sanitize {
+		Button(
+				modifier = Modifier
+						.fillMaxWidth()
+						.padding(top = 28.dp, bottom = 3.dp)
+						.trackTouchEvents("Continue Button"),
+				onClick = onSubmit,
+		) {
+				Text(
+						text = "Submit",
+						style = MaterialTheme.typography.titleSmall
+				)
+		}
+}
+```
+
+## Requêtes réseau
+
+Deux clés sont exportées pour rogner automatiquement les données de requête/réponse : `ignoredKeys` pour le corps et `ignoredHeaders` pour les en-têtes. La requête et la réponse seront toutes deux assainies, mais le corps ne sera affecté que s'il s'agit d'un JSON valide.
+
+Il suffit d'affecter une liste de chaînes que vous souhaitez assainir :
+
+```kotlin
+val networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+Il est également possible de modifier les données de la réponse avant de les transmettre au listener :
+
+```kotlin
+// ... request
+
+var sanitizedData: Any? = null
+data?.let {
+    try {
+        val json = JSONTokener(it).nextValue()
+        sanitizedData = customSanitizeFunction(it)
+        println(json)
+    } catch (error: JSONException) {
+        println("Error deserializing JSON: $error")
+    }
+}
+
+networkListener.finish(response, sanitizedData)
+```
+
+## Vous avez des questions ?
+Si vous avez des questions sur ce processus, n'hésitez pas à nous contacter sur notre [Slack](https://slack.openreplay.com) ou à consulter notre [Forum](https://forum.openreplay.com).

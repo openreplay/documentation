@@ -1,0 +1,196 @@
+---
+title: "استخدام OpenReplay مع Next.js"
+metaTitle: "إضافة Tracker الخاص بـ OpenReplay إلى تطبيق Next.js"
+metaDescription: "تعرّف على كيفية تشغيل الـ tracker في تطبيق Next.js الخاص بك"
+---
+import GoDeeperFooter from '~/components/go-deeper-footer.astro'
+
+إن تشغيل الـ tracker في تطبيق Next.js أمرٌ مباشر إلى حدٍّ كبير. وبما أن Next.js يعمل فوق React، فإن العملية متشابهة جدًا، وتأتي الصعوبة الرئيسية من قدرات التصيير على جانب الخادم (Server Side Rendering) في Next.js.
+
+ولكن بمجرد أن تفهم كيف تعمل وكيف تنظّم الكود الخاص بجانب العميل فقط، ستبدأ في تتبّع مستخدميك في وقتٍ قصير.
+
+## إضافة كود التتبّع
+
+في حين أنه يمكنك الحصول على نسخة من الكود جاهزة للنسخ واللصق مباشرةً من المنصّة عند إنشاء مشروع جديد، إلا أن ذلك الكود بدائي جدًا وقد لا يتّبع أفضل الممارسات التي يتوقعها فريقك أو شركتك.
+
+### مكوّن Tracker
+
+توفّر هذه الطريقة نهجًا مبسّطًا حيث نحقن الـ tracker داخل التطبيق كمكوّن، والذي بدوره سيحمّل المكتبة بشكل ديناميكي.
+ 
+#### App Router (v14+) - use client
+
+```jsx
+'use client'
+import {useEffect} from "react"
+import Tracker from '@openreplay/tracker'
+
+const tracker = new Tracker({
+  projectKey: "",
+  ingestPoint: "",
+})
+
+const Openreplay = () => {
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      tracker.start()
+    }
+  }, [])
+
+  return null
+}
+
+export default Openreplay 
+```
+
+#### مكوّن عادي (Next حتى v13)
+
+```jsx
+[...]
+
+function TrackerComponent() {
+const [tracker, setTracker] = React.useState(null);
+
+  React.useEffect(() => {
+    (async function () {
+      const Tracker = await import("@openreplay/tracker");
+      const openRelayTracker = new Tracker.default({
+        projectKey: PROJECT_KEY,
+        __DISABLE_SECURE_MODE: true,
+      });
+
+      setTracker(openRelayTracker);
+    })();
+  }, []);
+[...]
+```
+
+### سياق Tracker
+
+تتيح لك هذه الطريقة إنشاء سياق (context)، مما يسهّل بدوره التحكّم في حالة الـ tracker واستدعاء واجهات الـ API المختلفة الخاصة به.
+
+```jsx
+import { createContext } from "react"
+import {v4 as uuidV4} from 'uuid'
+import { useReducer } from "react"
+
+export const TrackerContext = createContext()
+
+function defaultGetUserId() {
+   return uuidV4() 
+}
+
+async function newTracker(config) {
+    // we use dynamic import to make sure that tracker is started inside browser env
+    const Tracker = await import("@openreplay/tracker");
+    const getUserId = (config?.userIdEnabled && config?.getUserId) ? config.getUserId : defaultGetUserId
+    let userId = null;
+
+    const trackerConfig = {
+        projectKey: config?.projectKey || process.env.NEXT_PUBLIC_OPENREPLAY_PROJECT_KEY
+    }
+
+    const tracker = new Tracker(trackerConfig);
+    
+    if(config?.userIdEnabled) {
+        userId = getUserId()
+        tracker.setUserID(userId)
+    }
+    return tracker
+
+}
+
+function reducer(state, action) {
+        switch(action.type) {
+            case 'init': {
+                if(!state.tracker) {
+                    console.log("Instantiaing the tracker for the first time...")
+                    return {...state, tracker: newTracker(state.config)}
+                }
+                return state
+            }
+            case 'start': {
+                console.log("Starting tracker...")
+                state.tracker.start()
+                return state
+            }
+        }
+    }
+
+export default function TrackerProvider({children, config = {}}) {
+    let [state, dispatch] = useReducer(reducer, {tracker: null, config})
+    let value = {
+        startTracking: () => dispatch({type: 'start'}),
+        initTracker: () => dispatch({type: 'init'})
+    }
+
+    return <TrackerContext.Provider value={value}>{children}</TrackerContext.Provider>
+}
+```
+
+يتيح هذا الـ provider طريقتين (methods) للمستخدم:
+
+- `initTracker`: التي تنشئ نسخة من الـ tracker باستخدام الإعدادات المقدَّمة.
+- `startTracking`: التي تطلق بدء عملية التتبّع.
+
+كما يقبل هذا الـ provider كائن «إعدادات» يمكنك توسيعه لميزات مستقبلية. يوضّح لك هذا المثال كيفية تفعيل القدرة على تحديد هوية المستخدمين بشكل فريد، بصورة اختيارية. يمكنك استخدام UUID افتراضي سيكون فريدًا لكل مستخدم في كل مرة يزور فيها الصفحة. وبدلًا من ذلك، يمكنك تقديم دالة `getUserId` مخصّصة كجزء من الإعدادات. 
+
+باستخدام دالتك المخصّصة، يمكنك تقديم معرّف العميل الخاص بمتجرك، أو عنوان البريد الإلكتروني للمستخدم، أو أي شيء يحدّد هوية المستخدم بشكل فريد داخل تطبيقك. وبهذه الطريقة يمكنك تتبّع عمليات إعادة تشغيل الجلسات (session replays) الخاصة بهم عبر الزمن في حال واجهوا مشكلة معيّنة لا يبلّغ عنها الآخرون.
+
+💡**ملاحظة لمستخدمي self-hosted**: إذا كنت تستخدم نسخة self-hosted من OpenReplay، فسيتعيّن عليك أيضًا تحديد خاصية الإعداد `ingestPoint`. تحدّد هذه الخاصية نقطة نهاية الإدخال (ingestion endpoint) لبيانات الـ tracker. لا يحتاج مستخدمو Cloud إلى ذلك، لأن الـ tracker سيعرف افتراضيًا أين توجد نسخة SaaS من نقطة النهاية هذه، ولكن إذا كنت تستضيفها بنفسك، فسيتعيّن عليك تحديدها (يجب أن تكون شيئًا مثل `https://openreplay.mydomain.com/ingest`) 
+
+### التعامل مع "projectKey" في الكود الخاص بك
+
+للعلم، فإن الـ `projectKey` الذي تقوم بإعداده هو ذلك الذي توفّره منصّة OpenReplay. ولأسباب أمنية، لا ينبغي تخزين هذه القيمة بشكل ثابت (hardcoded) داخل الكود الخاص بك، بل في نوع ما من ملفات/أنظمة الإعداد.
+
+في هذا المثال، أستفيد من ملفات `.env` الخاصة بـ Next. ما عليك فهمه هو أنك إذا لم تضع البادئة `NEXT_PUBLIC` قبل متغيّر البيئة، فلن يتمكّن الكود الخاص بجانب العميل (الـ tracker) من الوصول إليه. 
+
+إذا كان هذا غير مقبول، فيمكنك استخدام `getStaticProps` من داخل الصفحة الأولى التي يزورها مستخدموك للحصول على تلك القيمة قبل إنشاء نسخة من الـ tracker. يمكنك رؤية كلا المثالين أدناه.
+
+## استخدام سياق الـ tracker
+
+قم باستيراد الـ `TrackerProvider` الذي أنشأناه سابقًا وتغليف تطبيقك به، على هذا النحو:
+
+```jsx
+import '../styles/globals.css'
+import TrackerProvider from '../context/trackerContext'
+
+function MyApp({ Component, pageProps }) {
+
+  return <TrackerProvider>
+        <Component {...pageProps} />
+    </TrackerProvider>
+}
+
+export default MyApp
+```
+
+هذا هو ملف `_app.js`، الذي يعمل كنقطة دخول للتطبيق بأكمله.  
+
+ومن ثم، يمكنك تشغيل التتبّع من أي مكوّن ترغب فيه، على هذا النحو:
+
+```jsx
+import { useContext, useEffect } from 'react'
+import { TrackerContext } from '../context/trackerContext'
+import styles from '../styles/Home.module.css'
+
+export default function YourComponent({projectKey}) {
+    
+    const {initTracker, startTracking} = useContext(TrackerContext)
+    
+    useEffect( () => {
+       initTracker()
+       startTracking()
+    }, [])
+//.... rest of your code
+}
+```
+
+إذا لم تكن بحاجة إلى هذا القدر من التحكّم، فيمكنك دمج كليهما، «رسالة init» و«رسالة start tracking»، بحيث تحتاج فقط إلى استدعاء دالة واحدة لبدء التتبّع.
+
+## لديك أسئلة؟
+
+للاطلاع على **الكود الكامل** لتطبيق عامل قائم على Next، يمكنك مراجعة [هذا المستودع](https://github.com/deleteman/openreplay-next-example).
+
+إذا واجهت أي مشكلات في إعداد الـ tracker في مشروعك القائم على Next، فيرجى التواصل معنا عبر [مجتمع Slack](https://slack.openreplay.com/) الخاص بنا وطرح سؤالك مباشرةً على مطوّرينا!
+
+<GoDeeperFooter />

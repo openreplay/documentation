@@ -1,0 +1,170 @@
+---
+title: "Tâches"
+metaTitle: "Tâches"
+metaDescription: "Comment gérer les tâches de suppression des données utilisateur."
+---
+
+## Lister toutes les tâches
+
+Récupérez toutes les tâches, y compris celles qui sont terminées ou annulées.
+
+### Méthode
+`GET`
+
+### URL
+`/api/v1/:projectKey/jobs`
+
+### En-têtes de la requête
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}` : la clé se trouve dans 'Preferences' > 'Account' > 'Organization API Key'.
+
+### Codes de statut
+
+`200` : réponse envoyée au format JSON dans le corps
+
+### Exemple de requête
+
+```shell
+curl -X GET \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/jobs \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Exemple de réponse
+
+```json
+{
+  "data": [
+    {
+      "jobId": 3451,
+      "description": "Delete user sessions of userId = shekar@example.com",
+      "status": "scheduled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "mehdi@openreplay.com",
+      "createdAt": 1623912955277,
+      "updatedAt": 1623912955277,
+      "startAt": 1623954600000,
+      "errors": null
+    },
+    {
+      "jobId": 3452,
+      "description": "Delete user sessions of userId = shekar@example.com",
+      "status": "cancelled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "mehdi@openreplay.com",
+      "createdAt": 1623912962910,
+      "updatedAt": 1623913015276,
+      "startAt": 1623954600000,
+      "errors": null
+    }
+  ]
+}
+```
+
+## Obtenir les détails d'une tâche
+
+Renvoie le `status` de la tâche ainsi que d'autres détails tels que `createdAt`, `referenceId` et `errors`.
+
+### Méthode
+`GET`
+
+### URL
+`/api/v1/:projectKey/jobs/:jobId`
+
+### Paramètres
+
+| Nom | Type | Description |
+|----------|-------------|-------------|
+| jobId | string | L'ID renvoyé par l'appel de suppression d'utilisateur (obligatoire) |
+
+### En-têtes de la requête
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}` : la clé se trouve dans 'Preferences' > 'Account' > 'Organization API Key'.
+
+### Codes de statut
+
+`200` : réponse envoyée au format JSON dans le corps
+
+### Exemple de requête
+
+```shell
+curl -X GET \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/jobs/3451\
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Exemple de réponse
+
+```json
+{
+  "data": {
+    "jobId": 3451,
+    "description": "Delete user sessions of userId = shekar@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@openreplay.com",
+    "createdAt": 1623912955277,
+    "updatedAt": 1623912955277,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+## Annuler une tâche
+
+Annulez une tâche si elle n'a pas encore démarré ou si elle est toujours en cours.
+
+### Méthode
+`DELETE`
+
+### URL
+`/api/v1/:projectKey/jobs/:jobId`
+
+### Paramètres
+
+| Nom | Type | Description |
+|----------|-------------|-------------|
+| jobId | string | L'ID renvoyé par l'appel de suppression d'utilisateur (obligatoire) |
+
+### En-têtes de la requête
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}` : la clé se trouve dans 'Preferences' > 'Account' > 'Organization API Key'.
+
+### Codes de statut
+
+`200` : réponse envoyée au format JSON dans le corps
+`501` : renvoyé si la tâche ne peut pas être annulée
+
+### Exemple de requête
+
+```shell
+curl -X DELETE \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/jobs/3452 \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Exemple de réponse
+
+```json
+{
+  "data": {
+    "jobId": 3452,
+    "description": "Delete user sessions of userId = shekar@example.com",
+    "status": "cancelled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@openreplay.com",
+    "createdAt": 1623912962910,
+    "updatedAt": 1623913015276,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```

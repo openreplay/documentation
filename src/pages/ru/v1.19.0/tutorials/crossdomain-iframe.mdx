@@ -1,0 +1,48 @@
+---
+title: "Отслеживание междоменных iFrame"
+metaTitle: "Отслеживание междоменных iFrame"
+metaDescription: "Отслеживайте взаимодействия пользователей в междоменных iFrame с помощью OpenReplay."
+---
+
+Чтобы включить отслеживание междоменных iFrame, необходимо добавить опцию `crossdomain.enabled` в конструктор трекера, а затем указать область домена через `data-domain` для всех нужных iFrame следующим образом:
+
+```html
+<iframe
+	title="test"
+	src="http://iframe1.website.com/iframe-path"
+	width="300"
+	height="300"
+	data-domain="iframe1.website.com"
+></iframe>
+``` 
+
+Добавьте следующую опцию `crossdomain` в конструктор вашего трекера:
+
+```js
+const tracker = new OpenReplay({
+	projectKey: PROJECT_KEY,
+	crossdomain: {
+		enabled: true
+	},
+	captureIFrames: true
+});
+```
+
+Затем инициализируйте трекер внутри нужного iFrame и добавьте `crossdomain.parentDomain` в его конструктор:
+
+```js
+const tracker = new OpenReplay({
+	projectKey: PROJECT_KEY,
+	crossdomain: {
+	  // Specifies the domain of the parent window
+	  // If not specified, it will be set to '*'
+	  // Which means that child window will send messages to all domains inside the browser window
+	  // Consult your CSP settings to ensure that '*' is allowed or specify the parent domain
+		parentDomain: '*',
+	}
+});
+```
+
+## Остались вопросы?
+
+Если вы столкнулись с какими-либо проблемами, присоединяйтесь к нашему [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com) и получите помощь от нашего сообщества.

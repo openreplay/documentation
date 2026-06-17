@@ -1,0 +1,193 @@
+---
+title: "启用 Assist"
+metaTitle: "如何通过实时会话回放协助你的用户"
+metaDescription: "如何设置 OpenReplay Assist，并通过实时屏幕和 WebRTC 为你的终端用户提供支持。"
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="观看如何在 Next.js 中使用 Assist"
+  description="如果你不喜欢阅读，可以观看这个视频教程，它向你展示如何在应用中使用 Assist 插件"
+  videoURL="https://www.youtube.com/watch?v=8hpolw2_mMs"
+  />
+
+会话回放是每个产品团队和开发团队在其应用上线后都需要的工具。
+这些工具让他们能够了解最终用户如何与产品交互，而不会受到受控用户测试组可能带来的偏差影响。借助这些信息，他们可以了解诸如用户体验缺口、由于用户错误交互导致的业务逻辑问题、需要复杂操作序列才能触发的边缘情况，以及许多其他情况。
+
+然而，有一个使用场景是传统会话回放工具确实无法处理的：实时会话支持。
+
+能够_实时_查看你的用户正在做什么并直接做出响应，甚至接管他们的鼠标或快速通话以向他们_展示_问题，这是无价的。这正是 OpenReplay 实现 [Assist 功能](https://openreplay.com/feature-assist.html) 的原因。
+
+## OpenReplay Assist 能为你做什么？
+
+在正常情况下，当你将应用设置为记录某个用户会话时，在标签页关闭几分钟后（毕竟应用需要确认你不是不小心关闭的），你会收到应用的常规事件、错误和问题，并被传送到你的 OpenReplay 实例（或 SaaS 版本）。你将能够一步步分析用户做了什么，但如果你_确实_发现了问题，你无法直接与该用户一起复查它。
+
+然而，得益于 Assist，你现在能够：
+
++ 直接、实时地查看用户正在做什么，**从他们打开页面的那一刻起**。
++ 借助 WebRTC 的使用，在客户端和操作员之间创建了一个一对一的通道。这让你能够**直接从应用内发起通话**，无需在任一相关计算机上安装第三方通信软件。
++ **接管用户的鼠标**（当然需要他们的许可）并向他们准确展示该点击哪里。
+
+看看操作员所看到的 Assist 功能界面，它显示了用户在任意时刻正在做的事情：
+
+![](https://i.imgur.com/4vxXpHn.png)
+
+鉴于这是一个实时显示更新的功能，关键亮点是「电子邮件」和「手机号码」字段。前者被模糊处理以保护用户的隐私，而后者则被追踪器完全忽略，以防止收集个人数据。
+而且考虑到数据的转换是在客户端完成的，作为操作员的你绝无可能看到这些值。
+
+这反过来让你能够为任何类型的系统完美地提供支持，同时向你的用户保证不会对他们的个人数据进行任何处理。
+
+## 将 Assist 插件添加到你的设置中
+
+此功能已在所有最新版本的 OpenReplay 中可用，所以我们要做的就是启用它。
+如果你使用的是 OpenReplay 的包版本，你所要做的就是直接从命令行安装以下插件：
+
+```bash 
+npm install @openreplay/tracker-assist
+```
+
+然后，使用以下代码来启用它：
+
+```javascript 
+//...
+import { tracker } from '@openreplay/tracker';
+import trackerAssist from '@openreplay/tracker-assist';
+//...
+tracker.configure({
+  projectKey: "your project key"
+});
+tracker.use(trackerAssist({})); //add this line
+tracker.start();
+```
+
+另一方面，如果你使用的是首次设置时从平台获取的 JS 代码片段，你所要做的就是更新一个路径。
+你的原始代码片段应该类似于这个：
+
+```javascript 
+<!-- OpenReplay Tracking Code for HOST -->
+<script>
+  var initOpts = {
+    projectKey: "your project key",
+    defaultInputMode: 0,
+    obscureTextNumbers: false,
+    obscureTextEmails: true,
+  };
+  var startOpts = { userID: "" };
+  (function(A,s,a,y,e,r){
+    r=window.OpenReplay=[e,r,y,[s-1, e]];
+    s=document.createElement('script');s.src=A;s.async=!a;
+    document.getElementsByTagName('head')[0].appendChild(s);
+    r.start=function(v){r.push([0])};
+    r.stop=function(v){r.push([1])};
+    r.setUserID=function(id){r.push([2,id])};
+    r.setUserAnonymousID=function(id){r.push([3,id])};
+    r.setMetadata=function(k,v){r.push([4,k,v])};
+    r.event=function(k,p,i){r.push([5,k,p,i])};
+    r.issue=function(k,p){r.push([6,k,p])};
+    r.isActive=function(){return false};
+    r.getSessionToken=function(){};
+  })("//static.openreplay.com/latest/openreplay.js",1,0,initOpts,startOpts);
+</script>
+```
+
+注意底部指向 `openreplay.js` 文件的路径。我们需要更改它，改为放入 `openreplay-assist.js`，使其看起来像这样：
+
+```javascript 
+<!-- OpenReplay Tracking Code for HOST -->
+<script>
+  var initOpts = {
+    projectKey: "your project key",
+    defaultInputMode: 0,
+    obscureTextNumbers: false,
+    obscureTextEmails: true,
+  };
+  var startOpts = { userID: "" };
+  (function(A,s,a,y,e,r){
+    r=window.OpenReplay=[e,r,y,[s-1, e]];
+    s=document.createElement('script');s.src=A;s.async=!a;
+    document.getElementsByTagName('head')[0].appendChild(s);
+    r.start=function(v){r.push([0])};
+    r.stop=function(v){r.push([1])};
+    r.setUserID=function(id){r.push([2,id])};
+    r.setUserAnonymousID=function(id){r.push([3,id])};
+    r.setMetadata=function(k,v){r.push([4,k,v])};
+    r.event=function(k,p,i){r.push([5,k,p,i])};
+    r.issue=function(k,p){r.push([6,k,p])};
+    r.isActive=function(){return false};
+    r.getSessionToken=function(){};
+  })("//static.openreplay.com/latest/openreplay-assist.js",1,0,initOpts,startOpts);
+</script>
+```
+
+这应该就是你在基础设置中需要更改的全部内容，即可访问 Assist 的功能。
+
+是不是很酷？！
+
+请注意，如果你碰巧遇到以下错误消息（就像我遇到的那样），你应该按照 [这些步骤](https://github.com/peers/peerjs/issues/630#issuecomment-910028230) 来修复它们。
+
+**"Critical dependency: the request of a dependency is an expression"**
+
+该 issue 中的修复方法应该足以让你继续下去。
+
+现在你可以开始充分利用 OpenReplay 的 Assist 了，那么让我们来看看它吧。
+
+## 实时观看会话
+
+由于从现在起客户端无需再做任何事情，是时候让你来看看操作员这一端了。
+
+直接在平台上点击导航菜单中的 Assist 选项，如下所示：
+
+![](https://i.imgur.com/3LG9hcc.png)
+
+点击之后，你会得到一份活跃的 Assist 会话列表。一旦你的用户打开应用，该会话就会自动出现在这里，你会看到它像这样被列出：
+
+![](https://i.imgur.com/pp86irQ.png)
+
+在那里，你会看到以下信息：
+
+- 用户 ID，那里的那个电子邮件？你是通过追踪器上的 `setUserID` 方法设置它的。
+- 每个会话的开始时间和日期。
+- 会话的时长（在截图中显示为「14 seconds」）。
+- 最后，关于用户的地理信息。你可以看到那里我位于西班牙，此外我在我的桌面端 macOS 上使用 Firefox。
+
+仅仅这里就有大量信息，这对于你识别想要实时观看的会话非常重要。毕竟，在这个例子中我只向你展示了一个会话，但同一时间可能会有数百个（或更多）处于活跃状态。
+除此之外，你还可以使用搜索栏来帮助你执行复杂的查询，以找到正确的会话。
+
+### 进入特定会话
+
+一旦你找到了你要找的会话，点击该会话的「Play」图标。这会将你带到客户端应用的实时视图。
+
+在下面的并排对比中，你可以看到 Assist 屏幕如何显示当前被观察用户的会话。
+
+![](https://i.imgur.com/G7xAxTZ.png)
+
+现在，正如你所注意到的，用户所看到的和操作员所看到的之间存在一些差异。而且这是有充分理由的。
+私密信息会被自动模糊处理或完全忽略。这是为了保护被观察的用户；毕竟作为操作员，你不一定需要看到电话号码或电子邮件地址。
+需要注意的是，这是默认行为：安装在客户端应用上的追踪器会检测你正在输入的数据类型及其格式（比如在电子邮件字段中），并当场决定保护它。
+
+然而，如果你想更改此行为，让追踪器忽略或模糊处理其他字段，你可以通过不同的粒度级别来清理数据。如果你正在寻找这方面的内容，官方文档包含你所需的全部信息，所以 [去看看吧。](https://docs.openreplay.com/installation/sanitize-data)
+
+### 接管你用户的鼠标
+
+一个额外的功能（我得补充一句，是一个非常有趣的功能）是接管你客户端鼠标指针的能力。通过此功能，你将能够控制鼠标并点击应用的不同位置。
+你将无法发送任何其他类型的输入信号，但这应该足以帮助你帮助你的用户。
+
+要访问此功能，你所要做的就是点击屏幕右上方区域的「Remote Control」链接。
+当你这样做时，你的客户端会看到一个请求许可的模态窗口。
+
+![](https://i.imgur.com/5HtwYtb.png)
+
+一旦确认，你就会获得对他们鼠标的控制权，或者更确切地说，你的指针会出现在他们的屏幕上，你将能够点击并与应用交互，就像你直接使用他们的鼠标一样。
+你可以在下面的截图中看到，红点是你的 assist 鼠标，而黑色指针是用户的鼠标。
+
+![](https://i.imgur.com/L9K20q2.png)
+
+当你的用户无法弄清楚如何与你的应用交互或究竟该点击哪里时，这是一个极好的功能。
+你甚至可以通过与你的用户发起一次实时通话，并使用你的红色指针向他们展示该点击哪里，来为他们提供支持。
+下面的截图显示了我，正在与……嗯，与来自两台不同操作系统的不同计算机上的我自己进行实时通话。语音和视频都通过 WebRTC 传输。
+
+![](https://i.imgur.com/Ob7QTzH.png)
+
+
+## 有问题吗？
+
+如果你在项目中设置 Assist 插件时遇到任何问题，请通过我们的 [Slack 社区](https://slack.openreplay.com/) 联系我们，直接向我们的开发者提问！

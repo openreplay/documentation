@@ -1,0 +1,80 @@
+---
+title: "Sanear datos (iOS)"
+metaTitle: "Sanear datos (iOS)"
+metaDescription: "Cómo sanear datos y garantizar la privacidad de tus usuarios en tu aplicación iOS."
+---
+
+
+## Sanear componentes de la interfaz
+
+Las vistas saneadas aparecerán difuminadas en la repetición resultante. Puedes añadir cualquier componente de la interfaz y se eliminará automáticamente (para preservar la memoria) en cuanto deje de estar en pantalla.
+
+### SwiftUI
+
+Simplemente añade el modificador `.sensitive()` al componente deseado.
+
+```swift
+import ORTracker
+
+Text("Very important sensitive text")
+.sensitive()
+
+```
+
+### UIKit
+
+```swift
+import ORTracker
+
+ORTracker.shared.addIgnoredView(view)
+```
+
+### React Native
+
+El SDK exporta `ORSanitizedView`, que puedes usar para envolver tus componentes sensibles y difuminarlos.
+
+```js
+import OR from '@openreplay/react-native'
+
+// ... your app UI
+
+  <OR.ORSanitizedView>
+    <SensitiveComponent />
+  </OR.ORSanitizedView>
+
+// ...
+```
+
+## Sanear solicitudes de red
+
+Se exportan dos claves para recortar automáticamente los datos de la solicitud/respuesta: `ignoredKeys` para el cuerpo e `ignoredHeaders` para los encabezados. Tanto la solicitud como la respuesta se sanearán, pero el cuerpo solo se verá afectado si es un JSON válido.
+
+Simplemente asigna una lista de cadenas que quieras sanear:
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+También es posible cambiar los datos de la respuesta antes de pasarlos al listener:
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```
+
+## ¿Tienes preguntas?
+Si tienes alguna pregunta sobre este proceso, no dudes en contactarnos en nuestro [Slack](https://slack.openreplay.com) o consultar nuestro [Foro](https://forum.openreplay.com).

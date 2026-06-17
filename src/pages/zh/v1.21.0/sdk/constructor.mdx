@@ -15,17 +15,16 @@ npm i @openreplay/tracker
 ```
 
 ## 初始化
+在实例化 OpenReplay 的跟踪器时，您可以提供多个配置选项来自定义录制和录制体验的各个方面。
 
-在实例化 OpenReplay 的跟踪器时，您可以提供多个配置选项来自定义录制和体验的各个方面。
-
-您必须在构造函数中设置 `projectKey` 选项。您可以在 OpenReplay 仪表板的“偏好设置 > 项目”下获取此值。
+您必须在构造函数中设置 `projectKey` 选项。您可以在 OpenReplay 仪表板的 'Preferences > Projects' 下获取此值。
 
 <Aside type="tip">
   请注意，如果您有多个项目，需要仔细选择您使用的项目密钥。
 </Aside>
 
-### 单页应用程序（SPA）
 
+### 单页应用程序（SPA）
 如果您的网站是一个 **单页应用程序（SPA）**，请使用以下代码：
 
 ```js
@@ -34,12 +33,11 @@ import OpenReplay from '@openreplay/tracker';
 const tracker = new OpenReplay({
   projectKey: PROJECT_KEY
 });
-tracker.start(); // 返回包含会话信息（sessionID、sessionHash、userUUID）的 Promise
+tracker.start(); // returns a promise with session info (sessionID, sessionHash, userUUID)
 ```
 
 ### 服务端渲染（SSR）
-
-如果您的 Web 应用是 **服务端渲染（SSR）**（例如 NextJS、NuxtJS），请使用以下代码片段。确保在应用启动后调用 `tracker.start()`（在 `useEffect` 或 `componentDidMount` 中）。
+否则，如果您的 Web 应用是 **服务端渲染（SSR）**（例如 NextJS、NuxtJS），请使用以下代码片段。确保在应用启动后调用 `tracker.start()`（在 `useEffect` 或 `componentDidMount` 中）。
 
 ```js
 import OpenReplay from '@openreplay/tracker/cjs';
@@ -49,8 +47,8 @@ const tracker = new OpenReplay({
 });
 //...
 function MyApp() {
-  useEffect(() => { // 如果是 React 类组件，使用 componentDidMount
-    tracker.start(); // 返回包含会话信息（sessionID、sessionHash、userUUID）的 Promise
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start(); // returns a promise with session info (sessionID, sessionHash, userUUID)
   }, [])
 }
 ```
@@ -66,9 +64,9 @@ import OpenReplay from '@openreplay/tracker/cjs';
 //...
 const tracker = new OpenReplay({
       projectKey: PROJECT_KEY,
-      ingestPoint: "https://openreplay.mydomain.com/ingest", // 当使用 OpenReplay 自托管版本时
+      ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
       capturePerformance: true,
-      __DISABLE_SECURE_MODE: true // 用于本地测试
+      __DISABLE_SECURE_MODE: true // for local testing
 });
 ```
 
@@ -107,9 +105,9 @@ const tracker = new OpenReplay({
   projectKey: 'your_project_key',
   nodes: {
     maintainer: {
-      interval: 60 * 1000, // 每分钟运行一次清理
-      batchSize: 2500, // 每批检查 2500 个节点
-      enabled: true, // 启用节点维护器
+      interval: 60 * 1000, // Run cleanup every minute
+      batchSize: 2500, // Check nodes in batches of 2500
+      enabled: true, // Enable the node maintainer
     }
   }
 });
@@ -141,7 +139,7 @@ const tracker = new OpenReplay({
 
 - `captureResourceTimings?: boolean` 记录资源加载时间。默认值：`true`。
 - `capturePageLoadTimings?: boolean` 记录页面加载时间。默认值：`true`。
-- `capturePageRenderTimings?: boolean` 计算页面渲染指标，如速度指数、视觉完成度或可交互时间。需要 `captureResourceTimings = true`。默认值：`true`。
+- `capturePageRenderTimings?: boolean` 计算页面渲染指标，如 Speed Index、Visually Complete 或 Time To Interactive。需要 `captureResourceTimings = true`。默认值：`true`。
 
 ### 性能
 
@@ -156,12 +154,12 @@ network?: {
     failuresOnly: boolean;
     sessionTokenHeader: string;
     ignoreHeaders: Array<string> | boolean;
-    capturePayload: boolean; // 启用前确保清理您的数据
+    capturePayload: boolean; // make sure you sanitize your data before enabling it
     sanitizer: (RequestResponseData) => RequestResponseData | null;
-    captureInIframes: boolean;
-    axiosInstances: AxiosInstance[];
+		captureInIframes: boolean;
+  	axiosInstances: AxiosInstance[];
     useProxy?: boolean;
-    tokenUrlMatcher?: (url: string) => boolean;
+		tokenUrlMatcher?: (url: string) => boolean;
   }
 ```
 
@@ -187,19 +185,19 @@ canvas?: {
 `crossdomain` 选项与捕获来自不同域的 iFrame 有关。它与必须设置为 `true` 的 `captureIFrames` 选项一起使用。
 
 ```ts 
- crossdomain?: {
-    /**
-     * 启用跨域跟踪
-     * @default false
-     * */
-    enabled?: boolean
-    /**
-     * 用于指定父域，默认为 '*'
-     * （检查您的 CSP 设置）
-     * @default '*'
-     * */
-    parentDomain?: string
-}
+	crossdomain?: {
+		/**
+		 * Enable cross-domain tracking
+		 * @default false
+		 * */
+		enabled?: boolean
+		/**
+		 * Used to specify the parent domain, will be '*' by default
+		 * (Check your CSP settings)
+		 * @default '*'
+		 * */
+		parentDomain?: string
+	}
 ```
 从 Tracker 版本 [14.0.10](https://github.com/openreplay/openreplay/blob/dev/tracker/tracker/CHANGELOG.md) 开始，在处理跨域 iFrame 时，**不再需要**在 HTML 元素上添加 `data-domain` 属性。
 
@@ -235,7 +233,7 @@ mouse?:
 
 ```ts
  flags?: {
-    onFlagsLoad?: (flags: IFeatureFlag[]) => void
+ 	onFlagsLoad?: (flags: IFeatureFlag[]) => void
  } 
 
 // ...

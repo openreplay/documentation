@@ -1,0 +1,105 @@
+---
+title: "Métadonnées"
+metaTitle: "Métadonnées"
+metaDescription: "Comment transmettre les métadonnées utilisateur à OpenReplay. Également appelées traits ou variables utilisateur sur d'autres plateformes."
+---
+import Aside from '~/components/Aside.astro'
+
+Des informations supplémentaires sur les utilisateurs peuvent être fournies au moyen de métadonnées (également appelées traits ou variables utilisateur). Elles prennent la forme de paires clé/valeur et sont utiles pour filtrer et rechercher des relectures de session spécifiques.
+
+<Aside type="tip">
+  Nous proposons également un tutoriel détaillé sur la manière d'envoyer des métadonnées dans le cadre de votre session, vous pouvez le consulter [ici](/tutorials/metadata).
+</Aside>
+
+
+## 1. Spécifiez explicitement les Métadonnées
+
+Les métadonnées doivent être spécifiées explicitement depuis le tableau de bord dans 'Preferences > Metadata'. Vous pouvez ajouter jusqu'à 10 clés. Dans l'exemple ci-dessous, nous utilisons `plan`.
+
+![Ajouter des Métadonnées](/static/metadata-1.png#center)
+
+## 2. Injectez les Métadonnées lors de l'enregistrement des sessions
+
+Une fois la ou les clés ajoutées (dans cet exemple `plan`), vous pouvez injecter les métadonnées au démarrage du tracker sous la forme d'une paire clé/valeur (`string`).
+
+### Avec NPM
+
+Injectez les métadonnées au démarrage du tracker (dans cet exemple `plan`).
+
+```js
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+
+tracker.start({
+  userID: "john@doe.com",
+  metadata: {
+    balance: "10M",
+    plan: "free"
+  }
+});
+```
+
+Si cela n'est pas possible (certaines ou toutes les métadonnées peuvent n'être définies/connues que plus tard dans le flux de navigation, soit bien après le démarrage du tracker), appelez alors la méthode `setMetadata` pour ce faire : 
+
+```js
+tracker.setMetadata('plan', 'free'); // after tracker.start()
+```
+
+### Avec le snippet JavaScript
+
+Voici un exemple de la manière d'injecter les métadonnées (dans cet exemple `plan`) à l'aide du snippet. Notez la variable/ligne `startOpts` ajoutée, ainsi que le changement de paramètres dans la deuxième ligne.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: getUserID(), metadata: { plan: getPlan()} } // use startOpts variable to inject metadata
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})(0, "GxPpaDARdn2345fgt321", "//static.openreplay.com/3.5.0/openreplay.js",1,29);
+</script>
+```
+
+Si cela n'est pas possible (les métadonnées sont connues plus tard dans le flux de navigation, soit bien après le démarrage du tracker), appelez plutôt la méthode `setMetadata` pour identifier vos utilisateurs. L'identité de l'utilisateur peut être modifiée à tout moment pendant la session en appelant `setMetadata`. Cependant, OpenReplay ne conservera que le dernier ID utilisateur injecté.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" };
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+  ...
+  OpenReplay.setMetadata("plan", "free"); // set metadata later in your code
+  ...
+```
+
+### Avec l'application iOS
+
+```swift
+import ORTracker
+
+ORTracker.shared.setMetadata(key: String, value: String)
+```
+
+## 3. Recherchez des Enregistrements de Sessions à l'aide des Métadonnées
+
+Cliquer sur la barre d'omni-recherche affichera la liste des filtres disponibles, y compris la ou les clés de métadonnées que vous avez ajoutées. Vous pouvez désormais filtrer les enregistrements de sessions par n'importe quelle clé/valeur.
+
+![Rechercher à l'aide des Métadonnées](/static/metadata-2.png#center)
+
+## 4. Consultez les Métadonnées dans la Relecture de Session
+
+Les paires clé/valeur de métadonnées sont affichées sur la page de relecture de session, dans la carte d'identification de l'utilisateur. Les sessions ayant des valeurs de métadonnées similaires peuvent être trouvées en cliquant sur l'icône en forme de *boucle*.
+
+![Métadonnées dans la Relecture de Session](/static/metadata-3.png#center)
+
+## Vous avez des questions ?
+Si vous avez des questions sur ce processus, n'hésitez pas à nous contacter sur notre [Slack](https://slack.openreplay.com) ou à consulter notre [Forum](https://forum.openreplay.com).

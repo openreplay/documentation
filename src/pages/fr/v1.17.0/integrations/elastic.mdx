@@ -1,0 +1,123 @@
+---
+title: "Elastic"
+metaTitle: "Intégration d'Elasticsearch"
+metaDescription: "Comment intégrer Elasticsearch à OpenReplay et voir les erreurs backend aux côtés des rejeux de session."
+---
+
+Comment intégrer Elasticsearch à OpenReplay et voir les erreurs backend aux côtés des enregistrements de session.
+
+## 1. Créer une nouvelle clé API
+
+Si vous utilisez le tableau de bord Kibana :
+1. Connectez-vous à votre tableau de bord Kibana.
+2. Allez dans Dev *Tools > Console*.
+3. Copiez le code de console suivant dans votre console et exécutez-le.
+
+Si vous utilisez des commandes CURL :
+1. Exécutez la commande cURL suivante dans votre terminal.
+
+**Remarque :** par défaut, cette intégration recherche les journaux dans tout index correspondant à `*log*`. Si vous disposez d'un index spécifique pour les journaux qui ne correspond pas à ce motif, veuillez modifier le nom de l'index à la ligne 12 de la commande suivante. Si vous souhaitez spécifier plus d'un index, vous pouvez séparer les noms par `,`.
+
+```shell
+POST /_security/api_key
+{
+  "name": "openreplay-api-key",
+  "role_descriptors": {
+    "openreplay-role": {
+      "cluster": [
+        "all"
+      ],
+      "index": [
+        {
+          "names": [
+            "*log*"
+          ],
+          "privileges": [
+            "read"
+          ]
+        }
+      ]
+    }
+  }
+}
+```
+
+Si vous avez utilisé l'une des méthodes précédentes pour générer une clé API, vous obtiendrez un résultat comme le suivant :
+
+```json
+{
+  "id" : "eQWAIG0Bo0VqB8HXFH9-",
+  "name" : "openreplay-api-key",
+  "api_key" : "dZ5ycVRJTU-5UW_RYfi1_w"
+}
+```
+
+Veillez à copier l'`id` et l'`api_key`, car nous en avons besoin pour notre intégration. Pour plus d'informations sur la création d'une clé API, veuillez vous référer à cette [documentation](https://www.elastic.co/guide/en/elasticsearch/reference/master/security-api-create-api-key.html).
+
+## 2. Activer Elasticsearch dans OpenReplay
+
+Renseignez votre adresse `host`, le `port`, l'`id` et l'`api_key` dans le tableau de bord OpenReplay sous « Preferences > Integration ».
+Si vous avez modifié l'index lors de la génération de l'`api_key`, veuillez en préciser le nom dans `indexes`.
+
+![Intégration d'Elasticsearch dans OpenReplay](/static/elastic-1.png#center)
+
+## 3. Propager openReplaySessionToken
+
+Pour lier un événement Elasticsearch à la session utilisateur enregistrée, un token unique doit être propagé depuis votre frontend vers votre backend à chaque requête que vous souhaitez suivre. Cela peut être réalisé à l'aide d'un en-tête HTTP personnalisé. Dans l'exemple ci-dessous, nous utilisons la fonction `fetch` pour envoyer cet en-tête.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+Pour qu'OpenReplay associe une entrée de journal Elasticsearch à la session utilisateur enregistrée, un token unique doit être propagé dans chaque erreur backend que vous souhaitez suivre.
+
+Voici un exemple en Python utilisant le Monkey Patching.
+
+```python
+import sys
+import traceback
+#...
+old_tb = traceback.print_exception
+old_f = sys.stdout
+old_e = sys.stderr
+OPENREPLAY_SESSION_TOKEN = None
+
+class F:
+    def write(self, x):
+        if OPENREPLAY_SESSION_TOKEN is not None and x != '\n':
+            old_f.write(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] {x}")
+        else:
+            old_f.write(x)
+
+    def flush(self):
+        pass
+
+def tb_print_exception(etype, value, tb, limit=None, file=None, chain=True):
+    if OPENREPLAY_SESSION_TOKEN is not None:
+        value = type(value)(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] " + str(value))
+    old_tb(etype, value, tb, limit, file, chain)
+
+traceback.print_exception = tb_print_exception
+
+sys.stderr = F()
+```
+
+Le nom de la balise `openReplaySessionToken` est sensible à la casse.
+
+## Considérations particulières
+
+Par défaut, nous recherchons chaque journal associé à une session OpenReplay à l'aide des attributs `message` et `utc_time`. Nous ne nous intéressons qu'aux journaux d'erreur ; pour identifier les journaux d'erreur, nous vérifions que l'attribut `tags` contient la valeur `error`.
+
+## Vous avez des questions ?
+
+Si vous rencontrez des problèmes, rejoignez notre [Slack](https://slack.openreplay.com) ou consultez notre [Forum](https://forum.openreplay.com) et obtenez de l'aide de notre communauté.

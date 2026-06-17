@@ -1,0 +1,235 @@
+---
+title: "Captura y sanea los datos de las peticiones"
+metaTitle: "Saneamiento de los datos de las peticiones en tus replays"
+metaDescription: "Captura los datos de las peticiones para entender el tipo de errores que estás cometiendo en el front-end"
+---
+A veces los errores en tu código de cliente no son tan evidentes como cuando obtienes una pantalla en blanco porque nada de tu código JavaScript funciona.
+A veces el problema con tu aplicación es que, ante determinadas acciones que puede realizar tu usuario, estás formando incorrectamente una petición al servidor.
+El código de cliente funciona, no obtienes ningún error de JS en la consola, pero a tu back-end no le gusta mucho lo que le envías.
+
+Con OpenReplay, puedes capturar la comunicación cliente-servidor como parte de tu replay de sesión estándar y revisarla más tarde. Así que veamos cómo podemos hacerlo y qué tipo de beneficio podemos obtener de ello.
+
+## Una aplicación de ejemplo
+Para los fines de este tutorial, he creado una aplicación React sencilla que hace uso de la [Bored API](https://www.boredapi.com/). Esta es una API muy simple que devuelve una sugerencia de actividad aleatoria basada en algunos parámetros.
+Así que creé la aplicación "I'm bored App", que se ve así:
+
+![](https://i.imgur.com/ZCEOtiC.png)
+
+Y puedes encontrarla en vivo en Netlify [aquí](https://venerable-tartufo-f87748.netlify.app), o si quieres revisar el código para verlo en detalle, está completamente disponible en [GitHub](https://github.com/deleteman/im-bored-app).
+
+Esta aplicación está formada por 2 componentes, el componente `SearchForm`, que se encarga de renderizar esos 2 campos y el botón, así como de enviar la petición real a la API.
+Y el componente `Suggestion` simplemente renderiza la sugerencia dentro de un recuadro de aspecto agradable.
+
+Voy a centrarme en el primero, ya que es el único que envía peticiones usando la función `fetch`.
+
+**Ten en cuenta** que esta técnica también funciona para cualquier petición realizada con **Axios**.
+
+Echemos un vistazo rápido al componente para entender qué hace.
+
+### El código del componente SearchForm
+
+Este no es un componente complejo, pero hay una sección que es especialmente relevante para este caso de uso en particular, así que echémosle un vistazo rápido.
+
+```javascript
+import { Container, Col, Form, Row, Button } from 'react-bootstrap';
+
+const SearchForm = ({setResult, fetcher}) => {
+const getSomething = async (evt) => {
+    evt.preventDefault()
+    let form = evt.target
+
+    const API_URL = "/api/activity?"
+    let getParams = {}
+    if(form.participants.value !== '') {
+      getParams.participants = form.participants.value
+    }
+
+    if(form.priceRange.value !== '') {
+      let prices = form.priceRange.value.split("_")
+      getParams.minprice = prices[0]
+      getParams.maxprice = prices[1]
+    }
+
+    let results = await fetcher(API_URL + new URLSearchParams(getParams), {
+        mode: 'no-cors'
+    })
+    setResult(await results.json())
+
+    return false
+  }
+
+    return (
+        <Container>
+        <Form onSubmit={getSomething}>
+          <Row>
+            <Col>
+          <Form.Group controlId='participants' >
+            <Form.Label>Participants</Form.Label>
+            <Form.Control type='text' name="totalParticipants" placeholder='Leave empty if you dont care...'></Form.Control>
+          </Form.Group>
+          </Col>
+            <Col>
+          <Form.Group controlId='priceRangeId'>
+            <Form.Label>Price range</Form.Label>
+            <Form.Select name="priceRange" >
+              <option value="" >Select one or leave empty if you dont care</option>
+              <option value="0.0">Free</option>
+              <option value="0.1_0.5">Cheap</option>
+              <option value="0.6_1.0">Expensive</option>
+            </Form.Select>
+          </Form.Group>
+          </Col>
+          </Row>
+          <Row className='m-3'>
+            <Col>
+            <Form.Group>
+              <Button variant="primary" type="submit">Get me something!</Button>
+            </Form.Group>
+            </Col>
+          </Row>
+        </Form>
+      </Container>
+    )
+}
+
+export default SearchForm
+```
+
+Fíjate en la función `getSomething`, ahí es donde ocurre la mayor parte de la magia. La función se invoca cuando se dispara el evento submit del formulario.
+Cuando eso ocurre, la función obtiene el evento sintético con el formulario vinculado dentro de la propiedad `target`. Simplemente capturamos los valores de cada uno de los filtros (el campo de entrada y el desplegable) y luego ejecutamos la petición con la función `fetch`.
+Fíjate en que la URL no apunta directamente al endpoint de la BoredAPI. Eso es porque, para que la petición funcione y no se bloquee debido a las restricciones de CORS, he configurado un proxy en el backend para redirigir todas las peticiones de `/api` a la API real.
+
+Ahora que has visto el código, echemos un vistazo a lo que obtendrías si instalaras el tracker de OpenReplay sin el plugin de fetch.
+
+## Captura de datos habitual con OpenReplay
+Para este ejemplo, voy a usar la versión NPM del paquete; si no sabes cómo hacerlo, consulta [la documentación](https://docs.openreplay.com/installation/setup-or) y luego vuelve aquí.
+
+![](/tutorials/fetch/network-tab-imbored.png)
+
+Esta es la interfaz del replay de sesión por defecto.
+Fíjate en que en la mitad inferior ya he seleccionado la pestaña "Network", pero aunque sí muestra las peticiones que se están realizando, no hay detalles
+sobre ellas. Incluso si haces clic en una de ellas, obtendrás los detalles mínimos disponibles:
+
+![](/tutorials/fetch/network-tab-details.png)
+
+Entonces, ¿qué podemos hacer? Puedes habilitar la captura de la información de las peticiones con el [objeto Network options](installation/network-options).
+Veámoslo.
+
+### Captura de los datos de las peticiones en tus replays de sesión
+
+Para esto, todo lo que tenemos que hacer es añadir una opción de configuración cuando instancias el tracker.
+Así que ahora, cuando escribas la línea `new tracker(...)`, añadirás una nueva propiedad:
+
+```javascript
+import Tracker from '@openreplay/tracker';
+
+const tracker = new Tracker({
+  projectKey: "<your project key>",
+  network: {
+    capturePayload: true //start capturing the payload of every request
+  }
+});
+```
+
+Eso es todo lo que necesitamos hacer; de ahora en adelante, cada vez que realices una petición, los datos serán registrados por el tracker.
+Ahora despliega el cambio, prueba la aplicación, cierra la pestaña y espera un par de minutos.
+La sesión debería aparecer pronto y puedes pulsar el botón "play".
+
+## Inspeccionando la comunicación cliente-servidor
+
+Para los fines del ejemplo, veamos también un problema que empecé a observar después de publicar la aplicación.
+
+Fíjate en el cuadro de advertencia que obtengo en este caso:
+
+![](https://i.imgur.com/nOlRjO9.png)
+
+Como el desarrollador que programó esto, sé qué hacer para probarlo y entender dónde está el error. Sin embargo, como usuario, el error no me dice realmente mucho, y puede que no sea capaz de comunicarlo de una manera que el equipo de desarrollo pueda entender.
+Así que, en cambio, como usuario, puedo simplemente quejarme a la empresa de que su aplicación no funciona, y tú, como el desarrollador responsable de la aplicación, puedes echar un vistazo a mi sesión e inspeccionar la petición que envió el cliente y la respuesta del servidor.
+
+![](/tutorials/fetch/network-tab-requests.png)
+
+Mira ahora la interfaz del replay de sesión. Dentro de la pestaña Network puedes ver las peticiones que hemos estado haciendo a la API externa.
+
+Todo lo que tenemos que hacer ahora es encontrar el momento en el que obtenemos la respuesta de error y mirar las peticiones que se están realizando.
+Lo más probable es que veas el problema dentro de los detalles de la petición.
+En nuestro caso, el error dice "Failed to query due to error in arguments", lo que significa que cuando seleccionamos la opción "Free" en el desplegable,
+no estamos enviando una petición válida. Así que echemos un vistazo a sus detalles.
+
+![](https://i.imgur.com/FAtZEgt.png)
+
+¿Puedes ver el problema? Déjame ayudarte:
+
+![](https://i.imgur.com/yX8TJpp.png)
+
+Sí, estoy enviando un `undefined` como valor del atributo `maxprice`. Se me pasó completamente eso en mi lógica, y lo detecté mientras inspeccionaba la petición.
+Es cierto que es una solución fácil ahora que sé dónde está el problema, pero gracias a este proceso habría podido o bien generar un informe de error muy detallado, o bien ayudar directamente al desarrollador a identificar y resolver el problema sin tener que probarlo yo mismo y reproducir la incidencia.
+
+## Poniendo a prueba la privacidad
+
+Muy bien, llevemos este ejemplo un poco más lejos; supongamos que también necesito el número de teléfono de mi usuario para esta petición. Claramente no lo necesito, pero síguenos la corriente por un minuto.
+
+Añadiré el campo al formulario y actualizaré el código para capturar ese valor y enviarlo como parte de la petición.
+
+El HTML del formulario consiste simplemente en añadir un nuevo elemento `Col` así:
+
+```html
+<!-- previous code -->
+<Col>
+    <Form.Group controlId='phoneNumber'>
+        <Form.Label>Phone Number</Form.Label>
+        <Form.Control type='number' name="phoneNumber" placeholder='Enter your phone number here please'></Form.Control>
+    </Form.Group>
+</Col>
+<!-- rest of the code -->
+```
+
+Y añadir el contenido de este campo a la petición real solo necesita una única línea de código:
+
+```javascript
+getParams.phonenumber = form.phoneNumber.value
+```
+
+Ahora bien, ¿qué pasa si usamos este nuevo código y capturamos una sesión con OpenReplay?
+Pues, dos cosas:
+
+1. El replay real que _ves_ saneará automáticamente el contenido del campo del número de teléfono y no se mostrará a nadie que lo esté viendo.
+2. La información de la petición capturada por el plugin, sin embargo, sí mostrará el valor.
+
+La siguiente captura de pantalla muestra lo que acabo de describir:
+
+![](https://i.imgur.com/kKL47Rd.png)
+
+En la sección derecha de la pantalla, puedes ver el número de teléfono completo. Esto ocurre porque, mientras que el tracker normal puede entender que el campo del número de teléfono es un campo numérico, no capturará su entrada por si acaso el número representa información personal. Pero del lado de la petición, no podemos realmente hacer esa suposición, ya que el desarrollador podría haber hecho cualquier cosa con los datos, o incluso con el nombre del parámetro.
+Así que la pregunta es entonces: ¿podemos proteger la privacidad de nuestro usuario con este plugin?
+
+Y la respuesta, me alegra informar, es: SÍ podemos.
+
+### Saneando los datos de la petición
+
+Si vuelves al principio de este tutorial, cuando configuré las opciones de network, verás que no dije nada sobre el saneamiento.
+Sin embargo, como parte de esas opciones puedes especificar un callback destinado a sanear los datos. Este callback recibe un único atributo con ambos objetos, el de la petición y el de la respuesta. Luego puedes elegir editarlos como quieras; no afectarán a la petición real, pero cambiarán la forma en que se muestran los datos en la interfaz de OpenReplay.
+
+Por ejemplo, supongamos que quiero cambiar el atributo "phonenumber" y eliminar los números para evitar filtrar esa información. Esto se puede hacer así:
+
+```javascript
+const tracker = new Tracker({
+  projectKey: "<your project id>",
+  network: {
+    capturePayload: true,
+    sanitizer: (data) => { //we change the content of the "phonenumber" parameter from the url
+      data.url = data.url.replace(/phonenumber=([0-9]+)/, "phonenumber=XXXXXX")
+      return data
+    }
+    }
+});
+```
+
+Como puedes ver, el cambio es simple, reemplazamos solo los números de este atributo, así que ahora la petición se ve así en nuestra interfaz:
+
+![](/tutorials/fetch/network-tab-sanitized-data.png)
+
+Ahora los datos de tu usuario están seguros una vez más.
+
+## ¿Tienes preguntas?
+
+Si quieres revisar el código para ver este ejemplo en detalle, puedes encontrarlo [aquí en GitHub](https://github.com/deleteman/im-bored-app/tree/v1.10). Si tienes algún problema configurando el plugin de Fetch o el propio Tracker, ponte en contacto con nosotros en nuestra [comunidad de Slack](https://slack.openreplay.com/) y pregúntale directamente a nuestros desarrolladores.

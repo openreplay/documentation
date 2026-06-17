@@ -1,0 +1,227 @@
+---
+title: "Heuristiques personnalisées"
+metaTitle: "Heuristiques personnalisées"
+metaDescription: "Comment étendre le service d'heuristiques avec votre propre algorithme"
+---
+Nous utilisons le terme heuristiques pour désigner des algorithmes simples et robustes servant à détecter des problèmes tels qu'une charge CPU élevée ou la rage de clic (click rage). Nous allons ici utiliser un exemple pour comprendre comment fonctionnent les heuristiques et comment créer votre propre détecteur, puis voir ses résultats dans les DevTools.
+
+## Modèles
+
+Un modèle pour les heuristiques se trouve dans le chemin `openreplay/backend/pkg/handlers/custom`.
+
+```tsx
+package custom
+
+import . "openreplay/backend/pkg/messages"
+
+type CustomHandler struct {
+	lastTimestamp uint64
+}
+
+func (h *CustomHandler) Handle(message Message, messageID uint64, timestamp uint64) Message {
+	h.lastTimestamp = timestamp
+	return nil
+}
+
+func (h *CustomHandler) Build() Message {
+	return nil
+}
+```
+
+Une fois la méthode heuristique créée, elle peut être ajoutée en modifiant le fichier `main.go` situé dans le chemin
+`openreplay/backend/cmd/heuristics` en important le module personnalisé et en ajoutant la fonction personnalisée au handler du processeur de messages.
+```tsx
+package main
+
+import (
+        "log"
+        "openreplay/backend/internal/config/heuristics"
+        "openreplay/backend/pkg/handlers"
+        web2 "openreplay/backend/pkg/handlers/web"
+        "openreplay/backend/pkg/intervals"
+        logger "openreplay/backend/pkg/log"
+        "openreplay/backend/pkg/messages"
+        "openreplay/backend/pkg/queue"
+        "openreplay/backend/pkg/queue/types"
+        "openreplay/backend/pkg/sessions"
+        "os"
+        "os/signal"
+        "syscall"
+        "time"
+        // Import custom modules here
+)
+
+func main() {
+        log.SetFlags(log.LstdFlags | log.LUTC | log.Llongfile)
+
+        // Load service configuration
+        cfg := heuristics.New()
+
+        // HandlersFabric returns the list of message handlers we want to be applied to each incoming message.
+        handlersFabric := func() []handlers.MessageProcessor {
+                return []handlers.MessageProcessor{
+                        // web handlers
+                        &web2.ClickRageDetector{},
+                        &web2.CpuIssueDetector{},
+                        &web2.DeadClickDetector{},
+                        &web2.MemoryIssueDetector{},
+                        &web2.NetworkIssueDetector{},
+                        &web2.PerformanceAggregator{},
+                        // Add custom handlers here
+                }
+        }
+        ...
+}
+```
+
+## Exemple Quick Return
+
+Pour cet exemple, nous allons créer l'heuristique **Quick Return**, qui enverra un signal chaque fois que nous revenons à la même url en moins de cinq secondes. La méthode implémentée pour détecter un tel événement tirera parti des événements `SetPageLocation` et `MouseClick`. Chaque fois qu'un clic de souris se produit, nous mettons à jour l'horodatage actuel et, si un message `SetPageEvent` est reçu dans les cinq secondes suivantes en pointant vers la page web actuelle, nous renvoyons alors un événement QuickReturn.
+
+Pour commencer, créons le fichier `quickreturn.go` dans le chemin `openreplay/backend/pkg/handlers/custom` contenant le code présenté ci-dessous
+
+```go
+package custom
+import (
+    "log"
+    "encoding/json"
+    . "openreplay/backend/pkg/messages"
+)
+type QuickReturnDetector struct {
+    timestamp   uint64
+    currentPage string
+    lastPage    string
+}
+
+type CustomPayload struct {
+        Timestamp   uint64 `json:"timestamp"`
+        CurrentPage string `json:"current_page"`
+}
+
+// If received SetPageLocation on same 
+func (h *QuickReturnDetector) HandleSetPageLocation(msg *SetPageLocation, messageID uint64, timestamp uint64) Message {
+    if (h.timestamp + 5000 >= msg.NavigationStart && h.lastPage == msg.URL) {
+        h.timestamp = msg.NavigationStart
+        return h.Build()
+    }
+    h.lastPage = h.currentPage
+    h.currentPage = msg.URL
+    h.timestamp = msg.NavigationStart
+    return nil
+}
+// detect when a button is clicked (selector must have string 'button' in it)
+func (h *QuickReturnDetector) HandleMouseClick(msg *MouseClick, messageID uint64, timestamp uint64) {
+    h.timestamp = timestamp
+}
+func (h *QuickReturnDetector) Handle(message Message, messageID uint64, timestamp uint64) Message {
+    switch msg := message.(type) {
+    case *SetPageLocation:
+        if msg.NavigationStart != 0 {
+            return h.HandleSetPageLocation(msg, messageID, timestamp)
+        }
+    case *MouseClick:
+        h.HandleMouseClick(msg, messageID, timestamp)
+    }
+    return nil
+}
+func (h *QuickReturnDetector) Build() Message {
+    payload := &CustomPayload{
+        CurrentPage: h.currentPage,
+        Timestamp: h.timestamp,
+    }
+    payloadData, err := json.Marshal(payload)
+    if err != nil {
+            log.Println("JSON encoding error", err)
+            return nil
+    }
+    payloadString := string(payloadData)
+    event := &CustomEvent {
+        MessageID: 122,
+        Timestamp: h.timestamp,
+        Name:      "quickreturn",
+        Payload:   payloadString,
+    }
+    return event
+}
+```
+
+Maintenant que l'heuristique est créée, il ne reste plus qu'à l'activer. Pour ce faire, nous devons ajouter l'heuristique au fichier `main.go` situé dans le chemin `openreplay/backend/cmd/heuristics` comme suit :
+
+```tsx
+package main
+
+import (
+        "log"
+        "openreplay/backend/internal/config/heuristics"
+        "openreplay/backend/pkg/handlers"
+        web2 "openreplay/backend/pkg/handlers/web"
+        "openreplay/backend/pkg/intervals"
+        logger "openreplay/backend/pkg/log"
+        "openreplay/backend/pkg/messages"
+        "openreplay/backend/pkg/queue"
+        "openreplay/backend/pkg/queue/types"
+        "openreplay/backend/pkg/sessions"
+        "os"
+        "os/signal"
+        "syscall"
+        "time"
+        // Add custom module
+        custom "openreplay/backend/pkg/custom"
+)
+
+func main() {
+        log.SetFlags(log.LstdFlags | log.LUTC | log.Llongfile)
+
+        // Load service configuration
+        cfg := heuristics.New()
+
+        // HandlersFabric returns the list of message handlers we want to be applied to each incoming message.
+        handlersFabric := func() []handlers.MessageProcessor {
+                return []handlers.MessageProcessor{
+                        // web handlers
+                        &web2.ClickRageDetector{},
+                        &web2.CpuIssueDetector{},
+                        &web2.DeadClickDetector{},
+                        &web2.MemoryIssueDetector{},
+                        &web2.NetworkIssueDetector{},
+
+                        // The new handler
+                        &custom.QuickReturnDetector{},
+                }
+        }
+        ...
+}
+```
+
+L'heuristique est maintenant disponible et les messages sont envoyés sous forme d'un **Custom Event**. 
+Notez que vous devrez redéployer votre back-end avant de pouvoir tirer parti de la nouvelle heuristique. Pour ce faire, suivez les étapes de la section *build and deploy* de la page [**deploy from source**](https://docs.openreplay.com/deployment/deploy-source).
+
+## Utiliser l'événement personnalisé
+Maintenant que votre heuristique personnalisée envoie un nouvel événement personnalisé, la prochaine chose à faire est d'utiliser cet événement d'une manière ou d'une autre.
+Avec l'exemple précédent, vous avez deux options :
+
+1. Vous pouvez filtrer les sessions par événement personnalisé, en vous assurant de ne lister que celles qui présentent ce « problème » (dans notre cas, le problème du retour rapide).
+2. Vous pouvez trouver l'événement dans l'onglet Events de la section DevTools du lecteur. De cette façon, vous pouvez repérer le moment exact où l'événement est déclenché.
+
+### Filtrer les sessions par événement personnalisé
+
+Pour filtrer les sessions par votre nouvel événement personnalisé, utilisez simplement la fonctionnalité [Omnisearch](/tutorials/omnisearch), en cliquant sur la barre de recherche et en sélectionnant « Custom Events » comme type de filtre.
+Une fois cela fait, vous pourrez saisir le nom de l'événement ; il devrait se compléter automatiquement dès que vous commencez à taper, comme vous pouvez le voir dans l'image ci-dessous :
+
+![Custom event filter](/images/heuristics/custom-events.png)
+
+**Notez** que si l'autocomplétion ne fonctionne pas ou ne renvoie pas le nom de l'événement que vous recherchez, alors aucun événement portant ce nom n'existe dans la base de données. Dans ce cas, vous devriez revérifier votre logique pour vous assurer que vous déclenchez correctement l'envoi de l'événement personnalisé.
+
+### Trouver l'événement personnalisé dans les DevTools
+
+Si vous voulez comprendre exactement à quel moment l'événement personnalisé est déclenché, vous devrez rejouer une session et cliquer sur l'onglet « Events » des DevTools.
+Vous le trouverez situé dans le coin inférieur droit de l'écran.
+Une fois cliqué, il s'ouvrira et vous verrez la liste des événements, y compris le vôtre personnalisé, comme on le voit dans l'image ci-dessous :
+
+![Events listed in devTools](/images/heuristics/devtools.png)
+
+Au cours de ce processus simple, nous avons créé un nouveau détecteur. Bien entendu, votre algorithme peut être plus sophistiqué et inclure une combinaison de différents types d'événements.
+
+## Des questions ?
+
+Si vous rencontrez des problèmes, connectez-vous à notre [Slack](https://slack.openreplay.com) ou consultez notre [Forum](https://forum.openreplay.com) et obtenez de l'aide auprès de notre communauté.

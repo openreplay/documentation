@@ -1,0 +1,52 @@
+---
+title: "配置 SMTP"
+metaTitle: "配置 SMTP"
+metaDescription: "设置 SMTP 以接收警报、周报、邀请新用户加入 OpenReplay 以及重置密码。"
+---
+
+某些功能，例如 `alerts`、`weekly reports`、`password reset` 和 `inviting new users`，**需要**电子邮件消息传递。因此，除非你设置了 SMTP，否则这些功能将无法使用。我们强烈建议使用电子邮件服务提供商（ESP），例如 Mailgun 或 SendGrid，以获得最高的可靠性和送达率。下面我们提供了一份关于如何配置 Mailgun 的分步指南，但任何其他提供商同样可以胜任。
+
+## SMTP 配置
+
+要启用 SMTP，请运行 `openreplay -e` 并更新 `email` 部分中下列环境变量：
+
+| 变量 | 默认值 | 说明 |
+|----------|-------------|-------------|
+| emailHost |  | SMTP 主机名（即 smtp.mailgun.org） |
+| emailPort | 587 | SMTP 端口 |
+| emailUser |  | SMTP 用户名|
+| emailPassword |  | SMTP 密码 |
+| emailUseTls | true | 连接到 SMTP 主机时使用 TLS |
+| emailUseSsl | false | 连接到 SMTP 主机时使用 SSL |
+| emailSslKey |  | 你的 SSL 密钥路径（如适用） |
+| emailSslCert |  | 你的 SSL 证书路径（如适用） |
+| emailFrom | do-not-reply@openreplay.com | 发件人电子邮件 |
+
+然后，使用 `:wq` 保存并退出，使更改生效。随后，你可以通过邀请自己（使用另一个电子邮件地址）作为新的团队成员来测试该设置（在 'Preferences' > 'Users' 中）。
+
+## Mailgun
+
+1. 进入 'Sending' > 'Domains'，然后点击 'Add New Domain'
+2. 在 'Domain name' 中输入你的子域名（即 m.mycompany.com），并确保勾选 'Create DKIM Authority'，最好使用 2048 的密钥长度
+3. 进入你的 DNS 提供商（Mailgun 会提供具体说明）并添加**所有显示的记录**
+4. 添加完所有记录后，点击 'Verify DNS Settings'
+5. 现在进入 'Sending' > 'Domains settings' > 'SMTP credentials'，然后点击 'Add new SMTP user'。输入 'Login'（即 openreplay），然后点击 'Create SMTP credentials'。应该会出现一个弹出窗口，点击 'Copy' 复制生成的密码。
+6. 使用显示的 SMTP 设置和凭据在 OpenReplay 中配置 SMTP。运行 `openreplay -e` 并更新 `email` 部分中下列环境变量：
+
+```yaml
+emailHost: 'smtp.eu.mailgun.org' # from SMTP settings section
+emailPort: '587'
+emailUser: 'openreplay@mycompany.com' # from SMTP credentials section
+emailPassword: 'password' # the one copied when you created SMTP credentials
+emailUseTls: 'true'
+emailUseSsl: 'false'
+emailSslKey: ''
+emailSslCert: ''
+emailFrom: 'openreplay@mycompany.com' # sender email, use your domain'
+```
+
+7. 使用 `:wq` 保存并退出，使更改生效。
+8. 你可以通过邀请自己（使用另一个电子邮件地址）作为新的团队成员来测试该设置（在 'Preferences' > 'Users' 中）。
+
+## 有疑问？
+如果你对此过程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

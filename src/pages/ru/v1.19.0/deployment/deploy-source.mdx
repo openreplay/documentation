@@ -1,0 +1,172 @@
+---
+title: "Развёртывание из исходного кода"
+metaTitle: "Развёртывание из исходного кода"
+metaDescription: "Пошаговое руководство по развёртыванию OpenReplay из исходного кода."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+OpenReplay можно развернуть из исходного кода. Его основные компоненты (Backend, API и Frontend) необходимо собрать и отправить в ваш собственный реестр контейнеров перед выполнением установки.
+
+Минимальные характеристики для машины, на которой работает OpenReplay, составляют `2 vCPUs, 8 GB of RAM, 50 GB of storage`, иначе бэкенд-сервисы OpenReplay просто не запустятся. Этого должно быть достаточно для низкого/умеренного объёма. Если вы ожидаете высокий трафик, вам следует масштабироваться отсюда.
+
+## 1. Предварительные требования
+
+1. Установите docker:
+
+```bash
+sudo apt update
+sudo apt install docker.io -y
+user=`whoami`
+sudo chown $user /var/run/docker.sock
+```
+
+2. Клонируйте репозиторий OpenReplay:
+
+```bash
+git clone https://github.com/openreplay/openreplay
+```
+
+## 2. Сборка сервисов Backend
+
+1. Войдите в ваш реестр контейнеров с помощью `docker login <registry_url>`. Если у вас есть учётная запись docker hub, просто выполните `docker login`.
+
+2. Соберите компоненты бэкенда, а затем отправьте их в ваш реестр контейнеров:
+
+```bash
+cd openreplay/backend
+sudo IMAGE_TAG=<my_tag_number> PUSH_IMAGE=1 DOCKER_REPO=index.docker.io/<username> bash build.sh 
+```
+
+*Обратите внимание*, что имя тега может быть любой строкой по вашему желанию, оно будет создано в вашем реестре Docker и будет использоваться для идентификации этой конкретной версии кода (полезно, если вы также модифицируете код).
+
+Если всё пройдёт хорошо, в вашем реестре Docker должен появиться список образов, собранных из имевшегося у вас исходного кода и готовых к установке.
+Список образов следующий:
+
+- Storage
+- Sink
+- Integrations
+- HTTP
+- Heuristics
+- Ender
+- DB
+- Assets
+- Alerts
+- Chalice
+
+## 3. Обновление образов
+
+1. Создайте секрет вашего реестра контейнеров:
+
+```bash
+kubectl create secret -n app docker-registry my-registry-secret \
+        --docker-server=MY_CONTAINER_REGISTRY_URL \ # not required if docker hub
+        --docker-username=MY_CONTAINER_REGISTRY_USERNAME \
+        --docker-password=MY_CONTAINER_REGISTRY_PASSWORD \
+        --docker-email=no@email.local 
+```
+
+2. Чтобы использовать компоненты, которые вы только что собрали и отправили в ваш реестр контейнеров, обновите файл `vars.yaml`, расположенный в папке `openreplay/scripts/helmcharts`. 
+Просто добавьте раздел для каждого образа, имеющегося в вашем реестре docker, со следующей информацией:
+
+- `repository`: должен указывать на MY_CONTAINER_REGISTRY_URL/COMPONENT_NAME (если вы используете Docker Hub, используйте вместо этого формат `<username>/<component name>`)
+- `pullPolicy`: установите значение "Always"
+- `tag`: значение IMAGE_TAG, использованное при сборке Backend и API
+- `imagePullSecrets`: секрет реестра контейнеров
+
+Обратите внимание, что любой образ, на который вы не ссылаетесь в файле `vars.yaml`, будет развёрнут и установлен из **официального репозитория** OpenReplay, что означает, что у вас не будет версии, собранной из вашего исходного кода.
+
+Ниже приведён пример для сервиса `alerts`:
+
+```yaml
+alerts:
+  image:
+    repository: rg.fr-par.scw.cloud/foss/alerts
+    pullPolicy: Always
+    tag: "v1.4.2"
+  imagePullSecrets: 
+    - name: my-registry-secret
+```
+
+### Установка OpenReplay
+
+1. Откройте `vars.yaml` и отредактируйте:
+- `domainName`: это адрес, по которому будет доступен OpenReplay (т.е. openreplay.mycompany.com)
+
+2. Установите OpenReplay:
+
+```bash
+cd openreplay/scripts/helmcharts
+helm upgrade --install databases ./databases -n db --create-namespace --wait -f ./vars.yaml --atomic
+helm upgrade --install openreplay ./openreplay -n app --create-namespace --wait -f ./vars.yaml --atomic
+```
+
+Если вы когда-либо измените исходный код бэкенд-сервисов или сервиса DB, вам придётся вернуться к шагу 3, а затем снова выполнить приведённые выше команды.
+
+### Настройка TLS/SSL
+
+OpenReplay работает с конфиденциальными данными пользователей и поэтому требует HTTPS для своей работы. Это обязательно, иначе трекер просто не начнёт запись. То же самое касается дашборда: без HTTPS вы не сможете воспроизводить пользовательские сессии.
+
+Поэтому вы должны предоставить (или сгенерировать) свой собственный SSL-сертификат.
+
+1. Сначала перейдите к вашему поставщику услуг DNS и создайте `A Record`. Используйте домен, который вы ранее указали на этапе установки, и направьте его на вашу машину, используя её публичный IP.
+
+2. Если вы предоставляете свой собственный сертификат, создайте SSL-секрет Kubernetes с помощью следующей команды: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
+
+> **Примечание:** Если у вас нет сертификата, сгенерируйте автоматически обновляемый сертификат для вашего поддомена (указанного во время установки) с помощью Let's Encrypt. Выполните `cd openreplay/scripts/helmcharts && bash certmanager.sh` и следуйте шагам.
+
+3. Если вы хотите включить перенаправление с http на https (рекомендуется), раскомментируйте приведённый ниже блок в разделе `ingress-nginx` в `vars.yaml`:
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+Стоит упомянуть, что наш `ingress-nginx` по умолчанию работает на портах `80|443`, но при необходимости это можно легко изменить в `vars.yaml`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. Наконец, переустановите NGINX OpenReplay:
+
+```bash
+ openreplay -R
+```
+
+## 4. Сборка и развёртывание Frontend
+
+Наконец, если вы также хотите собрать фронтенд, вам нужно будет собрать образ с помощью следующей строки:
+
+```bash
+cd openreplay/frontend
+IMAGE_TAG=<your tag> PUSH_IMAGE=1 DOCKER_REPO=myDockerHubID bash build.sh
+```
+
+После этого вернитесь в файл `vars.yaml` и добавьте раздел, специфичный для фронтенда; он должен выглядеть аналогично тем, что вы добавляли ранее для `alerts` и `chalice`:
+
+```yaml
+frontend:
+  image:
+    repository: <YOUR DOCKER REGISTRY>/frontend
+    pullPolicy: Always
+    tag: <YOUR TAG>
+  imagePullSecrets: 
+    - name: <YOUR SECRET>
+```
+
+После добавления нового раздела в файл выполните команду `openreplay -R` (которая находится в папке `scripts/helmcharts`), и ваш новый фронтенд должен заработать.
+
+Теперь всё готово, OpenReplay должен быть доступен на вашем поддомене. Вы можете создать учётную запись, посетив страницу `/signup` (т.е. openreplay.mycompany.com/signup).
+
+## Есть вопросы?
+
+Если вы столкнулись с какими-либо проблемами, подключитесь к нашему [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com) и получите помощь от нашего сообщества.

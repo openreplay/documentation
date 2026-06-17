@@ -1,0 +1,35 @@
+---
+title: "iOS SDK - seguimiento de entradas"
+metaTitle: "iOS SDK - seguimiento de entradas"
+metaDescription: "Detalles sobre el seguimiento de las entradas con el tracker de iOS"
+---
+
+El tracker escuchará el evento de cambio de valor (con debounce) y enviará el valor resultante al backend de OpenReplay.
+
+## Agregar entradas rastreadas
+
+### SwiftUI
+
+usa `.observeInput(text:label:masked)` para observar los eventos de entrada,
+
+- `text: String` - valor de texto de la entrada
+- `label: String` - etiqueta para la entrada registrada
+- `masked: Bool` - si es `true`, el tracker solo registrará el evento de entrada en sí, no el valor; no olvides agregar `.sensitive` para difuminar la entrada en la grabación.
+
+```swift
+import ORTracker
+
+TextField("Input", text: $text)
+.observeInput(text: $text, label: "tracker input #1", masked: Bool)
+
+```
+
+### UIKit
+
+UIKit usará el placeholder como etiqueta y sender.isSecureTextEntry para enmascarar la entrada
+
+```swift
+import ORTracker
+
+Analytics.shared.addObservedInput(inputEl)
+```

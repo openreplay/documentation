@@ -1,0 +1,118 @@
+---
+title: "Отправка метаданных"
+metaTitle: "Метаданные"
+metaDescription: "Как передавать метаданные пользователя в OpenReplay. На других платформах также известны как traits или пользовательские переменные."
+---
+import Aside from '~/components/Aside.astro'
+
+Метаданные позволяют добавлять дополнительную информацию о пользователях к повторам сессий в виде пар «ключ-значение». Эта функция расширяет ваши возможности по фильтрации и поиску записей сессий, упрощая выявление нужных сессий. Подробнее об отправке метаданных смотрите в этом [руководстве](/tutorials/metadata).
+
+<Aside>
+
+**Ключи метаданных задаются отдельно для каждого проекта**: ключи метаданных необходимо определить в dashboard, прежде чем вы сможете отправлять метаданные в OpenReplay. У каждого проекта может быть свой набор ключей метаданных.
+
+</Aside>
+
+## Добавление ключей метаданных в проект
+
+Чтобы настроить ключи метаданных:
+
+1. Перейдите в **Preferences > Metadata** в OpenReplay.
+2. Выберите проект, в который вы хотите добавить метаданные.
+3. Нажмите **Add Metadata**.
+4. Введите нужное имя ключа в поле **Field Name**.
+5. Нажмите **Add**, чтобы сохранить ключ метаданных.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/send-metadata/send_metadata.gif" alt="Отправка метаданных" style={{ width: '600px', height: 'auto' }} />
+</div>
+
+
+> **Ограничение:** В один проект можно добавить до 10 ключей метаданных.
+
+## Внедрение метаданных в повторы сессий
+
+После того как ключи метаданных определены, вы можете отправлять метаданные при записи сессий. Ниже приведены доступные способы реализации:
+
+### 1. С помощью NPM
+
+Внедрите метаданные при запуске трекера:
+
+```js
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+
+tracker.start({
+  userID: "john@doe.com",
+  metadata: {
+    balance: "10M",
+    plan: "free"
+  }
+});
+```
+
+Если метаданные становятся доступны только после запуска трекера, используйте метод `setMetadata`:
+
+```javascript
+tracker.setMetadata('plan', 'free'); // after tracker.start()
+```
+
+### 2. С помощью JavaScript-сниппета
+
+Чтобы включить метаданные в сниппет, измените переменную `startOpts`:
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+  var initOpts = {
+    projectKey: "project_key",
+    defaultInputMode: 2,
+    obscureTextNumbers: false,
+    obscureTextEmails: true,
+  };
+  const yourMetadata = { yourKey: 'yourValue' };
+  var startOpts = { userID: "", metadata: yourMetadata };
+  (function(A,s,a,y,e,r){
+    r=window.OpenReplay=[e,r,y,[s-1, e]];
+    s=document.createElement('script');s.src=A;s.async=!a;
+    ...
+  })("//static.openreplay.com/latest/openreplay.js",1,0,initOpts,startOpts);
+
+</script>
+```
+
+Если метаданные становятся доступны позже:
+
+```html
+<script>
+  OpenReplay.setMetadata("plan", "free");
+</script>
+```
+
+### 3. С помощью iOS SDK
+
+Внедрите метаданные в свое iOS-приложение:
+
+```swift
+import ORTracker
+
+ORTracker.shared.setMetadata(key: String, value: String)
+```
+
+## Фильтрация и поиск сессий по метаданным
+
+Ключи метаданных позволяют фильтровать и искать сессии в OpenReplay:
+
+1. Откройте **Omni-Search** в разделе Sessions.
+2. Выберите ключ метаданных (например, `plan`).
+3. Введите значение метаданных (например, `free`), чтобы отфильтровать записи сессий.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/send-metadata/filter_metatdata.gif" alt="Фильтрация метаданных" style={{ width: '600px', height: 'auto' }} />
+</div>
+
+Эта функция позволяет быстро и точно находить сессии на основе сведений, относящихся к конкретному пользователю.
+
+## Остались вопросы?
+Если у вас есть вопросы по этому процессу, свяжитесь с нами в нашем [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com).

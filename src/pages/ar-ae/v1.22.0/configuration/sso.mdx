@@ -1,0 +1,237 @@
+---
+title: "SSO"
+metaTitle: "SSO"
+metaDescription: "كيفية إعداد الدخول الموحّد (SSO) عبر SAML2."
+---
+import ORDynamicCode from '../../../../components/Code/ORDynamicCode';
+export const initialValues = {domain: "YOUR_DOMAIN", tenantKey: "TENANT_KEY", port: "PORT"};
+export const ignoreValues = {jumpcloud: "https://sso.jumpcloud.com"};
+
+الدخول الموحّد (عبر SAML2) متاح فقط في إصدار OpenReplay Enterprise Edition.
+
+## إعداد موفّر الهوية (IDP)
+
+في لوحة تحكم موفّر الهوية الخاص بك، أنشئ تطبيقًا جديدًا باسم `openreplay` (يمكنك استخدام هذه <a href="https://docs.openreplay.com/static/OpenReplay.png" target="_blank">الأيقونة</a>). في صفحة الإعداد، تأكّد من ضبط القيم التالية (يُرجى التأكّد من استبدال <code>{initialValues.domain}</code> بالقيمة الصحيحة، على سبيل المثال `https://openreplay.mycompany.com`):
+
+| المتغيّر | القيمة |
+|----------|-------------|
+| عنوان ACS URL (ويُسمّى أيضًا Single Sign On URL أو Consumer URL) | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/</code> |
+| Entity ID (ويُسمّى أيضًا Audience) | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code> |
+| عنوان تسجيل الخروج الموحّد (ويُسمّى أيضًا SLO URL) | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/sls/</code> (اختياري) |
+| Name ID (يكون أحيانًا قابلًا للتهيئة في قسم 'Attribute Statements' أو 'Parameters') | `Email` أو `EmailAddress` أو `urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress`، حسب موفّر الهوية الخاص بك |
+| مُهيِّئ SAML | اضبطه على `Service Provider` (اختياري) |
+
+في قسم 'Attribute Statements' أو قسم 'Parameters'، يُرجى التأكّد من تعريف الحقول التالية:
+
+| الحقل | القيمة |
+|----------|-------------|
+| tenantKey | <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> يمكن العثور على قيمته في Dashboard، ضمن 'Preferences' > 'Account' (يجب عدم إضافة هذه السمة إذا كنت تستخدم خطّة Cloud Dedicated الخاصة بنا) |
+| firstName | `user.firstName` |
+| lastName |  `user.lastName` |
+| internalId | المعرّف الداخلي أو `user.email` (معرّف المستخدم في نظام إدارة الهوية الخاص بك) (اختياري) |
+| role | دور المستخدم؛ وحسب موفّر الهوية الخاص بك قد يكون `user.role` أو `group` وما إلى ذلك. (اختياري، القيمة الافتراضية = `member`) |
+| adminPrivileges | ما إذا كان المستخدم يملك صلاحيات المسؤول أم لا؛ إذا احتوى هذا الحقل على أي قيمة مختلفة عن `false`، فسيُعتبر `true`. (اختياري، القيمة الافتراضية = `false`) |
+
+ينبغي الآن أن تكون لديك جميع القيم المطلوبة للخطوة/القسم التالي.
+
+## إعداد SSO (SAML2)
+
+إذا كنت تستخدم خطّة Cloud dedicated الخاصة بنا، انتقل إلى [Console](https://console.openreplay.com) ثم انقر على الخادم (instance) واضبط المتغيّرات ضمن قسم SSO.
+
+وإلّا، إذا كنت تشغّل إصدار Enterprise Edition الخاص بنا، فشغّل `openreplay -e` وأزل التعليق ثم حدّث متغيّرات البيئة أدناه في قسم `chalice`:
+
+| المتغيّر | الوصف |
+|----------|-------------|
+| idp_entityId | الـ `entityId` الخاص بموفّر الهوية لديك، ويُشار إليه أيضًا بـ `Issuer URL` |
+| idp_sso_url | الـ `singleSignOnService` الخاص بموفّر الهوية لديك، ويُشار إليه أيضًا بـ `SAML 2.0 Endpoint (HTTP)` |
+| idp_x509cert | الـ `x509cert`، يجب أن يكون سلسلة نصّية في سطر واحد، دون فواصل أسطر. يمكنك استخدام <a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">هذه الأداة</a> لتنسيق قيمتك |
+| idp_name | اسم موفّر الهوية (اختياري) |
+| idp_sls_url | الـ `singleLogoutService` الخاص بموفّر الهوية لديك، ويُشار إليه أيضًا بـ `SLO Endpoint (HTTP)` (اختياري) |
+| enforce_SSO | إذا ضُبط على `true`، فستُحظَر جميع عمليات الاتصال باسم المستخدم وكلمة المرور (اختياري، القيمة الافتراضية=`false`) |
+
+ثم احفظ واخرج باستخدام `:wq` لكي تدخل التغييرات حيّز التنفيذ:
+
+## شهادة OpenReplay
+
+هذا اختياري؛ يمكنك إضافة شهادة x509 لمزيد من الأمان في SSO:
+
+1. شغّل هذا الأمر في خادمك أو في جهازك الآمن (يمكنك تغيير مدّة صلاحية شهادتك وفقًا لاحتياجاتك):
+```bash
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout openreplay-sso.key -out openreplay-sso.crt
+```
+2. في خادمك، شغّل `openreplay -e`
+3. ضمن قسم `chalice`، أضف متغيّرات البيئة التالية:
+- **sp_crt**: يجب أن يكون سلسلة نصّية في سطر واحد، دون فواصل أسطر، من ملف 'openreplay-sso.crt' الذي تمّ إنشاؤه (يمكنك استخدام <a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">هذه الأداة</a> لتنسيق قيمتك)
+- **sp_key**: يجب أن يكون سلسلة نصّية في سطر واحد، دون فواصل أسطر، من ملف 'openreplay-sso.key' الذي تمّ إنشاؤه
+4. احفظ واخرج باستخدام `:wq` لكي تدخل التغييرات حيّز التنفيذ
+5. أضف ملف 'openreplay-sso.crt' الذي تمّ إنشاؤه إلى إعداد تطبيق موفّر الهوية الخاص بك
+
+## مثال باستخدام Okta
+
+1. سجّل الدخول إلى لوحة تحكم إدارة Okta الخاصة بك وانتقل إلى 'Applications' > 'Applications'
+2. اضغط 'Create new app integration'، ثم اختر SAML 2.0 واضغط 'Next'
+3. اضبط 'App Name' على OpenReplay (يمكنك رفع هذه <a href="https://docs.openreplay.com/static/OpenReplay.png" target="_blank">الأيقونة</a>) لتطبيقك) ثم اضغط 'Next'
+4. اضبط:
+ - **Single sign on URL** على <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/</code>
+ - **Audience URI (SP Entity ID)** على <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code>
+ - **Name ID format** على `EmailAddress`
+5. عرّف الحقول أدناه في 'Attribute Statements':
+ - **tenantKey**: التنسيق `Basic` واضبط القيمة على <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>، الموجودة في لوحة تحكم OpenReplay ضمن 'Preferences' > 'Account' (يجب عدم إضافة هذه السمة إذا كنت تستخدم خطّة Cloud Dedicated الخاصة بنا)
+ - **firstName**: التنسيق `Basic` واضبط القيمة على `user.firstName`
+ - **lastName**: التنسيق `Basic` واضبط القيمة على `user.lastName`
+ - **internalId**: التنسيق `Basic` واضبط القيمة على `user.email`
+6. عرّف الحقل أدناه في 'Group Attribute Statements':
+ - **role**: التنسيق `Basic`، المرشّح `Match Regex`، القيمة `.*` (أو يمكنك تحديد مرشّح وتعبير نمطي مختلفَين وفقًا لاحتياجاتك)
+ - **adminPrivileges**: التنسيق `Basic`، المرشّح `Match Regex`، القيمة `admin` (سيحصل المستخدم الحالي على `admin privileges` إذا كان جزءًا من مجموعة **admin**)
+7. اضغط Next، اختر 'I'm an Okta customer adding an internal app' و 'This is an internal app that we have created' ثم اضغط 'Finish'
+8. في علامة التبويب Sign On، مرّر للأسفل واضغط 'View Setup Instructions' لرؤية إعداد SAML2 الخاص بك
+
+إذا كنت تستخدم خطّة Cloud dedicated الخاصة بنا، انتقل إلى [Console](https://console.openreplay.com) ثم انقر على الخادم (instance) واضبط المتغيّرات ضمن قسم SSO.
+
+وإلّا، إذا كنت تشغّل إصدار Enterprise Edition الخاص بنا:
+
+9.  اتّصل عبر SSH بتثبيت OpenReplay الخاص بك وشغّل `openreplay -e`
+10.  ضمن قسم `chalice`، أزل التعليق ثم اضبط متغيّرات البيئة التالية:
+   - **idp_entityId**: Identity Provider Issuer
+   - **idp_sso_url**: Identity Provider Single Sign-On URL
+   - **idp_x509cert**: X.509 Certificate، يجب أن يكون سلسلة نصّية في سطر واحد، دون فواصل أسطر (يمكنك استخدام <a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">هذه الأداة</a> لتنسيق قيمتك)
+   - **idp_name**: Okta
+11.  أخيرًا، احفظ واخرج باستخدام `:wq` لكي تدخل التغييرات حيّز التنفيذ
+
+## مثال باستخدام Azure Active Directory
+
+1. سجّل الدخول إلى بوّابة Azure الخاصة بك وانتقل إلى 'Azure Active Directory'
+2. اضغط '+ Add'، اختر 'Enterprise application' ثم انقر 'Create your own application'
+3. اضبط 'App Name' على OpenReplay ثم اختر 'Integrate any other application you don't find in the gallery (Non-gallery)' واضغط 'Create'
+4. انتقل إلى 'Single sign-on' في القائمة الجانبية اليسرى واضبط القيم أدناه في كتلة 'Basic SAML Configuration':
+ - **Identifier (Entity ID)** على <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code>
+ - **Reply URL (Assertion Consumer Service URL)** على <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/</code>
+ - **Logout URL** على <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/sls/</code>
+5. أضف المطالبات (claims) أدناه في كتلة 'Attribute & Claims' وتأكّد من ترك حقل 'Namespace' فارغًا لكلٍّ منها:
+ - **tenantKey**: اضبط القيمة على <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>، الموجودة في لوحة تحكم OpenReplay ضمن 'Preferences' > 'Account' (يجب عدم إضافة هذه السمة/المطالبة إذا كنت تستخدم خطّة Cloud Dedicated الخاصة بنا)
+ - **firstName**: اضبط القيمة على `user.givenname`
+ - **lastName**: اضبط القيمة على `user.surname`
+ - **internalId**: اضبط القيمة على `user.mail`
+6. انتقل إلى 'Users and groups' وعيّن المستخدمين الذين تختارهم للتطبيق
+
+إذا كنت تستخدم خطّة Cloud dedicated الخاصة بنا، انتقل إلى [Console](https://console.openreplay.com) ثم انقر على الخادم (instance) واضبط المتغيّرات ضمن قسم SSO (توجد القيم في 'Azure Active Directory' > 'OpenReplay' > 'Single sign-on').
+
+وإلّا، إذا كنت تشغّل إصدار Enterprise Edition الخاص بنا:
+
+7. اتّصل عبر SSH بتثبيت OpenReplay الخاص بك وشغّل `openreplay -e`
+8. ضمن قسم `chalice`، أزل التعليق ثم اضبط متغيّرات البيئة التالية (توجد القيم في 'Azure Active Directory' > 'OpenReplay' > 'Single sign-on'):
+   - **idp_entityId**: Azure AD Identifier
+   - **idp_sso_url**: Login URL
+   - **idp_sls_url**: Logout URL
+   - **idp_x509cert**: X.509 Certificate، يجب أن يكون سلسلة نصّية في سطر واحد، دون فواصل أسطر (يمكنك استخدام <a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">هذه الأداة</a> لتنسيق قيمتك)
+   - **idp_name**: Active Directory
+9.  أخيرًا، احفظ واخرج باستخدام `:wq` لكي تدخل التغييرات حيّز التنفيذ
+
+## مثال باستخدام Google Workspace (المعروف سابقًا باسم G Suite)
+
+#### إضافة سمات مخصّصة:
+
+1. في وحدة تحكم مسؤول Google، انتقل إلى 'Directory' > 'Users' > 'More options' > 'Manage custom attributes'.
+2. انقر 'Add Custom Attribute'.
+3. اضبط الحقول التالية:
+ - **Category**: 'OpenReplay'
+ - **Custom fields**:
+- **Name**: 'role'
+- **Info type**: 'Text'
+- **Visibility**: 'Visible to user and admin'
+- **No. of values**: 'Single-value'
+ - **Custom fields**:
+- **Name**: 'adminPrivileges'
+- **Info type**: 'Yes or No'
+- **Visibility**: 'Visible to user and admin'
+- **No. of values**: 'Single-value'
+4. انقر 'Add'
+5. لإضافة قيم إلى السمات المخصّصة الجديدة، انتقل إلى 'Users'
+6. اختر المستخدم (أو المستخدمين) المطلوب
+7. انقر 'User information' ثم حرّر قسم 'OpenReplay'
+8. غيّر قيمة **role** إلى الدور المطلوب في 'OpenReplay' (يجب أن يتطابق الدور مع الدور الذي تمّ إنشاؤه في لوحة تحكم OpenReplay ضمن 'Preferences' > 'Roles')
+9. غيّر قيمة **adminPrivileges** إلى 'Yes' إذا كان المستخدم مسموحًا له بامتلاك صلاحيات المسؤول في OpenReplay
+10. انقر 'Save'
+
+#### الإعداد:
+
+1. سجّل الدخول إلى وحدة تحكم مسؤول Google الخاصة بك وانتقل إلى 'Apps'
+2. اضغط 'Web and mobile apps' ثم انقر 'Add app' > 'Add custom SAML app'
+3. اضبط 'App name' على OpenReplay (يمكنك رفع هذه <a href="https://docs.openreplay.com/static/OpenReplay.png" target="_blank">الأيقونة</a> لـ 'App icon'') ثم اضغط 'Continue'
+4. انسخ 'SSO URL' و 'Entity ID' و 'Certificate' ثم انقر 'Continue' (سنستخدم هذه القيم في الخطوة 11)
+5. اضبط:
+ - **ACS URL** على <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/>/</code> (توجد <code>{initialValues.tenantKey}</code> في لوحة تحكم OpenReplay ضمن 'Preferences' > 'Account'، لكن إذا كنت تستخدم خطّة Cloud Dedicated الخاصة بنا، اترك قيمة tenantKey فارغة)
+ - **Entity ID** على <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code>
+ - **Name ID format** على `Email`
+ - **Name ID** على `Basic information > Primary Email`
+6. انقر 'Continue' ثم اضغط 'Add Mapping' لإضافة السمات أدناه:
+ - `Basic information > First Name` -> **firstName**
+ - `Basic information > Last Name` -> **lastName**
+ - `Basic information > Primary Email` -> **internalId**
+ - `OpenReplay > role` -> **role**
+ - `OpenReplay > adminPrivileges` -> **adminPrivileges**
+7. انقر 'Finish'
+8.  في وحدة تحكم مسؤول Google، انتقل إلى 'Apps' > 'Web and mobile apps' واختر 'OpenReplay'
+9.  انقر 'User access'، اختر 'ON for everyone' ثم اضغط 'Save'
+
+إذا كنت تستخدم خطّة Cloud dedicated الخاصة بنا، انتقل إلى [Console](https://console.openreplay.com) ثم انقر على الخادم (instance) واضبط المتغيّرات ضمن قسم SSO.
+
+وإلّا، إذا كنت تشغّل إصدار Enterprise Edition الخاص بنا:
+
+10. اتّصل عبر SSH بتثبيت OpenReplay الخاص بك وشغّل `openreplay -e`
+11. ضمن قسم `chalice > env`، أزل التعليق واضبط السمات التالية باستخدام القيم من الخطوة 4:
+   - **idp_sso_url**: الصق قيمة 'SSO URL'
+   - **idp_entityId**: الصق قيمة 'Entity ID'
+   - **idp_x509cert**: استخدم <a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">هذه الأداة</a> لتنسيق الشهادة المنسوخة/المُنزَّلة
+   - **idp_name**: اضبط القيمة على `G-Suite`
+   - **idp_tenantKey**: <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> الموجودة في لوحة تحكم OpenReplay ضمن 'Preferences' > 'Account'
+12. أخيرًا، احفظ واخرج باستخدام `:wq` لكي تدخل التغييرات حيّز التنفيذ
+
+## مثال باستخدام JumpCloud
+
+1. سجّل الدخول إلى لوحة تحكم إدارة JumpCloud الخاصة بك وفي القائمة اليسرى، انتقل إلى 'SSO'
+2. اضغط '+ Add New Application'، ثم اختر 'Custom SAML App'
+3. اضبط 'Display Label' على OpenReplay (يمكنك رفع هذه <a href="https://docs.openreplay.com/static/OpenReplay150x150.png" target="_blank">الأيقونة</a> لتطبيقك) ثم انتقل إلى علامة التبويب 'SSO'
+4. اضبط:
+- **IdP Entity ID** على <code>openreplay/<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> (توجد <code>{initialValues.tenantKey}</code> في لوحة تحكم OpenReplay ضمن 'Preferences' > 'Account'، لكن إذا كنت تستخدم خطّة Cloud Dedicated الخاصة بنا، اترك قيمة tenantKey فارغة)
+- **SP Entity ID** على <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code>
+- **ACS URL** على <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/</code>
+- **SAMLSubject NameID** على `email`
+- **SAMLSubject NameID Format:** على `urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress`
+- **Signature Algorithm** على `RSA-SHA256`
+- حدّد **Sign Assertion**
+- **IDP URL** بحيث ينتهي بـ <code>openreplay-<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> (لا يمكن تغيير هذه القيمة لاحقًا؛ إذا كنت تستخدم خطّة Cloud Dedicated الخاصة بنا، اترك جزء tenantKey فارغًا)
+5. إذا اتبعت تعليمات <a href="#openreplay-certificate">OpenReplay-Certificate</a>، يمكنك رفع ملف 'openreplay-sso.crt' الذي تمّ إنشاؤه بالضغط على 'Upload SP Certificate'، وإلّا تجاهل هذه الخطوة
+6. عرّف الحقول أدناه في 'USER ATTRIBUTE MAPPING' بالضغط على زرّ 'add attribute':
+- **firstName**: اضبط القيمة على `firstname`
+- **lastName**: اضبط القيمة على `lastname`
+- **internalId**: اضبط القيمة على `email`
+- **role**: اختياري، دور المستخدم في OpenReplay؛ إذا كان قيمة ثابتة لجميع المستخدمين، فعليك تعريفه في الخطوة التالية،
+وإلّا فعليك إضافة سمة نصّية (string) جديدة إلى مجموعة JumpCloud، وتسميتها `OpenReplayRole` وضبط القيمة على اسم الدور، ثم في إعداد SSO، اختر 'Custom User or Group Attribute' واضبط القيمة على `OpenReplayRole`.
+- **adminPrivileges**: اختياري، إذا كان قيمة ثابتة لجميع المستخدمين، فعليك تعريفه في الخطوة التالية، وإلّا فعليك إضافة سمة منطقية (boolean) جديدة إلى مجموعة JumpCloud، وتسميتها `OpenReplayAdminPrivileges` وضبط القيمة على اسم الدور، ثم في إعداد SSO، اختر 'Custom User or Group Attribute' واضبط القيمة على `OpenReplayAdminPrivileges`.
+7. عرّف الحقول أدناه في 'CONSTANT ATTRIBUTES' بالضغط على زرّ 'add attribute':
+- **tenantKey**: اضبط القيمة على <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>، الموجودة في لوحة تحكم OpenReplay ضمن 'Preferences' > 'Account' (يجب عدم إضافة هذه السمة إذا كنت تستخدم خطّة Cloud Dedicated الخاصة بنا)
+- **role**: اختياري، تجاهله إذا تمّ تعريفه في الخطوة السابقة، دور المستخدم في OpenReplay، يجب أن يتطابق مع اسم دور مُعرَّف مسبقًا في OpenReplay (القيمة الافتراضية = `member`)
+- **adminPrivileges**: اختياري، تجاهله إذا تمّ تعريفه في الخطوة السابقة، اضبط القيمة على `true` إذا كنت تريد منح المستخدمين الجدد صلاحية المسؤول، و `false` إذا لم تكن تريد ذلك
+(القيمة الافتراضية = `false`)
+8. في هذه المرحلة، يمكنك الانتقال إلى علامة التبويب 'User Groups'، واختيار مجموعة المستخدمين الذين سيكون لديهم وصول إلى OpenReplay، أو يمكنك فعل ذلك لاحقًا
+9. اضغط 'activate' و 'continue' في النافذة المنبثقة للتأكيد
+10. اضغط على أيقونة تطبيق OpenReplay الجديد، ثم في القائمة المنسدلة اليسرى 'IDP Certificate Valid' اختر 'Download certificate'
+
+إذا كنت تستخدم خطّة Cloud dedicated الخاصة بنا، انتقل إلى [Console](https://console.openreplay.com) ثم انقر على الخادم (instance) واضبط المتغيّرات ضمن قسم SSO.
+
+وإلّا، إذا كنت تشغّل إصدار Enterprise Edition الخاص بنا:
+
+11. اتّصل عبر SSH بتثبيت OpenReplay الخاص بك وشغّل `openreplay -e`
+12. ضمن قسم `chalice`، أزل التعليق ثم اضبط متغيّرات البيئة التالية:
+- **idp_entityId**: <code>openreplay/<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>
+- **idp_sso_url**: <code>{ignoreValues.jumpcloud}/saml2/openreplay-<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>
+- **idp_x509cert**: الشهادة المُنزَّلة، يجب أن تكون سلسلة نصّية في سطر واحد، دون فواصل أسطر (يمكنك استخدام <a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">هذه الأداة</a> لتنسيق قيمتك)
+- **idp_name**: JumpCloud
+13.  أخيرًا، احفظ واخرج باستخدام `:wq` لكي تدخل التغييرات حيّز التنفيذ
+
+## الأخطاء
+
+### The response was received at http instead of http
+
+هذا أمر شائع جدًّا، ويعود إلى عدم وجود ترويسة 'X-Forwarded-Proto' في الطلب. ولحلّ ذلك، تأكّد من أنّ موازن التحميل (Load Balancer) يقوم بإعادة توجيه الترويسة بشكل صحيح إلى الواجهة الخلفية (backend) لـ OpenReplay.

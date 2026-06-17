@@ -1,0 +1,363 @@
+---
+title: "使用 Redux 插件捕获状态变化"
+metaTitle: "使用 Redux 插件捕获状态变化"
+metaDescription: "了解如何使用 Redux 插件捕获状态变化并在会话回放中将其可视化"
+---
+import Aside from '~/components/Aside.astro'
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="观看如何使用 Redux 跟踪状态"
+  description="如果你不喜欢阅读，可以观看这个视频教程，它将向你展示在使用 Redux 时如何跟踪你的 React 应用的状态"
+  videoURL="https://www.youtube.com/watch?v=vSg4_i-jCj0"
+  />
+
+如果你在回放用户会话时需要更多的可见性，那么能够一窥应用状态会非常有帮助。
+
+在 Redux 的场景中，OpenReplay [提供了一个插件](https://docs.openreplay.com/plugins/redux)，让你能够集成到 store 的内部运作中。这个插件将让你看到 Redux store 的状态，以及在录制的会话期间所派发的 actions。
+
+设置完成后，你应该能够观察到 store 中的变化，如下方截图所示：
+
+![预期结果](images/redux-outcome.png)
+
+## 在 Next.js 项目中设置 Redux
+
+在本教程中，我们将使用[这个仓库](https://github.com/deleteman/nextjs-commerce-example/tree/redux-store)（**redux-store** 分支），这是一个用 Next.js 构建的通用电商网站。
+
+在这个项目中，我们将用一组从外部 API 获取的新产品替换一组重点展示的产品。
+
+为此，我们将添加一个使用 Axios 请求产品的函数，并且我们将在一个 Redux action 中执行它。
+
+**注意：** 这是一个复杂的 Next.js 应用，因此它可能不遵循经典待办事项（To-Do）应用中常见的标准结构，但只要跟随本教程，你应该能够跟上这些变化。
+
+**记住：** 你随时可以克隆该仓库并自行查看代码。
+
+我们将首先使用以下命令安装所有主要依赖项：
+
+```bash
+npm i next-redux-wrapper redux react-redux redux-thunk redux-devtools-extension
+```
+
+完成这一步后，在你项目的根目录中创建一个名为 `store` 的文件夹，并重现以下结构：
+
+![文件夹结构](images/folder-structure.png)
+
+`types.js` 文件将包含我们即将定义的两个 actions 的类型定义：
+
+```bash
+export const GET_PRODUCTS = 'GET_PRODUCTS'
+export const PRODUCTS_ERROR = 'PRODUCTS_ERROR'
+```
+
+`store.js` 文件将导出一个函数，该函数在被调用时会创建一个新的 Redux store。这是因为我们需要添加一个由 Redux 插件返回的新 Redux 中间件（稍后会详细介绍）。
+
+```jsx
+import { createStore, applyMiddleware } from 'redux'
+import thunk from 'redux-thunk'
+import { composeWithDevTools } from 'redux-devtools-extension'
+
+import rootReducer from './reducers'
+
+const initalState = {}
+
+export default function createReduxStore(extraMiddleware = []) {
+  const middleware = [thunk, ...extraMiddleware]
+
+  const store = createStore(
+    rootReducer,
+    initalState,
+    composeWithDevTools(applyMiddleware(...middleware))
+  )
+  return store
+}
+```
+
+我们的 reducer 文件（`makeUpReducer.js`）将使用产品列表或在出现问题时返回的错误消息来更新状态。
+
+```jsx
+import { GET_PRODUCTS, PRODUCTS_ERROR } from '../types'
+
+const initialState = {
+  makeUpProducts: [],
+  loading: true,
+}
+
+export default function (state = initialState, action) {
+  switch (action.type) {
+    case GET_PRODUCTS:
+      return {
+        ...state,
+        makeUpProducts: action.payload,
+        loading: false,
+      }
+    case PRODUCTS_ERROR:
+      return {
+        loading: false,
+        error: action.payload,
+      }
+    default:
+      return state
+  }
+}
+```
+
+最后，action 文件将定义一个函数，负责从外部 API 拉取产品列表并派发正确的 action 和 payload：
+
+```jsx
+import { GET_PRODUCTS, PRODUCTS_ERROR } from '../types'
+import axios from 'axios'
+import slugify from 'slugify'
+
+export const getMakeUpProducts = () => async (dispatch: any) => {
+  console.log('Getting the makeup products')
+
+  try {
+    let { data } = await axios.get(
+      'https://makeup-api.herokuapp.com/api/v1/products.json?brand=maybelline&apiKey=123fff132'
+    )
+    const products = data
+
+    let newProds = products.map((p: any) => {
+      return {
+        id: '' + p.id,
+        slug: slugify(p.name),
+        name: p.name,
+        description: '',
+        images: [{ url: p.image_link }],
+        variants: [],
+        price: {
+          value: +p.price,
+        },
+        options: [],
+      }
+    })
+
+    dispatch({
+      type: GET_PRODUCTS,
+      payload: newProds,
+    })
+  } catch (e) {
+    dispatch({
+      type: PRODUCTS_ERROR,
+      payload: e,
+    })
+  }
+}
+```
+
+## 设置 tracker provider
+
+为了将 tracker 注入应用中，我们将使用一个 context，其提供方式如 [Next.js 教程](https://docs.openreplay.com/tutorials/next)所示。
+
+这个 provider 将允许你配置一组插件，在我们的例子中，我们将使用 Redux 插件，方式如下（在 `_app.tsx` 文件内）
+
+```jsx
+//...more imports here....
+import TrackerProvider from '../context/trackerProvider'
+import trackerRedux from '@openreplay/tracker-redux'
+
+// ... more code here....
+
+export default function MyApp({ Component, pageProps }: AppProps) {
+  const Layout = (Component as any).Layout || Noop
+
+  useEffect(() => {
+    document.body.classList?.remove('loading')
+  }, [])
+
+  let plugins = [
+    {
+      fn: trackerRedux,
+      name: 'redux',
+      config: {},
+    },
+  ]
+
+  return (
+    <TrackerProvider config={{ plugins }}>
+      <Head />
+      <ManagedUIContext>
+        <Layout pageProps={pageProps}>
+          <Component {...pageProps} />
+        </Layout>
+      </ManagedUIContext>
+    </TrackerProvider>
+  )
+}
+```
+
+现在，这段代码让你能够用正确的插件设置 tracker，但为了让插件正常工作，我们需要访问在调用插件时返回的中间件。这意味着我们必须记录插件返回的值，以便在其他地方使用它们。在本例中，我们将在调用上面的 `createReduxStore` 函数时使用它。
+
+为此，我们必须扩展 `TrackerProvider`，以确保我们将返回值保存在 state 中，方式如下（你可以在[这里](https://github.com/deleteman/nextjs-commerce-example/blob/redux-store/site/context/trackerProvider.js)查看此文件的完整版本）：
+
+```jsx
+import { createContext, useCallback } from 'react'
+import Tracker from '@openreplay/tracker'
+import { v4 as uuidV4 } from 'uuid'
+import { useReducer } from 'react'
+
+export const TrackerContext = createContext()
+function defaultGetUserId() {
+  return uuidV4()
+}
+function newTracker(config) {
+  ///code here
+}
+function reducer(state, action) {
+  switch (action.type) {
+    case 'init': {
+      if (!state.tracker) {
+        console.log('Instantiaing the tracker for the first time...')
+        let t = newTracker(state.config)
+        let pluginsReturnedValue = {}
+        if (state.config.plugins) {
+          state.config.plugins.forEach((p) => {
+            console.log('Using plugin...')
+            pluginsReturnedValue[p.name] = t.use(p.fn(p.config)) //keep track
+          })
+        }
+        return {
+          ...state,
+          pluginsReturnedValue: pluginsReturnedValue, //update the state
+          tracker: t,
+        }
+      }
+      return state
+    }
+    case 'start': {
+      console.log('Starting tracker...')
+      state.tracker.start()
+      return state
+    }
+  }
+}
+export default function TrackerProvider({ children, config = {} }) {
+  let [state, dispatch] = useReducer(reducer, {
+    tracker: null,
+    pluginsReturnedValue: {},
+    config,
+  })
+  let value = {
+    startTracking: () => dispatch({ type: 'start' }),
+    initTracker: () => dispatch({ type: 'init' }),
+    pluginsReturnedValues: { ...state.pluginsReturnedValue }, //inject the state
+  }
+  return (
+    <TrackerContext.Provider value={value}>{children}</TrackerContext.Provider>
+  )
+}
+```
+
+在 `init` action 内部，我们还会记录使用我们的插件调用 `use` 方法时返回的值。并且我们将该字典保存在 `state.pluginsReturnedValue` 属性中。我们通过 `pluginsReturnedValues` 变量将其提供给所有子组件。
+
+这段逻辑让你能够在初始化 tracker 时使用插件，然后稍后访问并使用该中间件。
+
+## 使用新的中间件创建 Redux store
+
+现在插件已经能够工作，我们需要初始化 Redux store，并且我们需要在 Tracker 初始化之后、调用 `start` 方法之前进行此操作。
+
+为此，我选择了 `ManagedUI` 组件，它直接在 `_app.tsx` 文件中使用。这个组件被我们的 Tracker Provider 包裹，这意味着它将能够访问我们共享的 context。
+
+该组件如下所示：
+
+```jsx
+export const ManagedUIContext: FC = ({ children }) => {
+  const { initTracker, pluginsReturnedValues } = useContext(TrackerContext)
+  const [store, setStore] = useState<Store>()
+
+  useEffect(() => {
+    initTracker()
+  }, [])
+
+  useEffect(() => {
+    if (!pluginsReturnedValues['redux']) return
+    let middleWares = pluginsReturnedValues['redux']
+      ? [pluginsReturnedValues['redux']]
+      : []
+    setStore(createReduxStore(middleWares))
+  }, [pluginsReturnedValues])
+
+  return (
+    <div>
+      {store && (
+        <Provider store={store}>
+          <UIProvider>
+            <ThemeProvider>{children}</ThemeProvider>
+          </UIProvider>
+        </Provider>
+      )}
+    </div>
+  )
+}
+```
+
+从这个文件中需要重点掌握的内容是：
+
+1. 我们从 context 中获取 `initTracker` 函数和 `pluginsReturnedValues` 属性。
+2. 我们仅在组件挂载时调用第一个函数一次（通过第一个 `useEffect`）。
+3. 然后，只有当 `pluginsReturnedValues` 变量包含我们的返回值时，我们才创建 Redux store。第二个 `useEffect` 将被调用两次，一次是在页面加载时，另一次是在 `initTracker` 方法修改我们的 state 变量时。第二次时，我们将使用存储在 `pluginsReturnedValues` 中的中间件来创建 store。
+
+## 启动 tracker
+
+插件设置完成，Redux store 也已正确创建，现在我们要做的就是调用 tracker 的 `start` 方法。
+
+实现此功能的逻辑将被添加到 index.tsx 文件中，你可以查看[此文件](https://github.com/deleteman/nextjs-commerce-example/blob/redux-store/site/pages/index.tsx)的完整源代码。
+
+我们需要查看的这段代码的相关部分如下：
+
+```jsx
+// imports and more logic goes here...
+
+export default function Home({
+  products,
+}: InferGetStaticPropsType<typeof getStaticProps>) {
+
+  const { startTracking } = useContext(TrackerContext)
+  const dispatch = useDispatch()
+  const makeUpProductsList = useSelector((state: any) => state.makeUpProducts)
+  const { makeUpProducts } = makeUpProductsList
+
+  useEffect(() => {
+    async function getProds() {
+      await startTracking()
+      dispatch(getMakeUpProducts() as any)
+    }
+    getProds()
+  }, [dispatch])
+
+  return (
+    <>
+      <Grid variant="filled">
+        {products.slice(0, 3).map((product: any, i: number) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            imgProps={{
+              width: i === 0 ? 1080 : 540,
+              height: i === 0 ? 1080 : 540,
+              priority: true,
+            }}
+          />
+        ))}
+      </Grid>
+      <Marquee variant="secondary">
+        {makeUpProducts.slice(0, 3).map((product: any, i: number) => (
+          <ProductCard key={product.id} product={product} variant="slim" />
+        ))}
+      </Marquee>
+      <!-- more code here -->
+    </>
+  )
+}
+```
+
+我们只会使用来自 Tracker context provider 的 `startTracking` 函数，以及来自 Redux 的 `useSelector` hook 来捕获返回的产品列表。
+
+`useEffect` hook 将触发对 `startTracking` 的调用，并通过派发 `getMakeUpProducts` 函数调用来获取新的化妆品产品列表。
+
+至此，你应该能够部署你的应用了（前提是你已按照[本教程](https://docs.openreplay.com/tutorials/next)中所述配置好 API 密钥）
+
+## 有疑问吗？
+
+你可以[查看这个仓库](https://github.com/deleteman/nextjs-commerce-example/tree/redux-store)，获取一个带有 Redux store 的可运行 Next.js 应用的**完整源代码**。
+
+如果你在设置 Redux 插件时遇到任何问题，请通过我们的 [Slack 社区](https://slack.openreplay.com/)联系我们，直接向我们的开发人员提问！

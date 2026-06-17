@@ -1,0 +1,59 @@
+---
+title: "استخدام OpenReplay مع Vue"
+metaTitle: "إضافة متتبع OpenReplay إلى تطبيق Vue الخاص بك"
+metaDescription: "تعلّم كيفية تشغيل المتتبع في تطبيق Vue الخاص بك"
+---
+import GoDeeperFooter from '~/components/go-deeper-footer.astro'
+import Aside from '~/components/Aside.astro'
+
+تشغيل المتتبع في تطبيق Vue أمر بسيط للغاية. 
+
+## إضافة كود التتبع
+
+على الرغم من أنه بإمكانك [الحصول على نسخة جاهزة للنسخ واللصق من الكود مباشرةً من المنصة عند إنشاء مشروع جديد](/using-or/snippet#getting-the-snippet)، إلا أن هذا الكود بسيط جدًا وسيجعل عملية التخصيص وإضافة الإضافات الأخرى أصعب بكثير.
+
+بافتراض أنك تبني تطبيقًا من نوع SPA (Single Page Application)، فكل ما عليك فعله هو إضافة الكود التالي إلى سكربت setup في ملفك الرئيسي.
+
+```html
+<script setup>
+//... your code here
+const tracker = new Tracker({
+  projectKey: "<your project key>"
+});
+
+tracker.start();
+//... more code here
+</script>
+```
+
+
+<Aside type="tip">
+**ملاحظة لمستخدمي الاستضافة الذاتية (self-hosted)**: إذا كنت تستخدم نسخة الاستضافة الذاتية من OpenReplay، فسيتعين عليك أيضًا تحديد خاصية الإعداد `ingestPoint`. 
+تحدد هذه الخاصية نقطة استقبال (endpoint) بيانات المتتبع. لا يحتاج مستخدمو السحابة إلى ذلك، 
+لأن المتتبع سيعرف افتراضيًا مكان نسخة SaaS من نقطة الاستقبال هذه، ولكن إذا كنت تستضيفه ذاتيًا، فستحتاج إلى تحديدها 
+(يجب أن تكون بصيغة شبيهة بـ `https://openreplay.mydomain.com/ingest`) 
+</Aside>
+
+### التعامل مع "projectKey" في الكود الخاص بك
+
+كملاحظة، فإن `projectKey` الذي تقوم بإعداده هو المفتاح الذي توفره منصة OpenReplay. 
+لأسباب أمنية، لا ينبغي تخزين هذه القيمة بشكل ثابت (hardcoded) في الكود، بل في نوع من ملفات/أنظمة الإعداد.
+
+أحد الخيارات هو إضافة متغير بيئة في ملف `.env` في جذر مشروعك ووضع البادئة `VITE_` على المتغير، مما يجعله متاحًا لك في كود Vue الخاص بك.
+يمكنك استخدامه لاحقًا عبر `import.meta.env.<your variable name>`.
+هكذا:
+
+```javascript
+const tracker = new Tracker({
+  projectKey: import.meta.env.VITE_VUE_APP_PROJECT_KEY,
+});
+ ```
+
+## هل تبني شيئًا أكثر تعقيدًا؟
+إذا كنت تبني تطبيقًا معقدًا باستخدام Vue، فمن المرجح أنك تستخدم [Nuxt](/using-or/nuxt) أو شيئًا مشابهًا. تأكد من الاطلاع على [قسم الإعداد](/using-or) لدينا للعثور على إطار العمل الذي تعمل به.
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات في إعداد المتتبع في مشروع Vue الخاص بك، يرجى التواصل معنا عبر [مجتمعنا على Slack](https://slack.openreplay.com/) واطرح أسئلتك على مطورينا مباشرةً!
+
+<GoDeeperFooter />

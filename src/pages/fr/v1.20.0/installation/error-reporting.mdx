@@ -1,0 +1,79 @@
+---
+title: "Signalement des erreurs"
+metaTitle: "Signalement des erreurs"
+metaDescription: "Comment fonctionne le signalement des erreurs, ce qui est envoyé à l'onglet 'Errors' et comment signaler manuellement les erreurs et les exceptions"
+---
+
+Le signalement des erreurs est très important pour surveiller la stabilité de votre application, repérer les régressions à l'avance et savoir quels problèmes surviennent le plus souvent chez vos utilisateurs. Par défaut, toute exception non interceptée est enregistrée dans l'onglet 'Errors' :
+
+![Errors Tab](/static/errors-tab.jpg#center)
+
+De plus, les erreurs enregistrées apparaîtront également dans l'enregistrement de session, sous l'onglet 'Console' dans les DevTools :
+
+![Exceptions Tab](/static/exceptions-tab-in-recording.jpg#center)
+
+## Enregistrer manuellement les exceptions
+
+Le tracker OpenReplay prend en charge l'enregistrement de 3 types d'erreurs :
+* Exceptions interceptées - [Error](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error)
+* Promesses rejetées - [PromiseRejectionEvent](https://developer.mozilla.org/en-US/docs/Web/API/PromiseRejectionEvent)
+* Événements d'erreur (onError) - [ErrorEvent](https://developer.mozilla.org/en-US/docs/Web/API/ErrorEvent)
+
+Tous les types ci-dessus peuvent être signalés à l'aide d'une seule méthode :
+
+```js
+tracker.handleError(error, metaObject); // metaObject is optional and is a flat object
+```
+
+Examinons un exemple pour chaque type d'erreur :
+
+### Exceptions interceptées (Error)
+
+Par défaut, les exceptions interceptées ne sont pas enregistrées dans l'onglet 'Console'. Pour signaler une erreur, nous pouvons procéder comme suit :
+
+```js
+try {
+    // application code
+}
+catch(err) {
+    // application code that handles the error
+    tracker.handleError(error, metaObject); // metaObject is optional and is a flat object
+}
+```
+### Promesses rejetées (PromiseRejectionEvent)
+
+Si une Promesse est rejetée et que nous voulons signaler l'erreur à OpenReplay, nous pouvons procéder comme suit :
+
+```js
+function myFunc() {
+    doSomeAsyncStuff()
+    .then((result) => {
+        // application code
+    })
+    .catch(promiseRejectionErr => {
+        // application code to handle the error
+        tracker.handleError(promiseRejectionErr, metaObject); // metaObject is optional and is a flat object     
+    })
+}
+```
+
+### onError (ErrorEvent)
+
+Cet exemple montrera comment signaler une erreur dans le cas où un élément ```<img>``` ne se charge pas :  
+
+```html
+<img id="myImg" src="image.gif">
+<p id="demo"></p>
+```
+
+```js
+document.getElementById("myImg").addEventListener("error", myFunction);
+
+function myFunction(errorEvent) {
+  document.getElementById("demo").innerHTML = "The image could not be loaded.";
+  tracker.handleError(errorEvent, { context: "demo" });
+}
+```
+
+## Vous avez des questions ?
+Si vous avez des questions concernant ce processus, n'hésitez pas à nous contacter sur notre [Slack](https://slack.openreplay.com) ou à consulter notre [Forum](https://forum.openreplay.com).

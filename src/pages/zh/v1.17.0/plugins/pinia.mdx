@@ -1,0 +1,95 @@
+---
+title: "Pinia"
+metaTitle: "Pinia"
+metaDescription: "OpenReplay 的 Pinia 插件。"
+---
+import Aside from '~/components/Aside.astro'
+
+此插件允许你捕获 `Pinia` 的变更/状态，并在回放会话录制时进行检查。这对于理解和修复问题非常有用。
+
+
+<Aside type="tip">
+  我们还提供了一份详细的教程，介绍在使用此库时如何用 Pinia 插件来捕获应用程序的状态，你可以在[这里](/tutorials/pinia)查看。
+</Aside>
+
+
+
+
+## 安装
+
+```bash
+npm i @openreplay/tracker-vuex
+```
+
+## 用法
+
+像往常一样初始化 `@openreplay/tracker` 包，并将插件加载到其中。调用该插件以设置 store 名称，这将返回一个具名的 store 追踪器实例，你可以将示例 store 作为参数传入并调用它，以启用对该 store 的追踪。
+
+### 如果你的网站是单页应用程序 (SPA)
+
+```js
+import OpenReplay from '@openreplay/tracker';
+import trackerVuex from '@openreplay/tracker-vuex';
+```
+
+### 如果你的 Web 应用是服务端渲染 (SSR)
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+import trackerVuex from '@openreplay/tracker-vuex/cjs';
+```
+
+### 追踪 Pinia Store
+
+```js
+
+//...
+
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+  // ... options
+});
+
+// ...
+
+const examplePiniaStore = useExamplePiniaStore()
+const vuexPlugin = tracker.use(trackerVuex(<options>)) // check list of available options below
+
+const piniaStorePlugin = vuexPlugin('STORE NAME') // add a name to your store, 
+                                                  // optional (will be randomly generated otherwise)
+piniaStorePlugin(examplePiniaStore) // start tracking state updates
+
+// now you can use examplePiniaStore as usual pinia store (destructure values or return it as a whole etc)
+```
+
+## 选项
+
+你可以使用选项来自定义插件的行为，以净化你的数据。它们与标准 `createLogger` 插件的选项类似。
+
+```js
+trackerVuex({
+  filter (mutation, state) {
+    // returns `true` if a mutation should be logged
+    // `mutation` is a `{ type, payload }`
+    return mutation.type !== "aBlacklistedMutation";
+  },
+  transformer (state) {
+    // transforms the state before logging it.
+    // for example return only a specific sub-tree
+    return state.subTree;
+  },
+  mutationTransformer (mutation) {
+    // mutations are logged in the format of `{ type, payload }`
+    // we can format it any way we want.
+    return mutation.type;
+  },
+})
+```
+
+## 教程
+
+如果你想找一个如何使用此插件在会话回放中捕获状态变化的实际示例，请查看[我们这里的详细教程](/tutorials/pinia)。
+
+## 有疑问吗？
+
+在设置此插件时遇到困难？请加入我们的 [Slack](https://slack.openreplay.com)，或查看我们的[论坛](https://forum.openreplay.com)，从我们的社区获得帮助。

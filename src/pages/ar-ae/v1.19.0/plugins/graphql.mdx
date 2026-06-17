@@ -1,0 +1,154 @@
+---
+title: "GraphQL"
+metaTitle: "GraphQL"
+metaDescription: "إضافة GraphQL لـ OpenReplay."
+---
+
+import Aside from '~/components/Aside.astro'
+
+تتيح لك هذه الإضافة التقاط طلبات `GraphQL` وفحصها لاحقًا أثناء إعادة تشغيل تسجيلات الجلسات. وهذا مفيد جدًا لفهم المشكلات وإصلاحها. تتوافق إضافة `GraphQL` مع تطبيقات Apollo وRelay.
+
+<Aside type="tip">
+  لدينا أيضًا شرح تفصيلي حول كيفية استخدام إضافة GraphQL لالتقاط الطلبات وتعديلها، يمكنك الاطلاع عليه [هنا](/tutorials/graphql).
+</Aside>
+
+## التثبيت
+
+```bash
+npm i @openreplay/tracker-graphql
+```
+
+## الاستخدام
+
+قم بتهيئة حزمة `@openreplay/tracker` كالمعتاد وحمّل الإضافة فيها. سيعيد استدعاء `plugin` الدالة التي تستقبل أربعة متغيرات `operationKind` و`operationName` و`variables` و`result` و`duration` (القيمة الافتراضية 0) وتعيد `result` دون تغييرات.
+
+```js
+import Tracker from '@openreplay/tracker';
+import { createGraphqlMiddleware } from '@openreplay/tracker-graphql';
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+export const recordGraphQL = tracker.use(createGraphqlMiddleware());
+```
+
+### Relay
+
+إذا كنت تستخدم [أدوات الشبكة الخاصة بـ Relay](https://github.com/relay-tools/react-relay-network-modern)، فيمكنك ببساطة [إنشاء وسيط (middleware)](https://github.com/relay-tools/react-relay-network-modern/tree/master?tab=readme-ov-file#example-of-injecting-networklayer-with-middlewares-on-the-client-side)
+
+```js
+import { createRelayMiddleware } from '@openreplay/tracker-graphql';
+
+const trackerMiddleware = tracker.use(createRelayMiddleware());
+const network = new RelayNetworkLayer([
+  // your middleware
+  // ,
+  trackerMiddleware,
+]);
+```
+
+يمكنك تمرير دالة Sanitizer إلى `createRelayMiddleware` لتنقية المتغيرات والبيانات قبل إرسالها إلى OpenReplay.
+
+```js
+const trackerLink = tracker.use(
+  createRelayMiddleware((variables) => {
+    return {
+      ...variables,
+      password: '***',
+    };
+  }),
+);
+```
+
+أو يمكنك وضع استدعاء `recordGraphQL` يدويًا في تطبيق `NetworkLayer`. إذا كنت تستخدم الطريقة القياسية `Network.create` لتنفيذه، فعليك أن تفعل شيئًا مثل ما يلي:
+
+```js
+import { createGraphqlMiddleware } from '@openreplay/tracker-graphql'; // see above for recordGraphQL definition
+import { Environment } from 'relay-runtime';
+
+const handler = tracker.use(createGraphqlMiddleware());
+
+function fetchQuery(operation, variables, cacheConfig, uploadables) {
+  return fetch('www.myapi.com/resource', {
+    // ...
+  })
+    .then((response) => response.json())
+    .then((result) =>
+      handler(
+        // op kind, name, variables, response, duration (default 0)
+        operation.operationKind,
+        operation.name,
+        variables,
+        result,
+        duration,
+      ),
+    );
+}
+
+const network = Network.create(fetchQuery);
+```
+
+راجع [Relay Network Layer](https://relay.dev/docs/en/network-layer) للمزيد من التفاصيل.
+
+### Apollo
+
+بالنسبة لـ [Apollo](https://www.apollographql.com/) يجب عليك إنشاء `ApolloLink` جديد:
+
+```js
+import { createTrackerLink } from '@openreplay/tracker-graphql';
+
+const trackerLink = tracker.use(createTrackerLink());
+const yourLink = new ApolloLink(trackerLink);
+```
+
+يمكنك تمرير دالة Sanitizer إلى `createRelayMiddleware` لتنقية المتغيرات والبيانات قبل إرسالها إلى OpenReplay.
+
+```js
+const trackerLink = tracker.use(
+  createTrackerLink((variables) => {
+    return {
+      ...variables,
+      password: '***',
+    };
+  }),
+);
+```
+
+أو بدلاً من ذلك يمكنك استخدام معالج graphql العام:
+
+```js
+import { createGraphqlMiddleware } from '@openreplay/tracker-graphql'; // see above for recordGraphQL definition
+import { ApolloLink } from 'apollo-link';
+
+const handler = tracker.use(createGraphqlMiddleware());
+
+const trackerApolloLink = new ApolloLink((operation, forward) => {
+  operation.setContext({ start: performance.now() });
+  return forward(operation).map((result) => {
+    const time = performance.now() - operation.getContext().start;
+    return handler(
+      // op kind, name, variables, response, duration (default 0)
+      operation.query.definitions[0].operation,
+      operation.operationName,
+      operation.variables,
+      result,
+      time,
+    );
+  });
+});
+
+const link = ApolloLink.from([
+  trackerApolloLink,
+  // ...
+]);
+```
+
+راجع [Apollo Link](https://www.apollographql.com/docs/link/) و[Apollo Networking](https://www.apollographql.com/docs/react/networking/network-layer/) للمزيد من التفاصيل.
+
+## الشرح التعليمي
+إذا كنت تبحث عن مثال عملي حول كيفية استخدام هذه الإضافة لالتقاط بيانات العمليات (عمليات التعديل والاستعلامات) في إعادة تشغيل جلساتك، فاطّلع على [شرحنا التفصيلي هنا](/tutorials/graphql).
+
+## هل لديك أسئلة؟
+
+هل تواجه صعوبة في إعداد هذه الإضافة؟ يُرجى الانضمام إلى [Slack](https://slack.openreplay.com) الخاص بنا أو زيارة [المنتدى](https://forum.openreplay.com) والحصول على المساعدة من مجتمعنا.

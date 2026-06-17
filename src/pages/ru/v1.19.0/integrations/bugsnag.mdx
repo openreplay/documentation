@@ -1,0 +1,56 @@
+---
+title: "Bugsnag"
+metaTitle: "Интеграция с Bugsnag"
+metaDescription: "Как интегрировать Bugsnag с OpenReplay и видеть ошибки бэкенда рядом с воспроизведениями сессий."
+---
+
+Как интегрировать Bugsnag с OpenReplay и видеть ошибки бэкенда рядом с записями сессий.
+
+## 1. Создание токена авторизации
+
+1. Войдите в свою учётную запись [Bugsnag](https://app.bugsnag.com).
+2. Перейдите в *Settings > My account > Personal auth tokens*.
+3. Нажмите кнопку *Generate new token +*.
+4. В описании укажите `openreplay`.
+5. Нажмите кнопку *Generate*.
+6. Скопируйте токен, затем нажмите кнопку *Done*.
+
+![Личные токены аутентификации Bugsnag](/static/bugsnag-1.jpg#center)
+
+## 2. Включение Bugsnag в OpenReplay
+
+Укажите ваш `Authorization token` в панели управления OpenReplay в разделе 'Preferences > Integration' и выберите проект, который вы хотите отслеживать, из выпадающего списка.
+
+![Интеграция Bugsnag в OpenReplay](/static/bugsnag-2.jpg#center)
+
+## 3. Передача openReplaySessionToken
+
+Чтобы связать событие Bugsnag с записанной пользовательской сессией, уникальный токен должен передаваться от вашего фронтенда к бэкенду при каждом запросе, который вы хотите отслеживать. Это можно сделать с помощью пользовательского HTTP-заголовка. В приведённом ниже примере мы используем функцию `fetch` для отправки этого заголовка.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // use window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+Чтобы OpenReplay мог связать запись журнала Bugsnag с записанной пользовательской сессией, уникальный токен должен передаваться как `meta_data > special_info` в каждую ошибку бэкенда, которую вы хотите отслеживать.
+
+Ниже приведён пример с использованием Python API Bugsnag.
+
+```python
+bugsnag.notify(EXCEPTION_OBJECT,  meta_data={"special_info":{"openReplaySessionToken": OPENREPLAY_SESSION_TOKEN}})
+```
+
+Имя тега `openReplaySessionToken` чувствительно к регистру.
+
+## Есть вопросы?
+
+Если вы столкнётесь с какими-либо проблемами, присоединяйтесь к нашему [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com) и получите помощь от нашего сообщества.

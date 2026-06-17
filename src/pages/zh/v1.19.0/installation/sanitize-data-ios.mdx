@@ -1,0 +1,80 @@
+---
+title: "数据脱敏 (iOS)"
+metaTitle: "数据脱敏 (iOS)"
+metaDescription: "如何在你的 iOS 应用中对数据进行脱敏并确保用户隐私。"
+---
+
+
+## 对 UI 组件进行脱敏
+
+经过脱敏的视图将在生成的回放中被模糊处理。你可以添加任意 UI 组件，一旦它不再显示在屏幕上，就会被自动移除（以节省内存）。
+
+### SwiftUI
+
+只需为所需的组件添加 `.sensitive()` 修饰符即可。
+
+```swift
+import ORTracker
+
+Text("Very important sensitive text")
+.sensitive()
+
+```
+
+### UIKit
+
+```swift
+import ORTracker
+
+ORTracker.shared.addIgnoredView(view)
+```
+
+### React Native
+
+SDK 导出了 `ORSanitizedView`，你可以用它来包裹敏感组件，以将其模糊处理。
+
+```js
+import OR from '@openreplay/react-native'
+
+// ... your app UI
+
+  <OR.ORSanitizedView>
+    <SensitiveComponent />
+  </OR.ORSanitizedView>
+
+// ...
+```
+
+## 对网络请求进行脱敏
+
+导出了两个键用于自动裁剪请求/响应数据：`ignoredKeys` 用于请求体，`ignoredHeaders` 用于请求头。请求和响应都会被脱敏，但请求体只有在它是有效的 JSON 时才会受到影响。
+
+只需指定一个你想要脱敏的字符串列表即可：
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+也可以在将响应数据传递给监听器之前对其进行修改：
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```
+
+## 有疑问？
+如果你对此流程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

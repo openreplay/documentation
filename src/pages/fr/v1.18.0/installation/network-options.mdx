@@ -1,0 +1,134 @@
+---
+title: "Options réseau (Web)"
+metaTitle: "Options réseau (Web)"
+metaDescription: "Plugin d'options réseau pour OpenReplay."
+---
+import Aside from '~/components/Aside.astro'
+
+Cette page décrit l'espace de noms `network` des [options](/sdk/constructor) du SDK JavaScript d'OpenReplay. Elle concerne la capture des requêtes réseau telles que `fetch` et `XHR`, y compris les charges utiles si nécessaire, et permet de les inspecter ultérieurement lors de la relecture des enregistrements de sessions. C'est très utile pour comprendre et résoudre les problèmes.
+
+## Options
+
+```js
+network?: {
+  failuresOnly: boolean;
+  sessionTokenHeader: string | boolean;
+  ignoreHeaders: Array<string> | boolean;
+  capturePayload: boolean;
+  sanitizer: (RequestResponseData) => RequestResponseData | null;
+  captureInIframes: boolean;
+  axiosInstances: AxiosInstance[];
+  useProxy?: boolean;
+	tokenUrlMatcher?: (url: string) => boolean;
+}
+```
+
+- `useProxy` : Fait passer le tracker du patch de window.fetch/window.XMLRequest à l'utilisation d'objets proxy. Valeur par défaut : `true`.
+- `failuresOnly` : Capture les requêtes ayant un code de statut HTTP 4xx-5xx. Valeur par défaut : `false`.
+- `sessionTokenHeader` : Si vous avez activé certaines de nos [intégrations](/integrations) backend (c'est-à-dire Sentry), vous pouvez utiliser cette option pour spécifier le nom de l'en-tête (ou activer celui par défaut « X-OpenReplay-SessionToken » en réglant l'option sur `true`). Ce dernier est ajouté automatiquement à chaque requête fetch/XHR pour contenir la valeur du sessionToken d'OpenReplay. Valeur par défaut : `false`.
+- `tokenUrlMatcher` : Reçoit l'url de la requête actuelle du tracker et renvoie un `boolean`. S'il est présent, `sessionTokenHeader` ne sera appliqué que lorsque cette fonction renvoie `true`. Valeur par défaut : `undefined`.
+- `ignoreHeaders` : Aide à définir une liste d'en-têtes que vous ne souhaitez pas capturer. Réglez sa valeur sur `false` pour les capturer tous (`true` pour aucun). Valeur par défaut : `['Cookie', 'Set-Cookie', 'Authorization']` afin que les en-têtes sensibles ne soient pas capturés.
+- `capturePayload` : Stocke les charges utiles du corps des requêtes/réponses. Cela peut être très utile à des fins de dépannage, mais peut devenir lourd pour l'utilisation du réseau si votre application utilise abondamment les requêtes Fetch/XHR. Valeur par défaut : `false`.
+
+<Aside type="caution">
+	La capture des charges utiles HTTP peut consigner des données hautement sensibles (c'est-à-dire des mots de passe) ou des informations privées que votre application peut envoyer/recevoir dans les requêtes/réponses Fetch/XHR, alors assurez-vous d'assainir ces données à l'aide de l'option `sanitizer` ci-dessous.
+</Aside>
+
+- `captureInIframes` : Pour désactiver le suivi réseau à l'intérieur des iFrames. Valeur par défaut : `true`.
+- `axiosInstances` : Utile dans des situations spécifiques pour suivre des instances axios personnalisées, si la configuration habituelle (proxy api) ne fonctionne pas. Valeur par défaut : `undefined`.
+- `sanitizer` : Assainit les données sensibles de la requête/réponse Fetch/XHR ou ignore complètement la requête. Vous pouvez expurger des champs de l'objet de requête en le modifiant puis en le renvoyant depuis la fonction (voir les exemples ci-dessous). L'assainissement est appliqué **après** tous les filtrages et modifications induits par les autres options (c'est-à-dire que l'argument ne contiendra pas la charge utile `body` si `capturePayload` n'a pas été explicitement réglé sur `true`).
+
+```typescript
+interface RequestData {
+  body: BodyInit | null | undefined; // whatewer you've put in the init.body in fetch(url, init) or xhr.send(body)
+  headers: Record<string, string>;
+}
+
+interface ResponseData {
+  body: string | Object | null;  // Object if response is of JSON type
+  headers: Record<string, string>;
+}
+
+interface RequestResponseData {
+  readonly status: number;
+  readonly method: string;
+  url: string;
+  request: RequestData;
+  response: ResponseData;
+}
+
+sanitizer: (data: RequestResponseData) => { // sanitise the body or headers
+  if (data.url === "/auth") {
+    data.request.body = null
+  }
+
+  if (data.request.headers['x-auth-token']) { // can also use ignoreHeaders option instead
+    data.request.headers['x-auth-token'] = 'SANITISED';
+  }
+
+  // Sanitize response
+  if (data.status < 400 && data.response.body.token) {
+    data.response.body.token = "<TOKEN>"  
+  }
+
+  return data
+}
+
+// OR
+
+sanitizer: data => { // ignore payloads for calls that start with /secure
+  if (data.url.startsWith("/secure")) {
+    data.request.body = null;
+    data.response.body = null;
+  }
+  return data
+}
+
+// OR
+
+sanitizer: data => { // sanitize request url: replace all numbers
+  data.url = data.url.replace(/\d/g, "*")
+  return data
+}
+```
+
+## Exemples
+
+Vous trouverez ci-dessous des exemples sur la façon d'utiliser l'option `network`. 
+
+### Avec NPM
+
+```js
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY,
+  network: {
+    capturePayload: true // Capture HTTP payload
+  }
+});
+```
+
+### Avec l'extrait JavaScript
+
+Notez la variable/ligne `initOpts` permettant de définir l'option `network`.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { 
+  projectKey: "GxPpaDARdn2345fgt321", 
+  network: { // Enable HTTP payload capture in the network option
+    capturePayload: true
+  } 
+};
+
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+```
+
+## Dépannage
+
+Vous rencontrez des difficultés pour configurer ces options ? Rejoignez notre [Slack](https://slack.openreplay.com) ou consultez notre [Forum](https://forum.openreplay.com) et obtenez de l'aide de notre communauté.

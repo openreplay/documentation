@@ -1,0 +1,235 @@
+---
+title: "捕获并脱敏请求数据"
+metaTitle: "在回放中脱敏请求数据"
+metaDescription: "捕获请求数据，以了解你在前端所犯的错误类型"
+---
+有时候，客户端代码中的错误并不像因为所有 JavaScript 代码都无法运行而出现空白屏幕时那样明显。
+有时候，应用程序的问题在于：在用户可以执行的某些操作下，你向服务器发送了一个格式错误的请求。
+客户端代码正常运行，控制台没有任何 JS 错误，但你的后端并不太喜欢你发送给它的内容。
+
+使用 OpenReplay，你可以将客户端与服务器之间的通信作为标准会话回放的一部分进行捕获，并在之后进行审查。那么我们来看看如何做到这一点，以及我们能从中获得什么样的好处。
+
+## 一个示例应用
+为了本教程的目的，我创建了一个简单的 React 应用，它使用了 [Bored API](https://www.boredapi.com/)。这是一个非常简单的 API，它会根据一些参数返回一个随机的活动建议。
+于是我创建了 "I'm bored App"，它看起来是这样的：
+
+![](https://i.imgur.com/ZCEOtiC.png)
+
+你可以在 Netlify 上 [这里](https://venerable-tartufo-f87748.netlify.app) 查看它的在线版本，或者如果你想查看代码以便详细了解，它已完全在 [GitHub](https://github.com/deleteman/im-bored-app) 上提供。
+
+这个应用由 2 个组件构成：`SearchForm` 组件，负责渲染那 2 个字段和按钮，并负责向 API 发送实际的请求。
+而 `Suggestion` 组件只是将建议渲染在一个好看的框内。
+
+我将重点关注第一个组件，因为它是唯一一个使用 `fetch` 函数发送请求的组件。
+
+**请注意**，这项技术同样适用于任何使用 **Axios** 执行的请求。
+
+让我们快速看一下这个组件，以了解它在做什么。
+
+### SearchForm 组件的代码
+
+这不是一个复杂的组件，但其中有一部分对这个特定用例尤为相关，所以让我们快速看一下它。
+
+```javascript
+import { Container, Col, Form, Row, Button } from 'react-bootstrap';
+
+const SearchForm = ({setResult, fetcher}) => {
+const getSomething = async (evt) => {
+    evt.preventDefault()
+    let form = evt.target
+
+    const API_URL = "/api/activity?"
+    let getParams = {}
+    if(form.participants.value !== '') {
+      getParams.participants = form.participants.value
+    }
+
+    if(form.priceRange.value !== '') {
+      let prices = form.priceRange.value.split("_")
+      getParams.minprice = prices[0]
+      getParams.maxprice = prices[1]
+    }
+
+    let results = await fetcher(API_URL + new URLSearchParams(getParams), {
+        mode: 'no-cors'
+    })
+    setResult(await results.json())
+
+    return false
+  }
+
+    return (
+        <Container>
+        <Form onSubmit={getSomething}>
+          <Row>
+            <Col>
+          <Form.Group controlId='participants' >
+            <Form.Label>Participants</Form.Label>
+            <Form.Control type='text' name="totalParticipants" placeholder='Leave empty if you dont care...'></Form.Control>
+          </Form.Group>
+          </Col>
+            <Col>
+          <Form.Group controlId='priceRangeId'>
+            <Form.Label>Price range</Form.Label>
+            <Form.Select name="priceRange" >
+              <option value="" >Select one or leave empty if you dont care</option>
+              <option value="0.0">Free</option>
+              <option value="0.1_0.5">Cheap</option>
+              <option value="0.6_1.0">Expensive</option>
+            </Form.Select>
+          </Form.Group>
+          </Col>
+          </Row>
+          <Row className='m-3'>
+            <Col>
+            <Form.Group>
+              <Button variant="primary" type="submit">Get me something!</Button>
+            </Form.Group>
+            </Col>
+          </Row>
+        </Form>
+      </Container>
+    )
+}
+
+export default SearchForm
+```
+
+注意 `getSomething` 函数，大部分魔法都发生在那里。当表单的 submit 事件被触发时，该函数会被调用。
+当这种情况发生时，该函数会获取合成事件，表单被链接在 `target` 属性内部。我们只需捕获每个过滤器（输入字段和下拉框）的值，然后使用 `fetch` 函数执行请求。
+注意，这个 URL 并没有直接指向 BoredAPI 的端点。这是因为，为了让请求正常工作并且不会因 CORS 限制而被拦截，我在后端配置了一个代理，将所有来自 `/api` 的请求重定向到真正的 API。
+
+现在你已经看过代码了，让我们看看如果你安装 OpenReplay 的 tracker 而不安装 fetch 插件会得到什么。
+
+## 使用 OpenReplay 进行常规数据捕获
+在这个示例中，我将使用该包的 NPM 版本；如果你不知道怎么做，请查看 [文档](https://docs.openreplay.com/installation/setup-or)，然后回到这里。
+
+![](/tutorials/fetch/network-tab-imbored.png)
+
+这是默认情况下会话回放的界面。
+注意，在下半部分我已经选中了 "Network" 标签页，但虽然它确实显示了正在发出的请求，却没有关于它们的任何详细信息。
+即使你点击其中一个，你也只会得到可用的最少详细信息：
+
+![](/tutorials/fetch/network-tab-details.png)
+
+那么我们能做什么呢？你可以通过 [Network options 对象](installation/network-options) 启用对请求信息的捕获。
+我们来看一下。
+
+### 在你的会话回放中捕获请求数据
+
+为此，我们所要做的就是在实例化 tracker 时添加一个配置选项。
+所以现在，当你编写 `new tracker(...)` 这一行时，你将添加一个新属性：
+
+```javascript
+import Tracker from '@openreplay/tracker';
+
+const tracker = new Tracker({
+  projectKey: "<your project key>",
+  network: {
+    capturePayload: true //start capturing the payload of every request
+  }
+});
+```
+
+这就是我们需要做的全部；从现在起，每次你执行请求时，数据都会被 tracker 记录下来。
+现在部署这个更改，测试应用，关闭标签页，然后等待几分钟。
+会话应该很快就会出现，你可以点击 "play" 按钮。
+
+## 检查客户端与服务器之间的通信
+
+为了示例的目的，我们再来看一个我在发布应用之后开始注意到的问题。
+
+注意我在这种情况下得到的警告框：
+
+![](https://i.imgur.com/nOlRjO9.png)
+
+作为编写这段代码的开发者，我知道该怎么做来测试它并弄清楚 bug 在哪里。然而，作为用户，这个错误并没有告诉我太多信息，而且我可能无法以开发团队能够理解的方式来描述它。
+所以作为用户，我可以直接向公司抱怨他们的应用无法工作，而你，作为负责该应用的开发者，可以查看我的会话，检查客户端发送的请求以及服务器的响应。
+
+![](/tutorials/fetch/network-tab-requests.png)
+
+现在看看会话回放界面。在 Network 标签页内，你可以看到我们一直在向外部 API 发出的请求。
+
+现在我们所要做的，就是找到出现错误响应的那一刻，然后查看正在发出的请求。
+很有可能，你会在请求详情中看到问题所在。
+在我们的例子中，错误显示为 "Failed to query due to error in arguments"，这意味着当我们在下拉框中选择 "Free" 选项时，
+我们发送的并不是一个有效的请求。那么让我们看一下它的详细信息。
+
+![](https://i.imgur.com/FAtZEgt.png)
+
+你能看出问题所在吗？让我来帮你：
+
+![](https://i.imgur.com/yX8TJpp.png)
+
+是的，我在 `maxprice` 属性的值上发送了一个 `undefined`。我在逻辑中完全漏掉了这一点，并在检查请求时发现了它。
+诚然，既然我现在知道了问题所在，这是一个很容易的修复，但多亏了这个流程，我本可以提交一份非常详细的错误报告，或者直接帮助开发者识别并解决问题，而无需自己去测试和重现这个问题。
+
+## 对隐私进行检验
+
+好的，让我们把这个示例再推进一点；假设这个请求我还需要用户的电话号码。我显然不需要，但请暂时配合我一下。
+
+我会把该字段添加到表单中，并更新代码以捕获该值并将其作为请求的一部分发送。
+
+表单的 HTML 只是像这样添加一个新的 `Col` 元素：
+
+```html
+<!-- previous code -->
+<Col>
+    <Form.Group controlId='phoneNumber'>
+        <Form.Label>Phone Number</Form.Label>
+        <Form.Control type='number' name="phoneNumber" placeholder='Enter your phone number here please'></Form.Control>
+    </Form.Group>
+</Col>
+<!-- rest of the code -->
+```
+
+而将这个字段的内容添加到实际请求中只需要一行代码：
+
+```javascript
+getParams.phonenumber = form.phoneNumber.value
+```
+
+那么，如果我们使用这段新代码并用 OpenReplay 捕获一个会话，会发生什么呢？
+嗯，有两件事：
+
+1. 你_观看_的实际回放会自动对电话号码字段的内容进行脱敏处理，任何观看它的人都不会看到该内容。
+2. 然而，插件捕获到的请求信息将会显示该值。
+
+下面的截图展示了我刚才所描述的内容：
+
+![](https://i.imgur.com/kKL47Rd.png)
+
+在屏幕的右侧部分，你可以看到完整的电话号码。出现这种情况是因为，虽然普通的 tracker 能够将电话号码字段理解为一个数字字段，但它不会捕获其输入内容，以防该号码代表个人信息。但在请求这一侧，我们无法真正做出这种假设，因为开发者可能用这些数据做了任何事情，甚至参数的名称也可能任意。
+那么问题就来了：我们能用这个插件来保护用户的隐私吗？
+
+我很高兴地报告，答案是：是的，我们可以。
+
+### 脱敏请求数据
+
+如果你回到本教程的开头，也就是我配置 network 选项的时候，你会发现我没有提到任何关于脱敏的内容。
+然而，作为这些选项的一部分，你可以指定一个用于脱敏数据的回调函数。这个回调函数接收一个属性，其中同时包含请求对象和响应对象。然后你可以选择按你想要的方式编辑它们，它们不会影响实际的请求，但会改变数据在 OpenReplay 界面上的显示方式。
+
+例如，假设我想更改 "phonenumber" 属性并去除其中的数字，以避免泄露该信息。这可以这样做：
+
+```javascript
+const tracker = new Tracker({
+  projectKey: "<your project id>",
+  network: {
+    capturePayload: true,
+    sanitizer: (data) => { //we change the content of the "phonenumber" parameter from the url
+      data.url = data.url.replace(/phonenumber=([0-9]+)/, "phonenumber=XXXXXX")
+      return data
+    }
+    }
+});
+```
+
+如你所见，这个更改很简单，我们只替换了这个属性中的数字，所以现在请求在我们的界面中看起来是这样的：
+
+![](/tutorials/fetch/network-tab-sanitized-data.png)
+
+现在你的用户数据再次得到了保护。
+
+## 有疑问吗？
+
+如果你想查看代码以便详细了解这个示例，你可以在 [GitHub 上的这里](https://github.com/deleteman/im-bored-app/tree/v1.10) 找到它。如果你在设置 Fetch 插件或 Tracker 本身时遇到任何问题，请通过我们的 [Slack 社区](https://slack.openreplay.com/) 联系我们，直接向我们的开发者提问！

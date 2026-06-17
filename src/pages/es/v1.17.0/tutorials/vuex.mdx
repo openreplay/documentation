@@ -1,0 +1,168 @@
+---
+title: "Uso del complemento de VueX para capturar cambios de estado"
+metaTitle: "Uso del complemento de VueX para capturar cambios de estado"
+metaDescription: "Aprende a capturar cambios de estado usando el complemento de VueX y a visualizarlos en las repeticiones de sesión"
+---
+Si usas VueX para gestionar el estado de tus aplicaciones basadas en Vue, integrar [el complemento de OpenReplay](https://docs.openreplay.com/plugins/vuex) para rastrear las actualizaciones de estado es muy sencillo.
+
+Si quieres seguir el ejemplo, usa [el código publicado](https://github.com/deleteman/openreplay-vuex-example) aquí.
+
+## Integrar el Tracker en tu código
+
+Lo primero de lo que debemos preocuparnos es de integrar el tracker de OpenReplay en el proyecto. Estamos trabajando con un proyecto basado en Vue, lo que significa que nuestro punto de entrada será el archivo `main.js`. Primero instala el tracker con:
+
+```tsx
+yarn add @openreplay/tracker
+```
+
+O usa npm si lo prefieres:
+
+```tsx
+npm install @openreplay/tracker
+```
+
+Una vez hecho esto, después de haber configurado el proyecto dentro de la plataforma, obtén la KEY del proyecto y guárdala dentro de un archivo `.env` ubicado en la raíz del proyecto.
+
+```bash
+VUE_APP_OPENREPLAY_PROJECT_KEY=<your project key here>
+```
+
+Fíjate en el nombre de la variable de entorno. Comienza con `VUE_APP_` porque, cuando hacemos eso, WebPack reemplazará su valor allá donde usemos el código `process.env.VUE_APP_OPENREPLAY_PROJECT_KEY`, para evitar que tengamos que enviar el archivo de configuración real al cliente.
+
+Ahora, dentro de tu carpeta `src`, crea una carpeta `tracker` y un archivo `index.js` dentro de ella. Este archivo exportará una única función: `startTracker`, que configurará todo y pondrá en marcha el tracker.
+
+```jsx
+import Tracker from '@openreplay/tracker';
+
+import {v4 as uuidV4} from 'uuid'
+
+function defaultGetUserId() {
+   return uuidV4()
+}
+
+export function startTracker(config) {
+
+    console.log("Starting tracker...")
+
+    const getUserId = (config?.userIdEnabled && config?.getUserId) ? config.getUserId : defaultGetUserId
+    let userId = null;
+
+    const trackerConfig = {
+        projectKey: config.projectKey
+    }
+
+    const tracker = new Tracker(trackerConfig);
+
+    const pluginReturns = {}
+    Object.keys(config?.plugins).forEach( pk => {
+        pluginReturns[pk] = tracker.use(config?.plugins[pk]())
+    })
+
+    if(config?.userIdEnabled) {
+        userId = getUserId()
+        tracker.setUserID(userId)
+    }
+    console.log("tracker: user id: ", userId)
+
+    tracker.start();
+    return {
+        tracker,
+        userId,
+        ...pluginReturns
+    }
+}
+```
+
+De lo único que tienes que preocuparte ahora es de que esta función haga todo lo que necesitas. Lo único que debes hacer es pasar la clave del proyecto al llamarla. Así (desde el archivo `main.js`):
+
+```jsx
+import {startTracker} from './tracker/index'
+
+let {vuexTracker} = startTracker({
+    projectKey: process.env.VUE_APP_OPENREPLAY_PROJECT_KEY,
+})
+```
+
+Como ya hemos visto, la línea `process.env.VUE_APP_OPENREPLAY_PROJECT_KEY` será reemplazada por la clave real de tu proyecto al renderizar la página.
+
+Ahora, agreguemos el complemento de VueX para que también podamos empezar a rastrear los cambios de estado.
+
+## Añadir el complemento de VueX
+
+El complemento se instala fácilmente con una sola línea:
+
+```jsx
+yarn add @openreplay/tracker-vuex
+```
+
+Después de eso, podemos importarlo en nuestro código y pasarlo como parte del objeto de configuración a la función `startTracker`.
+
+Vuelve a la definición de esa función y fíjate en cómo ya tenemos código para gestionar complementos. De hecho, el elemento `plugins` de la configuración es un mapa que recibe los complementos (con una clave de nuestra elección) y devuelve lo que obtenemos al llamar al método `use`, también, con la misma clave que usamos para el complemento.
+
+Déjame mostrártelo, esto es de nuevo, en el archivo `main.js`:
+
+```jsx
+//your other imports go here...
+import trackerVuex from '@openreplay/tracker-vuex';
+import store from './store'
+
+let {vuexTracker} = startTracker({
+    userIdEnabled: true,
+    projectKey: process.env.VUE_APP_OPENREPLAY_PROJECT_KEY,
+    plugins:{
+      'vuexTracker': trackerVuex
+    }
+})
+
+new Vue({
+  router,
+  store: store([vuexTracker]),
+  render: h => h(App)
+}).$mount('#app')
+```
+
+Fíjate en cómo estamos:
+
+1. Llamando a la función `startTracker` con el mapa `plugins`. La cadena "vuexTracker" es algo que se me ocurrió en su momento, pero aquí puedes usar cualquier cadena.
+2. Desestructurando la respuesta y obteniendo la clave "vuexTracker" (la misma clave que usamos para el mapa). Mientras estas dos claves coincidan, puedes usar cualquier cadena.
+3. Pasando la función `vuexTracker` como parámetro a la función `store`.
+
+La variable vuexTracker contiene esencialmente nuestro complemento de VueX; este complemento se conectará al store de VueX y, para ello, usamos el siguiente código:
+
+```jsx
+import Vue from 'vue'
+import Vuex from 'vuex'
+
+import account from './account'
+import product from './product'
+
+Vue.use(Vuex)
+
+export default function (plugins = []) {
+  return function() {
+    const Store = new Vuex.Store({
+      modules: {
+        account,
+        product
+      },
+
+      strict: process.env.DEV,
+      plugins
+    })
+
+    return Store
+  }
+}
+```
+
+El fragmento anterior es tu código estándar para configurar un store; simplemente añadimos la capacidad de configurar complementos para asegurarnos de poder rastrear lo que ocurre con el estado en nuestra aplicación.
+
+Una vez que esto esté listo, deberías ver una nueva opción de VueX dentro de las repeticiones de sesión, así:
+
+![Rastreo de cambios de estado con VueX](/images/vuex-ss.png)
+
+## ¿Tienes preguntas?
+
+Puedes [consultar este repositorio](https://github.com/deleteman/openreplay-vuex-example) para ver el **código fuente completo** de una aplicación funcional que usa VueX con el Tracker.
+
+Si tienes algún problema al configurar el Tracker o el complemento de VueX en tu proyecto, contáctanos en nuestra [comunidad de Slack](https://slack.openreplay.com/) y pregunta directamente a nuestros desarrolladores.

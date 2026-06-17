@@ -1,0 +1,116 @@
+---
+title: "React Native SDK - 初始化 SDK"
+metaTitle: "React Native SDK - 初始化 SDK"
+metaDescription: "iOS React Native 跟踪器构造方法的配置选项"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	React Native SDK 目前处于 Beta 阶段。欢迎在我们的 [Slack](https://slack.openreplay.com) 上向我们提供反馈或报告您遇到的任何问题，也可以查看我们的[论坛](https://forum.openreplay.com)。
+</Aside>
+
+## 安装
+
+以下命令将为您安装跟踪器，同时也会安装 SDK，让您能够使用跟踪器的所有功能。
+
+```bash
+npm i @openreplay/react-native
+```
+
+## 初始化
+
+在实例化 OpenReplay 的跟踪器时，您可以提供多个配置选项来自定义录制及录制体验的诸多方面。您必须在构造函数中设置 `projectKey` 选项。您可以在 OpenReplay 仪表盘的 'Preferences > Projects' 下获取该值。
+
+<Aside type="tip">
+	请注意，如果您有多个项目，需要谨慎选择使用哪个项目密钥。
+</Aside>
+
+
+### 添加跟踪代码
+
+将以下代码添加到您的根文件中：
+
+```js
+import Openreplay from '@openreplay/react-native';
+
+// ...
+useEffect(() => {
+	Openreplay.tracker.startSession(
+		'yourProjectKey',
+		options, // explained below, set {} if empty
+		'https://local.openreplay.instance/ingest' // if you're using our Serverless/SaaS plan then 'https://api.openreplay.com/ingest'
+	);
+}, [])
+```
+
+### 添加增强组件
+
+为了跟踪应用内的用户交互，您需要将以下组件添加到您的应用中：
+
+- `ORTouchTrackingView` - 添加在根级别，用于跟踪触摸交互
+- `ORTrackedInput` - 围绕 React-Native Input 的包装组件，每当用户完成输入时发送信号
+- `ORSanitizedView` - 模糊处理其内部的内容
+
+```js
+// App.tsx
+import Openreplay from '@openreplay/react-native';
+
+function App() {
+	const start = () => {
+	    Openreplay.tracker.startSession(
+	      process.env.REACT_APP_KEY!,
+	      {},
+	      process.env.REACT_APP_INGEST
+	    );
+	    Openreplay.tracker.setMetadata('key', 'value');
+	    Openreplay.tracker.setUserID('user-id');
+	    Openreplay.patchNetwork(global, () => false, {});
+	};
+	
+	React.useEffect(() => start(), []);
+	
+	return (
+		// this top-level view is required to track touch interactions
+		<Openreplay.ORTouchTrackingView style={styles.container}> 
+		      <View style={styles.container}>
+		         <Openreplay.ORTrackedInput
+		          style={styles.input}
+		          onChangeText={onChangeNumber}
+		          value={number}
+		          placeholder="Trackable input"
+		          numberOfLines={1}
+		        />
+		
+		        <Openreplay.ORSanitizedView style={styles.sanitizedView}>
+		          <Text>Contents of this view are sanitized and invisible on the recording</Text>
+		        </Openreplay.ORSanitizedView>
+		      </View>
+		</Openreplay.ORTouchTrackingView>
+	)
+}
+```
+
+
+### 数据脱敏
+
+有关更多详情，请参阅[如何在 React Native 回放中对数据进行脱敏](/rn-sdk/sanitization)。
+
+## 初始化选项
+
+默认情况下，所有选项均标记为 `true`：
+
+- `crashes: Bool` 启用崩溃分析（crashlytics）。
+- `analytics: Bool` 启用对已标记视图的分析跟踪。
+- `performances: Bool` 启用性能监听器。
+- `logs: Bool` 启用日志监听器。
+- `screen: Bool` 启用屏幕录制器。
+
+## 方法
+
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="了解 React Native SDK 的各个模块" url="/rn-sdk/modules" hideIcon={true} width="100"/>
+</div>
+
+## 有疑问吗？
+如果您对此流程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

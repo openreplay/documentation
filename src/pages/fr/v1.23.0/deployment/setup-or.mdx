@@ -1,0 +1,110 @@
+---
+title: "Configurer OpenReplay"
+metaTitle: "Configurer OpenReplay"
+metaDescription: "Comment configurer rapidement OpenReplay et commencer à enregistrer des sessions et des métriques."
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+import IconText from '~/components/Card/IconText.astro'
+
+<YoutubeVideo title="Découvrez comment démarrer avec OpenReplay"
+  description="Si vous n'aimez pas lire, vous pouvez suivre ce tutoriel vidéo qui vous montre comment démarrer avec OpenReplay en 3 minutes ou moins"
+  videoURL="https://www.youtube.com/watch?v=EWbtMK3qK30"
+  />
+
+
+Démarrer avec OpenReplay est simple. 
+
+Si vous souhaitez regarder un tutoriel rapide sur la façon de démarrer, utilisez [cette vidéo YouTube](https://www.youtube.com/watch?v=EWbtMK3qK30) ; sinon, poursuivez votre lecture pour plus de détails.
+
+Il existe 2 façons de mettre OpenReplay en service : en utilisant le script ou le paquet npm.
+
+## Utilisation du Script
+
+Copiez/collez l'extrait de code directement dans le `</head>` de votre application web. Le script se trouve dans le tableau de bord OpenReplay sous 'Preferences > Projects' et est unique à chaque projet.
+
+Si votre site web prend en charge Google Tag Manager, vous pouvez suivre le [guide pas à pas GTM](/integrations/google-tag-manager).
+
+## Utilisation de NPM
+
+Installez d'abord le paquet npm.
+
+```bash
+npm i @openreplay/tracker
+```
+
+Ensuite, initialisez le paquet depuis le point d'entrée de votre base de code et démarrez le tracker. Vous devez définir l'option `projectKey` dans le constructeur. Sa valeur se trouve dans votre tableau de bord OpenReplay sous 'Preferences > Projects'.
+
+### Si votre site web est une Single Page Application (SPA)
+
+Vous pouvez utiliser le tracker en tant qu'instance singleton, ce qui est la manière recommandée de l'utiliser. 
+De cette façon, vous pouvez accéder au tracker depuis n'importe quel endroit de votre application :
+
+```js
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+	projectKey: PROJECT_KEY,
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+})
+
+tracker.start() // returns a promise with session info (sessionID, sessionHash, userUUID)
+```
+
+Ou vous pouvez utiliser directement la classe `Tracker` pour gérer son instance manuellement :
+
+```js
+import OpenReplay from '@openreplay/tracker';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY,
+  ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
+});
+
+tracker.start();
+```
+
+### Si votre application web est rendue côté serveur (SSR)
+
+Suivez l'extrait ci-dessous si votre application web est rendue côté serveur (SSR) (c'est-à-dire NextJS, NuxtJS). 
+Assurez-vous que le tracker s'exécute dans un environnement de navigateur et que `tracker.start()` est appelé une fois que l'application est servie au client (c'est-à-dire dans `useEffect` ou `componentDidMount`).
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+//...
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY
+});
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, []);
+}
+```
+
+Si vous souhaitez aller plus loin dans la configuration du tracker, consultez le [SDK JavaScript](/installation/javascript-sdk#options) pour obtenir la liste des options disponibles.
+
+## Intégration avec d'autres frameworks
+Si vous n'utilisez pas OpenReplay dans une application brute, vous utilisez probablement un framework de développement web, comme Next.js, Nuxt ou un autre.
+Consultez nos tutoriels personnalisés pour chacun des frameworks pris en charge :
+
+<div class="grid grid-cols-1 md:grid-cols-1 gap-3 md:gap-4">
+  <IconText url="/sdk/using-or/next" title="React" />
+  <IconText url="/sdk/using-or/nuxt" title="Vue" />
+  <IconText url="/sdk/using-or/angular" title="Angular" />
+  <IconText url="/sdk/using-or/next" title="NextJS" />
+  <IconText url="/sdk/using-or/nuxt" title="Nuxt" />
+</div>
+
+## Étapes suivantes
+
+Maintenant que vous avez installé le tracker et déployé votre application web, les enregistrements de sessions devraient apparaître en quelques minutes. Bravo !
+
+En attendant, vous pouvez poursuivre le processus de configuration pour tirer le meilleur parti d'OpenReplay. Plus vous capturez de données, plus il est facile de reproduire et de corriger rapidement les problèmes :
+- [Identifier un utilisateur](/installation/identify-user) : Associez votre ID utilisateur interne à la session en cours d'enregistrement.
+- [Métadonnées](/installation/metadata) : Également appelées traits ou variables utilisateur, les métadonnées fournissent des informations supplémentaires sur les utilisateurs pendant l'enregistrement des sessions.
+- [Événements personnalisés](/installation/custom-events) : Ajoutez plus d'intelligence en enregistrant des événements spécifiques à votre domaine en parallèle des rejeux de sessions.
+- [Rapport d'erreurs](/installation/error-reporting) : Signalez les erreurs et les exceptions et consultez-les sous l'onglet ERRORS.
+- [Téléverser des Source-Maps](/installation/upload-sourcemaps) : Visualisez le contexte du code source obtenu à partir des stack traces sous sa forme originale.
+- [Plugins](/plugins) : Comprenez ce qui se passe en coulisses en capturant le store de votre application et en surveillant vos requêtes HTTP et GraphQL.
+- [Intégrations](/integrations) : Connectez OpenReplay à vos outils de journalisation et synchronisez les erreurs backend avec les rejeux de sessions.

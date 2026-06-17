@@ -1,0 +1,35 @@
+---
+title: "iOS SDK - suivi des saisies"
+metaTitle: "iOS SDK - suivi des saisies"
+metaDescription: "Détails sur le suivi des saisies avec le tracker iOS"
+---
+
+Le tracker écoutera l'événement de changement de valeur (avec debounce) et enverra la valeur résultante au backend d'OpenReplay.
+
+## Ajouter des saisies suivies
+
+### SwiftUI
+
+utilisez `.observeInput(text:label:masked)` pour observer les événements de saisie,
+
+- `text: String` - valeur textuelle de la saisie
+- `label: String` - libellé pour la saisie enregistrée
+- `masked: Bool` - si `true`, le tracker enregistrera uniquement l'événement de saisie lui-même, pas la valeur ; n'oubliez pas d'ajouter `.sensitive` pour flouter la saisie dans l'enregistrement.
+
+```swift
+import ORTracker
+
+TextField("Input", text: $text)
+.observeInput(text: $text, label: "tracker input #1", masked: Bool)
+
+```
+
+### UIKit
+
+UIKit utilisera le placeholder comme libellé et sender.isSecureTextEntry pour masquer la saisie
+
+```swift
+import ORTracker
+
+Analytics.shared.addObservedInput(inputEl)
+```

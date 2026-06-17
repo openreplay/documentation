@@ -1,0 +1,64 @@
+---
+title: "Rollbar"
+metaTitle: "تكامل Rollbar"
+metaDescription: "كيفية دمج Rollbar مع OpenReplay ورؤية أخطاء الواجهة الخلفية جنبًا إلى جنب مع إعادة تشغيل الجلسات."
+---
+
+كيفية دمج Rollbar مع OpenReplay ورؤية أخطاء الواجهة الخلفية جنبًا إلى جنب مع إعادة تشغيل الجلسات.
+
+## 1. إنشاء رموز الوصول إلى المشروع
+
+1. سجّل الدخول إلى حسابك في [Rollbar](https://rollbar.com).
+2. اختر مشروعك من القائمة المنسدلة (أعلى اليسار).
+3. انتقل إلى *Settings > Project* Access Tokens.
+4. انقر على *Create new access tokens*.
+
+![رموز الوصول إلى مشروع Rollbar](/static/rollbar-1.png#center)
+
+5. في Scope اختر `read`؛ وفي الاسم ضع `openreplay`؛ واترك *Rate Limit* على القيمة الافتراضية.
+6. انسخ الرمز الجديد الخاص بك.
+
+![رمز Rollbar النشط](/static/rollbar-2.png#center)
+
+## 2. تفعيل Rollbar في OpenReplay
+
+الصق `Access Token` الخاص بك في لوحة تحكم OpenReplay ضمن 'Preferences > Integration'.
+
+![تكامل Rollbar في OpenReplay](/static/rollbar-3.png#center)
+
+
+## 3. تمرير openReplaySessionToken
+
+لربط حدث Rollbar بجلسة المستخدم المسجَّلة، يجب تمرير رمز فريد من الواجهة الأمامية إلى الواجهة الخلفية مع كل طلب ترغب في تتبعه. يمكن القيام بذلك باستخدام ترويسة HTTP مخصصة. في المثال أدناه، نستخدم دالة `fetch` لإرسال تلك الترويسة.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+ولكي يتمكّن OpenReplay من ربط إدخال سجل Rollbar بجلسة المستخدم المسجَّلة، يجب تمرير رمز فريد بصفته `extra_data` إلى كل خطأ في الواجهة الخلفية ترغب في تتبعه.
+
+فيما يلي مثال باستخدام واجهة برمجة تطبيقات Python الخاصة بـ Rollbar.
+
+```python
+rollbar.report_message("A LOG ENTRY", level='error', extra_data={"openReplaySessionToken": OPENREPLAY_SESSION_TOKEN})
+
+# or if you are catching the exceptions
+
+rollbar.report_exc_info(sys.exc_info(), level='error', extra_data={"openReplaySessionToken": str(OPENREPLAY_SESSION_TOKEN)})
+```
+
+اسم العلامة `openReplaySessionToken` حساس لحالة الأحرف؛
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات، تواصل معنا عبر [Slack](https://slack.openreplay.com) أو اطّلع على [المنتدى](https://forum.openreplay.com) الخاص بنا واحصل على المساعدة من مجتمعنا.

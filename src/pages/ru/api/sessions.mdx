@@ -1,0 +1,71 @@
+---
+title: "Сессии"
+metaTitle: "Сессии"
+metaDescription: "Как получить все сессии конкретного пользователя."
+---
+
+## Получение сессий пользователя
+
+Возвращает список сессий конкретного пользователя, идентифицированного с помощью JavaScript-функции `tracker.setUserID`. Результаты разбиваются на страницы.
+
+### Метод
+`POST`
+
+### URL
+`/public/:projectKey/users/:userId/sessions`
+
+### Параметры
+
+| Name       | Type   | Description                                              |
+|------------|--------|----------------------------------------------------------|
+| projectKey | string | Ключ проекта (обязательно)                               |
+| userId     | string | ID, заданный через `tracker.setUserID` (обязательно, макс. 256) |
+
+### Тело запроса
+
+| Name           | Type       | Description                                                |
+|----------------|------------|------------------------------------------------------------|
+| startTimestamp | epoch (ms) | Начало временного интервала (обязательно, мин. 946684800000) |
+| endTimestamp   | epoch (ms) | Конец временного интервала (обязательно, > startTimestamp) |
+| limit          | integer    | Размер страницы, 1-200 (необязательно, по умолчанию: 50)   |
+| page           | integer    | Номер страницы, начинается с 1 (необязательно, по умолчанию: 1) |
+| sortOrder      | string     | `asc` или `desc` (необязательно)                           |
+
+### Заголовки запроса
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Коды состояния
+
+`200`: Ответ отправлен в виде JSON в теле  
+`400`: Недопустимое тело или недопустимый `userId` (пустой или > 256 символов)
+
+### Пример запроса
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com/sessions \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "startTimestamp": 1623440000000,
+    "endTimestamp":   1623540000000,
+    "limit": 50,
+    "page": 1,
+    "sortOrder": "desc"
+  }'
+```
+
+### Пример ответа
+
+```json
+{
+  "data": {
+    "total": 2,
+    "sessions": [
+      { "sessionId": "4813018042986240", "eventsCount": 1, "startTs": 1623440822825, "endTs": 1623440835604 },
+      { "sessionId": "4813023023591169", "eventsCount": 6, "startTs": 1623440902620, "endTs": 1623440920846 }
+    ]
+  }
+}
+```

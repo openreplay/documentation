@@ -1,0 +1,52 @@
+---
+title: "Uso de OpenReplay con Vue"
+metaTitle: "Cómo añadir el Tracker de OpenReplay a tu aplicación Vue"
+metaDescription: "Aprende cómo poner en funcionamiento el tracker en tu aplicación Vue"
+---
+import Aside from '~/components/Aside.astro'
+
+Poner en funcionamiento el tracker en una aplicación Vue es bastante sencillo. 
+
+## Añadir el código de seguimiento
+
+Suponiendo que estás creando una SPA (Single Page Application), todo lo que tienes que hacer es añadir el siguiente código a tu script de setup en tu archivo principal.
+
+```html
+<script setup>
+// note that you can manually import Tracker class if you want to handle the instance manually
+import { tracker } from '@openreplay/tracker'
+//... your code here
+tracker.configure({
+  projectKey: "<your project key>",
+  ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
+});
+
+tracker.start();
+//... more code here
+</script>
+```
+
+<Aside type="tip">
+Aunque puedes obtener la [versión del snippet JS](/using-or/snippet#getting-the-snippet) de nuestro tracker directamente desde nuestra CDN al crear un nuevo proyecto, el código es demasiado básico y dificultará su personalización y la incorporación de plugins adicionales.
+</Aside>
+
+### Gestionar la "projectKey" en tu código
+
+Por razones de seguridad, evita codificar directamente tu `projectKey` en el código de tu aplicación. En su lugar, guárdala en un archivo de configuración o en un sistema de entorno.
+
+Una opción sería añadir una variable de entorno en un archivo `.env` en la raíz de tu proyecto y anteponer al nombre de la variable el prefijo `VITE_`, lo que la hará disponible en tu código Vue. Puedes usarla más adelante mediante `import.meta.env.<your variable name>`.
+
+Aquí tienes un ejemplo:
+```javascript
+tracker.configure({
+  projectKey: import.meta.env.VITE_VUE_APP_PROJECT_KEY,
+});
+ ```
+
+## ¿Estás construyendo algo más complejo?
+
+Si estás construyendo una aplicación compleja con Vue, es probable que estés usando [Nuxt](/using-or/nuxt) o algo similar. Asegúrate de consultar nuestra sección [Tracker Setup](/using-or) para encontrar el framework con el que estás trabajando.
+
+## ¿Tienes preguntas?
+
+Si tienes algún problema configurando el tracker en tu proyecto Vue, ¡ponte en contacto con nosotros en nuestra [comunidad de Slack](https://slack.openreplay.com/) y pregunta directamente a nuestros desarrolladores!

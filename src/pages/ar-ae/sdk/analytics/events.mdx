@@ -1,0 +1,186 @@
+---
+title: "الأحداث"
+metaTitle: "حزمة تطوير برمجيات التحليلات في OpenReplay — الأحداث"
+metaDescription: "حدّد وأدِر الخصائص الفائقة لأحداث التحليلات الخاصة بمتعقّب OpenReplay."
+---
+
+## الأحداث
+
+تتيح لك هذه الوحدة إدارة **الأحداث** و**الخصائص** — وهي أزواج مفتاح/قيمة دائمة تُرفَق تلقائيًا بكل حدث يتم تعقّبه.
+
+تُخزَّن الخصائص الفائقة محليًا وتُدمَج في حمولة كل حدث عند تعقّب الأحداث.
+
+لمعرفة المزيد حول إدارة الأحداث في واجهة OpenReplay، تفضّل بزيارة [Data Management](/product-analytics/data-management).
+
+متاحة في:
+
+`tracker.analytics.events`
+
+## المفاهيم
+
+### الخصائص الفائقة
+
+تُخزَّن الخصائص الفائقة في حزمة تطوير البرمجيات (SDK) وتُدمَج في كل حدث ضمن `properties`.
+
+### خصائص الحدث
+
+تُمرَّر خصائص الحدث فقط من أجل استدعاء واحد لـ `track/sendEvent`، و**لا تُحفَظ** كخصائص فائقة.
+
+## المفاتيح المحجوزة
+
+هذه المفاتيح محجوزة ولا يمكن إنشاؤها/إزالتها عبر مساعِدات الخصائص الفائقة:
+
+- `properties`
+- `token`
+- `timestamp`
+
+## التواقيع عالية المستوى
+
+```ts
+// Track an event.
+// The `properties` argument is per-event only (not persisted).
+tracker.analytics.events.sendEvent(eventName: string, properties?: Record<string, any>, options?: { send_immediately: boolean })
+
+// Create/update super properties (persisted)
+tracker.analytics.events.setProperty(name: string, value: any): void
+tracker.analytics.events.setProperty(properties: Record<string, any>): void
+
+// Create super properties only if they don't exist yet (persisted)
+tracker.analytics.events.setPropertiesOnce(name: string, value: any): void
+tracker.analytics.events.setPropertiesOnce(properties: Record<string, any>): void
+
+// Remove super properties (persisted)
+tracker.analytics.events.unsetProperties(name: string): void
+tracker.analytics.events.unsetProperties(names: string[]): void
+
+// Clear all super properties
+tracker.analytics.events.reset(): void
+```
+
+## تعقّب الأحداث مع الخصائص
+
+### الخصائص الخاصة بكل حدث (غير دائمة)
+
+```ts
+tracker.analytics.events.sendEvent("Button Clicked", {
+  button_text: "Start",
+  page: "home",
+})
+```
+
+تنطبق هذه الخصائص على هذا الحدث فقط.
+
+### الخصائص الفائقة + الخصائص الخاصة بكل حدث (مدموجة)
+
+عند تعيين خصائص فائقة، تُضمَّن تلقائيًا في كل حدث ثم تُدمَج مع الخصائص الخاصة بكل حدث:
+
+```ts
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  env: "prod",
+})
+
+tracker.analytics.events.sendEvent("Signup Started", {
+	// per-event, can override a super property with the same key
+  plan: "pro", 
+})
+```
+
+ترتيب الدمج:
+
+- تُضاف الخصائص الفائقة أولًا
+- تُدمَج الخصائص الخاصة بكل حدث فوقها
+
+لذا تتغلّب الخصائص الخاصة بكل حدث عند تعارض المفاتيح.
+
+## setProperty
+
+تُنشئ خصائص فائقة أو تستبدلها.
+
+```ts
+// object form
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  region: "eu",
+})
+
+// key/value form
+tracker.analytics.events.setProperty("build_sha", "3f2c9a1")
+```
+
+### ملاحظات:
+
+- يتم تجاهل المفاتيح الافتراضية/الداخلية (التي تتعقّبها حزمة تطوير البرمجيات) ولن تُضاف كخصائص فائقة.
+- تُحفَظ التغييرات محليًا فقط إذا تغيّر شيء ما فعليًا.
+
+## setPropertiesOnce
+
+تُنشئ خصائص فائقة فقط إذا لم تكن موجودة بعد.
+
+```ts
+tracker.analytics.events.setPropertiesOnce({
+  first_seen_at: Date.now(),
+  signup_source: "docs",
+})
+
+// key/value form
+tracker.analytics.events.setPropertiesOnce("initial_referrer", document.referrer)
+```
+
+### ملاحظات:
+
+- تُعيَّن الخصائص فقط إذا كان المفتاح مفقودًا.
+- يتم تجاهل المفاتيح المحجوزة (`properties` و`token` و`timestamp`).
+
+## unsetProperties
+
+تُزيل خاصية فائقة واحدة أو أكثر.
+
+```ts
+// single
+tracker.analytics.events.unsetProperties("region")
+
+// multiple
+tracker.analytics.events.unsetProperties(["app_version", "build_sha"])
+```
+
+### ملاحظات:
+
+- لا يمكن إزالة المفاتيح المحجوزة.
+- تُحفَظ عملية الإزالة بشكل دائم.
+
+## reset
+
+تمسح جميع الخصائص الفائقة.
+
+```ts
+tracker.analytics.events.reset()
+```
+
+## الإرسال الفوري
+
+افتراضيًا، تُوضَع الأحداث في قائمة انتظار/تُجمَّع على دفعات. يمكنك طلب إرسال فوري لحدث ما:
+
+```ts
+tracker.analytics.events.sendEvent(
+  "Checkout Completed",
+  { value: 199, currency: "EUR" },
+  { send_immediately: true },
+)
+```
+
+## الأسماء المستعارة المتوافقة مع Mixpanel
+
+تدعم جميع الطرق طبقة توافق مُوفَّرة لتسهيل الانتقال والإلمام:
+
+```ts
+tracker.analytics.events.register       // setProperty
+tracker.analytics.events.register_once  // setPropertiesOnce
+tracker.analytics.events.unregister     // unsetProperties
+tracker.analytics.events.track          // sendEvent
+```
+
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات، تواصل معنا عبر [Slack](https://slack.openreplay.com) أو اطّلع على [المنتدى](https://forum.openreplay.com) الخاص بنا واحصل على المساعدة من مجتمعنا.

@@ -1,0 +1,99 @@
+---
+title: "الأحداث"
+metaTitle: "الأحداث"
+metaDescription: "كيفية جلب جميع الأحداث الخاصة بتسجيل محدد."
+---
+
+## استرجاع الأحداث
+
+يُرجِع قائمة الأحداث (النقرات، زيارات الصفحات، الإدخالات، الأحداث المخصصة، وما إلى ذلك) الملتقطة في جلسة محددة. يفرض الخادم نطاق الجلسة — حيث تتم إضافة معامِل المسار `sessionID` تلقائيًا كمرشِّح للأحداث.
+
+### الطريقة
+`POST`
+
+### URL
+`/public/:projectKey/sessions/:sessionId/events`
+
+### المعامِلات
+
+| الاسم      | النوع  | الوصف                                                      |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | مفتاح المشروع (مطلوب)                                       |
+| sessionId  | string | معرّف الجلسة (مطلوب، 256 كحد أقصى)                          |
+
+### الحمولة
+
+| الاسم          | النوع      | الوصف                                                               |
+|----------------|------------|----------------------------------------------------------------------|
+| startTimestamp | epoch (ms) | بداية النافذة الزمنية (مطلوب، 946684800000 كحد أدنى)                 |
+| endTimestamp   | epoch (ms) | نهاية النافذة الزمنية (مطلوب، > startTimestamp)                      |
+| limit          | integer    | حجم الصفحة، 1-200 (مطلوب)                                            |
+| page           | integer    | رقم الصفحة، يبدأ من 1 (مطلوب)                                        |
+| sortBy         | string     | عمود الحدث المستخدَم للترتيب (اختياري)                               |
+| sortOrder      | string     | `asc` أو `desc` (اختياري)                                            |
+| filters        | array      | مرشِّحات أحداث إضافية (اختياري) — انظر بنية المرشِّح أدناه           |
+| columns        | array      | أعمدة الأحداث المراد تضمينها في الاستجابة (اختياري)                  |
+
+كائن المرشِّح:
+
+| الاسم    | النوع    | الوصف                                                         |
+|----------|----------|---------------------------------------------------------------|
+| name     | string   | اسم سمة المرشِّح (مطلوب، 256 كحد أقصى)                         |
+| operator | string   | عامل المقارنة (مثل `is`، `contains`)                          |
+| value    | string[] | حتى 10 قيم، كل منها 256 حرفًا كحد أقصى                         |
+| isEvent  | boolean  | ما إذا كان المرشِّح يستهدف خاصية حدث                           |
+| dataType | string   | أحد القيم `string`، `number`، `boolean`، `integer`، `timestamp` |
+
+### ترويسات الطلب
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### رموز الحالة
+
+`200`: تُرسَل الاستجابة بصيغة JSON في النص  
+`400`: نص غير صالح أو `sessionID` غير صالح (فارغ أو > 256 حرفًا)
+
+### مثال على الطلب
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/sessions/4813023023591169/events \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "startTimestamp": 1623440000000,
+    "endTimestamp":   1623441000000,
+    "limit": 100,
+    "page":  1,
+    "sortOrder": "asc"
+  }'
+```
+
+### مثال على الاستجابة
+
+```json
+{
+  "data": {
+    "total": 3,
+    "events": [
+      {
+        "event_id": "01H7Z...",
+        "$event_name": "$pageview",
+        "created_at": 1623440905732,
+        "distinct_id": "mickael@openreplay.com",
+        "session_id": "4813023023591169",
+        "properties": { "path": "/my-account/" }
+      },
+      {
+        "event_id": "01H7Z...",
+        "$event_name": "$click",
+        "created_at": 1623440915126,
+        "distinct_id": "mickael@openreplay.com",
+        "session_id": "4813023023591169",
+        "$properties": { "label": "Shop" },
+        "$auto_captured": true
+      }
+    ]
+  }
+}
+```

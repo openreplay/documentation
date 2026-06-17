@@ -1,0 +1,21 @@
+---
+title: "Vider le cache"
+metaTitle: "Vider le cache"
+metaDescription: "Comment vider et réinitialiser le cache (CSS, polices et icônes) dans OpenReplay."
+---
+
+OpenReplay a besoin d'accéder à des ressources telles que vos feuilles de style, icônes et polices pour que les relectures fonctionnent. En effet, ces fichiers sont copiés puis mis en cache par notre backend afin que vous puissiez voir d'anciens enregistrements même si votre application web a changé. Suivez les étapes ci-dessous pour vider votre cache :
+
+1. Exécutez `k9s -n db`
+2. Utilisez les flèches du clavier pour naviguer dans la liste et atteindre le conteneur `minio-*`
+3. Appuyez sur s pour obtenir un accès shell au conteneur Minio (stockage d'objets)
+4. Exécutez `export MINIO_ACCESS_KEY=<accessKey from vars.yaml>`
+5. Exécutez `export MINIO_SECRET_KEY=<secretKey from vars.yaml>`
+6. Exécutez `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
+7. Exécutez `mc rm --recursive --dangerous --force minio/sessions-assets` pour supprimer tous les fichiers mis en cache (CSS, polices et icônes)
+8. Utilisez `exit` pour quitter le conteneur Minio
+9. Exécutez `:quit` pour quitter la CLI Kubernetes
+10. Redémarrez le service `assets` en exécutant `openreplay -R`
+
+## Des questions ?
+Si vous avez des questions concernant ce processus, n'hésitez pas à nous contacter sur notre [Slack](https://slack.openreplay.com) ou à consulter notre [Forum](https://forum.openreplay.com).

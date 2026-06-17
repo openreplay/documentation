@@ -1,0 +1,77 @@
+---
+title: "Assainir les données (iOS)"
+metaTitle: "Assainir les données (iOS)"
+metaDescription: "Comment assainir les données et garantir la confidentialité de vos utilisateurs dans votre application iOS."
+---
+
+
+## Assainir les composants de l'interface
+
+Les vues assainies seront floutées dans la relecture obtenue. Vous pouvez ajouter n'importe quel composant d'interface et il sera automatiquement supprimé (afin de préserver la mémoire) dès qu'il n'est plus à l'écran.
+
+### SwiftUI
+
+Ajoutez simplement le modificateur `.sensitive()` au composant souhaité.
+
+```swift
+import ORTracker
+
+Text("Very important sensitive text")
+.sensitive()
+
+```
+
+### UIKit
+
+```swift
+import ORTracker
+
+ORTracker.shared.addIgnoredView(view)
+```
+
+### React Native
+
+Le SDK exporte `ORSanitizedView`, que vous pouvez utiliser pour envelopper vos composants sensibles afin de les flouter.
+
+```js
+import OR from '@openreplay/react-native'
+
+// ... your app UI
+
+  <OR.ORSanitizedView>
+    <SensitiveComponent />
+  </OR.ORSanitizedView>
+
+// ...
+```
+
+## Assainir les requêtes réseau
+
+Deux clés sont exportées pour réduire automatiquement les données de la requête/réponse : `ignoredKeys` pour le corps et `ignoredHeaders` pour les en-têtes. La requête et la réponse seront toutes deux assainies, mais le corps ne sera affecté que s'il s'agit d'un JSON valide.
+
+Assignez simplement une liste de chaînes que vous souhaitez assainir :
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+Il est également possible de modifier les données de la réponse avant de les transmettre au listener :
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```

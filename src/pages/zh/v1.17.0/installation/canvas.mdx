@@ -1,0 +1,50 @@
+---
+title: "Canvas 和 WebGL"
+metaTitle: "Canvas 和 WebGL"
+metaDescription: "如何在会话回放中录制 canvas 和 WebGL 元素。"
+---
+
+OpenReplay 可以录制 `<canvas>` 元素的内容，并支持 WebGL。
+
+> 注意：如果你使用 WebGL 上下文，请确保在 .getContext 选项中添加 `{ preserveDrawingBuffer: true }`，以防止出现空白帧，因为从 canvas 提取图像数据通常依赖于默认情况下会被省略的绘图层。
+
+## 启用 Canvas 录制
+
+要启用 canvas 录制，只需运行 `openreplay -e`，然后添加下面的代码块以更新 `http` 服务。
+
+```yaml
+http:
+  env:
+    RECORD_CANVAS: true
+    CANVAS_QUALITY: low
+    CANVAS_FPS: 1
+```
+
+完成后，使用 `:wq` 保存并退出配置，以便 OpenReplay 负责应用这些更改。
+
+> 注意：Canvas 录制在我们所有的 SaaS 产品中均已启用。这些设置——均设为其默认值——无法更改。
+
+### Canvas 选项
+
+你可以根据自己的需求微调下面的选项。事实上，某些应用可能需要更高的帧率。尽管快照的捕获和编码是在后台（web-worker）完成的，不会影响你应用的性能，但采用较高的数值会在终端用户层面消耗更多带宽，并需要你的 OpenReplay 实例（后端）提供更多磁盘存储空间。由 tracker 捕获的图像/快照会被发送到后端，然后经过处理并转换为用于会话回放的视频。
+
+- `CANVAS_QUALITY: 'low' | 'medium' | 'high'`：设置所录制快照的质量。默认值为 `low`。
+- `CANVAS_FPS: number`：定义录制 canvas 元素时每秒的帧数。默认值为 `1`。
+
+> 注意：由于当前视频编解码器的限制，canvas 录制的回放可能会出现黑色（或其他纯色）背景，因为无法对 alpha 通道进行编码。我们正在关注这一问题，一旦有更新版本的编解码器可用，我们将进行升级。
+
+### 数据脱敏
+
+就隐私而言，canvas 元素的内容无法进行脱敏处理。
+
+## 协同浏览会话
+
+对于实时会话（即 Assist），无需任何特定设置。Canvas 将默认启用并被捕获，数据将通过 P2P 协议传输。为确保网络的最佳使用，仅当有客服人员正在观看实时会话且 canvas 内容发生变化时才会传输数据。
+
+## Canvas 作为动画层
+
+如果你在前端层之上使用 canvas（具有更高的 zIndex），你可能会注意到在回放录制的会话时出现黑屏。这是因为 Web API 目前还不允许我们捕获 alpha 通道。如果你的 Web 应用出现这种情况，请为有问题的 canvas 元素添加 `data-openreplay-hidden` HTML 属性，以将其从会话录制中完全隐藏。
+
+## 有疑问吗？
+
+如果你对此过程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

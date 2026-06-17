@@ -1,0 +1,56 @@
+---
+title: "Bugsnag"
+metaTitle: "تكامل Bugsnag"
+metaDescription: "كيفية دمج Bugsnag مع OpenReplay ومشاهدة أخطاء الخادم الخلفي جنبًا إلى جنب مع عمليات إعادة تشغيل الجلسات."
+---
+
+كيفية دمج Bugsnag مع OpenReplay ومشاهدة أخطاء الخادم الخلفي جنبًا إلى جنب مع تسجيلات الجلسات.
+
+## 1. إنشاء رمز التفويض
+
+1. سجّل الدخول إلى حسابك في [Bugsnag](https://app.bugsnag.com).
+2. انتقل إلى *Settings > My account > Personal auth tokens*.
+3. انقر على زر *Generate new token +*.
+4. في الوصف، اكتب `openreplay`.
+5. انقر على زر *Generate*.
+6. انسخ الرمز ثم اضغط على زر *Done*.
+
+![رموز المصادقة الشخصية في Bugsnag](/static/bugsnag-1.jpg#center)
+
+## 2. تفعيل Bugsnag في OpenReplay
+
+ضع `Authorization token` الخاص بك في لوحة تحكم OpenReplay ضمن 'Preferences > Integration' واختر المشروع الذي تريد تتبعه من القائمة المنسدلة.
+
+![تكامل Bugsnag في OpenReplay](/static/bugsnag-2.jpg#center)
+
+## 3. نشر openReplaySessionToken
+
+لربط حدث Bugsnag بجلسة المستخدم المسجّلة، يجب نشر رمز فريد من الواجهة الأمامية إلى الخادم الخلفي في كل طلب ترغب في تتبعه. يمكن القيام بذلك باستخدام رأس HTTP مخصص. في المثال أدناه، نستخدم الدالة `fetch` لإرسال هذا الرأس.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // use window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+لكي يتمكّن OpenReplay من ربط إدخال سجل Bugsnag بجلسة المستخدم المسجّلة، يجب نشر رمز فريد بصيغة `meta_data > special_info` إلى كل خطأ في الخادم الخلفي ترغب في تتبعه.
+
+فيما يلي مثال باستخدام واجهة برمجة تطبيقات Python في Bugsnag.
+
+```python
+bugsnag.notify(EXCEPTION_OBJECT,  meta_data={"special_info":{"openReplaySessionToken": OPENREPLAY_SESSION_TOKEN}})
+```
+
+اسم الوسم `openReplaySessionToken` حسّاس لحالة الأحرف.
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات، تواصل معنا عبر [Slack](https://slack.openreplay.com) أو تفقّد [المنتدى](https://forum.openreplay.com) واحصل على المساعدة من مجتمعنا.

@@ -1,0 +1,213 @@
+---
+title: "在 Next.js 中使用 OpenReplay"
+metaTitle: "将 OpenReplay Tracker 添加到你的 Next.js 应用"
+metaDescription: "了解如何让 tracker 在你的 Next.js 应用中运行"
+---
+让 tracker 在 Next.js 应用中运行相当简单。由于 Next.js 构建在 React 之上，整个过程非常相似，主要的难点来自 Next.js 的服务端渲染（Server Side Rendering）能力。
+
+但一旦你理解了它们的工作原理以及如何组织仅在客户端运行的代码，你很快就能开始追踪你的用户。
+
+## 添加追踪代码
+
+虽然你在创建新项目时可以直接从平台获取一份可复制粘贴的代码，但那份代码过于简单，可能不符合你的团队或公司所期望的最佳实践。
+
+### Tracker 组件
+
+此方法提供了一种极简的方式，我们将 tracker 作为组件注入到应用中，它会动态加载该库。
+ 
+#### App Router (v14+) - use client
+
+```jsx
+'use client'
+import {useEffect} from "react"
+import Tracker from '@openreplay/tracker'
+
+const tracker = new Tracker({
+  projectKey: "",
+  ingestPoint: "",
+})
+
+const Openreplay = () => {
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      tracker.start()
+    }
+  }, [])
+
+  return null
+}
+
+export default Openreplay 
+```
+##### App Router - 将 Openreplay 组件实例动态导入到 root layout 中
+```jsx
+import dynamic from "next/dynamic";
+
+const OpenReplayNoSSR = dynamic(() => import('//import the Openreplay instance'), {
+  ssr: false, //disables Server-side pre-rendering so window won't be undefined
+})
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en" >
+      <body>
+        {children}
+        <OpenReplayNoSSR />
+      </body>
+    </html >
+  );
+}
+
+```
+
+
+#### 常规组件（Next 直到 v13）
+
+```jsx
+[...]
+
+function TrackerComponent() {
+const [tracker, setTracker] = React.useState(null);
+
+  React.useEffect(() => {
+    (async function () {
+      const Tracker = await import("@openreplay/tracker");
+      const openRelayTracker = new Tracker.default({
+        projectKey: PROJECT_KEY,
+        __DISABLE_SECURE_MODE: true,
+      });
+
+      setTracker(openRelayTracker);
+    })();
+  }, []);
+[...]
+```
+
+### Tracker Context
+
+此方法让你创建一个 context，从而更便于控制 tracker 的状态并调用其各种 API。
+
+```jsx
+import { createContext } from "react"
+import {v4 as uuidV4} from 'uuid'
+import { useReducer } from "react"
+
+export const TrackerContext = createContext()
+
+function defaultGetUserId() {
+   return uuidV4() 
+}
+
+async function newTracker(config) {
+    // we use dynamic import to make sure that tracker is started inside browser env
+    const Tracker = await import("@openreplay/tracker");
+    const getUserId = (config?.userIdEnabled && config?.getUserId) ? config.getUserId : defaultGetUserId
+    let userId = null;
+
+    const trackerConfig = {
+        projectKey: config?.projectKey || process.env.NEXT_PUBLIC_OPENREPLAY_PROJECT_KEY
+    }
+
+    const tracker = new Tracker(trackerConfig);
+    
+    if(config?.userIdEnabled) {
+        userId = getUserId()
+        tracker.setUserID(userId)
+    }
+    return tracker
+
+}
+
+function reducer(state, action) {
+        switch(action.type) {
+            case 'init': {
+                if(!state.tracker) {
+                    console.log("Instantiaing the tracker for the first time...")
+                    return {...state, tracker: newTracker(state.config)}
+                }
+                return state
+            }
+            case 'start': {
+                console.log("Starting tracker...")
+                state.tracker.start()
+                return state
+            }
+        }
+    }
+
+export default function TrackerProvider({children, config = {}}) {
+    let [state, dispatch] = useReducer(reducer, {tracker: null, config})
+    let value = {
+        startTracking: () => dispatch({type: 'start'}),
+        initTracker: () => dispatch({type: 'init'})
+    }
+
+    return <TrackerContext.Provider value={value}>{children}</TrackerContext.Provider>
+}
+```
+
+此 provider 向用户提供了 2 个方法：
+
+- `initTracker`：使用所提供的配置实例化 tracker。
+- `startTracking`：触发追踪过程的启动。
+
+此 provider 还接收一个“配置”对象，你可以为将来的功能对其进行扩展。本示例向你展示如何选择性地启用唯一标识用户的能力。你可以使用默认的 UUID，它对每个用户每次访问页面时都是唯一的。或者，你也可以在配置中提供一个自定义的 `getUserId` 函数。 
+
+通过你的自定义函数，你可以提供商店的客户 ID、用户的电子邮件地址，或任何能在你的应用中唯一标识该用户的信息。这样一来，万一某个用户遇到其他人没有报告的特定问题，你就可以随着时间追踪他们的 session replays。
+
+💡**给 self-hosted 用户的提示**：如果你使用的是 self-hosted 版本的 OpenReplay，你还需要指定 `ingestPoint` 配置属性。该属性指定了 tracker 数据的数据接入 endpoint。云端用户不需要这一项，因为默认情况下 tracker 已经知道此 endpoint 的 SaaS 版本在哪里，但如果你是自托管的，则需要指定它（它应该类似于 `https://openreplay.mydomain.com/ingest`） 
+
+### 在你的代码中处理 "projectKey"
+
+需要说明的是，你所配置的 `projectKey` 是由 OpenReplay 平台提供的。出于安全原因，不应将该值硬编码（hardcoded）存储在你的代码中，而应存放在某种配置文件/系统中。
+
+在本示例中，我利用了 Next 的 `.env` 文件。你需要理解的是，如果你不给环境变量加上 `NEXT_PUBLIC` 前缀，你的客户端代码（tracker）将无法访问它。 
+
+如果这不可接受，你可以在用户访问的第一个页面中使用 `getStaticProps`，以便在实例化 tracker 之前获取该值。你可以在下面看到这两种示例。
+
+## 使用 tracker context
+
+导入之前我们创建的 `TrackerProvider`，并用它包裹你的应用，如下所示：
+
+```jsx
+import '../styles/globals.css'
+import TrackerProvider from '../context/trackerContext'
+
+function MyApp({ Component, pageProps }) {
+
+  return <TrackerProvider>
+        <Component {...pageProps} />
+    </TrackerProvider>
+}
+
+export default MyApp
+```
+
+这是 `_app.js` 文件，它充当整个应用的入口点。  
+
+然后，你可以从任意你希望的组件中触发追踪，如下所示：
+
+```jsx
+import { useContext, useEffect } from 'react'
+import { TrackerContext } from '../context/trackerContext'
+import styles from '../styles/Home.module.css'
+
+export default function YourComponent({projectKey}) {
+    
+    const {initTracker, startTracking} = useContext(TrackerContext)
+    
+    useEffect( () => {
+       initTracker()
+       startTracking()
+    }, [])
+//.... rest of your code
+}
+```
+
+如果你不需要这么多控制，你可以将两者合并——把“初始化消息”和“开始追踪消息”合并，这样你只需调用一个函数就能让追踪运行起来。
+
+## 有问题吗？
+
+要查看基于 Next 的可运行应用的**完整代码**，你可以查看[此代码仓库](https://github.com/deleteman/openreplay-next-example)。
+
+如果你在基于 Next 的项目中设置 tracker 时遇到任何问题，请通过我们的 [Slack 社区](https://slack.openreplay.com/)联系我们，直接向我们的开发人员提问！

@@ -1,0 +1,87 @@
+---
+title: "Android SDK - Инициализация SDK"
+metaTitle: "Android SDK - Инициализация SDK"
+metaDescription: "Параметры конфигурации для метода-конструктора трекера Android"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	Android SDK находится в стадии бета-тестирования. Не стесняйтесь оставлять нам отзывы или сообщать о любых проблемах, с которыми вы столкнётесь, в нашем [Slack](https://slack.openreplay.com) или посетите наш [Форум](https://forum.openreplay.com).
+</Aside>
+
+## Установка
+
+Следующая строка установит трекер, а вместе с ним и SDK, чтобы вы могли воспользоваться всеми возможностями трекера.
+
+###  Настройка Gradle
+Добавьте это в корневой build.gradle в конце блока repositories:
+```javascript
+dependencyResolutionManagement {
+		repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+		repositories {
+			mavenCentral()
+			maven { url 'https://jitpack.io' }
+		}
+}
+```
+
+Добавьте зависимость в файл build.gradle вашего приложения:
+```javascript
+dependencies {
+		implementation("com.github.openreplay:android:v1.1.7")
+}
+```
+
+## Инициализация
+
+При создании экземпляра трекера OpenReplay доступно несколько параметров конфигурации, которые вы можете указать для настройки многих аспектов записи и процесса записи. Вы должны задать параметр `projectKey` в конструкторе. Это значение можно получить в панели управления OpenReplay в разделе 'Preferences > Projects'.
+
+<Aside type="tip">
+	Обратите внимание, что если у вас несколько проектов, вам нужно внимательно выбирать ключ проекта.
+</Aside>
+
+
+### Добавление кода отслеживания
+
+Добавьте следующий код в ваш файл `MainActivity.kt`:
+
+```kotlin
+// MainActivity.kt
+import com.openreplay.tracker.OpenReplay
+
+//...
+
+class MainActivity : AppCompatActivity() {
+	override fun onCreate(savedInstanceState: Bundle?) {
+		// not required if you're using our SaaS version
+		OpenReplay.serverURL = "https://your.instance.com/ingest"
+		// check out our SDK docs to see available options
+		OpenReplay.start(
+			applicationContext,
+			"projectkey",
+			OpenReplay.Options.defaults(),
+			onStarted = {
+				println("OpenReplay Started")
+			})
+
+		// ...
+	}
+}
+```
+
+### Очистка данных
+
+Подробнее см. [как очищать данные в записях Android](/android-sdk/sanitization).
+
+## Параметры инициализации
+
+- `crashes: Bool` Включает crashlytics.
+- `analytics: Bool` Включает отслеживание аналитики для отмеченных представлений.
+- `performances: Bool` Включает слушатель производительности.
+- `logs: Bool` Включает слушатель логов.
+- `screen: Bool` Включает запись экрана.
+- `wifiOnly: Bool` Заставляет трекер запускаться только при наличии у пользователя подключения по wifi.
+
+## Остались вопросы?
+Если у вас есть вопросы по этому процессу, не стесняйтесь связаться с нами в нашем [Slack](https://slack.openreplay.com) или посетите наш [Форум](https://forum.openreplay.com).

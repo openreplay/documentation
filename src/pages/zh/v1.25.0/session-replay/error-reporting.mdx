@@ -1,0 +1,104 @@
+---
+title: "错误跟踪"
+metaTitle: "错误跟踪"
+metaDescription: "了解如何使用 OpenReplay 跟踪和解决错误。全面深入地洞察 Web 应用中的错误，并借助完整上下文进行故障排查。"
+---
+
+获得对 Web 应用中错误的高层次和细粒度的可见性。借助 OpenReplay，你可以在完整上下文中进行故障排查，从而更快地解决问题。
+
+## 不同视图中的错误跟踪洞察
+
+### 从 Sessions 视图
+
+1. 导航至会话视图 > **Errors** 选项卡
+2. **使用 Omnisearch**：选择事件 **“Error Message”** 并输入具体的错误信息。
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/error-tracking/errors_sessions_view.gif" alt="会话中的错误" style={{ width: '600px', height: 'auto' }} />
+</div>
+
+### 在单个会话内
+
+1. 导航至 **Console > Errors 选项卡**
+2. 打开错误以查看完整的 sourcemap。
+3. 点击 **"Find all sessions with this error"** 查看发生该错误的会话列表。
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/error-tracking/errors_session_view.gif" alt="会话错误" style={{ width: '600px', height: 'auto' }} />
+</div>
+
+### 从 Cards 视图
+
+1. 导航至 Cards > Add Card > Monitors
+2. 选择 **Table of Errors** 卡片
+
+{/* <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/error-tracking/errors_cards_view.gif" alt="错误表格" style={{ width: '600px', height: 'auto' }} />
+</div> */}
+
+## 手动记录异常
+
+OpenReplay 跟踪器支持记录三种类型的错误：
+
+1. **捕获的异常** - [Error](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error)
+2. **被拒绝的 Promise** - [PromiseRejectionEvent](https://developer.mozilla.org/en-US/docs/Web/API/PromiseRejectionEvent)
+3. **错误事件（onError）** - [ErrorEvent](https://developer.mozilla.org/en-US/docs/Web/API/ErrorEvent)
+
+所有这些都可以使用同一个方法进行上报：
+
+```javascript
+tracker.handleError(error, metaObject); // metaObject is optional and is a flat object
+```
+
+让我们来看一下每种错误类型的示例：
+
+### 捕获的异常（Error）
+
+默认情况下，捕获的异常不会记录到 “Console” 选项卡。要上报错误，请使用以下模式：
+
+```javascript
+try {
+    // application code
+} catch (err) {
+    // application code that handles the error
+    tracker.handleError(err, metaObject); // metaObject is optional and is a flat object
+}
+```
+
+### 被拒绝的 Promise（PromiseRejectionEvent）
+
+如果某个 Promise 被拒绝并且需要上报给 OpenReplay，请使用以下方法：
+
+```javascript
+function myFunc() {
+    doSomeAsyncStuff()
+        .then((result) => {
+            // application code
+        })
+        .catch(promiseRejectionErr => {
+            // application code to handle the error
+            tracker.handleError(promiseRejectionErr, metaObject); // metaObject is optional and is a flat object
+        });
+}
+```
+
+### onError（ErrorEvent）
+
+上报由事件触发的错误，例如 `<img>` 元素加载失败：
+
+```javascript
+<img id="myImg" src="image.gif">
+<p id="demo"></p>
+
+<script>
+document.getElementById("myImg").addEventListener("error", myFunction);
+
+function myFunction(errorEvent) {
+    document.getElementById("demo").innerHTML = "The image could not be loaded.";
+    tracker.handleError(errorEvent, { context: "demo" });
+}
+</script>
+```
+
+## 有疑问？
+如果你对此流程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

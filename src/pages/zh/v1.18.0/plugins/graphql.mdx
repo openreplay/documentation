@@ -1,0 +1,126 @@
+---
+title: "GraphQL"
+metaTitle: "GraphQL"
+metaDescription: "OpenReplay 的 GraphQL 插件。"
+---
+
+import Aside from '~/components/Aside.astro'
+
+此插件允许你捕获 `GraphQL` 请求，并在稍后回放会话录制时对其进行检查。这对于理解和修复问题非常有用。`GraphQL` 插件与 Apollo 和 Relay 实现兼容。
+
+<Aside type="tip">
+  我们还提供了一份详细的教程，介绍如何使用 GraphQL 插件来捕获和修改请求，你可以在[这里](/tutorials/graphql)查看。
+</Aside>
+
+## 安装
+
+```bash
+npm i @openreplay/tracker-graphql
+```
+
+## 使用方法
+
+像往常一样初始化 `@openreplay/tracker` 包，并将插件加载到其中。`plugin` 调用将返回该函数，它接收四个变量 `operationKind`、`operationName`、`variables`、`result` 和 `duration`（默认值为 0），并原样返回 `result`。
+
+```js
+import Tracker from '@openreplay/tracker';
+import trackerGraphQL from '@openreplay/tracker-graphql';
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+export const recordGraphQL = tracker.plugin(trackerGraphQL());
+```
+
+### Relay
+
+如果你正在使用 [Relay 网络工具](https://github.com/relay-tools/react-relay-network-modern)，你可以直接[创建一个中间件](https://github.com/relay-tools/react-relay-network-modern/tree/master tab=readme-ov-file#example-of-injecting-networklayer-with-middlewares-on-the-client-side)
+
+```js
+import { createRelayMiddleware } from '@openreplay/tracker-graphql'
+
+const trackerMiddleware = createRelayMiddleware(tracker)
+
+const network = new RelayNetworkLayer([
+  // your middleware
+  // ,
+  trackerMiddleware
+])
+```
+
+或者你可以手动将 `recordGraphQL` 调用放入 `NetworkLayer` 实现中。如果你使用标准的 `Network.create` 方式来实现它，那么你应该执行类似下面的操作：
+
+```js
+import { createGraphqlMiddleware } from '@openreplay/tracker-graphql'; // see above for recordGraphQL definition
+import { Environment } from 'relay-runtime';
+
+const handler = createGraphqlMiddleware(tracker)
+
+function fetchQuery(operation, variables, cacheConfig, uploadables) {
+  return fetch('www.myapi.com/resource', {
+    // ...
+  })
+    .then(response => response.json())
+    .then(result =>
+        handler(
+          // op kind, name, variables, response, duration (default 0)
+          operation.operationKind,
+          operation.name,
+          variables,
+          result,
+          duration,
+        ),
+    );
+}
+
+const network = Network.create(fetchQuery);
+```
+
+详情请参阅 [Relay Network Layer](https://relay.dev/docs/en/network-layer)。
+
+### Apollo
+
+对于 [Apollo](https://www.apollographql.com/)，你应该创建一个新的 `ApolloLink`。
+
+```js
+import { createTrackerLink } from '@openreplay/tracker-graphql'
+
+const trackerLink = createTrackerLink(tracker);
+const yourLink = new ApolloLink(trackerLink)
+```
+
+或者，你也可以使用通用的 graphql handler：
+
+```js
+import { createGraphqlMiddleware } from '@openreplay/tracker-graphql'; // see above for recordGraphQL definition
+import { ApolloLink } from 'apollo-link';
+
+const handler = createGraphqlMiddleware(tracker)
+
+const trackerApolloLink = new ApolloLink((operation, forward) => {
+  return forward(operation).map(result =>
+    handler(
+      // op kind, name, variables, response, duration (default 0)
+      operation.query.definitions[0].operation,
+      operation.operationName,
+      operation.variables,
+      result,
+    ),
+  );
+});
+
+const link = ApolloLink.from([
+  trackerApolloLink,
+  // ...
+]);
+```
+
+更多详情请参阅 [Apollo Link](https://www.apollographql.com/docs/link/) 和 [Apollo Networking](https://www.apollographql.com/docs/react/networking/network-layer/)。
+
+## 教程
+如果你正在寻找一个实际示例，了解如何使用此插件在你的会话回放中捕获操作数据（变更和查询），请查看[我们这里的详细教程](/tutorials/graphql)。
+
+## 有疑问？
+
+设置此插件时遇到问题？请加入我们的 [Slack](https://slack.openreplay.com)，或查看我们的[论坛](https://forum.openreplay.com)，从我们的社区获得帮助。

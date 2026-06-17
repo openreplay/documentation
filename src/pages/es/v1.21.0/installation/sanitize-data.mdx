@@ -1,0 +1,160 @@
+---
+title: "Sanitizar datos (Web)"
+metaTitle: "Sanitizar datos (Web)"
+metaDescription: "Cómo sanitizar datos y garantizar la privacidad de tus usuarios."
+---
+import Aside from '~/components/Aside.astro'
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<Aside type="tip">
+¿Buscas [cómo sanitizar datos en las repeticiones de iOS](/installation/sanitize-data-ios)? Si no, sigue leyendo para más detalles sobre cómo hacerlo en las grabaciones web.
+</Aside>
+
+## Sanitizar los datos de las repeticiones
+
+Puedes sanitizar lo que OpenReplay captura a nivel global o granular. Cualquier dato ocultado o ignorado no se capturará en el origen. Es decir, esos datos nunca saldrán del navegador del usuario.
+
+<YoutubeVideo title="Mira cómo sanitizar datos sensibles en tus repeticiones"
+  description="Si no te gusta leer, puedes seguir este tutorial en vídeo que te muestra cómo sanitizar datos en tus grabaciones."
+  videoURL="https://youtu.be/22-UCoocy6s"
+/>
+
+### Nivel global
+
+Los datos se pueden sanitizar a nivel del tracker, al configurar OpenReplay.
+
+#### Estoy usando el script de OpenReplay
+
+![Configuración del proyecto en OpenReplay](/static/gdpr-1.png#center)
+
+1) Haz clic en el *Código de seguimiento* de tu proyecto en 'Preferences > Projects'.
+2) Las opciones de grabación de datos deberían aparecer justo antes del fragmento de código:
+- **Inputs**: Para ignorar, ocultar o grabar todos los valores de entrada de tus usuarios.
+- **Do not record any numeric text**: Para ignorar los valores numéricos contenidos en elementos de texto.
+- **Do not record email addresses**: De forma predeterminada, todos los correos electrónicos contenidos en elementos de texto se ocultan y no aparecerán en las repeticiones. Puedes desactivar esto desmarcando la casilla.
+3) Cambiar las opciones de grabación de datos afecta al fragmento de código. Asegúrate de copiar y pegar el script actualizado en tu aplicación web.
+
+#### Estoy usando el NPM de OpenReplay
+
+Hay un conjunto de opciones relacionadas con la privacidad que puedes pasar al constructor:
+- `obscureTextEmails?: boolean` Oculta los correos electrónicos en elementos de texto. Los correos se convertirán en una cadena aleatoria de asteriscos. Predeterminado: true.
+- `obscureTextNumbers?: boolean` Oculta los números en elementos de texto. Los números se convertirán en una cadena aleatoria de asteriscos. Predeterminado: false.
+- `obscureInputEmails?: boolean` Oculta los correos electrónicos en los campos de entrada. Los valores de correo se convertirán en una cadena aleatoria de asteriscos. Predeterminado: true.
+- `obscureInputNumbers?: boolean` Oculta los números en los campos de entrada. Los valores numéricos se convertirán en una cadena aleatoria de asteriscos. Predeterminado: false.
+- `obscureInputDates?: boolean` Oculta las fechas en los campos de entrada. Los valores de fecha se convertirán en una cadena aleatoria de asteriscos. Predeterminado: false.
+- `defaultInputMode?: 0 | 1 | 2` Modo de captura predeterminado para los valores de entrada. Respectivamente: sin procesar, ocultado o ignorado. Predeterminado: 1 (ocultado).
+
+El texto, los correos electrónicos y los números sanitizados se ocultan o se suprimen antes de enviar los datos a los servidores de OpenReplay. Por lo tanto, los cambios aplicados a las opciones anteriores no pueden ser retroactivos y solo se aplicarán a los datos recién recopilados.
+
+### Nivel granular
+
+También puedes sanitizar tus datos a nivel de código para una mayor granularidad. Esto es útil para ocultar o ignorar elementos del DOM y campos de entrada.
+
+#### Usando atributos HTML
+
+- `data-openreplay-obscured` para enmascarar el contenido de texto de las etiquetas `<input>`, `<img>` y otros elementos HTML (es decir, `<div>`) con la excepción de `<svg>` y `<canvas>`.
+
+```html
+<!--Obscuring input fields-->
+<form action="/action_page.php">
+  Name: <input type="text" name="fname" data-openreplay-obscured><br>
+  <input type="submit" value="Submit">
+</form>
+<!--Obscuring a div element-->
+<div style="background-color:lightblue" data-openreplay-obscured>
+  <h3>This is a sensitive information</h3>
+  <p>This is an important paragraph</p>
+  <img src="important_image.jpg">
+</div>
+```
+
+- `data-openreplay-hidden` para redactar el contenido de las etiquetas `<input>`, `<img>`, `<svg>` y otros elementos HTML (es decir, `<div>`) con la excepción de `<canvas>`. El contenido del elemento (incluidos sus componentes hijos) se elimina, pero se conservan sus props y argumentos, como en este ejemplo:
+
+```html
+<div style="background-color:lightblue" data-openreplay-hidden>
+  <div>This is a sensitive information</div>
+  <svg>An important chart</svg>
+</div>
+```
+
+Esto dará como resultado que el tracker grabe el siguiente DOM:
+
+```html
+<div style="background-color:lightblue" data-openreplay-hidden>
+</div>
+```
+
+#### Usando la función domSanitizer
+
+- La función `domSanitizer: (node: Element) => SanitizeLevel` evita tener que instrumentar cada componente HTML que necesita ser sanitizado. `SanitizeLevel` puede ser `Plain` (0), `Obscured` (1) o `Hidden` (2). Esta función se pasa al constructor del tracker. A continuación se muestra un ejemplo de redacción de todos los elementos HTML que tengan un nombre de clase CSS específico:
+
+```js
+// Import SanitizeLevel enum
+import Tracker, { SanitizeLevel } from "@openreplay/tracker";
+
+const tracker = new Tracker({
+  projectKey: PROJECT_KEY,
+  domSanitizer: (node: Element) => {
+    const elementClassNames = node.classList
+
+    if (elementClassNames.contains('to_be_redacted_class')) {
+      return SanitizeLevel.Hidden
+    }
+
+    if (node.id === 'sensitiveData') {
+      return SanitizeLevel.Obscured
+    }
+
+    return SanitizeLevel.Plain
+  }
+})
+tracker.start()
+```
+
+> **Nota:** Todos los elementos sanitizados se enmascaran/redactan a nivel del origen (tracker) para que los datos sensibles nunca lleguen a la instancia de OpenReplay.
+
+## Sanitizar los datos de DevTools
+
+Puedes usar el SDK de OpenReplay para sanitizar los datos de red y el estado de la aplicación.
+
+### Red
+
+La captura de solicitudes/respuestas puede registrar información altamente sensible o privada que tu aplicación pueda estar enviando o recibiendo. Asegúrate de redactar correctamente tus datos de red.
+
+#### Fetch/XHR
+
+Usa la opción `sanitizer` para redactar datos sensibles de las solicitudes/respuestas Fetch/XHR. Consulta las [opciones de red](/installation/network-options#options) para más detalles.
+
+Además, consulta este tutorial paso a paso sobre cómo [capturar y sanitizar solicitudes de red](/tutorials/capture-request).
+
+#### GraphQL
+
+Para sanitizar los datos de GraphQL, necesitas clonar las variables clave y los resultados de la operación antes de llamar al tracker. Consulta cómo [sanitizar los datos grabados en GraphQL](/tutorials/graphql/#sanitizing-the-recorded-data) para más detalles.
+
+### Gestión del estado
+
+Limpia los datos sensibles de tu almacén de estado del frontend usando el SDK de OpenReplay.
+
+#### Redux
+
+Usa las opciones `actionFilter`, `actionTransformer` y `stateTransformer` para redactar acciones y subárboles sensibles de tu almacén. Consulta la [documentación del plugin de redux](/plugins/redux/#options) para más detalles.
+
+#### VueX
+
+Usa las opciones `filter`, `transformer` y `mutationTransformer` para redactar mutaciones y subárboles sensibles de tu almacén. Consulta la [documentación del plugin de vuex](/plugins/vuex/#options) para más detalles.
+
+#### Zustand
+
+Usa las opciones `filter`, `transformer` y `mutationTransformer` para redactar mutaciones y subárboles sensibles de tu almacén. Consulta la [documentación del plugin de zustand](/plugins/zustand/#options) para más detalles.
+
+#### Pinia
+
+Usa las opciones `filter`, `transformer` y `mutationTransformer` para redactar mutaciones y subárboles sensibles de tu almacén. Consulta la [documentación del plugin de pinia](/plugins/pinia/#options) para más detalles.
+
+#### NgRx
+
+Usa las opciones `actionFilter`, `actionTransformer` y `stateTransformer` para redactar acciones y subárboles sensibles de tu almacén. Consulta la [documentación del plugin de ngrx](/plugins/ngrx/#options) para más detalles.
+
+## ¿Tienes preguntas?
+
+Estamos mejorando constantemente nuestras funciones relacionadas con la privacidad, así que avísanos si necesitas algo que aún no soportamos. Si tienes problemas para sanitizar tus datos, contáctanos en nuestro [Slack](https://slack.openreplay.com) o visita nuestro [Foro](https://forum.openreplay.com) y obtén ayuda de nuestra comunidad.

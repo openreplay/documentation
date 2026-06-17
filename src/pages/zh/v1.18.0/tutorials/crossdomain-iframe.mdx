@@ -1,0 +1,44 @@
+---
+title: "跨域 iFrame 追踪"
+metaTitle: "跨域 iFrame 追踪"
+metaDescription: "使用 OpenReplay 追踪跨域 iFrame 中的用户交互。"
+---
+
+要启用跨域 iFrame 追踪，你需要在 tracker 的构造函数中添加 `crossdomain.enabled` 选项，然后像下面这样通过 `data-domain` 为所有需要的 iFrame 添加域名区域：
+
+```html
+<iframe
+	title="test"
+	src="http://iframe1.website.com/iframe-path"
+	width="300"
+	height="300"
+	data-domain="iframe1.website.com"
+></iframe>
+``` 
+
+在你的 tracker 构造函数中添加以下 `crossdomain` 选项：
+
+```js
+const tracker = new OpenReplay({
+	projectKey: PROJECT_KEY,
+	crossdomain: {
+		enabled: true
+	},
+	captureIFrames: true
+});
+```
+
+然后在所需的 iFrame 内部初始化 tracker，并在其构造函数中添加 `crossdomain.parentDomain`：
+
+```js
+const tracker = new OpenReplay({
+	projectKey: PROJECT_KEY,
+	crossdomain: {
+	  // Specifies the domain of the parent window
+	  // If not specified, it will be set to '*'
+	  // Which means that child window will send messages to all domains inside the browser window
+	  // Consult your CSP settings to ensure that '*' is allowed or specify the parent domain
+		parentDomain: '*',
+	}
+});
+```

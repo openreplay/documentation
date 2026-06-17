@@ -1,0 +1,81 @@
+---
+title: "SumoLogic"
+metaTitle: "Integración con SumoLogic"
+metaDescription: "Cómo integrar SumoLogic con OpenReplay y ver los errores del backend junto a las repeticiones de sesión."
+---
+
+Cómo integrar SumoLogic con OpenReplay y ver los errores del backend junto a las grabaciones de sesión.
+
+## 1. Crear un nuevo Access ID y Access Key
+
+1. Inicia sesión en tu cuenta de [SumoLogic](https://service.eu.sumologic.com/ui/#/login).
+2. Ve a la página de [Access Keys](https://service.eu.sumologic.com/ui/#/security/access-keys).
+3. Haz clic en *+ Add Access Key*.
+4. En el nombre pon "openreplay" y haz clic en *Create Key*.
+5. Copia el nuevo `Access ID` y `Access Key`, ya que los necesitaremos para nuestra integración.
+6. Haz clic en *Done*.
+
+Para más información sobre cómo crear un Access ID y un Access Key, consulta esta [documentación](https://help.sumologic.com/Manage/Security/Access-Keys).
+
+## 2. Habilitar SumoLogic en OpenReplay
+
+Coloca tu `Access ID` y `Access Key` en el panel de OpenReplay, en 'Preferences > Integration'.
+
+![Integración de SumoLogic en OpenReplay](/static/sumo-1.png#center)
+
+## 3. Propagar openReplaySessionToken
+
+Para vincular un evento de SumoLogic con la sesión de usuario grabada, se debe propagar un token único desde tu frontend a tu backend en cada solicitud que quieras rastrear. Esto se puede hacer usando una cabecera HTTP personalizada. En el siguiente ejemplo, usamos la función `fetch` para enviar esa cabecera.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+Para que OpenReplay pueda asociar un mensaje de SumoLogic con la sesión de usuario grabada, se debe propagar un token único como parte de cada error del backend que desees rastrear.
+
+A continuación se muestra un ejemplo en Python usando Monkey Patching.
+
+```python
+import sys
+import traceback
+#...
+old_tb = traceback.print_exception
+old_f = sys.stdout
+old_e = sys.stderr
+OPENREPLAY_SESSION_TOKEN = None
+
+class F:
+    def write(self, x):
+        if OPENREPLAY_SESSION_TOKEN is not None and x != '\n':
+            old_f.write(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] {x}")
+        else:
+            old_f.write(x)
+
+    def flush(self):
+        pass
+
+def tb_print_exception(etype, value, tb, limit=None, file=None, chain=True):
+    if OPENREPLAY_SESSION_TOKEN is not None:
+        value = type(value)(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] " + str(value))
+    old_tb(etype, value, tb, limit, file, chain)
+
+traceback.print_exception = tb_print_exception
+
+sys.stderr = F()
+```
+
+El nombre de la etiqueta `openReplaySessionToken` distingue entre mayúsculas y minúsculas.
+
+## ¿Tienes preguntas?
+
+Si encuentras algún problema, conéctate a nuestro [Slack](https://slack.openreplay.com) o consulta nuestro [Foro](https://forum.openreplay.com) y obtén ayuda de nuestra comunidad.

@@ -1,0 +1,227 @@
+---
+title: "Пользовательские эвристики"
+metaTitle: "Пользовательские эвристики"
+metaDescription: "Как расширить сервис эвристик собственным алгоритмом"
+---
+Термином эвристики мы называем простые и надёжные алгоритмы, используемые для обнаружения проблем, таких как высокая загрузка CPU или click rage. Здесь мы рассмотрим один пример, чтобы понять, как работают эвристики, как создать собственный детектор и увидеть его результаты в DevTools.
+
+## Шаблоны
+
+Шаблон для эвристик находится по пути `openreplay/backend/pkg/handlers/custom`.
+
+```tsx
+package custom
+
+import . "openreplay/backend/pkg/messages"
+
+type CustomHandler struct {
+	lastTimestamp uint64
+}
+
+func (h *CustomHandler) Handle(message Message, messageID uint64, timestamp uint64) Message {
+	h.lastTimestamp = timestamp
+	return nil
+}
+
+func (h *CustomHandler) Build() Message {
+	return nil
+}
+```
+
+После того как метод эвристики создан, его можно добавить, изменив файл `main.go` по пути
+`openreplay/backend/cmd/heuristics`, импортировав пользовательский модуль и добавив пользовательскую функцию в обработчик процессора сообщений.
+```tsx
+package main
+
+import (
+        "log"
+        "openreplay/backend/internal/config/heuristics"
+        "openreplay/backend/pkg/handlers"
+        web2 "openreplay/backend/pkg/handlers/web"
+        "openreplay/backend/pkg/intervals"
+        logger "openreplay/backend/pkg/log"
+        "openreplay/backend/pkg/messages"
+        "openreplay/backend/pkg/queue"
+        "openreplay/backend/pkg/queue/types"
+        "openreplay/backend/pkg/sessions"
+        "os"
+        "os/signal"
+        "syscall"
+        "time"
+        // Import custom modules here
+)
+
+func main() {
+        log.SetFlags(log.LstdFlags | log.LUTC | log.Llongfile)
+
+        // Load service configuration
+        cfg := heuristics.New()
+
+        // HandlersFabric returns the list of message handlers we want to be applied to each incoming message.
+        handlersFabric := func() []handlers.MessageProcessor {
+                return []handlers.MessageProcessor{
+                        // web handlers
+                        &web2.ClickRageDetector{},
+                        &web2.CpuIssueDetector{},
+                        &web2.DeadClickDetector{},
+                        &web2.MemoryIssueDetector{},
+                        &web2.NetworkIssueDetector{},
+                        &web2.PerformanceAggregator{},
+                        // Add custom handlers here
+                }
+        }
+        ...
+}
+```
+
+## Пример Quick Return
+
+В этом примере мы создадим эвристику **Quick Return**, которая будет отправлять сигнал каждый раз, когда мы возвращаемся на тот же url менее чем за пять секунд. Метод, реализованный для обнаружения такого события, будет использовать события `SetPageLocation` и `MouseClick`. Каждый раз при клике мышью мы обновляем текущую метку времени, и если сообщение `SetPageEvent` получено в течение следующих пяти секунд и указывает на текущую веб-страницу, то мы возвращаем событие QuickReturn.
+
+Чтобы начать, давайте создадим файл `quickreturn.go` по пути `openreplay/backend/pkg/handlers/custom` с кодом, показанным ниже
+
+```go
+package custom
+import (
+    "log"
+    "encoding/json"
+    . "openreplay/backend/pkg/messages"
+)
+type QuickReturnDetector struct {
+    timestamp   uint64
+    currentPage string
+    lastPage    string
+}
+
+type CustomPayload struct {
+        Timestamp   uint64 `json:"timestamp"`
+        CurrentPage string `json:"current_page"`
+}
+
+// If received SetPageLocation on same
+func (h *QuickReturnDetector) HandleSetPageLocation(msg *SetPageLocation, messageID uint64, timestamp uint64) Message {
+    if (h.timestamp + 5000 >= msg.NavigationStart && h.lastPage == msg.URL) {
+        h.timestamp = msg.NavigationStart
+        return h.Build()
+    }
+    h.lastPage = h.currentPage
+    h.currentPage = msg.URL
+    h.timestamp = msg.NavigationStart
+    return nil
+}
+// detect when a button is clicked (selector must have string 'button' in it)
+func (h *QuickReturnDetector) HandleMouseClick(msg *MouseClick, messageID uint64, timestamp uint64) {
+    h.timestamp = timestamp
+}
+func (h *QuickReturnDetector) Handle(message Message, messageID uint64, timestamp uint64) Message {
+    switch msg := message.(type) {
+    case *SetPageLocation:
+        if msg.NavigationStart != 0 {
+            return h.HandleSetPageLocation(msg, messageID, timestamp)
+        }
+    case *MouseClick:
+        h.HandleMouseClick(msg, messageID, timestamp)
+    }
+    return nil
+}
+func (h *QuickReturnDetector) Build() Message {
+    payload := &CustomPayload{
+        CurrentPage: h.currentPage,
+        Timestamp: h.timestamp,
+    }
+    payloadData, err := json.Marshal(payload)
+    if err != nil {
+            log.Println("JSON encoding error", err)
+            return nil
+    }
+    payloadString := string(payloadData)
+    event := &CustomEvent {
+        MessageID: 122,
+        Timestamp: h.timestamp,
+        Name:      "quickreturn",
+        Payload:   payloadString,
+    }
+    return event
+}
+```
+
+Теперь эвристика создана, её осталось только включить. Для этого нам нужно добавить эвристику в файл `main.go` по пути `openreplay/backend/cmd/heuristics` следующим образом:
+
+```tsx
+package main
+
+import (
+        "log"
+        "openreplay/backend/internal/config/heuristics"
+        "openreplay/backend/pkg/handlers"
+        web2 "openreplay/backend/pkg/handlers/web"
+        "openreplay/backend/pkg/intervals"
+        logger "openreplay/backend/pkg/log"
+        "openreplay/backend/pkg/messages"
+        "openreplay/backend/pkg/queue"
+        "openreplay/backend/pkg/queue/types"
+        "openreplay/backend/pkg/sessions"
+        "os"
+        "os/signal"
+        "syscall"
+        "time"
+        // Add custom module
+        custom "openreplay/backend/pkg/custom"
+)
+
+func main() {
+        log.SetFlags(log.LstdFlags | log.LUTC | log.Llongfile)
+
+        // Load service configuration
+        cfg := heuristics.New()
+
+        // HandlersFabric returns the list of message handlers we want to be applied to each incoming message.
+        handlersFabric := func() []handlers.MessageProcessor {
+                return []handlers.MessageProcessor{
+                        // web handlers
+                        &web2.ClickRageDetector{},
+                        &web2.CpuIssueDetector{},
+                        &web2.DeadClickDetector{},
+                        &web2.MemoryIssueDetector{},
+                        &web2.NetworkIssueDetector{},
+
+                        // The new handler
+                        &custom.QuickReturnDetector{},
+                }
+        }
+        ...
+}
+```
+
+Теперь эвристика доступна, и сообщения отправляются как **Custom Event** (пользовательское событие).
+Обратите внимание, что вам потребуется повторно развернуть свой бэкенд, прежде чем вы сможете воспользоваться новой эвристикой. Для этого следуйте шагам из раздела *build and deploy* на странице [**deploy from source**](https://docs.openreplay.com/deployment/deploy-source).
+
+## Использование пользовательского события
+Теперь, когда ваша пользовательская эвристика отправляет новое пользовательское событие, следующее, что вам нужно сделать, — это как-то использовать это событие.
+С приведённым ранее примером у вас есть два варианта:
+
+1. Вы можете фильтровать сессии по пользовательскому событию, чтобы в списке оказывались только те, у которых есть эта «проблема» (в нашем случае — проблема quick return).
+2. Вы можете найти событие во вкладке Events в разделе DevTools плеера. Таким образом вы сможете точно определить момент, когда событие срабатывает.
+
+### Фильтрация сессий по пользовательскому событию
+
+Чтобы отфильтровать сессии по вашему новому пользовательскому событию, просто воспользуйтесь функцией [Omnisearch](/tutorials/omnisearch): нажмите на строку поиска и выберите «Custom Events» в качестве типа фильтра.
+После этого вы сможете ввести название события; оно должно автозаполняться, как только вы начнёте печатать, как показано на изображении ниже:
+
+![Custom event filter](/tutorials//heuristics/custom-events.png)
+
+**Обратите внимание**, что если автозаполнение не работает или не возвращает искомое название события, значит в базе данных нет события с таким названием. В этом случае вам следует перепроверить свою логику, чтобы убедиться, что вы корректно инициируете отправку пользовательского события.
+
+### Поиск пользовательского события в DevTools
+
+Если вы хотите понять, в какой именно момент срабатывает пользовательское событие, вам нужно воспроизвести сессию и нажать на вкладку «Events» в DevTools.
+Вы найдёте её в правом нижнем углу экрана.
+После нажатия она откроется, и вы увидите список событий, включая ваше пользовательское, как показано на изображении ниже:
+
+![Events listed in devTools](/tutorials//heuristics/devtools.png)
+
+В этом простом процессе мы создали новый детектор. Разумеется, ваш алгоритм может быть более сложным и включать комбинацию различных типов событий.
+
+## Остались вопросы?
+
+Если вы столкнулись с какими-либо проблемами, присоединяйтесь к нашему [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com) и получите помощь от нашего сообщества.

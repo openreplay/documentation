@@ -1,0 +1,166 @@
+---
+title: "OpenReplay 管理"
+metaTitle: "OpenReplay 管理"
+metaDescription: "如何轻松地管理和维护你的 OpenReplay 实例。"
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+## CLI
+
+CLI 有助于管理 OpenReplay 实例的基本方面，例如重启或重新安装服务、访问某个组件的日志，或者只是检查后端服务的状态。
+
+使用 `-h` 选项运行 CLI：
+
+```bash
+openreplay -h
+```
+
+并查看所有可用选项的列表：
+
+```shellsession
+  ___                   ____            _
+ / _ \ _ __   ___ _ __ |  _ \ ___ _ __ | | __ _ _   _
+| | | | '_ \ / _ \ '_ \| |_) / _ \ '_ \| |/ _` | | | |
+| |_| | |_) |  __/ | | |  _ <  __/ |_) | | (_| | |_| |
+ \___/| .__/ \___|_| |_|_| \_\___| .__/|_|\__,_|\__, |
+      |_|                        |_|            |___/
+
+[INFO]
+  Usage: openreplay [ -h | --help ]
+                    [ -s | --status ]
+                    [ -i | --install DOMAIN_NAME ]
+                    [ -u | --upgrade ]
+                    [ -U | --deprecated-upgrade /path/to/old_vars.yaml]
+                    [ -r | --restart ]
+                    [ -R | --Reload ]
+                    [ -c | --cleanup N (in days) ]
+                    [ -e | --edit ]
+                    [ -p | --install-packages ]
+                    [ -l | --logs SERVICE ]
+         Services: alerts assets assist chalice
+                   db ender frontend heuristics
+                   http integrations nginx-controller
+                   peers sink sourcemapreader storage
+```
+
+OpenReplay 后端依赖以下组件/服务：
+
+| 服务 | 描述 |
+|---------|-------------|
+| http | 摄取事件和会话录制 |
+| sink | 从流式管道（企业版为 Redis 或 Kafka）读取数据并插入到临时存储（NFS）中 |
+| storage | 将临时会话录制文件移动到对象存储服务 |
+| assets | 用于缓存资源（CSS、字体和图标）以正确渲染录制内容 |
+| db | 读取和写入各种数据库（企业版为 Postgres + ClickHouse） |
+| ender | 当用户会话处于非活动或断开连接状态时终止会话 |
+| chalice | 用于提供前端服务的 API |
+| alerts | 当任一性能指标达到用户设置的阈值时发送通知（电子邮件、slack、应用内、webhook） |
+| integrations |  从受支持的第三方 API（Sentry、Elastic、GitHub、Jira 等）推送和拉取数据 |
+
+## 实用命令
+
+- 检查 OpenReplay 的健康状态
+
+```sh
+openreplay -s
+```
+
+- 检查服务的日志
+
+```sh
+openreplay -l <service name>
+```
+
+## 提升服务容量
+
+可以通过覆盖默认的 cpu/内存分配值来提升任意服务的容量。这些默认值是在安装过程中根据你的实例容量确定的，应该能够满足大多数安装的需求。
+
+ 如果你的流量很大并且机器性能强劲，只需运行 `openreplay -e` 文件并覆盖该服务的资源即可。在下面的示例中，我们针对 `http` worker 进行设置。但这可以针对任意服务（即 sink、storage、postgresql、redis 等）执行，方法是取消注释并更新下面的代码块。如果你需要对多个服务执行此操作，只需复制并重命名/更新相同的代码块即可（注意避免重复）。
+
+```yaml
+http:
+  resources:
+    limits:
+      cpu: 4096m
+      memory: 8192Mi
+    requests:
+      cpu: 1024m
+      memory: 2056Mi
+```
+
+最后，重新安装该服务以使新的限制生效（你的数据不会丢失）：
+
+```bash
+openreplay -R
+```
+
+## 升级 PostgreSQL
+
+以下是将 PostgreSQL 升级到 1.16 或更高版本的说明：
+
+1. 在持久卷中转储数据库：
+
+   如果你使用的是原生（vanilla）安装，请执行以下命令来转储数据库：
+
+   > 注意：你可以预期数据将被压缩为 3:1 的比率（示例：如果你有 15G 的 postgres 数据，那么转储后将为 5G）。因此请确保你有足够的磁盘空间。
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'PGPASSWORD=$POSTGRES_PASSWORD PGUSER=postgres pg_dumpall -v > /bitnami/postgresql/dumpall.sql'
+   ```
+
+2. 删除现有的数据目录：
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'rm -rf /bitnami/postgresql/data'
+   ```
+
+3. 将 PostgreSQL StatefulSet 缩放到零，以停止当前的 pod：
+
+   ```sh
+   kubectl scale sts postgresql --replicas=0 -n db
+   ```
+
+4. 将 PostgreSQL 镜像更新到 16.3.0 或更高版本：
+
+   ```sh
+   kubectl set image statefulset/postgresql postgresql=bitnamilegacy/postgresql:17.2.0 -n db
+   ```
+
+5. 将 StatefulSet 重新缩放回一，以启动更新后的 pod：
+
+   ```sh
+   kubectl scale sts postgresql --replicas=1 -n db
+   ```
+
+6. 确保 pod 正在运行且缩放操作已完成：
+
+   ```sh
+   kg po -n db -l app.kubernetes.io/name=postgresql
+   ```
+
+7. 从转储中恢复数据库：
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'PGPASSWORD=$POSTGRES_PASSWORD PGUSER=postgres psql -f /bitnami/postgresql/dumpall.sql'
+   ```
+
+8. 升级完成后，你可以从 PostgreSQL pod 中删除转储文件：
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'rm /bitnami/postgresql/dumpall.sql'
+   ```
+
+## 卸载 OpenReplay
+
+运行以下命令以卸载 OpenReplay：
+
+```bash
+sudo k3s-uninstall.sh
+```
+
+所有配置都存储在 `/var/lib/openreplay/` 中。
+
+```
+sudo rm -rf /var/lib/openreplay/openreplay
+```

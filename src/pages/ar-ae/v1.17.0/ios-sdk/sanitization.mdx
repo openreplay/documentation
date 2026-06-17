@@ -1,0 +1,60 @@
+---
+title: "iOS SDK - تنقية البيانات الحساسة"
+metaTitle: "iOS SDK - تنقية البيانات الحساسة"
+metaDescription: "تفاصيل حول تنقية التسجيلات وبيانات الشبكة في متعقّب iOS"
+---
+
+## مكوّنات واجهة المستخدم
+
+سيتم تمويه العروض التي تمت تنقيتها في إعادة التشغيل الناتجة. يمكنك إضافة أي مكوّن لواجهة المستخدم وسيتم إزالته تلقائيًا (للحفاظ على الذاكرة) بمجرد عدم ظهوره على الشاشة.
+
+### SwiftUI
+
+ما عليك سوى إضافة المُعدِّل `.sensitive()` إلى المكوّن المطلوب
+
+```swift
+import ORTracker
+
+Text("Very important sensitive text")
+.sensitive()
+
+```
+
+### UIKit
+
+```swift
+import ORTracker
+
+ORTracker.shared.addIgnoredView(view)
+```
+
+## طلبات الشبكة
+
+يتم تصدير مفتاحين لاقتطاع بيانات الطلب/الاستجابة تلقائيًا: `ignoredKeys` للمتن و`ignoredHeaders` للترويسات. ستتم تنقية كل من الطلب والاستجابة، ولكن لن يتأثر المتن إلا إذا كان JSON صالحًا.
+
+ما عليك سوى تعيين قائمة من السلاسل النصية التي ترغب في تنقيتها:
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+من الممكن أيضًا تعديل بيانات الاستجابة قبل تمريرها إلى الـ listener:
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```

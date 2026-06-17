@@ -1,0 +1,52 @@
+---
+title: "Nettoyer les données (Android)"
+metaTitle: "Nettoyer les données (Android)"
+metaDescription: "Comment nettoyer les données et garantir la confidentialité de vos utilisateurs dans votre application Android."
+---
+
+
+## Composants de l'interface
+
+Les vues nettoyées seront floutées dans le replay obtenu. Vous pouvez ajouter n'importe quel composant d'interface et il sera automatiquement supprimé (pour préserver la mémoire) dès qu'il n'est plus à l'écran.
+
+### View
+
+```kotlin
+import com.openreplay.tracker.OpenReplay
+
+OpenReplay.addIgnoredView(view)
+```
+
+## Requêtes réseau
+
+Deux clés sont exportées pour rogner automatiquement les données de la requête/réponse : `ignoredKeys` pour le corps et `ignoredHeaders` pour les en-têtes. La requête et la réponse seront toutes deux nettoyées, mais le corps ne sera affecté que s'il s'agit d'un JSON valide.
+
+Il suffit d'attribuer une liste de chaînes que vous souhaitez nettoyer :
+
+```kotlin
+val networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+Il est également possible de modifier les données de la réponse avant de les transmettre au listener :
+
+```kotlin
+// ... request
+
+var sanitizedData: Any? = null
+data?.let {
+    try {
+        val json = JSONTokener(it).nextValue()
+        sanitizedData = customSanitizeFunction(it)
+        println(json)
+    } catch (error: JSONException) {
+        println("Error deserializing JSON: $error")
+    }
+}
+
+networkListener.finish(response, sanitizedData)
+```
+
+## Vous avez des questions ?
+Si vous avez des questions sur ce processus, n'hésitez pas à nous contacter sur notre [Slack](https://slack.openreplay.com) ou à consulter notre [Forum](https://forum.openreplay.com).

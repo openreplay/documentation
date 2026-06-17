@@ -1,0 +1,226 @@
+---
+title: "清理存储"
+metaTitle: "清理存储"
+metaDescription: "从数据库中批量删除录制内容并清理你的存储。"
+---
+import Aside from '~/components/Aside.astro'
+
+每条录制都以一个文件和数据库中的一条记录的形式存在。OpenReplay 会将重放一个会话所需的内容（DOM 变更、鼠标坐标、控制台日志、网络活动等等）转储到 3 个文件中（其中 2 个用于重放本身，1 个用于 DevTools 数据）。这些文件默认存储在你的实例上，因此它们占用了大部分存储空间。会话元数据将永久存储在 PostgreSQL 数据库中，但 180 天之后，包含录制内容的文件将通过 minio 生命周期策略过期/删除。
+
+## 临时存储清理
+
+在处理并上传到对象存储服务（minIO 或 S3）之前，OpenReplay 会将临时数据存储在文件系统中。处理完成后，这些数据即被弃用，并由一个 cronjob 在每周的第 2 天删除这些文件。
+
+如果你希望修改该 cronjob：
+1. 编辑配置：
+
+```bash
+openreplay -e
+```
+
+2. 通过追加以下行来更改 cronjob 的执行时间：
+
+```yaml
+utilities:
+  # Cleanup data everyday morning 3:05 am, server time.
+	cron: "5 3 * * *"
+```
+
+
+在你的 OpenReplay 实例中有 2 种清理存储的方式：自动（CLI）和手动。
+
+## 数据清理（CLI）
+
+此过程通过我们的 CLI 完全自动化。只需运行下面的命令，即可通过同时从 Postgres（存储事件的位置）和 minio（保存录制内容的位置）中删除数据来清理你的存储：
+
+```bash
+# To clean data older than 14 days
+openreplay --cleanup 14
+```
+
+## 数据清理（手动）
+
+数据可以同时从数据库（存储事件的位置）和 minio（保存录制内容的位置）中删除。
+
+### 录制内容清理
+
+如果你需要释放一些空间，请登录到你的 OpenReplay 实例并按照以下步骤操作：
+
+1. 运行 `k9s -n db`
+2. 使用键盘方向键浏览列表并定位到 `minio-*` 容器
+3. 按 `s` 以获取对 Minio（对象存储）容器的 shell 访问权限
+4. 运行 `mc alias set minio http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD`
+5. 运行 `mc rm --recursive --dangerous --force --older-than 7d minio/mobs`（即删除超过 7 天的文件）
+6. 使用 `exit` 退出 Minio 容器
+7. 运行 `:quit` 退出 Kubernetes CLI
+
+#### 更改默认的生命周期策略
+
+如果你使用的是 minio（标准安装），可以通过以下方式更改默认的生命周期策略：
+
+1. 运行 `k9s -n db`
+2. 使用键盘方向键浏览列表并定位到 `minio-*` 容器
+3. 按 `s` 以获取对 Minio（对象存储）容器的 shell 访问权限
+6. 运行 `mc alias set minio http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD`
+7. 要在录制内容创建 14 天后自动清理
+
+```bash
+export EXPIRATION_DAYS=14
+export DELETE_JOB_DAYS=$((EXPIRATION_DAYS>30 ? 30 : EXPIRATION_DAYS))
+cat <<EOF > /tmp/lifecycle.json
+{
+  "Rules": [
+    {
+      "Expiration": {
+        "Days": $EXPIRATION_DAYS
+      },
+      "ID": "Delete old mob files",
+      "Status": "Enabled"
+    },
+    {
+      "Expiration": {
+        "Days": $DELETE_JOB_DAYS
+      },
+      "ID": "Delete flagged mob files after ${DELETE_JOB_DAYS} days",
+      "Filter": {
+        "Tag": {
+          "Key": "to_delete_in_days",
+          "Value": "${DELETE_JOB_DAYS}"
+        }
+      },
+      "Status": "Enabled"
+    }
+  ]
+}
+EOF
+mc ilm import minio/mobs < /tmp/lifecycle.json
+```
+
+8. 使用 `exit` 退出 Minio 容器
+9. 运行 `:quit` 退出 Kubernetes CLI
+
+### 数据库清理（PostgeSQL）
+
+根据你的使用情况，数据可以从多个表中以不同的方式删除。
+
+#### 连接到 PostgreSQL
+
+连接到你的 OpenReplay 实例，然后：
+
+1. 运行 `k9s -n db`
+2. 使用键盘方向键浏览列表并定位到 `postgresql-*` 容器
+3. 按 `s` 以获取对 Postgres 容器的 shell 访问权限
+4. 运行 `PGPASSWORD=MY_PG_PASSWORD psql -U postgres`（将 `MY_PG_PASSWORD` 替换为 `/var/lib/openreplay/vars.yaml` 文件中 `postgresqlPassword` 变量的值）
+5. 执行你的删除查询（或任何其他查询）
+6. 输入 `exit` 退出 postgresql-client
+7. 使用 `exit` 退出 Postgres 容器
+8. 运行 `:quit` 退出 Kubernetes CLI
+
+#### 检查表的大小
+
+要检查表的大小，你可以运行以下查询：
+
+```sql
+SELECT nspname AS "name_space",
+       relname AS "relation",
+       pg_size_pretty(
+               pg_total_relation_size(C.oid)
+           )   AS "total_size"
+FROM pg_class C
+         LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+WHERE nspname NOT IN ('pg_catalog','information_schema')
+  AND C.relkind <> 'i'
+  AND nspname !~ '^pg_toast'
+ORDER BY pg_total_relation_size(C.oid) DESC
+LIMIT 20;
+```
+
+#### 删除特定事件
+
+我们注意到，大多数 OpenReplay 用户在查看上一节的结果后，决定删除特定事件而不是清理会话（尤其是 `events.resources` 和 `events_common.requests`）。
+
+要丢弃所有事件数据，你可以运行以下任意一条查询，但请记住，这将影响 cards 数值、click-maps、事件列表以及其他功能。
+
+<Aside type="caution">
+	此操作风险自负，因此在数据库中执行此类操作时请务必格外小心，因为它们不可逆，并且可能会影响 OpenReplay 的多项功能。
+</Aside>
+
+```sql
+--- To delete all data related to a specific event
+
+-- The next 2 tables are usually the biggest ones, and they affect some cards only
+TRUNCATE TABLE events.resources;
+TRUNCATE TABLE events_common.requests;
+
+-- The next table will affect click-maps and events list of session's replay
+TRUNCATE TABLE events.clicks;
+TRUNCATE TABLE events.errors;
+TRUNCATE TABLE events.graphql;
+TRUNCATE TABLE events.inputs;
+TRUNCATE TABLE events.pages;
+TRUNCATE TABLE events.performance;
+TRUNCATE TABLE events.state_actions;
+TRUNCATE TABLE events_common.customs;
+TRUNCATE TABLE events_common.issues;
+```
+
+#### 按时间删除特定会话
+
+如果你想清理所有会话，请直接跳到[下一部分](#delete-all-sessions)，因为它更快并能立即释放存储空间。
+
+如果你希望清理数据库（PostgreSQL）中的数据，请使用下面的 SQL 查询。将 `2021-01-01` 替换为你希望从该日期起保留录制内容的日期。这是一个级联删除，因此所有录制内容及其对应的事件都将从数据库中删除。
+
+<Aside type="caution">
+	此操作风险自负，因此在数据库中执行此类操作时请务必格外小心，因为它们不可逆。
+</Aside>
+
+```sql
+--- Cascade delete all sessions and their related events captured before Jan 1st, 2021
+DELETE FROM public.sessions WHERE start_ts < extract(epoch from '2021-01-01'::date) * 1000;
+```
+
+运行上述查询后，数据库不会立即释放存储空间，因为它会将清理安排到稍后进行。要手动强制它释放存储空间，你可以运行以下查询：
+
+<Aside type="note">
+	这些查询会锁定每个表，使其不可用，并且根据你的数据库情况，可能需要数小时才能完成。如果你仍有足够的可用存储空间，可以将清理交给 PostgreSQL 的 Auto-Vacuum 处理。
+	
+	此外，它的运行需要一些可用存储空间，因此我们强烈建议按照[表的大小](#check-tables-size)的升序运行这些查询
+</Aside>
+
+```sql
+--- Recreate indexes and free unused storage
+VACUUM FULL public.sessions;
+VACUUM FULL events_common.customs;
+VACUUM FULL events_common.issues;
+VACUUM FULL events_common.requests;
+VACUUM FULL events.pages;
+VACUUM FULL events.state_actions;
+VACUUM FULL events.errors;
+VACUUM FULL events.graphql;
+VACUUM FULL events.performance;
+VACUUM FULL events.resources;
+VACUUM FULL events.inputs;
+VACUUM FULL events.clicks;
+```
+
+#### 删除所有会话
+
+如果你希望清理数据库（PostgreSQL）中所有会话的数据，请使用下面的 SQL 查询。这是一个级联删除，因此所有录制内容及其对应的事件都将从数据库中删除。
+
+<Aside type="caution">
+	此操作风险自负，因此在数据库中执行此类操作时请务必格外小心，因为它们不可逆。
+	
+	对于 OpenReplay Enterprise Edition，这些查询还会删除 vault-sessions。
+</Aside>
+
+```sql
+--- Cascade delete all sessions and their related events 
+TRUNCATE TABLE public.sessions CASCADE;
+TRUNCATE TABLE public.errors CASCADE;
+TRUNCATE TABLE public.issues CASCADE;
+TRUNCATE TABLE public.autocomplete;
+```
+
+## 有疑问吗？
+
+如果你对此过程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

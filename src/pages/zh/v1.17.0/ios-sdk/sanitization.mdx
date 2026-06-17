@@ -1,0 +1,60 @@
+---
+title: "iOS SDK - 清理敏感数据"
+metaTitle: "iOS SDK - 清理敏感数据"
+metaDescription: "关于在 iOS 跟踪器中清理录制内容和网络数据的详细信息"
+---
+
+## UI 组件
+
+被清理的视图将在生成的回放中被模糊处理。你可以添加任何 UI 组件，一旦它不再显示在屏幕上，就会被自动移除（以节省内存）。
+
+### SwiftUI
+
+只需为目标组件添加 `.sensitive()` 修饰符
+
+```swift
+import ORTracker
+
+Text("Very important sensitive text")
+.sensitive()
+
+```
+
+### UIKit
+
+```swift
+import ORTracker
+
+ORTracker.shared.addIgnoredView(view)
+```
+
+## 网络请求
+
+导出了两个键用于自动裁剪请求/响应数据：`ignoredKeys` 用于请求体，`ignoredHeaders` 用于请求头。请求和响应都会被清理，但请求体仅在它是有效的 JSON 时才会受到影响。
+
+只需指定一个你想要清理的字符串列表：
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+也可以在将响应数据传递给 listener 之前对其进行修改：
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```

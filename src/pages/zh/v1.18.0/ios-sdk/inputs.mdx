@@ -1,0 +1,35 @@
+---
+title: "iOS SDK - 跟踪输入"
+metaTitle: "iOS SDK - 跟踪输入"
+metaDescription: "关于使用 iOS tracker 跟踪输入的详细信息"
+---
+
+Tracker 会监听值变更事件（经过防抖处理），并将最终的值发送到 OpenReplay 后端。
+
+## 添加被跟踪的输入
+
+### SwiftUI
+
+使用 `.observeInput(text:label:masked)` 来观察输入事件，
+
+- `text: String` - 输入的文本值
+- `label: String` - 记录输入的标签
+- `masked: Bool` - 如果为 `true`，tracker 将只记录输入事件本身，而不记录其值；别忘了添加 `.sensitive` 以在录制中模糊该输入。
+
+```swift
+import ORTracker
+
+TextField("Input", text: $text)
+.observeInput(text: $text, label: "tracker input #1", masked: Bool)
+
+```
+
+### UIKit
+
+UIKit 将使用 placeholder 作为标签，并使用 sender.isSecureTextEntry 来遮蔽输入
+
+```swift
+import ORTracker
+
+Analytics.shared.addObservedInput(inputEl)
+```

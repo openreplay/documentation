@@ -1,0 +1,214 @@
+---
+title: "Assist"
+metaTitle: "Assist"
+metaDescription: "Как настроить OpenReplay Assist и поддерживать ваших конечных пользователей через экран в реальном времени и WebRTC."
+---
+
+import Aside from '~/components/Aside.astro'
+
+OpenReplay Assist позволяет вам поддерживать ваших пользователей, видя их экран в реальном времени и мгновенно подключаясь к звонку (WebRTC) с ними без необходимости использования какого-либо стороннего программного обеспечения для демонстрации экрана.
+
+<Aside type="tip">
+  У нас также есть подробное руководство о том, как использовать Assist для взаимодействия с вашими пользователями в реальном времени, вы можете ознакомиться с ним [здесь](/tutorials/assist).
+</Aside>
+
+## Установка
+
+```bash
+npm i @openreplay/tracker-assist
+```
+
+## Использование
+
+### С помощью JavaScript-сниппета
+
+Если ваш трекер OpenReplay настроен с помощью JS-сниппета, просто замените вхождение `.../openreplay.js` на `.../openreplay-assist.js`. Ниже приведён пример того, как должен выглядеть скрипт после изменения:
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" };
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay-assist.js", 1, 0, initOpts, startOpts);
+</script>
+```
+
+### С помощью NPM
+
+Инициализируйте трекер, затем загрузите плагин `@openreplay/tracker-assist`.
+
+#### Если ваш веб-сайт является одностраничным приложением (SPA)
+
+```js
+import Tracker from '@openreplay/tracker';
+import trackerAssist from '@openreplay/tracker-assist';
+
+const tracker = new Tracker({
+  projectKey: PROJECT_KEY,
+});
+tracker.use(trackerAssist(options)); // check the list of available options below
+
+tracker.start();
+
+```
+
+#### Если ваше веб-приложение рендерится на стороне сервера (SSR)
+
+Следуйте приведённому ниже примеру, если ваше приложение использует SSR. Убедитесь, что `tracker.start()` вызывается после запуска приложения (в `useEffect` или `componentDidMount`).
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+import trackerFetch from '@openreplay/tracker-assist/cjs';
+
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+tracker.use(trackerAssist(options)); // check the list of available options below
+
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, [])
+//...
+}
+```
+
+## Опции
+
+Плагин assist поддерживает следующие опции:
+
+```js
+trackerAssist({
+  callConfirm?: string|ConfirmOptions;
+  controlConfirm?: string|ConfirmOptions;
+  config?: object;
+  onAgentConnect?: () => (()=>void | void);
+  onCallStart?: () => (()=>void | void);
+  onRemoteControlStart?: () => (()=>void | void);
+	onCallDeny?: () => any;
+	onRemoteControlDeny?: (agentInfo: Record<string, any>) => any;
+  onRecordingDeny?: (agentInfo: Record<string, any>) => any;
+	callUITemplate?: string
+	/** 
+	 * enables gzip compression for big batches on client side
+	 * */
+	compressionEnabled: boolean;
+	/**
+	 * Minimum amount of MESSAGES in a batch to trigger compression run
+	 * @default 5000
+	 * */
+	compressionMinBatchSize: number
+})
+```
+
+### Настройка виджетов
+
+Как удалённое управление, так и виджеты звонка, которые видит конечный пользователь, можно полностью настроить.
+
+#### Виджет удалённого управления
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
+
+#### Виджет звонка
+
+Каждый аспект этого виджета можно настроить с помощью приведённого ниже набора `ids` и `classes`. `Ids` служат якорями для отдельных кнопок/элементов, тогда как `classes` можно использовать для групповых контейнеров.
+
+| Тип HTML | Имя(имена) | Описание |
+|----------|-------------|-------------|
+|id | `or-assist` | Контейнер виджета |
+|class | `card`, `border-dark`, `shadow` и `drag-area` | Стили для границы и тени карточки |
+|id | `controls`  | Контейнер для части звонка внутри виджета |
+|class | `card-header` | Стили для заголовка карточки виджета звонка (того, что показывает имя агента рядом с таймером) |
+|id | `agent-name` | Контейнер для имени агента |
+|id | `duration` | Контейнер для таймера |
+|id | `video-container` | Контейнер собственного видеопотока пользователя |
+|id | `remote-stream` | Видеопоток агента |
+|class | `card-footer` | Контейнер для кнопок «Без звука», «Видео», «Завершить звонок» |
+|id | `audio-btn` | Кнопка отключения звука |
+|id | `video-btn` | Кнопка видео |
+|id | `end-call-btn` | Кнопка завершения звонка |
+|id | `remote-control-row` | Строка для элементов удалённого управления |
+|id | `end-control-btn` | Id для кнопки завершения управления |
+
+### Колбэки
+
+Вот список всех колбэков:
+
+- `callConfirm`: Настройка текста и/или макета всплывающего окна запроса звонка. 
+- `controlConfirm`: Настройка текста и/или макета всплывающего окна запроса удалённого управления.
+- `config`: Содержит пользовательскую конфигурацию сервера ICE/TURN. По умолчанию `{ 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }], 'sdpSemantics': 'unified-plan' }`.
+- `onAgentConnect: () => (()=>void | void)`: Эта функция обратного вызова срабатывает, как только начинается сессия в реальном времени, и возвращает данные агента (email, name и query). Она также может вернуть `onAgentDisconnect`, который будет вызван при отключении сессии. В случае нестабильного соединения это может вызываться несколько раз. Ниже приведён пример:
+
+```js
+onAgentConnect = ({ email, name, query }) => {
+  console.log("Live session started")
+  const onAgentDisconnect =  () => console.log("Live session stopped")
+  return onAgentDisconnect
+}
+```
+
+- `onCallStart: ({ email, name, query }) => (()=>void | void)`: Эта функция обратного вызова срабатывает, как только начинается звонок (webRTC), и возвращает данные агента (email, name и query). Она также может вернуть `onCallEnd`, который будет вызван при завершении звонка. В случае нестабильного соединения это может вызываться несколько раз. Ниже приведён пример:
+
+```js
+onCallStart: () => {
+  console.log("Call started")
+  const onCallEnd = () => console.log("Call ended")
+  return onCallEnd
+}
+```
+
+- `onRemoteControlStart: ({ email, name, query }) => (()=>void | void)`: Эта функция обратного вызова срабатывает, как только начинается сессия удалённого управления, и возвращает данные агента (email, name и query). Она также может вернуть `onRemoteControlEnd`, который будет вызван при отзыве разрешений на удалённое управление. Ниже приведён пример:
+
+```js
+onRemoteControlStart: () => {
+  console.log("Remote control started")
+  const onControlEnd = () => console.log("Remote control ended")
+  return onControlEnd
+}
+```
+
+- `onCallDeny?: () => any;`: Эта функция обратного вызова срабатывает, когда пользователь отклонил звонок на этапе запроса.
+
+```js
+onCallDeny: () => {
+  console.log("Call denied")
+}
+```
+
+- `onRemoteControlDeny?: (agentInfo: Record<string, any>) => any;`: Эта функция обратного вызова срабатывает, когда пользователь отклонил сессию удалённого управления на этапе запроса, и возвращает данные агента (email, name и query).
+
+```js
+onRemoteControlDeny: ({ email, name, query }) => {
+  console.log("Remote control request denied for", email)
+}
+```
+
+- `onRecordingDeny?: (agentInfo: Record<string, any>) => any;`: Эта функция обратного вызова срабатывает, когда пользователь отклонил сессию записи на этапе запроса, и возвращает данные агента (email, name и query).
+
+```js
+onRecordingDeny: ({ email, name, query }) => {
+  console.log("Recording session denied")
+ 
+}
+```
+
+## Есть вопросы?
+
+Возникли проблемы с настройкой этого плагина? Подключайтесь к нашему [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com) и получите помощь от нашего сообщества.

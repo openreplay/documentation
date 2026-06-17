@@ -1,0 +1,202 @@
+---
+title: "Assist"
+metaTitle: "Assist"
+metaDescription: "如何搜索某个特定项目的所有实时会话。"
+---
+
+## 获取实时会话
+
+仅适用于企业版（EE）。
+
+返回某个特定项目的实时会话列表。
+
+### 方法
+
+`GET`
+
+### URL
+
+`/api/v1/:projectKey/assist/sessions`
+
+### 参数
+
+| Name | Type | Description |
+|----------|-------------|-------------|
+| projectKey | string | 你正在跟踪的项目的 ID（必填） |
+
+### 请求头
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`：该密钥可在 'Preferences' > 'Account' > 'Organization API
+Key' 中找到。
+
+### 状态码
+
+`200`：以 JSON 格式在响应体中返回
+
+### 请求示例
+
+```shell
+curl -X GET \
+  https://openreplay.example.com/api/v1/aYYaFHiagqdXKEmVlmvJ/assist/sessions \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### 响应示例
+
+```json
+{
+  "data": {
+    "total": 1,
+    "sessions": [
+      {
+        "pageTitle": "OpenReplay Blog",
+        "sessionID": "6975518573799938",
+        "metadata": {},
+        "userID": "",
+        "userUUID": "8998545b-553c-4f41-a39d-d7cba7fac2d1",
+        "projectKey": "aYYaFHiagqdXKEmVlmvJ",
+        "revID": "",
+        "timestamp": 1656437966459,
+        "trackerVersion": "3.5.11",
+        "isSnippet": true,
+        "userOs": "Mac OS",
+        "userBrowser": "Chrome",
+        "userBrowserVersion": "103.0.0.0",
+        "userDevice": null,
+        "userDeviceType": "desktop",
+        "userCountry": "FR",
+        "active": false,
+        "live": true,
+        "projectId": 3
+      }
+    ]
+  }
+}
+```
+
+## 搜索实时会话
+
+在某个特定项目的实时会话列表中进行搜索。
+
+### 方法
+
+`POST`
+
+### URL
+
+`/api/v1/:projectKey/assist/sessions`
+
+### 参数
+
+| Name | Type | Description |
+|----------|-------------|-------------|
+| projectKey | string | 你正在跟踪的项目的 ID（必填） |
+
+### Payload
+
+| Name    | Type            | Description                                          |
+|---------|-----------------|------------------------------------------------------|
+| sort    | string          | 排序属性（默认值:timestamp）               |
+| order   | string          | 排序顺序，可以是 "DESC" 或 "ASC"（默认值:DESC） |
+| page    | integer         | 用于分页的页码（默认值:1）           |
+| limit   | integer         | 每页的会话数量（默认值:200）        |
+| filters | array of filter | 过滤器列表，请查看下一个表格（默认值:[]）   |
+
+filter 对象：
+
+| Name     | Type                              | Description                                                                        |
+|----------|-----------------------------------|------------------------------------------------------------------------------------|
+| value    | array of case insensitive strings | 值的列表（默认值:[]）                                                    |
+| type     | case insensitive string           | 过滤属性（必填）                                                    |
+| source   | case insensitive string           | 当 type=metadata 时的元数据属性名称（默认值:""）                          |
+| operator | case sensitive string           | 对每个值使用的运算符，可以是 "contains" 或 "is"（默认值:"contains"） |
+
+该搜索会查找属性名称包含给定 `type` 且其值包含给定 `value` 中任意一个的实时会话。
+
+
+附注：如果 `values=[]`，搜索将查找具有给定属性的实时会话。
+
+例如，如果你要查找具有特定元数据（任意值）的会话：
+```json
+{"value": [], "type": "METADATA", "source": "myMeta"}
+```
+
+### 请求头
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`：该密钥可在 'Preferences' > 'Account' > 'Organization API
+Key' 中找到。
+
+### 状态码
+
+`200`：以 JSON 格式在响应体中返回
+
+### 请求示例
+
+以下示例将查找前 10 个实时会话（按 timestamp 倒序排列），其中
+`userId` 包含 'openreplay'，且 `metadata.plan` 包含 'trial' 或 'free'。
+
+```shell
+curl -X POST \
+  https://openreplay.example.com/api/v1/aYYaFHiagqdXKEmVlmvJ/assist/sessions \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+  --data-raw '{
+    "filters": [
+        {
+            "value": [
+                "trial", "free"
+            ],
+            "type": "METADATA",
+            "source": "plan",
+            "operator": "is"
+        },
+        {
+            "value": [
+                "openreplay"
+            ],
+            "type": "USERID",
+            "operator": "contains"
+        }
+    ],
+    "sort": "timestamp",
+    "order": "DESC",
+    "limit": 10,
+    "page": 1
+   }'
+```
+
+### 响应示例
+
+```json
+{
+  "data": {
+    "total": 1,
+    "sessions": [
+      {
+        "pageTitle": "OpenReplay Blog",
+        "sessionID": "6975518573799185",
+        "metadata": {
+          "plan": "trial"
+        },
+        "userID": "dev@openreplay.com",
+        "userUUID": "8998545b-553c-4f41-a39d-d7cba7fac2d1",
+        "projectKey": "aYYaFHiagqdXKEmVlmvJ",
+        "revID": "",
+        "timestamp": 1656437966459,
+        "trackerVersion": "3.5.11",
+        "isSnippet": true,
+        "userOs": "Mac OS",
+        "userBrowser": "Chrome",
+        "userBrowserVersion": "103.0.0.0",
+        "userDevice": null,
+        "userDeviceType": "desktop",
+        "userCountry": "FR",
+        "active": false,
+        "live": true,
+        "projectId": 3
+      }
+    ]
+  }
+}
+```

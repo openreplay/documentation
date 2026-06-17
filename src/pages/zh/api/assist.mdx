@@ -1,0 +1,169 @@
+---
+title: "Assist"
+metaTitle: "Assist"
+metaDescription: "如何搜索特定项目的所有实时会话。"
+---
+import Aside from '~/components/Aside.astro'
+
+<Aside type="note">
+仅在企业版 (EE) 中可用。
+</Aside>
+
+## 获取实时会话
+
+返回特定项目的实时会话列表。可选择通过查询参数按 `userId` 进行筛选。
+
+服务端应用的默认值：`sort = timestamp`、`order = desc`、`limit = 10`、`page = 1`。
+
+### 方法
+
+`GET`
+
+### URL
+
+`/public/:projectKey/assist/sessions`
+
+### 参数
+
+| Name       | Type   | Description                                             |
+|------------|--------|---------------------------------------------------------|
+| projectKey | string | 项目密钥（必填）                                        |
+| userId     | string | 可选的 `tracker.setUserID` 值（URL 查询参数）           |
+
+### 请求头
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### 请求示例
+
+```shell
+curl -X GET \
+  '{BASE_URL}/public/aYYaFHiagqdXKEmVlmvJ/assist/sessions?userId=mickael@openreplay.com' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### 响应示例
+
+```json
+{
+  "data": {
+    "total": 1,
+    "sessions": [
+      {
+        "pageTitle": "OpenReplay Blog",
+        "sessionID": "6975518573799938",
+        "metadata": {},
+        "userID": "mickael@openreplay.com",
+        "userUUID": "8998545b-553c-4f41-a39d-d7cba7fac2d1",
+        "projectKey": "aYYaFHiagqdXKEmVlmvJ",
+        "timestamp": 1656437966459,
+        "trackerVersion": "3.5.11",
+        "userOs": "Mac OS",
+        "userBrowser": "Chrome",
+        "userBrowserVersion": "103.0.0.0",
+        "userDeviceType": "desktop",
+        "userCountry": "FR",
+        "live": true,
+        "projectId": 3
+      }
+    ],
+    "live": true
+  }
+}
+```
+
+## 搜索实时会话
+
+使用 JSON 请求体搜索特定项目的实时会话列表。
+
+省略时服务端应用的默认值：`sort = timestamp`、`order = desc`、`limit = 10`、`page = 1`。
+
+### 方法
+
+`POST`
+
+### URL
+
+`/public/:projectKey/assist/sessions`
+
+### 参数
+
+| Name       | Type   | Description                                             |
+|------------|--------|---------------------------------------------------------|
+| projectKey | string | 项目密钥（必填）                                        |
+
+### 负载
+
+| Name    | Type            | Description                                          |
+|---------|-----------------|------------------------------------------------------|
+| sort    | string          | 排序属性（默认值：`timestamp`）                      |
+| order   | string          | `asc` 或 `desc`（默认值：`desc`）                    |
+| page    | integer         | 用于分页的页码（默认值：`1`）                        |
+| limit   | integer         | 每页的会话数量（默认值：`10`）                       |
+| filters | array of filter | 筛选器列表（默认值：`[]`）                           |
+
+筛选器对象：
+
+| Name     | Type       | Description                                                                    |
+|----------|------------|--------------------------------------------------------------------------------|
+| name     | string     | 筛选属性（必填，例如 `userId`）。当配合下方的 `source` 使用时请填 `METADATA`    |
+| operator | string     | `contains` 或 `is`（默认值：`contains`）                                       |
+| value    | string[]   | 值列表（默认值：`[]`）                                                         |
+| source   | string     | 当 `name = METADATA` 时的元数据属性名称（默认值：`""`）                         |
+
+如果 `value = []`，搜索将匹配设置了给定属性（任意值）的实时会话。
+
+### 请求头
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### 请求示例
+
+以下示例搜索前 10 个实时会话（按 timestamp 降序排列），其中 `userId` 包含 `openreplay` 且 `metadata.plan` 为 `trial` 或 `free`。
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/aYYaFHiagqdXKEmVlmvJ/assist/sessions \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "filters": [
+      { "value": ["trial", "free"], "name": "METADATA", "source": "plan", "operator": "is" },
+      { "value": ["openreplay"], "name": "userId", "operator": "contains" }
+    ],
+    "sort": "timestamp",
+    "order": "desc",
+    "limit": 10,
+    "page": 1
+  }'
+```
+
+### 响应示例
+
+```json
+{
+  "data": {
+    "total": 1,
+    "sessions": [
+      {
+        "pageTitle": "OpenReplay Blog",
+        "sessionID": "6975518573799185",
+        "metadata": { "plan": "trial" },
+        "userID": "dev@openreplay.com",
+        "userUUID": "8998545b-553c-4f41-a39d-d7cba7fac2d1",
+        "projectKey": "aYYaFHiagqdXKEmVlmvJ",
+        "timestamp": 1656437966459,
+        "trackerVersion": "3.5.11",
+        "userOs": "Mac OS",
+        "userBrowser": "Chrome",
+        "userBrowserVersion": "103.0.0.0",
+        "userDeviceType": "desktop",
+        "userCountry": "FR",
+        "live": true,
+        "projectId": 3
+      }
+    ],
+    "live": true
+  }
+}
+```

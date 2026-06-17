@@ -1,0 +1,203 @@
+---
+title: "在 Remix 中使用 OpenReplay"
+metaTitle: "在 Remix 项目中使用 tracker"
+metaDescription: "了解如何开始在你的 Remix 项目中追踪你的用户"
+---
+在基于 Remix 的项目中安装 OpenReplay tracker 相对简单。
+
+准备好你的 Remix 项目后，在 `app` 文件夹中找到 `root.jsx` 文件，并加入你在平台上创建项目时 OpenReplay 提供的 SSR 代码。
+
+## 第 1 步。获取代码
+
+你完全可以使用平台提供的代码，它代表了你开始所需的最低限度。如果你这样做，请确保选择如下所示的 “Server-Side-Rendered (SSR)” 选项。
+
+![snippet-code-screenshot.jpg](/using-or/snippet-code-screenshot.jpg)
+
+但在本示例中，我们将创建一个示例模块，并将其保存为 `app` 文件夹中的 `tracker.ts`。该模块将导出一个名为 `startTracker` 的函数，用于实例化 tracker 并使其运行起来。
+
+```jsx
+import {v4 as uuidV4} from 'uuid'
+import Tracker from '@openreplay/tracker'
+
+function defaultGetUserId() {
+    return uuidV4()
+}
+
+type TrackerConfig = {
+    projectKey: string,
+    userIdEnabled?: boolean,
+    getUserId?: () => string
+}
+
+export function startTracker(config: TrackerConfig) {
+    let tracker = null;
+    let userId = "";
+
+    console.log("Starting tracker...")
+    console.log("Custom configuration received: ", config)
+
+    const getUserId = (config?.userIdEnabled && config?.getUserId) ? config.getUserId : defaultGetUserId
+
+    const trackerConfig: TrackerConfig = {
+        projectKey: config?.projectKey
+    }
+
+    console.log("Tracker configuration")
+    console.log(trackerConfig)
+    tracker = new Tracker(trackerConfig);
+
+    if(config?.userIdEnabled) {
+        userId = getUserId()
+        tracker.setUserID(userId)
+    }
+
+    tracker.start();
+
+    return {
+        tracker,
+        userId
+    }
+}
+```
+
+如果你以这种方式从 OpenReplay 导入 Tracker 模块时遇到问题，可以考虑使用动态导入，如下所示：
+
+```jsx
+import {v4 as uuidV4} from 'uuid'
+
+function defaultGetUserId() {
+    return uuidV4()
+}
+
+type TrackerConfig = {
+    projectKey: string,
+    userIdEnabled?: boolean,
+    getUserId?: () => string
+}
+
+export function startTracker(config: TrackerConfig) {
+    let tracker = null;
+    let Tracker = null
+    let userId = "";
+
+    (async () => {
+				//dynamic import
+        Tracker  = (await import('@openreplay/tracker')).default
+        console.log("Starting tracker...")
+        console.log("Custom configuration received: ", config)
+
+        const getUserId = (config?.userIdEnabled && config?.getUserId) ? config.getUserId : defaultGetUserId
+
+        const trackerConfig: TrackerConfig = {
+            projectKey: config?.projectKey
+        }
+
+        console.log("Tracker configuration")
+        console.log(trackerConfig)
+        tracker = new Tracker(trackerConfig);
+
+        if(config?.userIdEnabled) {
+            userId = getUserId()
+            tracker.setUserID(userId)
+        }
+
+
+        tracker.start();
+
+    })()
+
+    return {
+        tracker,
+        userId
+    }
+}
+```
+
+💡**给 self-hosted 用户的提示：** 如果你使用的是 OpenReplay 的 self-hosted 版本，你还需要指定 `ingestPoint` 配置属性。该属性用于指定 tracker 数据的接收端点（ingestion endpoint）。云端用户不需要此项，因为默认情况下
+tracker 会知道该端点的 SaaS 版本在哪里，但如果
+你是自托管的，你就需要指定它（它应该类似于 `https://openreplay.mydomain.com/ingest`）
+
+## 第 2 步。 将代码和 tracker 添加到你的项目中
+
+完成上述步骤后，你需要使用以下命令为你的项目安装 tracker 包：
+
+```markdown
+$ npm install @openreplay/tracker
+```
+
+你还需要安装 [uuid 包](https://www.npmjs.com/package/uuid)，以确保上面的代码可以按原样运行。
+
+完成后，我们几乎就可以开始追踪了，但我们仍然需要将 **project key** 配置为 ENV 环境变量，并以某种方式通过 `startTracker` 函数接收到的 `config` 对象将其传递给 tracker。
+
+### 在 Remix 中加载 ENV 环境变量
+
+ENV 环境变量在后端（back-end）可访问，因此我们将利用 `loader` 函数，它可用于加载任何外部数据，包括 ENV 环境变量。
+
+然后我们将使用 `useLoaderData` 钩子，以便在 hydration 之后，我们的组件可以访问已加载的数据。
+
+在我们的 root.tsx 文件中（如果你不使用 TypeScript 则为 jsx），添加以下函数：
+
+```tsx
+type LoaderData = {
+  ENV: {
+    projectKey: string | undefined
+  }
+};
+
+export const loader: LoaderFunction = async ({ }) => {
+  return json<LoaderData>({
+    ENV: {
+      projectKey: process.env.OPENREPLAY_PROJECT_KEY
+    }
+  });
+};
+```
+
+请注意我们如何将 project key 配置在 `OPENREPLAY_PROJECT_KEY` ENV 环境变量中。
+
+通过将其作为 `loader` 函数执行结果的一部分返回，我们就可以在主组件中使用 `useLoaderData` 钩子，如下所示：
+
+```tsx
+export default function App() {
+
+  let loaderData = useLoaderData()
+
+  useEffect(() => {
+    startTracker({
+      projectKey:  loaderData.ENV.projectKey
+    })
+  }, [])
+
+  return (
+    <html lang="en">
+      <head>
+        <Meta />
+        <Links />
+      </head>
+      <body>
+        <Outlet />
+        <ScrollRestoration />
+        <Scripts />
+        <LiveReload />
+      </body>
+    </html>
+  );
+}
+```
+
+你的组件内容可能会有所不同，这取决于你想要实现的目标，但这里的示例负责在页面 hydration 之后，使用正确的 project key 启动 tracker。
+
+## 第 3 步。尽情享受你的调试体验吧！
+
+完成上述步骤后，你现在就可以继续部署你的应用程序了。
+
+当你开始测试它时，你会在标签页关闭几分钟后看到列出的回放（replays）（这是为了确保该标签页不是意外关闭的）。
+
+💡 **请记住**：tracker 在本地不会工作，你也不会在平台上看到你的本地测试。你必须部署应用程序，tracker 才能访问 OpenReplay 后端（back-end）。
+
+
+## 还有疑问？
+
+要查看一个可运行的基于 Remix 的应用程序的**完整代码**，你可以查看[这个仓库](https://github.com/deleteman/openreplay-remix-example)。
+
+如果你在基于 Remix 的项目中设置 tracker 时遇到任何问题，请通过我们的 [Slack 社区](https://slack.openreplay.com/) 联系我们，直接向我们的开发者提问！

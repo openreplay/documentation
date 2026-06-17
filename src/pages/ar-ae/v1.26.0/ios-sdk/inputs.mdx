@@ -1,0 +1,38 @@
+---
+title: "iOS SDK - تتبّع حقول الإدخال"
+metaTitle: "iOS SDK - تتبّع حقول الإدخال"
+metaDescription: "تفاصيل حول تتبّع حقول الإدخال باستخدام مُتتبّع iOS"
+---
+
+سيستمع المُتتبّع إلى حدث تغيير القيمة (مع إزالة الارتداد debounce) ويُرسل القيمة الناتجة إلى الخادم الخلفي لـ OpenReplay.
+
+## إضافة حقول الإدخال المُتتبَّعة
+
+### SwiftUI
+
+استخدم `.observeInput(text:label:masked)` لمراقبة أحداث الإدخال،
+
+- `text: String` - القيمة النصية لحقل الإدخال
+- `label: String` - تسمية لحقل الإدخال المُسجَّل
+- `masked: Bool` - إذا كانت القيمة `true`، فسيُسجّل المُتتبّع حدث الإدخال نفسه فقط دون القيمة، ولا تنسَ إضافة `.sensitive` لتمويه حقل الإدخال في التسجيل.
+
+```swift
+import ORTracker
+
+TextField("Input", text: $text)
+.observeInput(text: $text, label: "tracker input #1", masked: Bool)
+
+```
+
+### UIKit
+
+سيستخدم UIKit الـ placeholder كتسمية و sender.isSecureTextEntry لإخفاء حقل الإدخال
+
+```swift
+import ORTracker
+
+Analytics.shared.addObservedInput(inputEl)
+```
+
+## هل لديك أسئلة؟
+إذا كانت لديك أي أسئلة حول هذه العملية، فلا تتردّد في التواصل معنا عبر [Slack](https://slack.openreplay.com) أو الاطّلاع على [المنتدى](https://forum.openreplay.com) الخاص بنا.

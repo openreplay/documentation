@@ -1,0 +1,91 @@
+---
+title: "设置 OpenReplay"
+metaTitle: "设置 OpenReplay"
+metaDescription: "如何快速设置 OpenReplay 并开始记录会话和指标。"
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+import IconText from '~/components/Card/IconText.astro'
+
+<YoutubeVideo title="观看如何开始使用 OpenReplay"
+  description="如果你不喜欢阅读，可以观看这个视频教程，它将向你展示如何在 3 分钟或更短的时间内开始使用 OpenReplay"
+  videoURL="https://www.youtube.com/watch?v=EWbtMK3qK30"
+  />
+
+
+开始使用 OpenReplay 非常简单。 
+
+如果你想观看一个关于如何开始的快速教程，请观看[这个 YouTube 视频](https://www.youtube.com/watch?v=EWbtMK3qK30)，否则请继续阅读以了解更多详情。
+
+有 2 种方式可以让 OpenReplay 运行起来：使用脚本或使用 npm 包。
+
+## 使用脚本
+
+将代码片段直接复制/粘贴到你的 Web 应用的 `</head>` 中。该脚本可以在 OpenReplay 控制面板的 'Preferences > Projects' 下找到，并且对每个项目都是唯一的。
+
+如果你的网站支持 Google Tag Manager，那么你可以参考 [GTM 分步指南](/integrations/google-tag-manager)。
+
+## 使用 NPM
+
+首先安装 npm 包。
+
+```bash
+npm i @openreplay/tracker
+```
+
+然后，从你代码库的入口点初始化该包并启动 tracker。你必须在构造函数中设置 `projectKey` 选项。它的值可以在你的 OpenReplay 控制面板的 'Preferences > Projects' 下找到。
+
+### 如果你的网站是单页应用（SPA）
+
+```js
+import OpenReplay from '@openreplay/tracker';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+tracker.start();
+```
+
+### 如果你的 Web 应用是服务端渲染（SSR）
+
+如果你的 Web 应用是服务端渲染（SSR）（即 NextJS、NuxtJS），请遵循下面的代码片段。确保在应用启动后调用 `tracker.start()`（在 `useEffect` 或 `componentDidMount` 中）。
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+//...
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY
+});
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, []);
+}
+```
+
+如果你想进一步配置 tracker，请查看 [JavaScript SDK](/installation/javascript-sdk#options) 以获取可用选项列表。
+
+## 与其他框架集成
+如果你不是在一个简单的应用中使用 OpenReplay，那么你很可能正在使用某个 Web 开发框架，例如 Next.js、Nuxt 或其他框架。
+请查看我们为每个受支持框架量身定制的教程：
+
+<div class="grid grid-cols-1 md:grid-cols-1 gap-3 md:gap-4">
+  <IconText url="/using-or/next" title="React" />
+  <IconText url="/using-or/nuxt" title="Vue" />
+  <IconText url="/using-or/angular" title="Angular" />
+  <IconText url="/using-or/next" title="NextJS" />
+  <IconText url="/using-or/nuxt" title="Nuxt" />
+</div>
+
+## 后续步骤
+
+现在你已经安装了 tracker 并部署了你的 Web 应用，会话录制应该会在几分钟内出现。做得好！
+
+与此同时，你可以在设置过程中更进一步，以充分利用 OpenReplay。你捕获的内容越多，就越有利于快速重现和修复问题：
+- [识别用户](/installation/identify-user)：将你的内部用户 ID 与正在记录的会话关联起来。
+- [元数据](/installation/metadata)：也称为 traits 或用户变量，元数据在记录会话时提供有关用户的额外信息。
+- [自定义事件](/installation/custom-events)：通过在会话回放的同时记录特定于业务领域的事件来获得更深入的洞察。
+- [错误报告](/installation/error-reporting)：报告错误和异常，并在 ERRORS 标签页下查看它们。
+- [上传 Source-Maps](/installation/upload-sourcemaps)：以原始形式查看从堆栈跟踪中获取的源代码上下文。
+- [插件](/plugins)：通过捕获你应用的 store 并监控你的 HTTP 和 GraphQL 查询，了解幕后发生的情况。
+- [集成](/integrations)：将 OpenReplay 与你的日志工具连接起来，并将后端错误与会话回放同步。
