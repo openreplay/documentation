@@ -2,6 +2,10 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_CONTENT_ACCESS_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_CONTENT_ACCESS_KEY }}
@@ -16,27 +20,24 @@ env:
   DOCS_KEY: ${{ secrets.DOCS_KEY }}
 
   PUBLIC_SITE_URL: ${{ secrets.PUBLIC_SITE_URL}}
-  NODE_OPTIONS: "--max_old_space_size=15360"
 
 jobs:
   build-and-deploy:
     name: Build and Deploy
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [20.x]
 
     steps:
     - uses: actions/checkout@v4
-    - name: Use Node.js ${{ env.NODE_VERSION }}
+    - name: Use Node.js 20
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: 20
+        cache: 'npm'
     - name: Set Swap Space
       uses: actionhippie/swap-space@v1
       with:
        size: 10G
-    - run: npm install
+    - run: npm ci
     - run: npm run build
     - run: aws s3 sync ./dist/ s3://openreplay-documentation --acl public-read --exact-timestamps
     - run: aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CF_DISTRIBUTION_ID}} --paths "/*"

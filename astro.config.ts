@@ -6,7 +6,6 @@ import rehypeSlug from 'rehype-slug';
 import rehypeAutoLink from 'rehype-autolink-headings';
 import remarkGFM from 'remark-gfm';
 import remarkSmarty from 'remark-smartypants';
-import inspectUrls from '@jsdevtools/rehype-url-inspector';
 import { toString } from 'hast-util-to-string';
 import { h } from 'hastscript';
 import { escape } from 'html-escaper';
@@ -20,6 +19,14 @@ import remarkCopy from 'remark-copy-linked-files'
 import dotenv from 'dotenv';
 
 dotenv.config();
+
+// DOCS_KEY is inlined into the client bundle (used by the AI chatbot). It comes from
+// the env (CI secret in deploy.yml / local .env loaded above). In CI, fail loudly if
+// it's missing rather than silently shipping an empty key; locally, fall back to ''.
+const docsKey = process.env.DOCS_KEY;
+if (!docsKey && process.env.CI) {
+  throw new Error('DOCS_KEY is not set in CI — refusing to build the chatbot with an empty key.');
+}
 //import remarkCopyLinkedFiles from 'remark-copy-linked-files';
 
 function addDefaultLayout() {
@@ -50,6 +57,11 @@ const createSROnlyLabel = (text: string) => {
 // https://astro.build/config
 export default defineConfig({
   site: 'https://docs.openreplay.com/',
+  build: {
+    // Render pages in parallel (default is 1). Speeds up the many
+    // dynamic-route renders (i18n fallback pages, redirect stubs).
+    concurrency: 4
+  },
   legacy: {
     astroFlavoredMarkdown: true
   },
@@ -89,10 +101,6 @@ export default defineConfig({
       content: heading => [h(`span.anchor-icon`, {
         ariaHidden: 'true'
       }, AnchorLinkIcon), createSROnlyLabel(toString(heading))]
-    }], [inspectUrls, {
-      inspectUrl(url) {
-        console.log(url);
-      }
     }], rehypeTasklistEnhancer()]
   }),
   //	astroAsides(),
@@ -101,7 +109,7 @@ export default defineConfig({
   ],
   vite: {
     define: {
-      'process.env.DOCS_KEY': JSON.stringify("ZXJ3dmxud2VscnZ1d2VucnZubHdldmxld252aW5lcnZubGVudg==")
+      'process.env.DOCS_KEY': JSON.stringify(docsKey ?? '')
     }
   }
 });

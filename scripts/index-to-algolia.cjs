@@ -4,8 +4,6 @@ const dotenv = require('dotenv')
 
 dotenv.config()
 
-console.log(process.env)
-
 // API keys below contain actual values tied to your Algolia account
 const client = algoliasearch(process.env.PUBLIC_ALGOLIA_KEY, process.env.ALGOLIA_ADMIN_SECRET);
 const index = client.initIndex(process.env.PUBLIC_ALGOLIA_INDEX);
@@ -21,7 +19,6 @@ readFile(__dirname + '/../public/search-index.json', (err, data) => {
         let objects = []
 
         jsonData.forEach( page => {
-            console.log("Trying to index ", page.slug)
             objects.push({
                 objectID: page.slug,
                 title: page.title,
