@@ -6,7 +6,6 @@ import rehypeSlug from 'rehype-slug';
 import rehypeAutoLink from 'rehype-autolink-headings';
 import remarkGFM from 'remark-gfm';
 import remarkSmarty from 'remark-smartypants';
-import inspectUrls from '@jsdevtools/rehype-url-inspector';
 import { toString } from 'hast-util-to-string';
 import { h } from 'hastscript';
 import { escape } from 'html-escaper';
@@ -50,6 +49,11 @@ const createSROnlyLabel = (text: string) => {
 // https://astro.build/config
 export default defineConfig({
   site: 'https://docs.openreplay.com/',
+  build: {
+    // Render pages in parallel (default is 1). Speeds up the many
+    // dynamic-route renders (i18n fallback pages, redirect stubs).
+    concurrency: 4
+  },
   legacy: {
     astroFlavoredMarkdown: true
   },
@@ -89,10 +93,6 @@ export default defineConfig({
       content: heading => [h(`span.anchor-icon`, {
         ariaHidden: 'true'
       }, AnchorLinkIcon), createSROnlyLabel(toString(heading))]
-    }], [inspectUrls, {
-      inspectUrl(url) {
-        console.log(url);
-      }
     }], rehypeTasklistEnhancer()]
   }),
   //	astroAsides(),
@@ -101,7 +101,9 @@ export default defineConfig({
   ],
   vite: {
     define: {
-      'process.env.DOCS_KEY': JSON.stringify("ZXJ3dmxud2VscnZ1d2VucnZubHdldmxld252aW5lcnZubGVudg==")
+      // Sourced from the DOCS_KEY env var (CI secret in deploy.yml / local .env via
+      // dotenv.config() above). Falls back to '' for local builds without the key.
+      'process.env.DOCS_KEY': JSON.stringify(process.env.DOCS_KEY ?? '')
     }
   }
 });
