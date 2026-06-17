@@ -1,0 +1,85 @@
+---
+title: "إعداد MCP"
+metaTitle: "إعداد تطبيق OpenReplay MCP"
+metaDescription: "ثبّت خادم OpenReplay MCP في Claude Desktop أو ChatGPT أو Codex، ووجّهه إلى نسخة OpenReplay الخاصة بك، وسجّل الدخول من خلال تدفّق التفويض المعتمد على المتصفّح."
+---
+
+import Aside from '~/components/Aside.astro';
+
+تشرح هذه الصفحة كيفية تثبيت تطبيق OpenReplay MCP، وتوجيهه إلى نسختك، وتسجيل الدخول.
+
+## 1. ثبّت خادم MCP
+
+أضِف خادم OpenReplay MCP إلى إعدادات MCP الخاصة بعميلك. 
+
+### Claude Desktop
+
+يثبّت Claude Desktop تطبيق OpenReplay MCP بوصفه **امتدادًا** بنقرة واحدة (حزمة `.mcpb`):
+
+1. نزّل `openreplay.mcpb` من [صفحة الإصدارات](https://github.com/openreplay/openreplay/releases) الخاصة بـ OpenReplay.
+2. انقر نقرًا مزدوجًا على الملف — يُفتح Claude Desktop ويطلب منك تثبيته كامتداد.
+3. انقر على **Install**.
+
+هذا كل شيء. لا يوجد إعداد JSON لتحريره ولا سلسلة أدوات Node لتثبيتها.
+
+## 2. وجّه MCP إلى نسخة OpenReplay الخاصة بك
+
+في Claude Desktop، افتح لوحة إعدادات الامتداد واضبط حقل **OpenReplay URL** على العنوان الذي تستخدمه في المتصفّح — `https://app.openreplay.com` لخدمة Cloud، أو نطاقك الخاص في حالة الاستضافة الذاتية. يستنتج MCP مضيف الـ API تلقائيًا.
+
+<img src="/mcp/config-panel.png" alt="ضبط عنوان OpenReplay في إعدادات تطبيق MCP" style={{ width: '700px', height: 'auto' }} />
+
+بالنسبة إلى ChatGPT وCodex، يأتي العنوان من متغيّر البيئة `OPENREPLAY_BACKEND_URL` الذي ضبطته في الخطوة 1.
+
+يمكنك أيضًا تبديل النُّسخ في أي وقت من داخل المحادثة: *"استخدم OpenReplay على https://openreplay.mycompany.com"*.
+
+## 3. سجّل الدخول عبر المتصفّح
+
+يستخدم MCP تدفّق تفويض معتمدًا على المتصفّح — لن تضطر أبدًا إلى لصق كلمة المرور في المحادثة.
+
+<Aside type="tip" title="التدفّق في لمحة" >
+  1. اطلب من Claude **تسجيل الدخول إلى OpenReplay**.
+  2. يعيد Claude رابط تفويض ويحاول فتحه في متصفّحك.
+  3. تسجّل الدخول إلى OpenReplay (إن لم تكن قد فعلت بالفعل) وتنقر على **Authorize**.
+  4. تخبر Claude *"لقد فوّضته"*.
+  5. ينهي Claude عملية تسجيل الدخول ويؤكّد إصدار الرمز المميّز.
+</Aside>
+
+### خطوة بخطوة
+
+**1.** في المحادثة، قُل:
+
+```
+Log me in to OpenReplay
+```
+
+**2.** يستدعي Claude أداة `login_browser` ويردّ برابط `…/mcp/authorize?state=…`. وفي معظم الأنظمة، يفتح الرابط أيضًا تلقائيًا في متصفّحك الافتراضي.
+
+**3.** في علامة تبويب OpenReplay، أكّد طلب الوصول بالنقر على **Authorize**.
+
+<img src="/mcp/authorize.png" alt="شاشة التفويض في OpenReplay" style={{ width: '700px', height: 'auto' }} />
+
+**4.** عُد إلى Claude وقُل:
+
+```
+I authorized it
+```
+
+**5.** ينهي Claude عملية تسجيل الدخول (عبر أداة `complete_login`) ويؤكّد توليد رمز مميّز. يُحفظ الرمز المميّز محليًا، لذا لا تحتاج إلى تكرار ذلك في المحادثة التالية.
+
+<Aside type="caution" title="البديل بكلمة المرور" >
+  إذا لم يتمكّن مضيفك من فتح نوافذ المتصفّح، فإن MCP يدعم أيضًا تسجيل الدخول بالبريد الإلكتروني وكلمة المرور — ما عليك سوى أن تقول *"سجّل دخولي بالبريد الإلكتروني `you@example.com` وكلمة المرور `...`"*. يُفضّل تدفّق المتصفّح كلما كان متاحًا.
+</Aside>
+
+## التحقّق من الاتصال
+
+بمجرّد تسجيل الدخول، اطلب من Claude:
+
+```
+List my OpenReplay projects
+```
+
+إذا كان كل شيء موصّلًا بشكل صحيح، فسترى أسماء مشاريعك ومعرّفاتها. ومن هناك، توجّه إلى صفحة [القدرات](/mcp/capabilities) لمعرفة ما يمكنك طلبه أيضًا.
+
+## هل لديك أسئلة؟
+
+إذا واجهت مشكلات، فانضمّ إلى [Slack](https://slack.openreplay.com) الخاص بنا أو انشر في [المنتدى](https://forum.openreplay.com).

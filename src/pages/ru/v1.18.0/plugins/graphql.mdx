@@ -1,0 +1,126 @@
+---
+title: "GraphQL"
+metaTitle: "GraphQL"
+metaDescription: "Плагин GraphQL для OpenReplay."
+---
+
+import Aside from '~/components/Aside.astro'
+
+Этот плагин позволяет захватывать запросы `GraphQL` и просматривать их позже во время воспроизведения записей сессий. Это очень полезно для понимания и устранения проблем. Плагин `GraphQL` совместим с реализациями Apollo и Relay.
+
+<Aside type="tip">
+  У нас также есть подробное руководство о том, как использовать плагин GraphQL для захвата и изменения запросов, вы можете ознакомиться с ним [здесь](/tutorials/graphql).
+</Aside>
+
+## Установка
+
+```bash
+npm i @openreplay/tracker-graphql
+```
+
+## Использование
+
+Инициализируйте пакет `@openreplay/tracker` как обычно и загрузите в него плагин. Вызов `plugin` вернёт функцию, которая принимает четыре переменные `operationKind`, `operationName`, `variables`, `result` и `duration` (по умолчанию 0) и возвращает `result` без изменений.
+
+```js
+import Tracker from '@openreplay/tracker';
+import trackerGraphQL from '@openreplay/tracker-graphql';
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+export const recordGraphQL = tracker.plugin(trackerGraphQL());
+```
+
+### Relay
+
+Если вы используете [сетевые инструменты Relay](https://github.com/relay-tools/react-relay-network-modern), вы можете просто [создать middleware](https://github.com/relay-tools/react-relay-network-modern/tree/master tab=readme-ov-file#example-of-injecting-networklayer-with-middlewares-on-the-client-side)
+
+```js
+import { createRelayMiddleware } from '@openreplay/tracker-graphql'
+
+const trackerMiddleware = createRelayMiddleware(tracker)
+
+const network = new RelayNetworkLayer([
+  // your middleware
+  // ,
+  trackerMiddleware
+])
+```
+
+Или вы можете вручную поместить вызов `recordGraphQL` в реализацию `NetworkLayer`. Если вы реализуете это стандартным способом `Network.create`, то вам следует сделать что-то вроде следующего:
+
+```js
+import { createGraphqlMiddleware } from '@openreplay/tracker-graphql'; // see above for recordGraphQL definition
+import { Environment } from 'relay-runtime';
+
+const handler = createGraphqlMiddleware(tracker)
+
+function fetchQuery(operation, variables, cacheConfig, uploadables) {
+  return fetch('www.myapi.com/resource', {
+    // ...
+  })
+    .then(response => response.json())
+    .then(result =>
+        handler(
+          // op kind, name, variables, response, duration (default 0)
+          operation.operationKind,
+          operation.name,
+          variables,
+          result,
+          duration,
+        ),
+    );
+}
+
+const network = Network.create(fetchQuery);
+```
+
+Подробнее см. [Relay Network Layer](https://relay.dev/docs/en/network-layer).
+
+### Apollo
+
+Для [Apollo](https://www.apollographql.com/) вам следует создать новый `ApolloLink`.
+
+```js
+import { createTrackerLink } from '@openreplay/tracker-graphql'
+
+const trackerLink = createTrackerLink(tracker);
+const yourLink = new ApolloLink(trackerLink)
+```
+
+В качестве альтернативы вы можете использовать универсальный обработчик graphql:
+
+```js
+import { createGraphqlMiddleware } from '@openreplay/tracker-graphql'; // see above for recordGraphQL definition
+import { ApolloLink } from 'apollo-link';
+
+const handler = createGraphqlMiddleware(tracker)
+
+const trackerApolloLink = new ApolloLink((operation, forward) => {
+  return forward(operation).map(result =>
+    handler(
+      // op kind, name, variables, response, duration (default 0)
+      operation.query.definitions[0].operation,
+      operation.operationName,
+      operation.variables,
+      result,
+    ),
+  );
+});
+
+const link = ApolloLink.from([
+  trackerApolloLink,
+  // ...
+]);
+```
+
+Подробнее см. [Apollo Link](https://www.apollographql.com/docs/link/) и [Apollo Networking](https://www.apollographql.com/docs/react/networking/network-layer/).
+
+## Руководство
+Если вы ищете практический пример того, как использовать этот плагин для захвата данных операций (мутаций и запросов) в ваших записях сессий, ознакомьтесь с [нашим подробным руководством здесь](/tutorials/graphql).
+
+## Есть вопросы?
+
+Возникли трудности с настройкой этого плагина? Присоединяйтесь к нашему [Slack](https://slack.openreplay.com) или посетите наш [Форум](https://forum.openreplay.com) и получите помощь от нашего сообщества.

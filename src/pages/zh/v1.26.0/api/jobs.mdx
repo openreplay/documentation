@@ -1,0 +1,170 @@
+---
+title: "任务"
+metaTitle: "任务"
+metaDescription: "如何管理用户数据删除任务。"
+---
+
+## 列出所有任务
+
+检索所有任务，包括已完成或已取消的任务。
+
+### 方法
+`GET`
+
+### URL
+`/api/v1/:projectKey/jobs`
+
+### 请求标头
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`：可在 'Preferences' > 'Account' > 'Organization API Key' 中找到该密钥。
+
+### 状态码
+
+`200`：响应以 JSON 形式发送在正文中
+
+### 请求示例
+
+```shell
+curl -X GET \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/jobs \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### 响应示例
+
+```json
+{
+  "data": [
+    {
+      "jobId": 3451,
+      "description": "Delete user sessions of userId = shekar@example.com",
+      "status": "scheduled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "mehdi@openreplay.com",
+      "createdAt": 1623912955277,
+      "updatedAt": 1623912955277,
+      "startAt": 1623954600000,
+      "errors": null
+    },
+    {
+      "jobId": 3452,
+      "description": "Delete user sessions of userId = shekar@example.com",
+      "status": "cancelled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "mehdi@openreplay.com",
+      "createdAt": 1623912962910,
+      "updatedAt": 1623913015276,
+      "startAt": 1623954600000,
+      "errors": null
+    }
+  ]
+}
+```
+
+## 获取任务详情
+
+返回任务的 `status` 以及其他详情，例如 `createdAt`、`referenceId` 和 `errors`。
+
+### 方法
+`GET`
+
+### URL
+`/api/v1/:projectKey/jobs/:jobId`
+
+### 参数
+
+| 名称 | 类型 | 描述 |
+|----------|-------------|-------------|
+| jobId | string | 用户删除调用返回的 ID（必填） |
+
+### 请求标头
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`：可在 'Preferences' > 'Account' > 'Organization API Key' 中找到该密钥。
+
+### 状态码
+
+`200`：响应以 JSON 形式发送在正文中
+
+### 请求示例
+
+```shell
+curl -X GET \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/jobs/3451\
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### 响应示例
+
+```json
+{
+  "data": {
+    "jobId": 3451,
+    "description": "Delete user sessions of userId = shekar@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@openreplay.com",
+    "createdAt": 1623912955277,
+    "updatedAt": 1623912955277,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+## 取消任务
+
+如果任务尚未开始或仍在进行中，可以取消该任务。
+
+### 方法
+`DELETE`
+
+### URL
+`/api/v1/:projectKey/jobs/:jobId`
+
+### 参数
+
+| 名称 | 类型 | 描述 |
+|----------|-------------|-------------|
+| jobId | string | 用户删除调用返回的 ID（必填） |
+
+### 请求标头
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`：可在 'Preferences' > 'Account' > 'Organization API Key' 中找到该密钥。
+
+### 状态码
+
+`200`：响应以 JSON 形式发送在正文中
+`501`：如果任务无法取消则返回此状态码
+
+### 请求示例
+
+```shell
+curl -X DELETE \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/jobs/3452 \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### 响应示例
+
+```json
+{
+  "data": {
+    "jobId": 3452,
+    "description": "Delete user sessions of userId = shekar@example.com",
+    "status": "cancelled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@openreplay.com",
+    "createdAt": 1623912962910,
+    "updatedAt": 1623913015276,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```

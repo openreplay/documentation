@@ -1,0 +1,90 @@
+---
+title: "Zustand"
+metaTitle: "Zustand"
+metaDescription: "OpenReplay 的 Zustand 插件。"
+---
+import Aside from '~/components/Aside.astro'
+
+此插件允许你捕获 `Zustand` 的变更/状态，并在回放会话录制时进行检查。这对于理解和修复问题非常有用。
+
+<Aside type="tip">
+  我们还提供了一份详细的教程，介绍如何在使用此库时通过 Zustand 插件捕获应用程序的状态，你可以在[这里](/tutorials/zustand)查看。
+</Aside>
+
+
+
+## 安装
+
+```bash
+npm i @openreplay/tracker-zustand
+```
+
+## 用法
+
+像往常一样初始化 `@openreplay/tracker` 包，并将插件加载到其中。调用该插件以设置 store 名称，这将返回一个具名的 store tracker 实例，你可以将你的 store 实例作为参数来调用它，从而启用对该 store 的追踪。
+
+### 如果你的网站是单页应用程序（SPA）
+
+```js
+import Tracker from '@openreplay/tracker';
+import trackerZustand from '@openreplay/tracker-zustand';
+```
+
+### 如果你的 Web 应用使用服务端渲染（SSR）
+
+```js
+import Tracker from '@openreplay/tracker/cjs';
+import trackerZustand from '@openreplay/tracker-zustand/cjs';
+```
+
+### 追踪 Zustand Store
+
+```js
+import create from "zustand";
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+const zustandPlugin = tracker.use(trackerZustand())
+// name is optional, randomly generated 
+// string if its undefined
+const bearStoreLogger = zustandPlugin('bear_store')
+
+
+const useBearStore = create(
+  bearStoreLogger((set: any) => ({
+    bears: 0,
+    increasePopulation: () => set((state: any) => ({ bears: state.bears + 1 })),
+    removeAllBears: () => set({ bears: 0 }),
+  }))
+)
+```
+
+## 选项
+
+你可以通过选项来自定义插件的行为以净化你的数据。它们与标准 `createLogger` 插件中的选项类似。
+
+```js
+trackerZustand({
+  filter (mutation, state) {
+    // returns `true` if a mutation should be logged
+    // `mutation` is a `{ type, payload }`
+    return mutation.type !== "aBlacklistedMutation";
+  },
+  transformer (state) {
+    // transforms the state before logging it.
+    // for example return only a specific sub-tree
+    return state.subTree;
+  },
+  mutationTransformer (mutation) {
+    // mutations are logged in the format of `{ type, payload }`
+    // we can format it any way we want.
+    return mutation.type;
+  },
+})
+```
+
+## 有疑问？
+
+设置此插件时遇到了困难？请加入我们的 [Slack](https://slack.openreplay.com)，或访问我们的[论坛](https://forum.openreplay.com)，从我们的社区获取帮助。

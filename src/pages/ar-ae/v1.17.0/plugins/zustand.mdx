@@ -1,0 +1,90 @@
+---
+title: "Zustand"
+metaTitle: "Zustand"
+metaDescription: "إضافة Zustand لـ OpenReplay."
+---
+import Aside from '~/components/Aside.astro'
+
+تتيح لك هذه الإضافة التقاط تغييرات/حالة `Zustand` وفحصها لاحقًا أثناء إعادة تشغيل تسجيلات الجلسات. وهذا مفيد جدًا لفهم المشكلات وإصلاحها.
+
+<Aside type="tip">
+  لدينا أيضًا شرح تفصيلي حول كيفية استخدام إضافة Zustand لالتقاط حالة تطبيقك عند استخدام هذه المكتبة، ويمكنك الاطلاع عليه [هنا](/tutorials/zustand).
+</Aside>
+
+
+
+## التثبيت
+
+```bash
+npm i @openreplay/tracker-zustand
+```
+
+## الاستخدام
+
+قم بتهيئة حزمة `@openreplay/tracker` كالمعتاد وحمّل الإضافة فيها. استدعِ الإضافة لإعداد اسم المتجر (store)، وسيؤدي ذلك إلى إرجاع نسخة متتبِّع متجر مُسمّاة يمكنك استدعاؤها مع تمرير نموذج المتجر الخاص بك كوسيطة لتفعيل تتبّع هذا المتجر.
+
+### إذا كان موقعك الإلكتروني تطبيقًا أحادي الصفحة (SPA)
+
+```js
+import Tracker from '@openreplay/tracker';
+import trackerZustand from '@openreplay/tracker-zustand';
+```
+
+### إذا كان تطبيق الويب الخاص بك يُعرَض من جهة الخادم (SSR)
+
+```js
+import Tracker from '@openreplay/tracker/cjs';
+import trackerZustand from '@openreplay/tracker-zustand/cjs';
+```
+
+### تتبّع متجر Zustand
+
+```js
+import create from "zustand";
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+const zustandPlugin = tracker.use(trackerZustand())
+// name is optional, randomly generated 
+// string if its undefined
+const bearStoreLogger = zustandPlugin('bear_store')
+
+
+const useBearStore = create(
+  bearStoreLogger((set: any) => ({
+    bears: 0,
+    increasePopulation: () => set((state: any) => ({ bears: state.bears + 1 })),
+    removeAllBears: () => set({ bears: 0 }),
+  }))
+)
+```
+
+## الخيارات
+
+يمكنك تخصيص سلوك الإضافة باستخدام خيارات لتنقية بياناتك. وهي مشابهة لخيارات إضافة `createLogger` القياسية.
+
+```js
+trackerZustand({
+  filter (mutation, state) {
+    // returns `true` if a mutation should be logged
+    // `mutation` is a `{ type, payload }`
+    return mutation.type !== "aBlacklistedMutation";
+  },
+  transformer (state) {
+    // transforms the state before logging it.
+    // for example return only a specific sub-tree
+    return state.subTree;
+  },
+  mutationTransformer (mutation) {
+    // mutations are logged in the format of `{ type, payload }`
+    // we can format it any way we want.
+    return mutation.type;
+  },
+})
+```
+
+## هل لديك أسئلة؟
+
+هل تواجه مشكلة في إعداد هذه الإضافة؟ يُرجى الانضمام إلى [Slack](https://slack.openreplay.com) الخاص بنا أو زيارة [المنتدى](https://forum.openreplay.com) للحصول على المساعدة من مجتمعنا.

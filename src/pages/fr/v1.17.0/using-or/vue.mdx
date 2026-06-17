@@ -1,0 +1,59 @@
+---
+title: "Utiliser OpenReplay avec Vue"
+metaTitle: "Ajouter le Tracker OpenReplay à votre application Vue"
+metaDescription: "Découvrez comment faire fonctionner le tracker sur votre application Vue"
+---
+import GoDeeperFooter from '~/components/go-deeper-footer.astro'
+import Aside from '~/components/Aside.astro'
+
+Faire fonctionner le tracker sur une application Vue est assez simple. 
+
+## Ajouter le code de suivi
+
+Bien que vous puissiez [obtenir une version à copier-coller du code directement depuis la plateforme lorsque vous créez un nouveau projet](/using-or/snippet#getting-the-snippet), ce code est trop minimaliste et rendra beaucoup plus difficile sa personnalisation et l'ajout de plugins supplémentaires.
+
+En supposant que vous construisez une SPA (Single Page Application), tout ce que vous avez à faire est d'ajouter le code suivant à votre script de setup dans votre fichier principal.
+
+```html
+<script setup>
+//... your code here
+const tracker = new Tracker({
+  projectKey: "<your project key>"
+});
+
+tracker.start();
+//... more code here
+</script>
+```
+
+
+<Aside type="tip">
+**Une note pour les utilisateurs self-hosted** : si vous utilisez la version self-hosted d'OpenReplay, vous devrez également spécifier la propriété de configuration `ingestPoint`. 
+Cette propriété spécifie le point de terminaison d'ingestion pour les données du tracker. Les utilisateurs cloud n'en ont pas besoin, 
+car par défaut le tracker saura où se trouve la version SaaS de ce point de terminaison, mais si vous l'hébergez vous-même, vous devrez le spécifier 
+(il devrait ressembler à quelque chose comme `https://openreplay.mydomain.com/ingest`) 
+</Aside>
+
+### Gérer la « projectKey » dans votre code
+
+À noter, la `projectKey` que vous configurez est celle fournie par la plateforme d'OpenReplay. 
+Pour des raisons de sécurité, cette valeur ne devrait pas être stockée en dur dans votre code, mais plutôt dans une sorte de fichier/système de configuration.
+
+Une option serait d'ajouter une variable d'environnement dans un fichier `.env` à la racine de votre projet et de préfixer la variable avec `VITE_`, ce qui la rendra disponible dans votre code Vue.
+Vous pourrez l'utiliser ensuite à l'aide de `import.meta.env.<your variable name>`.
+Comme ceci :
+
+```javascript
+const tracker = new Tracker({
+  projectKey: import.meta.env.VITE_VUE_APP_PROJECT_KEY,
+});
+ ```
+
+## Vous construisez quelque chose de plus complexe ?
+Si vous construisez une application complexe avec Vue, il y a de fortes chances que vous utilisiez [Nuxt](/using-or/nuxt) ou quelque chose de similaire. Pensez à consulter notre [section Configuration](/using-or) pour trouver le framework avec lequel vous travaillez.
+
+## Vous avez des questions ?
+
+Si vous rencontrez des problèmes pour configurer le tracker sur votre projet Vue, contactez-nous sur notre [communauté Slack](https://slack.openreplay.com/) et posez vos questions directement à nos développeurs !
+
+<GoDeeperFooter />

@@ -1,0 +1,110 @@
+---
+title: "Настройка OpenReplay"
+metaTitle: "Настройка OpenReplay"
+metaDescription: "Как быстро настроить OpenReplay и начать запись сессий и метрик."
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+import IconText from '~/components/Card/IconText.astro'
+
+<YoutubeVideo title="Посмотрите, как начать работу с OpenReplay"
+  description="Если вы не любите читать, можете посмотреть этот видеоурок, который покажет, как начать работу с OpenReplay за 3 минуты или меньше"
+  videoURL="https://www.youtube.com/watch?v=EWbtMK3qK30"
+  />
+
+
+Начать работу с OpenReplay очень просто. 
+
+Если вы хотите посмотреть краткий видеоурок о том, как начать, воспользуйтесь [этим видео на YouTube](https://www.youtube.com/watch?v=EWbtMK3qK30); в противном случае продолжайте чтение для получения дополнительных сведений.
+
+Есть 2 способа запустить и настроить OpenReplay: с помощью скрипта или npm-пакета.
+
+## Использование скрипта
+
+Скопируйте и вставьте фрагмент кода непосредственно в `</head>` вашего веб-приложения. Скрипт можно найти в панели управления OpenReplay в разделе 'Preferences > Projects'; он уникален для каждого проекта.
+
+Если ваш веб-сайт поддерживает Google Tag Manager, вы можете воспользоваться [пошаговым руководством по GTM](/integrations/google-tag-manager).
+
+## Использование NPM
+
+Сначала установите npm-пакет.
+
+```bash
+npm i @openreplay/tracker
+```
+
+Затем инициализируйте пакет из точки входа вашей кодовой базы и запустите трекер. В конструкторе необходимо задать параметр `projectKey`. Его значение можно найти в панели управления OpenReplay в разделе 'Preferences > Projects'.
+
+### Если ваш веб-сайт является одностраничным приложением (SPA)
+
+Вы можете использовать трекер как экземпляр-синглтон, что является рекомендуемым способом его использования. 
+Таким образом, вы можете обращаться к трекеру из любого места вашего приложения:
+
+```js
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+	projectKey: PROJECT_KEY,
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+})
+
+tracker.start() // returns a promise with session info (sessionID, sessionHash, userUUID)
+```
+
+Либо вы можете использовать класс `Tracker` напрямую, чтобы управлять его экземпляром вручную:
+
+```js
+import OpenReplay from '@openreplay/tracker';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY,
+  ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
+});
+
+tracker.start();
+```
+
+### Если ваше веб-приложение использует серверный рендеринг (SSR)
+
+Используйте приведённый ниже фрагмент, если ваше веб-приложение использует серверный рендеринг (SSR) (т.е. NextJS, NuxtJS). 
+Убедитесь, что трекер запускается в окружении браузера и что `tracker.start()` вызывается после того, как приложение доставлено клиенту (т.е. в `useEffect` или `componentDidMount`).
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+//...
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY
+});
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, []);
+}
+```
+
+Если вы хотите подробнее настроить трекер, см. [JavaScript SDK](/installation/javascript-sdk#options), где приведён список доступных параметров.
+
+## Интеграция с другими фреймворками
+Если вы используете OpenReplay не в простом приложении, то, скорее всего, вы используете фреймворк для веб-разработки, например Next.js, Nuxt или другой.
+Ознакомьтесь с нашими индивидуальными руководствами для каждого из поддерживаемых фреймворков:
+
+<div class="grid grid-cols-1 md:grid-cols-1 gap-3 md:gap-4">
+  <IconText url="/sdk/using-or/next" title="React" />
+  <IconText url="/sdk/using-or/nuxt" title="Vue" />
+  <IconText url="/sdk/using-or/angular" title="Angular" />
+  <IconText url="/sdk/using-or/next" title="NextJS" />
+  <IconText url="/sdk/using-or/nuxt" title="Nuxt" />
+</div>
+
+## Дальнейшие шаги
+
+Теперь, когда вы установили трекер и развернули своё веб-приложение, записи сессий должны появиться в течение нескольких минут. Отлично!
+
+А пока вы можете продолжить процесс настройки, чтобы получить максимум от OpenReplay. Чем больше вы фиксируете, тем легче быстро воспроизводить и устранять проблемы:
+- [Идентификация пользователя](/installation/identify-user): свяжите ваш внутренний идентификатор пользователя с записываемой сессией.
+- [Метаданные](/installation/metadata): также называемые traits или пользовательскими переменными, метаданные предоставляют дополнительную информацию о пользователях во время записи сессий.
+- [Пользовательские события](/installation/custom-events): сделайте записи более информативными, фиксируя события, специфичные для вашей предметной области, вместе с повторами сессий.
+- [Отчёт об ошибках](/installation/error-reporting): сообщайте об ошибках и исключениях и просматривайте их на вкладке ERRORS.
+- [Загрузка Source-Maps](/installation/upload-sourcemaps): просматривайте контекст исходного кода, полученный из стек-трейсов, в его исходном виде.
+- [Плагины](/plugins): разберитесь, что происходит «под капотом», захватывая хранилище вашего приложения и отслеживая ваши HTTP- и GraphQL-запросы.
+- [Интеграции](/integrations): подключите OpenReplay к вашим инструментам логирования и синхронизируйте ошибки бэкенда с повторами сессий.

@@ -20,7 +20,7 @@ Lors de l'instanciation du tracker OpenReplay, il existe plusieurs options de co
 Vous devez définir l'option `projectKey` dans le constructeur. Vous pouvez obtenir cette valeur depuis votre tableau de bord OpenReplay sous 'Préférences > Projets'.
 
 <Aside type="tip">
-  Notez que si vous avez plusieurs projets, vous devez faire attention au project key que vous choisissez.
+  Notez que si vous avez plusieurs projets, vous devez faire attention à la clé de projet que vous choisissez.
 </Aside>
 
 
@@ -33,7 +33,7 @@ import OpenReplay from '@openreplay/tracker';
 const tracker = new OpenReplay({
   projectKey: PROJECT_KEY
 });
-tracker.start(); // renvoie une promesse avec les informations de session (sessionID, sessionHash, userUUID)
+tracker.start(); // returns a promise with session info (sessionID, sessionHash, userUUID)
 ```
 
 ### Rendu côté serveur (SSR)
@@ -47,8 +47,8 @@ const tracker = new OpenReplay({
 });
 //...
 function MyApp() {
-  useEffect(() => { // utilisez componentDidMount dans le cas d'un composant de classe React
-    tracker.start(); // renvoie une promesse avec les informations de session (sessionID, sessionHash, userUUID)
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start(); // returns a promise with session info (sessionID, sessionHash, userUUID)
   }, [])
 }
 ```
@@ -64,9 +64,9 @@ import OpenReplay from '@openreplay/tracker/cjs';
 //...
 const tracker = new OpenReplay({
       projectKey: PROJECT_KEY,
-      ingestPoint: "https://openreplay.mydomain.com/ingest", // lorsque vous utilisez la version auto-hébergée d'OpenReplay
+      ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
       capturePerformance: true,
-      __DISABLE_SECURE_MODE: true // pour les tests locaux
+      __DISABLE_SECURE_MODE: true // for local testing
 });
 ```
 
@@ -80,7 +80,7 @@ Il existe un ensemble d'options que vous pouvez passer au constructeur. Seul `pr
 - `sessionHash?: string` Le hachage de la session initiale. Ceci est utile lorsque les sessions traversent différents sous-domaines sur votre application web mais que vous souhaitez les assembler en un seul enregistrement. Dans le cas où il n'est pas possible de continuer la session (n'existe pas ou est terminée), le tracker démarrera automatiquement une nouvelle. Il est également renvoyé sur `stop()`. Plus de détails à ce sujet [ici](/troubleshooting/session-recordings#replaysarebrokenacrosssubdomains).
 - `ingestPoint?: string` Votre domaine OpenReplay (par exemple https://openreplay.mydomain.com/ingest), auquel le tracker enverra les événements. Ceci est optionnel pour les utilisateurs d'OpenReplay Cloud. Par défaut : `https://api.openreplay.com/ingest` (qui pointe vers OpenReplay Cloud). 
 - `revID?: string` L'ID de révision de votre application web. Utile lors de la recherche de problèmes se produisant sur une version spécifique.
-- `resourceBaseHref?: string` Se réfère au domaine accessible publiquement où les ressources (styles, polices et icônes) pourraient être récupérées par OpenReplay. Puisqu'elles sont nécessaires pour une relecture correcte de la session, cette option est utile pour contourner la limitation d'avoir votre site (et donc les ressources) hébergé dans un domaine privé. Exemple : `https://mysitepublic.com/assets/`.
+- `resourceBaseHref?: string` Se réfère au domaine accessible publiquement où les ressources (styles, polices et icônes) pourraient être récupérées par OpenReplay. Puisqu'elles sont nécessaires pour une relecture correcte de la session, cette option est utile pour contourner la limitation d'avoir votre site (et donc les ressources) hébergé dans un domaine privé. Exemple : `https://mypublicsite.com/assets/`.
 - `captureIFrames?: boolean` Pour capturer tous les iFrames du même domaine dans votre application web. Si vous souhaitez suivre un iFrame spécifique, alors ajoutez simplement l'attribut HTML `data-openreplay-capture` à la balise `<iframe>`. Par défaut : `true`.
 - `disableClickmaps?: boolean` Pour désactiver le calcul du sélecteur CSS (utilisé dans les cartes de clics). Par défaut : `false`.
 - `verbose?: boolean` Pour activer les logs. Par défaut : `false`.
@@ -89,7 +89,7 @@ Il existe un ensemble d'options que vous pouvez passer au constructeur. Seul `pr
 - `disableStringDict: boolean` Désactive la logique du dictionnaire de chaînes (pour optimiser le stockage) dans les enregistrements. Par défaut : `false`.
 - `fixedCanvasScaling: boolean` Force les images du canevas à être rendues avec une densité de pixels de 1 au lieu de devicePixelRatio. (réduit la qualité potentielle d'une image pour rendre le résultat final plus petit en taille). Par défaut : `false`.
 - `disableCanvas?: boolean` Désactive l'enregistrement des éléments canvas. Par défaut : `false`.
-- `assistSocketHost?: string` Peut être utilisé pour définir un hôte spécifique pour la connexion du plugin d'assistance. Défaut sur la valeur de `ingestPoint`.
+- `assistSocketHost?: string` Peut être utilisé pour définir un hôte spécifique pour la connexion du plugin Assist. Par défaut, prend la valeur de `ingestPoint`.
 - `nodes?: { maintainer: MaintainerOptions }` La nouvelle option `nodes.maintainer` aide à gérer la mémoire et à nettoyer les nœuds DOM qui ne sont plus utilisés. Elle a les paramètres suivants:
     - `interval: number`: Intervalle de temps (en millisecondes) entre les exécutions de nettoyage. Par défaut : 30 * 1000 (30 secondes).
     - `batchSize: number`: Nombre de nœuds à vérifier lors de chaque exécution de nettoyage. Par défaut : 2500.
@@ -105,9 +105,9 @@ const tracker = new OpenReplay({
   projectKey: 'your_project_key',
   nodes: {
     maintainer: {
-      interval: 60 * 1000, // Exécuter le nettoyage chaque minute
-      batchSize: 2500, // Vérifier les nœuds par lots de 2500
-      enabled: true, // Activer le mainteneur de nœuds
+      interval: 60 * 1000, // Run cleanup every minute
+      batchSize: 2500, // Check nodes in batches of 2500
+      enabled: true, // Enable the node maintainer
     }
   }
 });
@@ -154,12 +154,12 @@ network?: {
     failuresOnly: boolean;
     sessionTokenHeader: string;
     ignoreHeaders: Array<string> | boolean;
-    capturePayload: boolean; // assurez-vous d'assainir vos données avant d'activer cela
+    capturePayload: boolean; // make sure you sanitize your data before enabling it
     sanitizer: (RequestResponseData) => RequestResponseData | null;
-    captureInIframes: boolean;
-    axiosInstances: AxiosInstance[];
+		captureInIframes: boolean;
+  	axiosInstances: AxiosInstance[];
     useProxy?: boolean;
-    tokenUrlMatcher?: (url: string) => boolean;
+		tokenUrlMatcher?: (url: string) => boolean;
   }
 ```
 
@@ -185,19 +185,19 @@ Voir [Canvas et WebGL](/installation/canvas) pour savoir comment activer cette f
 L'option `crossdomain` concerne la capture des iFrames de différents domaines. Elle est utilisée en conjonction avec l'option `captureIFrames` qui doit être définie sur `true`.
 
 ```ts 
- crossdomain?: {
-    /**
-     * Activer le suivi multi-domaines
-     * @default false
-     * */
-    enabled?: boolean
-    /**
-     * Utilisé pour spécifier le domaine parent, sera '*' par défaut
-     * (Vérifiez les paramètres CSP)
-     * @default '*'
-     * */
-    parentDomain?: string
-}
+	crossdomain?: {
+		/**
+		 * Enable cross-domain tracking
+		 * @default false
+		 * */
+		enabled?: boolean
+		/**
+		 * Used to specify the parent domain, will be '*' by default
+		 * (Check your CSP settings)
+		 * @default '*'
+		 * */
+		parentDomain?: string
+	}
 ```
 À partir de la version du Tracker [14.0.10](https://github.com/openreplay/openreplay/blob/dev/tracker/tracker/CHANGELOG.md), **l'attribut `data-domain` n'est plus requis** sur les éléments HTML lors du travail avec les iFrames multi-domaines.
 

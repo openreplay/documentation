@@ -1,0 +1,81 @@
+---
+title: "SumoLogic"
+metaTitle: "SumoLogic 集成"
+metaDescription: "如何将 SumoLogic 与 OpenReplay 集成，并在会话回放旁查看后端错误。"
+---
+
+如何将 SumoLogic 与 OpenReplay 集成，并在会话录制旁查看后端错误。
+
+## 1. 创建新的 Access ID 和 Access Key
+
+1. 登录你的 [SumoLogic](https://service.eu.sumologic.com/ui/#/login) 账户。
+2. 前往 [Access Keys](https://service.eu.sumologic.com/ui/#/security/access-keys) 页面。
+3. 点击 *+ Add Access Key*。
+4. 在名称中填写 "openreplay"，然后点击 *Create Key*。
+5. 复制新的 `Access ID` 和 `Access Key`，因为我们的集成需要用到它们。
+6. 点击 *Done*。
+
+有关创建 Access ID 和 Access Key 的更多信息，请参阅此[文档](https://help.sumologic.com/Manage/Security/Access-Keys)。
+
+## 2. 在 OpenReplay 中启用 SumoLogic
+
+在 OpenReplay 控制台的 'Preferences > Integration' 下填入你的 `Access ID` 和 `Access Key`。
+
+![OpenReplay 中的 SumoLogic 集成](/static/sumo-1.png#center)
+
+## 3. 传播 openReplaySessionToken
+
+要将 SumoLogic 事件与录制的用户会话关联起来，必须在你想要跟踪的每个请求中，将一个唯一的令牌从前端传播到后端。这可以通过自定义 HTTP 标头来实现。在下面的示例中，我们使用 `fetch` 函数来发送该标头。
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+为了让 OpenReplay 能够将 SumoLogic 消息与录制的用户会话关联起来，必须在你想要跟踪的每个后端错误中传播一个唯一的令牌。
+
+下面是一个使用 Monkey Patching 的 Python 示例。
+
+```python
+import sys
+import traceback
+#...
+old_tb = traceback.print_exception
+old_f = sys.stdout
+old_e = sys.stderr
+OPENREPLAY_SESSION_TOKEN = None
+
+class F:
+    def write(self, x):
+        if OPENREPLAY_SESSION_TOKEN is not None and x != '\n':
+            old_f.write(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] {x}")
+        else:
+            old_f.write(x)
+
+    def flush(self):
+        pass
+
+def tb_print_exception(etype, value, tb, limit=None, file=None, chain=True):
+    if OPENREPLAY_SESSION_TOKEN is not None:
+        value = type(value)(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] " + str(value))
+    old_tb(etype, value, tb, limit, file, chain)
+
+traceback.print_exception = tb_print_exception
+
+sys.stderr = F()
+```
+
+标签名称 `openReplaySessionToken` 区分大小写。
+
+## 有疑问？
+
+如果你遇到任何问题，请加入我们的 [Slack](https://slack.openreplay.com) 或查看我们的[论坛](https://forum.openreplay.com)，从我们的社区获得帮助。

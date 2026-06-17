@@ -1,0 +1,104 @@
+---
+title: "Suivi des erreurs"
+metaTitle: "Suivi des erreurs"
+metaDescription: "Découvrez comment suivre et résoudre les erreurs avec OpenReplay. Obtenez une visibilité détaillée sur les erreurs de vos applications web et dépannez-les avec un contexte complet."
+---
+
+Obtenez une visibilité globale et granulaire sur les erreurs au sein de vos applications web. Avec OpenReplay, vous pouvez dépanner avec un contexte complet, permettant une résolution plus rapide des problèmes.
+
+## Informations sur le suivi des erreurs à travers différentes vues
+
+### Depuis la vue Sessions
+
+1. Accédez à la vue de session > onglet **Errors**
+2. **Utilisez Omnisearch** : sélectionnez l'événement **« Error Message »** et saisissez le message d'erreur spécifique.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/error-tracking/errors_sessions_view.gif" alt="Erreurs dans les sessions" style={{ width: '600px', height: 'auto' }} />
+</div>
+
+### À l'intérieur d'une seule session
+
+1. Accédez à **Console > onglet Errors**
+2. Ouvrez l'erreur pour afficher les sourcemaps complètes.
+3. Cliquez sur **"Find all sessions with this error"** pour voir la liste des sessions où l'erreur s'est produite.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/error-tracking/errors_session_view.gif" alt="Erreur de session" style={{ width: '600px', height: 'auto' }} />
+</div>
+
+### Depuis la vue Cards
+
+1. Accédez à Cards > Add Card > Monitors
+2. Sélectionnez la carte **Table of Errors**
+
+{/* <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/error-tracking/errors_cards_view.gif" alt="Tableau des erreurs" style={{ width: '600px', height: 'auto' }} />
+</div> */}
+
+## Journalisation manuelle des exceptions
+
+Le tracker OpenReplay prend en charge la journalisation de trois types d'erreurs :
+
+1. **Exceptions capturées** - [Error](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error)
+2. **Promesses rejetées** - [PromiseRejectionEvent](https://developer.mozilla.org/en-US/docs/Web/API/PromiseRejectionEvent)
+3. **Événements d'erreur (onError)** - [ErrorEvent](https://developer.mozilla.org/en-US/docs/Web/API/ErrorEvent)
+
+Toutes ces erreurs peuvent être signalées à l'aide d'une seule méthode :
+
+```javascript
+tracker.handleError(error, metaObject); // metaObject is optional and is a flat object
+```
+
+Examinons des exemples pour chaque type d'erreur :
+
+### Exceptions capturées (Error)
+
+Par défaut, les exceptions capturées ne sont pas journalisées dans l'onglet 'Console'. Pour signaler une erreur, utilisez le modèle suivant :
+
+```javascript
+try {
+    // application code
+} catch (err) {
+    // application code that handles the error
+    tracker.handleError(err, metaObject); // metaObject is optional and is a flat object
+}
+```
+
+### Promesses rejetées (PromiseRejectionEvent)
+
+Si une promesse est rejetée et doit être signalée à OpenReplay, utilisez cette approche :
+
+```javascript
+function myFunc() {
+    doSomeAsyncStuff()
+        .then((result) => {
+            // application code
+        })
+        .catch(promiseRejectionErr => {
+            // application code to handle the error
+            tracker.handleError(promiseRejectionErr, metaObject); // metaObject is optional and is a flat object
+        });
+}
+```
+
+### onError (ErrorEvent)
+
+Signalez les erreurs déclenchées par des événements, comme un élément `<img>` qui ne parvient pas à se charger :
+
+```javascript
+<img id="myImg" src="image.gif">
+<p id="demo"></p>
+
+<script>
+document.getElementById("myImg").addEventListener("error", myFunction);
+
+function myFunction(errorEvent) {
+    document.getElementById("demo").innerHTML = "The image could not be loaded.";
+    tracker.handleError(errorEvent, { context: "demo" });
+}
+</script>
+```
+
+## Vous avez des questions ?
+Si vous avez des questions sur ce processus, n'hésitez pas à nous contacter sur notre [Slack](https://slack.openreplay.com) ou à consulter notre [Forum](https://forum.openreplay.com).

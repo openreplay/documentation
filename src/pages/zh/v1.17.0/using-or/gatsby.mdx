@@ -1,0 +1,61 @@
+---
+title: "在 Gatsby 中使用 OpenReplay"
+metaTitle: "将 OpenReplay Tracker 添加到你的 Gatsby 应用"
+metaDescription: "了解如何让 tracker 在你的 Gatsby 应用中运行"
+---
+import GoDeeperFooter from '~/components/go-deeper-footer.astro'
+
+将 OpenReplay tracker 安装到基于 Gatsby 的项目中相对简单。
+
+![Sesion replay of a Gatsby site](/images/gatsby-ss.png)
+
+考虑到 Gatsby 底层使用的是 React，我们要做的只是在主页面中添加 tracker 代码，并通过 `useEffect` hook 调用 `start` 方法。
+
+让我们来看一看。
+
+## 为什么要在静态站点上设置 Tracker？
+
+你的应用缺少动态内容并不意味着你不想利用 OpenReplay 的其他一些功能。
+
+虽然你不会使用会话回放来查找 bug，但你将能够捕获有价值的指标，并围绕这些指标创建[你自己的自定义仪表盘](https://docs.openreplay.com/tutorials/custom-dashboard)。
+
+你可以使用性能指标、web vitals 甚至与资源相关的指标，从而全面了解用户在你站点上的体验如何。
+
+## 在 Gatsby 中设置 Tracker
+
+假设有一个静态 Gatsby 站点，其入口点是 `pages` 文件夹中的 `index.tsx` 文件，你需要向其中添加以下代码：
+
+```jsx
+import Tracker from '@openreplay/tracker';
+const tracker = new Tracker({
+  projectKey: process.env.GATSBY_OPENREPLAY_PROJECT_KEY
+});
+
+const Index = ({data, location }) => {
+
+  React.useEffect(() => {
+    tracker.start();
+  }, [])
+
+   //the rest of your code here...
+}
+```
+
+tracker 会在页面被编译时（无论是 SSR 还是客户端渲染）实例化，但 start 方法只能从浏览器中调用，因此我们需要确保它在组件挂载之后才被调用（这就是这里使用 `useEffect` hook 的原因）。`useEffect` hook 的第二个参数为空数组，可确保回调只执行一次。
+
+💡**给 self-hosted 用户的提示：** 如果你使用的是 OpenReplay 的 self-hosted 版本，在实例化 tracker 时还需要指定 `ingestPoint` 配置属性。该属性用于指定 tracker 数据的接收端点。云端用户不需要它，因为默认情况下 tracker 会知道此端点的 SaaS 版本位于何处，但如果你是自托管，则需要指定它（它应该类似于 `https://openreplay.mydomain.com/ingest`）
+
+## 在 Gatsby 中处理 ENV 变量
+
+出于安全考虑，我们建议不要将项目密钥硬编码在代码中。这意味着你需要将它导出为一个 ENV 变量，以便 Gatsby 读取它。
+
+OpenReplay 项目密钥随后将存放在一个名为 `GATSBY_OPENREPLAY_PROJECT_KEY` 的变量中
+
+请注意，该名称带有 `GATSBY_` 前缀，它会告诉 Gatsby 确保该变量同样在前端代码中可用。否则，除非你运行的是 Node.js 代码，否则将无法读取该值。
+
+## 有疑问？
+
+你可以[查看此代码仓库](https://github.com/deleteman/openreplay-gatsby-example)，获取一个集成了 Tracker 的可运行 Gatsby 应用的**完整源代码**。
+
+如果你在 Gatsby 项目中设置 Tracker 时遇到任何问题，请通过我们的 [Slack 社区](https://slack.openreplay.com/)联系我们，直接向我们的开发人员提问！
+<GoDeeperFooter />

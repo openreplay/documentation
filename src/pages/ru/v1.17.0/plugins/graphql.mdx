@@ -1,0 +1,123 @@
+---
+title: "GraphQL"
+metaTitle: "GraphQL"
+metaDescription: "Плагин GraphQL для OpenReplay."
+---
+
+import Aside from '~/components/Aside.astro'
+
+Этот плагин позволяет захватывать запросы `GraphQL` и просматривать их позже при воспроизведении записей сессий. Это очень полезно для понимания и устранения проблем. Плагин `GraphQL` совместим с реализациями Apollo и Relay.
+
+<Aside type="tip">
+  У нас также есть подробное руководство о том, как использовать плагин GraphQL для захвата и изменения запросов, вы можете ознакомиться с ним [здесь](/tutorials/graphql).
+</Aside>
+
+## Установка
+
+```bash
+npm i @openreplay/tracker-graphql
+```
+
+## Использование
+
+Вызов `plugin` вернёт функцию, которая принимает четыре переменные `operationKind`, `operationName`, `variables` и `result`. Она возвращает `result` без изменений.
+
+### Если ваш веб-сайт является одностраничным приложением (SPA)
+
+```js
+import OpenReplay from '@openreplay/tracker';
+import trackerGraphQL from '@openreplay/tracker-graphql';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY,
+});
+
+export const recordGraphQL = tracker.use(trackerGraphQL());
+
+tracker.start();
+```
+
+### Если ваше веб-приложение отрисовывается на стороне сервера (SSR)
+
+Следуйте приведённому ниже примеру, если ваше приложение использует SSR. Убедитесь, что `tracker.start()` вызывается после запуска приложения на стороне клиента (в `useEffect` или `componentDidMount`).
+
+```js
+// openreplay.js
+import OpenReplay from '@openreplay/tracker/cjs';
+import trackerGraphQL from '@openreplay/tracker-graphql/cjs';
+
+export const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+export const recordGraphQL = tracker.use(trackerGraphQL());
+
+// MyApp.js
+import { tracker } from './openreplay';
+
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, [])
+}
+//...
+```
+
+### Relay
+
+Для [Relay](https://relay.dev/) вам нужно вручную добавить вызов `recordGraphQL` в реализацию `NetworkLayer`. Если вы используете стандартный способ `Network.create` для его реализации, то следуйте приведённому ниже примеру.
+
+```js
+import { Environment } from 'relay-runtime';
+import { recordGraphQL } from './openreplay'; // see above for recordGraphQL definition
+
+//...
+function fetchQuery(operation, variables, cacheConfig, uploadables) {
+  return fetch('ENDPOINT', {
+  //...
+  })
+    .then(response => response.json())
+    .then(result =>
+      recordGraphQL(operation.operationKind, operation.name, variables, result)
+    );
+}
+//...
+const network = Network.create(fetchQuery);
+```
+
+Подробнее см. [Relay Network Layer](https://relay.dev/docs/en/network-layer).
+
+### Apollo
+
+Для [Apollo](https://www.apollographql.com/) вам нужно создать новый `ApolloLink` с вызовом `recordGraphQL` и добавить его в свою цепочку. Вот пример того, как это сделать.
+
+```js
+import { ApolloLink } from '@apollo/client';
+import { recordGraphQL } from './openreplay'; // see above for recordGraphQL definition
+
+const trackerApolloLink = new ApolloLink((operation, forward) => {
+  return forward(operation).map((result) => {
+    const operationDefinition = operation.query.definitions[0];
+    return recordGraphQL(
+      operationDefinition.kind === 'OperationDefinition' ? operationDefinition.operation : 'unknown?',
+      operation.operationName,
+      operation.variables,
+      result
+    );
+  });
+});
+//...
+const link = ApolloLink.from([
+  trackerApolloLink,
+  //...
+]);
+```
+
+Подробнее см. [Apollo Link](https://www.apollographql.com/docs/link/) и
+[Apollo Networking](https://www.apollographql.com/docs/react/networking/network-layer/).
+
+## Руководство
+Если вы ищете практический пример того, как использовать этот плагин для захвата данных операций (мутаций и запросов) в ваших записях сессий, ознакомьтесь с [нашим подробным руководством здесь](/tutorials/graphql).
+
+## Остались вопросы?
+
+Возникли трудности с настройкой этого плагина? Присоединяйтесь к нашему [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com) и получите помощь от нашего сообщества.

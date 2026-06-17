@@ -1,0 +1,102 @@
+---
+title: "Sentry"
+metaTitle: "Sentry 集成"
+metaDescription: "如何将 Sentry 与 OpenReplay 集成，并在查看会话回放的同时查看后端错误。"
+---
+
+如何将 Sentry 与 OpenReplay 集成，并在查看会话录制的同时查看后端错误。
+
+## 1. 生成 Sentry 身份验证令牌
+
+前往 [Sentry > Account > API > Auth Tokens](https://sentry.io/settings/account/api/auth-tokens/)，并生成具有 `event:read`、`org:read` 和 `project:read` 权限的令牌。后者将在下一步中用于在 OpenReplay 控制面板中启用 Sentry 集成。
+
+![在 Sentry 中创建令牌](/static/sentry-1.png#center)
+
+## 2. 在 OpenReplay 中启用集成
+
+从 Sentry 控制面板的 **Projects** 页面复制你的 `organization_slug` 和 `project_slug`。
+
+![Sentry 中的项目页面](/static/sentry-2.png#center)
+
+![OpenReplay 中的 Sentry 集成表单](/static/sentry-3.png#center)
+
+然后在 OpenReplay 控制面板的 'Preferences > Integration' 下，将它们与你在第 1 步中生成的令牌一起粘贴进去。
+
+## 3. 传递 openReplaySessionToken
+
+为了让 OpenReplay 能够将 Sentry 事件与录制的用户会话关联起来，Sentry 事件应使用唯一令牌进行标记。  
+
+### Frontend
+如果你在前端使用 Sentry，可以参考下面的示例。
+
+```javascript
+import OpenReplay from "@openreplay/tracker";
+import * as Sentry from "@sentry/browser";
+
+const tracker = new OpenReplay({
+	projectKey: MY_PROJECT_KEY,
+	onStart: ({ sessionToken }) => {
+	  Sentry.setTag("openReplaySessionToken", sessionToken);
+	},
+})
+```
+或者在使用代码片段的情况下： 
+```javascript
+if (window.OpenReplay.getSessionToken()) {
+	Sentry.setTag("openReplaySessionToken", window.OpenReplay.getSessionToken());
+}
+```
+
+### Backend
+
+否则，如果你在后端使用 Sentry SDK，则需要在每个想要跟踪的请求中从前端传递会话令牌。这可以通过自定义 HTTP 标头来实现。在下面的示例中，我们使用 `fetch` API 来发送该标头。
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+你也可以使用 OpenReplay 的 [Fetch Plugin](/plugins/fetch) 为每个跟踪请求自动设置该标头。
+
+然后，你可以从标头中提取 `openReplaySessionToken`，并将其添加到你的 Sentry scope 中（最好使用中间件或装饰器）。
+
+```python
+with configure_scope() as scope:
+  scope.set_tag('openReplaySessionToken', app.current_request.headers.get('X-OpenReplay-SessionToken'))
+```
+
+标签的名称必须正好是 `openReplaySessionToken`。
+
+## 4. 附加 openReplaySessionURL（可选但非常有用）
+
+如果你希望将 OpenReplay 录制的 URL 与 Sentry 关联起来，并将其显示为标签，下面是一个操作示例：
+
+```javascript
+ const tracker = new OpenReplay({
+ projectKey: window.OPENREPLAY_PROJECT_KEY,
+ 
+ onStart: ({ sessionToken, sessionID }) => {
+  // This is to link from OpenReplay -> Sentry
+  Sentry.setTag("openReplaySessionToken", sessionToken);
+ 
+  // This is to link from Sentry -> OpenReplay (requires tracker v3.6.0+)
+  Sentry.setTag(
+    "openReplaySessionURL",
+    tracker.getSessionURL();
+    );
+  },
+});
+```
+
+## 有疑问？
+
+如果你遇到任何问题，请加入我们的 [Slack](https://slack.openreplay.com)，或访问我们的[论坛](https://forum.openreplay.com)，从我们的社区获得帮助。

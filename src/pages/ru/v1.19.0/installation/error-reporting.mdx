@@ -1,0 +1,79 @@
+---
+title: "Отчёты об ошибках"
+metaTitle: "Отчёты об ошибках"
+metaDescription: "Как работают отчёты об ошибках, что отправляется на вкладку 'Errors' и как сообщать об ошибках и исключениях вручную"
+---
+
+Отчёты об ошибках очень важны для мониторинга стабильности вашего приложения, заблаговременного обнаружения регрессий и понимания того, какие проблемы возникают у ваших пользователей чаще всего. По умолчанию любое неперехваченное исключение регистрируется на вкладке 'Errors':
+
+![Errors Tab](/static/errors-tab.jpg#center)
+
+Кроме того, зарегистрированные ошибки также будут отображаться в записи сессии на вкладке 'Console' в DevTools:
+
+![Exceptions Tab](/static/exceptions-tab-in-recording.jpg#center)
+
+## Ручная регистрация исключений
+
+Трекер OpenReplay поддерживает регистрацию трёх типов ошибок:
+* Перехваченные исключения - [Error](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error)
+* Отклонённые промисы - [PromiseRejectionEvent](https://developer.mozilla.org/en-US/docs/Web/API/PromiseRejectionEvent)
+* События ошибок (onError) - [ErrorEvent](https://developer.mozilla.org/en-US/docs/Web/API/ErrorEvent)
+
+Обо всех перечисленных выше типах можно сообщить с помощью одного метода:
+
+```js
+tracker.handleError(error, metaObject); // metaObject is optional and is a flat object
+```
+
+Рассмотрим пример для каждого типа ошибок:
+
+### Перехваченные исключения (Error)
+
+По умолчанию перехваченные исключения не регистрируются на вкладке 'Console'. Чтобы сообщить об ошибке, мы можем поступить следующим образом:
+
+```js
+try {
+    // application code
+}
+catch(err) {
+    // application code that handles the error
+    tracker.handleError(error, metaObject); // metaObject is optional and is a flat object
+}
+```
+### Отклонённые промисы (PromiseRejectionEvent)
+
+Если промис отклонён, и мы хотим сообщить об ошибке в OpenReplay, мы можем поступить следующим образом:
+
+```js
+function myFunc() {
+    doSomeAsyncStuff()
+    .then((result) => {
+        // application code
+    })
+    .catch(promiseRejectionErr => {
+        // application code to handle the error
+        tracker.handleError(promiseRejectionErr, metaObject); // metaObject is optional and is a flat object     
+    })
+}
+```
+
+### onError (ErrorEvent)
+
+В этом примере показано, как сообщить об ошибке в случае, если элемент ```<img>``` не загрузился:  
+
+```html
+<img id="myImg" src="image.gif">
+<p id="demo"></p>
+```
+
+```js
+document.getElementById("myImg").addEventListener("error", myFunction);
+
+function myFunction(errorEvent) {
+  document.getElementById("demo").innerHTML = "The image could not be loaded.";
+  tracker.handleError(errorEvent, { context: "demo" });
+}
+```
+
+## Есть вопросы?
+Если у вас есть какие-либо вопросы об этом процессе, не стесняйтесь обращаться к нам в нашем [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com).

@@ -1,0 +1,21 @@
+---
+title: "清除缓存"
+metaTitle: "清除缓存"
+metaDescription: "如何在 OpenReplay 中清除和重置缓存（CSS、字体和图标）。"
+---
+
+OpenReplay 需要访问样式表、图标和字体等资源才能让回放正常工作。事实上，这些文件会被复制并由我们的后端缓存，这样即使你的 Web 应用发生了变化，你仍然可以查看旧的录制。请按照以下步骤清除缓存：
+
+1. 运行 `k9s -n db`
+2. 使用键盘方向键浏览列表并定位到 `minio-*` 容器
+3. 按 s 以获得 Minio（对象存储）容器的 shell 访问权限
+4. 运行 `export MINIO_ACCESS_KEY=<accessKey from vars.yaml>`
+5. 运行 `export MINIO_SECRET_KEY=<secretKey from vars.yaml>`
+6. 运行 `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
+7. 运行 `mc rm --recursive --dangerous --force minio/sessions-assets` 以删除所有缓存文件（CSS、字体和图标）
+8. 使用 `exit` 退出 Minio 容器
+9. 运行 `:quit` 退出 Kubernetes CLI
+10. 通过运行 `openreplay -R` 重启 `assets` 服务
+
+## 有疑问？
+如果你对此过程有任何疑问，欢迎在我们的 [Slack](https://slack.openreplay.com) 上联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

@@ -1,0 +1,70 @@
+---
+title: "Erreurs JS"
+metaTitle: "Erreurs JS"
+metaDescription: "Toutes sortes d'erreurs Javascript."
+---
+
+Cette section répertorie les erreurs Javascript les plus courantes signalées par notre communauté.
+
+## ReferenceError: Navigator is not defined
+
+Cette erreur survient parfois lorsque vous essayez d'importer les plugins `tracker-assist` ou `tracker-fetch` ; cela se produit parce que node tente de construire la page sans l'API `window` dans l'environnement.
+
+La solution est assez simple. Il vous suffit de modifier l'importation habituelle du plugin qui pose problème :
+
+```js
+import trackerAssist from '@openreplay/tracker-assist/cjs';
+```
+
+Par l'alternative d'importation dynamique à l'intérieur de `componendDidMount` ou `useEffect` :
+
+```js
+import Tracker, { Options } from "@openreplay/tracker";
+const tracker = new Tracker({ /* your options */ });
+
+class TrackerComponent extends React.Component {
+
+  componentDidMount = () => {
+    import(‘@openreplay/tracker-assist/cjs’).then(({ default: trackerAssist }) => {
+      tracker.start(/* your options */)
+      tracker.use(trackerAssist(/* your assist options */))
+    })
+   }
+
+ /* Other code */
+```
+
+De cette façon, tous les plugins dépendant de l'API window seront importés lorsque le composant sera rendu.
+
+## Critical dependency: the request of a dependency is an expression
+
+Cela peut se produire avec d'anciennes versions du plugin `tracker-assist`. Vous devriez appliquer cette [solution de contournement](https://github.com/peers/peerjs/issues/630#issuecomment-910028230) si vous rencontrez l'erreur ci-dessous lors de la compilation :
+
+```log
+Failed to compile.
+
+./node_modules/peerjs/dist/peerjs.min.js
+Critical dependency: the request of a dependency is an expression
+```
+
+## Uncaught DOMException: Blocked a frame with origin "X" from accessing a cross-origin frame
+
+Le tracker OpenReplay capture par défaut les iFrames du **même domaine**. Cependant, il génère une erreur lorsqu'il tente de capturer un iFrame qui n'est PAS du même domaine que votre site web. Vous pouvez soit :
+
+- Désactiver entièrement la fonctionnalité en utilisant la propriété `captureIFrames` comme dans l'exemple ci-dessous : 
+
+```js
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY,
+      captureIFrames: false
+});
+```
+
+- Continuer à capturer les iFrames (comportement par défaut) en ajoutant l'attribut HTML `data-openreplay-capture` **uniquement** aux balises `<iframe>` du même domaine. De cette façon, les iFrames d'origine croisée ne seront pas suivis par OpenReplay.
+
+## Mon problème n'est pas répertorié
+
+Si vous rencontrez des erreurs qui ne sont pas listées sur cette page, n'hésitez pas à [signaler un problème](https://github.com/openreplay/openreplay/issues/new/choose) ou contactez simplement notre [Slack](https://slack.openreplay.com) ou consultez notre [Forum](https://forum.openreplay.com) pour obtenir l'aide de notre communauté.
+
+## Vous avez des questions ?
+Si vous avez des questions concernant ce processus, n'hésitez pas à nous contacter sur notre [Slack](https://slack.openreplay.com) ou à consulter notre [Forum](https://forum.openreplay.com).

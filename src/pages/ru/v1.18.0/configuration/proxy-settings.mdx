@@ -1,0 +1,74 @@
+---
+title: "Настройки прокси"
+metaTitle: "Настройки прокси"
+metaDescription: "Настройки для запуска OpenReplay за прокси, таким как NGINX или Apache2."
+---
+
+## Размещение OpenReplay с другими приложениями с помощью обратного прокси
+
+Когда OpenReplay запущен на машине, он использует порт 80/443 для предоставления доступа к приложению. Но при использовании обратного прокси OpenReplay можно настроить на использование другого порта для доступа к приложению. Ниже приведены шаги, как это сделать:
+
+1. Отредактируйте файл конфигурации:
+
+```bash
+openreplay -e
+```
+
+2. Измените раздел конфигурации nginx:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+	...
+	...
+    service:
+      externalTrafficPolicy: "Local"
+      ports:
+        http: 880   # Change this port for http
+        https: 8443 # Change this port for https
+```
+3. Сохраните и выйдите из конфигурации с помощью `:wq`, чтобы OpenReplay смог перезагрузить конфигурацию.
+
+После этого можно настроить ваш обратный прокси. Для этого обратитесь к разделам ниже.
+
+### Настройки NGINX
+
+Убедитесь, что ваш прокси отправляет заголовки `X-Forwarded-For` и `X-Forwarded-Proto`. Для работы OpenReplay также должен быть включён SSL. Остальная часть конфигурации должна выглядеть так:
+
+```nginx
+location / {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        proxy_pass http://1.2.3.4:880; # replace with OpenReplay instance IP
+    }
+```
+
+### Настройки Apache2
+
+Убедитесь, что модули `proxy`, `proxy_http` и `proxy_html` включены. SSL также должен быть настроен, остальные настройки должны быть похожи на это:
+
+```
+<VirtualHost *:443>
+    ProxyPass / http://1.2.3.4:880 <!-- replace with instance IP -->
+    RequestHeader set X-Forwarded-Proto expr=%{REQUEST_SCHEME}
+    # SSL + other config here
+</VirtualHost>
+```
+
+## Публичные эндпоинты
+
+Если вы защищаете свой экземпляр OpenReplay с помощью прокси, убедитесь, что приведённые ниже эндпоинты общедоступны, чтобы OpenReplay работал должным образом.
+
+| Эндпоинт | Описание |
+|----------|-------------|
+| /ingest | Для захвата событий и записей |
+| /api | Для извлечения данных пользователей и управления ими |
+| /assist | Для видео/звонков в реальном времени с конечными пользователями (WebRTC) |
+| /ws-assist | Для воспроизведения сессий в реальном времени с конечными пользователями |
+| /static/openreplay.js | JavaScript-код, который загружает OpenReplay |
+
+## Есть вопросы?
+
+Если у вас есть какие-либо вопросы об этом процессе, не стесняйтесь обращаться к нам в нашем [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com).

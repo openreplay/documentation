@@ -1,0 +1,329 @@
+---
+title: "如何构建你的第一个 OpenReplay 插件"
+metaTitle: "通过创建你自己的插件为 tracker 添加额外功能"
+metaDescription: "学习如何创建你自己的 OpenReplay 插件"
+---
+如果你自托管（self-hosting）自己的 OpenReplay 版本，你将获得一个额外的好处，即能够开发和安装自定义插件。这能让你添加 OpenReplay 开箱即用所不提供的功能和兼容性。
+
+目前，已有一些由 OpenReplay 团队开发和维护的插件，例如 [Redux 插件](/plugins/redux)，它让你能够追踪状态变化；又如 [Fetch 插件](/plugins/fetch)，它让你能够记录请求和响应数据。如果你想了解更多，可以查看[这里的完整插件列表](/plugins)。
+
+在本教程中，你将学习如何构建你自己的插件。具体来说，我们将构建一个用于追踪 JQuery 的 GET 方法的插件。
+
+## 从零开始构建插件
+
+我们建议你先复制并粘贴一个功能与你想要实现的功能类似的插件文件夹，这样你就能拥有所有现成的逻辑和配置代码。
+
+话虽如此，由于我们这里要构建的插件其行为将与 Fetch 插件类似，所以我们将复制该插件。
+
+话虽如此，你仍然需要做一些事情，例如：
+
+- 修改 back-end。
+- 向消息协议中添加新消息。
+- 从源代码构建一些 back-end 服务。
+
+因此，如果你还没有经历过[从源代码构建 OpenReplay](/deployment/deploy-source) 的流程，我建议你先用当前版本的 OpenReplay 走一遍这个流程，因为你在测试新代码时会多次执行它。
+
+另一方面，如果你已经掌握了这部分内容，请继续阅读！
+
+## 构建一个新插件需要什么？
+
+构建一个新插件有三个部分：
+
+1. 首先你必须定义你的插件将发送给平台的消息类型。该消息需要包含你想要追踪的所有遥测数据。
+2. 然后你必须更新 front-end，以创建一个能够显示插件数据的组件。在我们的例子中，我们将在回放器上添加一个标签页，列出所有用 JQuery 完成的请求。
+3. 最后，你还必须创建插件！记住，这正是我们的目的。插件是这一切中唯一可以在 OpenReplay 之外开发的部分，你将把它安装到其他地方（你的应用程序）。
+
+请注意，本教程的其余部分将假定你已经 fork 了我们的 Github 仓库，并已在某处准备好并正常运行。如果你还没有，请先查看[我们文档的部署部分](/deployment)。
+
+## 第 1 步：构建你的新消息
+
+首先要做的是弄清楚你想用插件捕获和展示哪些数据。在我们的例子中，由于我们正在构建追踪 GET 请求的东西，我们应该确保捕获以下各项：
+
+- URL：显然，就是请求的 URL
+- Response：我们也会尝试捕获一部分响应
+- Status：从服务器收到的状态码
+
+我们还将添加一个 “duration” 属性，以追踪执行请求并获取数据所花费的时间，为此我们还需要请求的 “timestamp”。
+
+为此，我们需要修改 `mob/messages.rb` 文件。那是一个 Ruby 文件，但如果你不懂 Ruby 也不用担心，你需要做的只是添加一条描述你新消息的新记录，类似这样：
+
+```jsx
+message 112, 'JQueryGET' do
+  string 'Method'
+  string 'url'
+  string 'response'
+  string 'status'
+  string 'duration'
+  int  'timestamp'
+end
+```
+
+请注意，我还定义了：
+
+- 一个消息 ID（112），这是一个尚未被使用的随机数字（你可以查看文件中的其他消息），并且小于 200。
+- 一个消息名称，这完全取决于你，只要确保它能描述你的消息类型即可。
+- 一个 “method” 字段，这样我们将来就有可能将该消息复用于其他方法。
+- 属性的类型为 "string" 和 "int"，这是因为我们的编码器会把数组和对象转换为字符串。
+
+
+完成这些之后，你需要确保该消息可以在所有地方被访问到，因此你将在此文件夹内运行 2 个脚本：
+
+```jsx
+$ ruby run.rb
+$ sh format.sh
+```
+
+这个过程结束后，该消息及其 ID 将被复制并添加到 back-end 中所有需要它的地方。
+
+现在让我们进入 front-end，看看我们需要修改什么。
+
+## 第 2 步：更新 front-end
+
+消息准备就绪后，你需要更新 `messageDistributor` 函数（位于 `frontend/app/player/MessageDistributor/MessageDistributor.ts` 文件中），它接收所有消息并决定如何处理它们。
+
+在该函数内部，你会看到一个很大的 `switch` 语句，其中已经为你的消息添加了一个新的 case（你会注意到所使用的名称与你使用的大小写形式不同）。在本例中，对于消息类型 “JQueryGET”，你将得到一个 “j_query_get” 类型。
+
+现在你需要将该消息添加到一个列表中，front-end 组件将使用这些列表。你将通过 `listAppend` 函数来完成。
+
+这个 case 应该看起来像这样：
+
+```jsx
+case 'j_query_get':
+    listAppend("jquery", Resource({
+      method: msg.method,
+      url: msg.url,
+      payload: {},
+      response: msg.response,
+      status: msg.status,
+      type: TYPES.JQUERY,
+      time: msg.timestamp - this.sessionStart,
+      duration: msg.duration,
+      index
+    }))
+  break;
+```
+现在，为了让它正常工作，我们还需要做几件事：
+
+- 我们必须添加 “jquery” 列表，为此，我们将修改文件 `frontend/app/player/lists/index.js`，并将 “jquery” 添加到 `entityNamesWithRed` 数组中。
+- 我们必须添加 `TYPES.JQUERY`，你可以通过修改这个文件来完成：`frontend/app/types/session/resource.js`
+
+完成上述操作后，我们将创建在播放器内部展示数据的实际组件。类似这样：
+
+![最终结果](/tutorials/build-plugins/1.png)
+
+为此，我们将借助一个现有组件，并复制粘贴 Fetch 组件。为此，我们将复制 `frontend/app/components/Session_/Fetch` 文件夹并将其命名为 “JQuery”。
+
+我们将更新新创建文件夹内对 fetch 的每一处引用，以确保它读取为 "jquery"（这里使用查找和替换可能会比较合理）。
+
+这将创建可视化组件，之后你需要手动添加它。首先，你需要编辑 `frontend/app/components/Session_/Player/Controls/Controls.js` 文件，以在屏幕右下角（即显示所有控件的地方）添加 “JQuery” 按钮。
+
+查找 JSX 代码并添加一个像这样的代码块：
+
+```jsx
+{showJQuery && (
+  <ControlButton
+    disabled={disabled && !inspectorMode}
+    onClick={() => toggleBottomTools(JQUERY)}
+    active={bottomBlock === JQUERY && !inspectorMode}
+    hasErrors={jqueryRedCount > 0}
+    count={jqueryCount}
+    label="JQUERY"
+    noIcon
+    labelClassName="!text-base font-semibold"
+    containerClassName="mx-2"
+  />
+)}
+```
+
+在此期间，请确保定义所有相关变量，例如 `showJQuery`、`jqueryCount`、`JQUERY` 和 `jqueryRedCount`。如果你不确定如何做，可以搜索它们对应的 fetch 版本，你很快就能找到它们。
+
+添加按钮后，你现在可以编辑 `frontend/app/components/Session_/Player/Player.js` 文件并添加实际的组件。
+
+为此，在导入它之后，请确保在 JSX 部分内添加一个如下所示的代码块：
+
+```jsx
+{ bottomBlock === JQUERY &&
+  <JQuery />
+}
+```
+
+作为其中的一部分，你还必须将 `JQUERY` 常量添加为从 `frontend/app/duck/components/player.js` 文件中导出。
+
+这样一切就处理好了。
+
+现在你的 front-end 已准备好显示这些信息，我们需要找到一种生成它的方法。所以让我们来看看插件的实际代码！
+
+## 第 3 步：构建你的插件
+
+你可以在任何你想要的地方创建这个项目。重点是提供一个可安装的包，以便在其他项目中使用。
+
+因此，请确保 `package.json` 文件看起来像这样：
+
+```jsx
+{
+  "name": "tracker-jquery",
+  "version": "1.0.0",
+  "description": "jquery openreplay tracker",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "peerDependencies": {
+    "@openreplay/tracker": ">=3.6.0"
+  },
+  "devDependencies": {
+    "@openreplay/tracker": "<latest version of the tracker>",
+    "prettier": "^1.18.2",
+    "replace-in-files-cli": "^1.0.0"
+  }
+}
+```
+
+然后我们将在项目的 `src` 文件夹内添加一个 `index.js` 文件。只要你导出的函数遵循某些预先定义的标准，你就可以随意以你认为合适的方式组织这个项目。
+
+插件的结构很简单：你定义一个函数，当被调用时返回一个新函数，该新函数期望传入一个 `app` 属性。这个 `app` 属性包含 tracker 的实例。在返回的函数内部，只要你通过 `app` 对象发送一条消息，你就可以自由地做任何你想做的事。该消息将被平台接收，并根据一组规则进行处理。
+
+消息格式将是我们在本教程开头定义的那种。
+
+让我向你展示一下我们的 JQuery 插件的代码是什么样子：
+
+```jsx
+import { App, Messages } from '@openreplay/tracker';
+
+export default function($) {
+
+    const oldGET = $.get;
+
+    return (app) => {
+
+        const newGET = async (settingsObj) => {
+
+            const startTime = performance.now();
+            let resp = await fetch(settingsObj.url, {
+                method: 'GET'
+            })
+            const duration = performance.now() - startTime;
+
+            let valueResp = null;
+
+            if(settingsObj.json) {
+                valueResp = await resp.json()
+            } else {
+                valueResp = await resp.text()
+            }
+            const getStj = (res) => {
+                let r = {...res}
+                if (r && typeof r.body !== 'string') {
+	                try {
+	                    r.body = JSON.stringify(r.body)
+	                } catch {
+	                    r.body = "<unable to stringify>"
+	                }
+                }
+                return JSON.stringify(r)
+            }
+
+            const msg = Messages.JQueryGET(
+                    'GET',
+                    String(settingsObj.url),
+                    getStj(resp),
+                    resp.status,
+                    duration,
+                    (new Date()).getTime()
+                )
+            console.log("Sending a message to the tracker....", msg)
+
+            app.send(msg, true)
+            return valueResp;
+
+        }
+
+        $.get = newGET;
+
+    }
+}
+```
+
+本质上，我所做的全部事情就是用一个自定义方法替换 JQuery 的 `.get` 方法，而该自定义方法实际上在幕后使用 `fetch`（这完全是可选的，你也可以使用 JQuery 的 GET 方法）。在所有请求执行完毕后，代码使用 `app.send` 方法发送一条消息。该消息是用 `Messages.JQueryGET` 方法创建的，这个方法是之前的 Ruby 脚本为我们创建的。
+
+这条消息所接收的属性，显然就是我们在**第 1 步**中定义为消息本身结构的那些属性。最重要的是，它们全都是必填的，如果你不得不处理一个空值，那就传入空数组/对象/字符串/任何东西，但**绝不要跳过这个键**。
+
+### 发布插件
+
+一旦你完成了本地测试并确信插件已经准备就绪，你就需要将它发布到 NPM。
+
+请遵循本指南了解如何操作：[https://docs.npmjs.com/creating-and-publishing-unscoped-public-packages](https://docs.npmjs.com/creating-and-publishing-unscoped-public-packages)
+
+## 测试插件
+
+发布后，你会想到处使用你的插件。在 OpenReplay tracker 中使用插件的机制始终是相同的。
+
+1. 你首先必须实例化 tracker。
+2. 然后你必须调用 `use` 方法，并将调用你的插件所得到的结果函数传给它。
+3. 最后，使用 `start` 方法启动 tracker。
+
+下面是一个代码示例，展示了在 React 应用程序中使用此插件的样子：
+
+```jsx
+import logo from './logo.svg';
+import './App.css';
+import tracker from 'openreplay-tracker'
+import jqueryTracker from 'tracker-jquery'
+import { useEffect } from 'react';
+import $ from 'jquery'
+
+const t = new tracker({
+  __DISABLE_SECURE_MODE: true, //only if you're testing locally
+  ingestPoint: "openreplay.<your custom domain>/ingest",
+  projectKey: "<your project key>",
+})
+
+function App() {
+  useEffect(()=> {
+    t.use(jqueryTracker($))
+    t.start()
+    async function doGet() {
+      let resp = await $.get({
+        url: "http://localhost:3000"
+      })
+      console.log(resp)
+    }
+
+    doGet()
+  }, [])
+  return (
+    <div className="App">
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+        <p>
+          Edit <code>src/App.js</code> and save to reload.
+        </p>
+        <a
+          className="App-link"
+          href="https://reactjs.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn React
+        </a>
+      </header>
+    </div>
+  );
+}
+
+export default App;
+```
+
+这段代码在页面加载后使用 Jquery 的 `get` 方法执行一个 GET 请求，由于我们已经设置好了我们这个小巧实用的 tracker，我们实际上能够追踪到该请求。
+
+下面是最终结果在你这边应该呈现的样子：
+
+![显示 JQuery 请求](/tutorials//build-plugins/2.png)
+
+---
+
+你可以[查看此仓库](https://github.com/deleteman/openreplay)以获取本教程的**完整源代码**。
+
+如果你在此过程的任何步骤中遇到任何问题，请在我们的 [Slack 社区](https://slack.openreplay.com/)上联系我们，直接向我们的开发人员提问！

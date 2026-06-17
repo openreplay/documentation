@@ -1,0 +1,113 @@
+---
+title: "React Native SDK - تهيئة الـ SDK"
+metaTitle: "React Native SDK - تهيئة الـ SDK"
+metaDescription: "خيارات التهيئة لدالة الباني (constructor) الخاصة بأداة التتبّع React Native لنظام iOS"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	إن React Native SDK في مرحلة الإصدار التجريبي (Beta). لا تتردد في إرسال ملاحظاتك إلينا أو الإبلاغ عن أي مشكلة قد تواجهها عبر [Slack](https://slack.openreplay.com) الخاص بنا أو تفقّد [المنتدى](https://forum.openreplay.com).
+</Aside>
+
+## التثبيت
+
+سيقوم السطر التالي بتثبيت أداة التتبّع ومعها الـ SDK لتتمكن من الاستفادة من جميع ميزات أداة التتبّع.
+
+```bash
+npm i @openreplay/react-native
+```
+
+## التهيئة
+
+عند إنشاء نسخة من أداة تتبّع OpenReplay، هناك عدة خيارات تهيئة يمكنك توفيرها لتخصيص العديد من جوانب التسجيل وتجربة التسجيل. يجب عليك تعيين الخيار `projectKey` في الباني (constructor). يمكنك الحصول على هذه القيمة من لوحة تحكم OpenReplay الخاصة بك ضمن 'Preferences > Projects'.
+
+<Aside type="tip">
+	لاحظ أنه إذا كان لديك عدة مشاريع، فعليك الانتباه إلى أي مفتاح مشروع تختاره.
+</Aside>
+
+
+### إضافة شيفرة التتبّع
+
+أضف الشيفرة التالية إلى ملفك الجذري:
+
+```js
+import Openreplay from '@openreplay/react-native';
+
+// ...
+useEffect(() => {
+	Openreplay.tracker.startSession(
+		'yourProjectKey',
+		options, // explained below, set {} if empty
+		'https://local.openreplay.instance/ingest' // if you're using our Serverless/SaaS plan then 'https://api.openreplay.com/ingest'
+	);
+}, [])
+```
+
+### إضافة المكوّنات المحسّنة
+
+من أجل تتبّع تفاعلات المستخدم داخل التطبيق، ستحتاج إلى إضافة المكوّنات التالية إلى تطبيقك:
+
+- `ORTouchTrackingView` - يُضاف على المستوى الجذري لتتبّع تفاعلات اللمس
+- `ORTrackedInput` - غلاف حول حقل الإدخال (Input) في React-Native يُرسل إشارات كلما أنهى المستخدم الإدخال
+- `ORSanitizedView` - يُموّه المحتوى الموجود بداخله
+
+```js
+// App.tsx
+import Openreplay from '@openreplay/react-native';
+
+function App() {
+	const start = () => {
+	    Openreplay.tracker.startSession(
+	      process.env.REACT_APP_KEY!,
+	      {},
+	      process.env.REACT_APP_INGEST
+	    );
+	    Openreplay.tracker.setMetadata('key', 'value');
+	    Openreplay.tracker.setUserID('user-id');
+	    Openreplay.patchNetwork(global, () => false, {});
+	};
+	
+	React.useEffect(() => start(), []);
+	
+	return (
+		// this top-level view is required to track touch interactions
+		<Openreplay.ORTouchTrackingView style={styles.container}> 
+		      <View style={styles.container}>
+		         <Openreplay.ORTrackedInput
+		          style={styles.input}
+		          onChangeText={onChangeNumber}
+		          value={number}
+		          placeholder="Trackable input"
+		          numberOfLines={1}
+		        />
+		
+		        <Openreplay.ORSanitizedView style={styles.sanitizedView}>
+		          <Text>Contents of this view are sanitized and invisible on the recording</Text>
+		        </Openreplay.ORSanitizedView>
+		      </View>
+		</Openreplay.ORTouchTrackingView>
+	)
+}
+```
+
+
+### تطهير البيانات
+
+راجع [كيفية تطهير البيانات في عمليات إعادة تشغيل React Native](/rn-sdk/sanitization) لمزيد من التفاصيل.
+
+## خيارات التهيئة
+
+افتراضيًا، جميع الخيارات مضبوطة على `true`:
+
+- `crashes: Bool` يُفعّل crashlytics.
+- `analytics: Bool` يُفعّل التتبّع التحليلي لطرق العرض (views) المُعلّمة.
+- `performances: Bool` يُفعّل مستمع الأداء.
+- `logs: Bool` يُفعّل مستمع السجلات.
+- `screen: Bool` يُفعّل مُسجّل الشاشة.
+
+## الدوال
+
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="تعرّف على دوال ووحدات React Native SDK" url="/rn-sdk/modules" hideIcon={true} width="100"/>
+</div>

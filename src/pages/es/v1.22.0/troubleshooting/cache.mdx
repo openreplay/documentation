@@ -1,0 +1,21 @@
+---
+title: "Borrar caché"
+metaTitle: "Borrar caché"
+metaDescription: "Cómo borrar y restablecer la caché (CSS, fuentes e iconos) en OpenReplay."
+---
+
+OpenReplay necesita acceso a recursos como tus hojas de estilo, iconos y fuentes para que las reproducciones funcionen. De hecho, estos archivos se copian y luego se almacenan en caché en nuestro backend para que puedas ver grabaciones antiguas incluso si tu aplicación web ha cambiado. Sigue los pasos a continuación para borrar tu caché:
+
+1. Ejecuta `k9s -n db`
+2. Usa las flechas del teclado para navegar por la lista y llegar al contenedor `minio-*`
+3. Pulsa s para obtener acceso de shell al contenedor de Minio (almacenamiento de objetos)
+4. Ejecuta `export MINIO_ACCESS_KEY=<accessKey from vars.yaml>`
+5. Ejecuta `export MINIO_SECRET_KEY=<secretKey from vars.yaml>`
+6. Ejecuta `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
+7. Ejecuta `mc rm --recursive --dangerous --force minio/sessions-assets` para eliminar todos los archivos en caché (CSS, fuentes e iconos)
+8. Usa `exit` para salir del contenedor de Minio
+9. Ejecuta `:quit` para salir de la CLI de Kubernetes
+10. Reinicia el servicio `assets` ejecutando `openreplay -R`
+
+## ¿Tienes preguntas?
+Si tienes alguna pregunta sobre este proceso, no dudes en contactarnos en nuestro [Slack](https://slack.openreplay.com) o consulta nuestro [Foro](https://forum.openreplay.com).

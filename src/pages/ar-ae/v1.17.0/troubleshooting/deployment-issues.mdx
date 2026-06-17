@@ -1,0 +1,118 @@
+---
+title: "مشكلات النشر"
+metaTitle: "مشكلات النشر"
+metaDescription: "المشكلات المتعلقة بالنشر أو الأسئلة الشائعة"
+---
+
+## التثبيت
+
+### Error: release openreplay failed, and has been uninstalled due to atomic being set
+
+قد يكون السبب في ذلك فشل تثبيت helm. لتصحيح الأخطاء، اتبع الخطوات التالية:
+
+```bash
+openreplay -s
+
+# If you see any failed pods, check the log. it should shed some light.
+openreplay -l <pod name>
+
+# If there is no pods in running/error/crashloop status, then check the status of pod using following command
+kubectl describe po -n app -n db <pod name>
+```
+
+## التسجيل لا يعمل
+
+### فحص السلامة يُظهر فشل التحقق من SSL
+  
+إذا كان لديك شهادة موقّعة ذاتيًا، يمكنك استخدام الأمر التالي لإصلاح ذلك:
+
+```bash
+openreplay -e
+
+# Add following line to skip the SSL health check
+chalice:
+  env:
+    ...
+    # append the following line under env section
+    SKIP_H_SSL: true
+```
+
+احفظ ملف الإعداد واخرج منه باستخدام `:wq`
+
+## توقّف تثبيتي فجأة عن العمل
+   
+قد تكون هناك أسباب متعددة لذلك. إليك كيفية تصحيح الوضع:
+
+### تحقّق من حالة التثبيت باستخدام `openreplay -s`
+
+تحقّق من قسم استخدام القرص. إذا تجاوز 80%، فلن تعمل الخدمات.
+
+## فشلت الترقية دون أي خطأ محدّد
+   
+### أرى "helm or another operation (install/upgrade/rollback) is in progress"
+
+يعني هذا عادةً أنك أعدت محاولة عملية التثبيت/الترقية عدة مرات. شغّل الأمر التالي لحل هذا الوضع:
+
+```bash
+helm rollback -n app openreplay
+```
+
+### لا أرى أي أخطاء، فقط "installation failed"
+
+```bash
+# Check for failed pods
+kubectl get pods -n app --field-selector="status.phase!=Succeeded,status.phase!=Running" -o custom-columns="POD:metadata.name"
+        
+# Check for the err logs
+openreplay -l `pod name from above`
+ ```
+
+## أخطاء الاستضافة الذاتية
+
+### Error: You must be logged in to the server (Unauthorized)
+
+يُصدر `openreplay -s` أو `kubectl get po` الخطأ `error: You must be logged in to the server (Unauthorized)`. ربما أعاد k3s توليد شهادة العميل لتسجيل الدخول إلى العنقود، لكن kubectl لم يلتقط ذلك. انسخ الإعداد الجديد باستخدام `cp /etc/rancher/k3s/k3s.yaml ~/.kube/config` وبذلك تصبح جاهزًا.
+
+## قواعد البيانات
+
+### Postgres لا يقوم بتنظيف البيانات حتى بعد pg-cleanup
+
+تتولّى PG عملية تنظيف Postgres. وهذا يعني أننا سنحذف البيانات قبل التاريخ المحدد، وستقوم PG بوضع علامة على تلك البيانات للحذف. تحذف PG البيانات في عملية تُسمّى AutoVacuum، ومنطق تشغيلها داخلي. لذا ليس لدينا وقت تقديري لتنظيف البيانات من القرص. إذا أردت معرفة الجداول التي تحتوي على بيانات، واقتطاع الجدول إذا كان بإمكانك تحمّل فقدان البيانات، على سبيل المثال الجدول `requests` الذي يحتوي على البيانات المتعلقة بطلبات الشبكة؛ وإذا لم تكن لديك بيانات هناك، فلن تتمكّن من البحث عن الجلسات باستخدام عناوين URL الخاصة بالطلبات.
+
+للتحقّق من حجم الجدول
+
+```sql
+SELECT nspname AS "name_space",
+       relname AS "relation",
+       pg_size_pretty(
+               pg_total_relation_size(C.oid)
+           )   AS "total_size"
+FROM pg_class C
+         LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+WHERE nspname NOT IN ('pg_catalog','information_schema')
+  AND C.relkind <> 'i'
+  AND nspname !~ '^pg_toast'
+ORDER BY pg_total_relation_size(C.oid) DESC
+LIMIT 20;
+```
+
+## SSL
+
+### تفريغ SSL إلى وكيل/موازن تحميل خارجي
+
+```bash
+openreplay -e
+
+# Under ingress-nginx block disable ssl redirection
+ingress-nginx: &ingress-nginx
+  ...
+  controller:
+    ...
+    config:
+      ...
+      ssl-redirect: false
+      force-ssl-redirect: false
+```
+## هل لديك أسئلة؟
+
+إذا كانت لديك أي أسئلة حول هذه العملية، فلا تتردد في التواصل معنا عبر [Slack](https://slack.openreplay.com) الخاص بنا أو الاطلاع على [المنتدى](https://forum.openreplay.com) الخاص بنا.

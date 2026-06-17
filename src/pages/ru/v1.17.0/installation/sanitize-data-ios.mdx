@@ -1,0 +1,77 @@
+---
+title: "Очистка данных (iOS)"
+metaTitle: "Очистка данных (iOS)"
+metaDescription: "Как очищать данные и обеспечивать конфиденциальность ваших пользователей в вашем приложении для iOS."
+---
+
+
+## Очистка UI-компонентов
+
+Очищенные представления будут размыты в итоговой записи. Вы можете добавить любой UI-компонент, и он будет автоматически удалён (для экономии памяти), как только перестанет отображаться на экране.
+
+### SwiftUI
+
+Просто добавьте модификатор `.sensitive()` к нужному компоненту.
+
+```swift
+import ORTracker
+
+Text("Very important sensitive text")
+.sensitive()
+
+```
+
+### UIKit
+
+```swift
+import ORTracker
+
+ORTracker.shared.addIgnoredView(view)
+```
+
+### React Native
+
+SDK экспортирует `ORSanitizedView`, который вы можете использовать, чтобы обернуть свои конфиденциальные компоненты и размыть их.
+
+```js
+import OR from '@openreplay/react-native'
+
+// ... your app UI
+
+  <OR.ORSanitizedView>
+    <SensitiveComponent />
+  </OR.ORSanitizedView>
+
+// ...
+```
+
+## Очистка сетевых запросов
+
+Экспортируются два ключа для автоматической обрезки данных запроса/ответа: `ignoredKeys` для тела и `ignoredHeaders` для заголовков. Будут очищены как запрос, так и ответ, но тело будет затронуто только в том случае, если это корректный JSON.
+
+Просто назначьте список строк, которые вы хотели бы очистить:
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+Также можно изменить данные ответа перед передачей их слушателю:
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```

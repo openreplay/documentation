@@ -1,0 +1,97 @@
+---
+title: "الأحداث المخصصة"
+metaTitle: "الأحداث المخصصة"
+metaDescription: "كيفية إرسال أحداث خاصة بمجالك وإضافة ذكاء إضافي إلى تسجيلات الجلسات."
+---
+import Aside from '~/components/Aside.astro'
+
+تُعدّ الأحداث المخصصة رائعة لإضافة المزيد من الذكاء من خلال تسجيل أحداث خاصة بمجالك جنبًا إلى جنب مع عمليات إعادة تشغيل الجلسات. يستخدم OpenReplay نوعين من الأحداث: الوظيفية (`event`) والتقنية (`issue`). تتم فهرسة جميع الأحداث لتسهيل البحث، ويتم مزامنتها مع تسجيلات الجلسات.
+
+<Aside type="tip">
+  لدينا أيضًا درس تعليمي مفصّل حول كيفية إرسال الأحداث المخصصة، يمكنك الاطلاع عليه [هنا](/tutorials/custom-events).
+</Aside>
+
+## الأحداث الوظيفية
+
+تتم فهرسة الأحداث الوظيفية، مما يُسهّل البحث عن تسجيلات جلسات محددة. إذا استلمها OpenReplay بنجاح، فستكون متاحة كعوامل تصفية في شريط omnisearch.
+
+![Functional Event](/static/custom-events-1.png#center)
+
+### باستخدام NPM
+
+استخدم الطريقة `event` للإشارة إلى الأحداث الوظيفية مثل *order completed* أو *product added*. تأخذ معاملين: *name* (string) و *payload* (كائن JS غير تكراري).
+
+```js
+tracker.event('product_added', 'shoes'); // after tracker.start()
+```
+
+### باستخدام مقتطف JavaScript
+
+فيما يلي مثال على كيفية إرسال حدث وظيفي باستخدام المقتطف.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: ""}; 
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+  ...
+  __OPENREPLAY__.event('product_added', 'shoes'); // send a functional event later in your code
+  ...
+```
+
+## الأحداث التقنية
+
+تظهر الأحداث التقنية في إعادة تشغيل الجلسة ضمن علامة التبويب *Events* في DevTools، وكتعليقات توضيحية على التشغيل. كما يتم أخذها في الاعتبار ضمن المسارات (Funnels) لربط انخفاضات التحويل بالمشكلات التقنية.
+
+![Technical Event](/static/custom-events-2.png#center)
+
+### باستخدام NPM
+
+يُستخدم `issue` لإرسال الأحداث التقنية، مثل الأخطاء، التي قد تحدث في مجموعة التقنيات (stack) الخاصة بك أو في الأنظمة الأخرى الواقعة في مرحلة لاحقة. يأخذ `issue` معاملين: *name* (string) و *payload* (كائن JS غير تكراري).
+
+```js
+tracker.issue('payment_error', {code: 500, context: 42}); // after tracker.start()
+```
+
+### باستخدام مقتطف JavaScript
+
+فيما يلي مثال على كيفية إرسال حدث تقني باستخدام المقتطف.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" }; 
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+  ...
+  __OPENREPLAY__.issue('payment_error', {code: 500, context: 42}); // send a technical event (issue) later in your code
+  ...
+```
+
+### باستخدام تطبيق iOS
+
+
+```swift
+import ORTracker
+
+ORTracker.shared.event(name: String, payload: Encodable?)
+```
+
+
+## الدرس التعليمي
+إذا كنت تبحث عن مثال عملي لكيفية استخدام الأحداث المخصصة، فاطّلع على [درسنا التعليمي المفصّل هنا](/tutorials/custom-events).
+
+## لديك أسئلة؟
+
+هل تواجه مشكلة في استخدام الأحداث المخصصة؟ يُرجى الانضمام إلى [Slack](https://slack.openreplay.com) الخاص بنا أو زيارة [المنتدى](https://forum.openreplay.com) الخاص بنا والحصول على المساعدة من مجتمعنا.

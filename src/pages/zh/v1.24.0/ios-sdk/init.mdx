@@ -1,0 +1,109 @@
+---
+title: "iOS SDK - 初始化 SDK"
+metaTitle: "iOS SDK - 初始化 SDK"
+metaDescription: "iOS 追踪器构造方法的配置选项"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	iOS SDK 目前处于 Beta 阶段。欢迎在我们的 [Slack](https://slack.openreplay.com) 上向我们提供反馈或报告您遇到的任何问题，也可以查看我们的[论坛](https://forum.openreplay.com)。
+</Aside>
+
+## 安装
+
+以下这行代码将为您安装追踪器，并随之安装 SDK，让您能够使用追踪器的所有功能。
+
+### Cocoapods
+
+```ruby
+  pod 'OpenReplay', '~> 1.0.17'
+```
+
+### Swift Package Manager
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/openreplay/ios-tracker.git", from: "1.0.17"),
+]
+```
+
+## 初始化
+
+在实例化 OpenReplay 的追踪器时，您可以提供多个配置选项来自定义录制及录制体验的诸多方面。您必须在构造函数中设置 `projectKey` 选项。您可以从 OpenReplay 控制台的 'Preferences > Projects' 中获取该值。
+
+<Aside type="tip">
+	请注意，如果您有多个项目，需要谨慎选择所使用的项目密钥。
+</Aside>
+
+
+### 添加追踪代码
+
+将以下代码添加到您的 `AppDelegate.swift` 文件中：
+
+```swift
+// AppDelegate.swift
+import OpenReplay
+
+//...
+
+class AppDelegate: UIResponder, UIApplicationDelegate {
+
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+
+			  // not required if you're using our SaaS version
+        OpenReplay.shared.serverURL = "https://your.instance.com/ingest"
+				// check out our SDK docs to see available options
+        OpenReplay.shared.start(projectKey: "projectkey", options: .defaults)
+
+        // ...
+        return true
+			}
+```
+
+### 设置触摸监听器
+
+```swift
+// SceneDelegate.Swift
+import OpenReplay
+
+// ...
+func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+	let contentView = ContentView()
+	.environmentObject(TodoStore())
+
+	if let windowScene = scene as? UIWindowScene {
+		let window = TouchTrackingWindow(windowScene: windowScene) // <<<< here
+		window.rootViewController = UIHostingController(rootView: contentView)
+		self.window = window
+		window.makeKeyAndVisible()
+	}
+}
+```
+
+### 脱敏数据
+
+有关更多详细信息，请参阅[如何在 iOS 回放中脱敏数据](/ios-sdk/sanitization)。
+
+## 初始化选项
+
+- `crashes: Bool` 启用崩溃分析（crashlytics）。
+- `analytics: Bool` 启用对标记视图的分析追踪。
+- `performances: Bool` 启用性能监听器。
+- `logs: Bool` 启用日志监听器。
+- `screen: Bool` 启用屏幕录制器。
+- `wifiOnly: Bool` 强制追踪器仅在用户拥有 wifi 连接时启动。
+
+## 模块
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="了解 iOS SDK 的模块" url="/ios-sdk/modules" hideIcon={true} width="100"/>
+</div>
+
+## 方法
+
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="了解 iOS SDK 的方法" url="/ios-sdk/methods" hideIcon={true} width="100"/>
+</div>
+
+## 有疑问？
+如果您对此过程有任何疑问，欢迎在我们的 [Slack](https://slack.openreplay.com) 上联系我们，也可以查看我们的[论坛](https://forum.openreplay.com)。

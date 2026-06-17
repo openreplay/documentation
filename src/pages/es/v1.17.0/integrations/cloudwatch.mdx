@@ -1,0 +1,86 @@
+---
+title: "CloudWatch"
+metaTitle: "Integración con CloudWatch"
+metaDescription: "Cómo integrar CloudWatch con OpenReplay y ver los errores del backend junto a las repeticiones de sesión."
+---
+
+Cómo integrar CloudWatch con OpenReplay y ver los errores del backend junto a las repeticiones de sesión.
+
+## 1. Crear una cuenta de servicio
+
+1. Inicia sesión en tu cuenta de [AWS](https//console.aws.amazon.com).
+2. Ve al panel de [IAM](https://console.aws.amazon.com/iam/home).
+3. Haz clic en *Users*.
+4. Haz clic en el botón *Add user*.
+5. Establece el nombre como "openreplay_cw".
+6. En el tipo de acceso, selecciona *Programmatic access*.
+7. Haz clic en el botón *Next: Permissions*.
+8. Elige *Attach existing policies directly*
+9. En la lista de permisos, elige *CloudWatchReadOnlyAccess*.
+10. Haz clic en el botón *Next: Tags*.
+11. Haz clic en el botón *Next: Review*.
+12. Haz clic en el botón *Create user*.
+13. Copia el `Access key ID` y la `Secret access key`.
+
+## 2. Habilitar CloudWatch en OpenReplay
+
+Coloca tu `Access key ID` y tu `Secret access key` en el panel de OpenReplay en 'Preferences > Integration', selecciona la región y elige el grupo de logs que deseas rastrear de la lista desplegable.
+
+![Integración de CloudWatch en OpenReplay](/static/cloudwatch-1.jpg#center)
+
+## 3. Propagar openReplaySessionToken
+
+Para vincular un evento de CloudWatch con la sesión de usuario grabada, se debe propagar un token único desde tu frontend a tu backend en cada solicitud que quieras rastrear. Esto se puede hacer usando una cabecera HTTP personalizada. En el siguiente ejemplo, usamos la función `fetch` para enviar esa cabecera.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // use window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+Para que OpenReplay pueda asociar una entrada de log de CloudWatch con la sesión de usuario grabada, se debe propagar un token único como parte de cada error del backend que desees rastrear.
+
+A continuación se muestra un ejemplo en Python usando Monkey Patching.
+
+```python
+import sys
+import traceback
+#...
+old_tb = traceback.print_exception
+old_f = sys.stdout
+old_e = sys.stderr
+OPENREPLAY_SESSION_TOKEN = None
+
+class F:
+    def write(self, x):
+        if OPENREPLAY_SESSION_TOKEN is not None and x != '\n':
+            old_f.write(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] {x}")
+        else:
+            old_f.write(x)
+
+    def flush(self):
+        pass
+
+def tb_print_exception(etype, value, tb, limit=None, file=None, chain=True):
+    if OPENREPLAY_SESSION_TOKEN is not None:
+        value = type(value)(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] " + str(value))
+    old_tb(etype, value, tb, limit, file, chain)
+
+traceback.print_exception = tb_print_exception
+
+sys.stderr = F()
+```
+
+El nombre de la etiqueta `openReplaySessionToken` distingue entre mayúsculas y minúsculas.
+
+## ¿Tienes preguntas?
+
+Si encuentras algún problema, conéctate a nuestro [Slack](https://slack.openreplay.com) o consulta nuestro [Foro](https://forum.openreplay.com) y obtén ayuda de nuestra comunidad.

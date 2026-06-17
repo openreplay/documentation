@@ -1,0 +1,63 @@
+---
+title: "MobX"
+metaTitle: "MobX"
+metaDescription: "إضافة MobX لـ OpenReplay."
+---
+
+تتيح لك هذه الإضافة التقاط تغييرات `MobX` وفحصها لاحقًا أثناء إعادة تشغيل تسجيلات الجلسات. وهذا مفيد لفهم المشكلات وإصلاحها. 
+
+
+## التثبيت
+
+```bash
+npm i @openreplay/tracker-mobx
+```
+
+## الاستخدام
+
+قم بتهيئة حزمة `@openreplay/tracker` كالمعتاد وحمّل الإضافة فيها.
+ثم استخدم القيمة المُعادة لتتبّع الكائنات القابلة للملاحظة (observables) في MobX.
+
+```js
+import { observable, observe } from 'mobx';
+import Tracker from '@openreplay/tracker';
+import trackerMobX from '@openreplay/tracker-mobx';
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+// this instance can be exported and used for multiple stores
+const mobxObserver = tracker.use(trackerMobX({ ...options }));
+
+const myArray = observable(['foo', 'bar', 42]);
+
+observe(myArray, mobxObserver)
+
+myArray.push("Hello world"); // This mutation will be tracked
+```
+
+## الخيارات
+
+يمكنك تخصيص سلوك الوسيط (middleware) لتنقية بياناتك.
+
+```js
+interface Options {
+    predicate?: (observeEvent: { type: string; name: string; object: any; debugObjectName: string }) => boolean;
+    sanitize?: (resultAction: { state: any; type: string; property: string }) => { state: any; type: string; property: string };
+    update?: boolean;
+    add?: boolean;
+    delete?: boolean;
+}
+
+trackerMobX({
+  predicate: () => true,
+  sanitize: (event) => event
+})
+```
+
+حيث يمكن استخدام predicate لإيقاف الالتقاط ديناميكيًا، ويمكن استخدام sanitize لتعديل الحمولة (payload) قبل إرسالها إلى الخادم الخلفي (backend). تندرج معظم الإجراءات ضمن نوع update، راجع وثائق mobx لمزيد من التفاصيل حول add و delete (غالبًا لـ Maps)
+
+## هل لديك أسئلة؟
+
+هل تواجه صعوبة في إعداد هذه الإضافة؟ يُرجى الانضمام إلى [Slack](https://slack.openreplay.com) الخاص بنا أو زيارة [المنتدى](https://forum.openreplay.com) والحصول على المساعدة من مجتمعنا.

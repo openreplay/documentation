@@ -1,0 +1,77 @@
+---
+title: "Sanitizar datos (iOS)"
+metaTitle: "Sanitizar datos (iOS)"
+metaDescription: "Cómo sanitizar datos y garantizar la privacidad de tus usuarios en tu aplicación iOS."
+---
+
+
+## Sanitizar componentes de la interfaz
+
+Las vistas sanitizadas aparecerán difuminadas en la repetición resultante. Puedes añadir cualquier componente de la interfaz y se eliminará automáticamente (para preservar la memoria) en cuanto deje de estar en pantalla.
+
+### SwiftUI
+
+Simplemente añade el modificador `.sensitive()` al componente deseado.
+
+```swift
+import ORTracker
+
+Text("Very important sensitive text")
+.sensitive()
+
+```
+
+### UIKit
+
+```swift
+import ORTracker
+
+ORTracker.shared.addIgnoredView(view)
+```
+
+### React Native
+
+El SDK exporta `ORSanitizedView`, que puedes usar para envolver tus componentes sensibles y difuminarlos.
+
+```js
+import OR from '@openreplay/react-native'
+
+// ... your app UI
+
+  <OR.ORSanitizedView>
+    <SensitiveComponent />
+  </OR.ORSanitizedView>
+
+// ...
+```
+
+## Sanitizar peticiones de red
+
+Se exportan dos claves para recortar automáticamente los datos de la petición/respuesta: `ignoredKeys` para el cuerpo e `ignoredHeaders` para las cabeceras. Tanto la petición como la respuesta se sanitizarán, pero el cuerpo solo se verá afectado si es un JSON válido.
+
+Simplemente asigna una lista de cadenas que te gustaría sanitizar:
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+También es posible modificar los datos de la respuesta antes de pasarlos al listener:
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```

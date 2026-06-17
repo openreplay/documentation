@@ -1,0 +1,90 @@
+---
+title: "Zustand"
+metaTitle: "Zustand"
+metaDescription: "Plugin de Zustand para OpenReplay."
+---
+import Aside from '~/components/Aside.astro'
+
+Este plugin te permite capturar las mutaciones/el estado de `Zustand` e inspeccionarlos más adelante mientras reproduces las grabaciones de sesiones. Esto resulta muy útil para entender y solucionar problemas.
+
+<Aside type="tip">
+  También tenemos un tutorial detallado sobre cómo usar el plugin de Zustand para capturar el estado de tu aplicación al utilizar esta librería; puedes consultarlo [aquí](/tutorials/zustand).
+</Aside>
+
+
+
+## Instalación
+
+```bash
+npm i @openreplay/tracker-zustand
+```
+
+## Uso
+
+Inicializa el paquete `@openreplay/tracker` como de costumbre y carga el plugin en él. Llama al plugin para configurar el nombre del store; esto devolverá una instancia de tracker de store con nombre que puedes invocar pasando tu ejemplar de store como argumento para habilitar el seguimiento de dicho store.
+
+### Si tu sitio web es una Single Page Application (SPA)
+
+```js
+import Tracker from '@openreplay/tracker';
+import trackerZustand from '@openreplay/tracker-zustand';
+```
+
+### Si tu aplicación web es Server-Side-Rendered (SSR)
+
+```js
+import Tracker from '@openreplay/tracker/cjs';
+import trackerZustand from '@openreplay/tracker-zustand/cjs';
+```
+
+### Seguimiento del store de Zustand
+
+```js
+import create from "zustand";
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+const zustandPlugin = tracker.use(trackerZustand())
+// name is optional, randomly generated 
+// string if its undefined
+const bearStoreLogger = zustandPlugin('bear_store')
+
+
+const useBearStore = create(
+  bearStoreLogger((set: any) => ({
+    bears: 0,
+    increasePopulation: () => set((state: any) => ({ bears: state.bears + 1 })),
+    removeAllBears: () => set({ bears: 0 }),
+  }))
+)
+```
+
+## Opciones
+
+Puedes personalizar el comportamiento del plugin con opciones para sanear tus datos. Son similares a las del plugin estándar `createLogger`.
+
+```js
+trackerZustand({
+  filter (mutation, state) {
+    // returns `true` if a mutation should be logged
+    // `mutation` is a `{ type, payload }`
+    return mutation.type !== "aBlacklistedMutation";
+  },
+  transformer (state) {
+    // transforms the state before logging it.
+    // for example return only a specific sub-tree
+    return state.subTree;
+  },
+  mutationTransformer (mutation) {
+    // mutations are logged in the format of `{ type, payload }`
+    // we can format it any way we want.
+    return mutation.type;
+  },
+})
+```
+
+## ¿Tienes preguntas?
+
+¿Tienes problemas para configurar este plugin? Conéctate a nuestro [Slack](https://slack.openreplay.com) o visita nuestro [Foro](https://forum.openreplay.com) y obtén ayuda de nuestra comunidad.

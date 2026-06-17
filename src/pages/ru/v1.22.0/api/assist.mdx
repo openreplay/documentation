@@ -1,0 +1,202 @@
+---
+title: "Assist"
+metaTitle: "Assist"
+metaDescription: "Как выполнять поиск по всем активным сессиям конкретного проекта."
+---
+
+## Получение активных сессий
+
+Доступно только в Enterprise Edition (EE).
+
+Возвращает список активных сессий для конкретного проекта.
+
+### Метод
+
+`GET`
+
+### URL
+
+`/api/v1/:projectKey/assist/sessions`
+
+### Параметры
+
+| Name | Type | Description |
+|----------|-------------|-------------|
+| projectKey | string | ID отслеживаемого проекта (обязательно) |
+
+### Заголовки запроса
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`: Ключ можно найти в разделе 'Preferences' > 'Account' > 'Organization API
+Key'.
+
+### Коды состояния
+
+`200`: Ответ отправлен в формате JSON в теле
+
+### Пример запроса
+
+```shell
+curl -X GET \
+  https://openreplay.example.com/api/v1/aYYaFHiagqdXKEmVlmvJ/assist/sessions \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Пример ответа
+
+```json
+{
+  "data": {
+    "total": 1,
+    "sessions": [
+      {
+        "pageTitle": "OpenReplay Blog",
+        "sessionID": "6975518573799938",
+        "metadata": {},
+        "userID": "",
+        "userUUID": "8998545b-553c-4f41-a39d-d7cba7fac2d1",
+        "projectKey": "aYYaFHiagqdXKEmVlmvJ",
+        "revID": "",
+        "timestamp": 1656437966459,
+        "trackerVersion": "3.5.11",
+        "isSnippet": true,
+        "userOs": "Mac OS",
+        "userBrowser": "Chrome",
+        "userBrowserVersion": "103.0.0.0",
+        "userDevice": null,
+        "userDeviceType": "desktop",
+        "userCountry": "FR",
+        "active": false,
+        "live": true,
+        "projectId": 3
+      }
+    ]
+  }
+}
+```
+
+## Поиск активных сессий
+
+Поиск в списке активных сессий конкретного проекта.
+
+### Метод
+
+`POST`
+
+### URL
+
+`/api/v1/:projectKey/assist/sessions`
+
+### Параметры
+
+| Name | Type | Description |
+|----------|-------------|-------------|
+| projectKey | string | ID отслеживаемого проекта (обязательно) |
+
+### Payload
+
+| Name    | Type            | Description                                          |
+|---------|-----------------|------------------------------------------------------|
+| sort    | string          | Атрибут сортировки (по умолчанию:timestamp)               |
+| order   | string          | Порядок сортировки, может быть "DESC" или "ASC" (по умолчанию:DESC) |
+| page    | integer         | Номер страницы для постраничной разбивки (по умолчанию:1)           |
+| limit   | integer         | Количество сессий на странице (по умолчанию:200)        |
+| filters | array of filter | Список фильтров, см. следующую таблицу (по умолчанию:[])   |
+
+объект filter:
+
+| Name     | Type                              | Description                                                                        |
+|----------|-----------------------------------|------------------------------------------------------------------------------------|
+| value    | array of case insensitive strings | Список значений (по умолчанию:[])                                                    |
+| type     | case insensitive string           | Атрибут фильтра (обязательно)                                                    |
+| source   | case insensitive string           | Имя атрибута метаданных для type=metadata (по умолчанию:"")                          |
+| operator | case sensitive string           | Оператор, применяемый к каждому значению, может быть "contains" или "is" (по умолчанию:"contains") |
+
+Поиск найдёт активные сессии, у которых имя атрибута содержит указанный `type` и значение которых содержит одно из указанных `value`.
+
+
+P.S.: если `values=[]`, поиск найдёт активные сессии, у которых есть заданный атрибут.
+
+Например, если вы ищете сессии с определёнными метаданными (любое значение):
+```json
+{"value": [], "type": "METADATA", "source": "myMeta"}
+```
+
+### Заголовки запроса
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`: Ключ можно найти в разделе 'Preferences' > 'Account' > 'Organization API
+Key'.
+
+### Коды состояния
+
+`200`: Ответ отправлен в формате JSON в теле
+
+### Пример запроса
+
+В следующем примере выполняется поиск первых 10 активных сессий (в обратном порядке сортировки по timestamp), у которых
+`userId` содержит 'openreplay' и `metadata.plan` содержит 'trial' или 'free'.
+
+```shell
+curl -X POST \
+  https://openreplay.example.com/api/v1/aYYaFHiagqdXKEmVlmvJ/assist/sessions \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+  --data-raw '{
+    "filters": [
+        {
+            "value": [
+                "trial", "free"
+            ],
+            "type": "METADATA",
+            "source": "plan",
+            "operator": "is"
+        },
+        {
+            "value": [
+                "openreplay"
+            ],
+            "type": "USERID",
+            "operator": "contains"
+        }
+    ],
+    "sort": "timestamp",
+    "order": "DESC",
+    "limit": 10,
+    "page": 1
+   }'
+```
+
+### Пример ответа
+
+```json
+{
+  "data": {
+    "total": 1,
+    "sessions": [
+      {
+        "pageTitle": "OpenReplay Blog",
+        "sessionID": "6975518573799185",
+        "metadata": {
+          "plan": "trial"
+        },
+        "userID": "dev@openreplay.com",
+        "userUUID": "8998545b-553c-4f41-a39d-d7cba7fac2d1",
+        "projectKey": "aYYaFHiagqdXKEmVlmvJ",
+        "revID": "",
+        "timestamp": 1656437966459,
+        "trackerVersion": "3.5.11",
+        "isSnippet": true,
+        "userOs": "Mac OS",
+        "userBrowser": "Chrome",
+        "userBrowserVersion": "103.0.0.0",
+        "userDevice": null,
+        "userDeviceType": "desktop",
+        "userCountry": "FR",
+        "active": false,
+        "live": true,
+        "projectId": 3
+      }
+    ]
+  }
+}
+```

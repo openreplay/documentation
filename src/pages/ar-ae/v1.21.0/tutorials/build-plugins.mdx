@@ -1,0 +1,329 @@
+---
+title: "كيفية بناء أول إضافة (plugin) خاصة بك في OpenReplay"
+metaTitle: "إضافة وظائف إضافية إلى الـ tracker من خلال إنشاء الإضافات الخاصة بك"
+metaDescription: "تعلّم كيفية إنشاء إضافات OpenReplay الخاصة بك"
+---
+إذا كنت تستضيف نسختك من OpenReplay ذاتيًا (self-hosting)، فستحصل على ميزة إضافية تتمثل في القدرة على تطوير وتثبيت إضافات مخصصة. وهذا سيتيح لك إضافة وظائف وتوافق لا يوفّرها OpenReplay جاهزًا من الصندوق.
+
+في الوقت الحالي، هناك بعض الإضافات التي طوّرها وصانها فريق OpenReplay، مثل [إضافة Redux](/plugins/redux)، التي تتيح لك تتبّع تغييرات الحالة (state)، أو [إضافة Fetch](/plugins/fetch)، التي تمنحك القدرة على تسجيل بيانات الطلبات (Request) والاستجابات (Response). يمكنك الاطلاع على [القائمة الكاملة للإضافات هنا](/plugins) إذا أردت معرفة المزيد.
+
+في هذا الدليل التعليمي، ستتعلّم كيفية بناء إضافتك الخاصة. وعلى وجه التحديد، سنبني إضافة تتبّع طريقة GET في JQuery.
+
+## بناء إضافة من الصفر
+
+نوصي بأن تبدأ بنسخ ولصق مجلد إضافة تقوم بشيء مشابه لما تسعى لفعله، فبهذه الطريقة سيكون لديك كل منطق الكود وكود الإعداد جاهزًا.
+
+ومع ذلك، بما أن الإضافة التي سنبنيها هنا ستتصرّف بطريقة مشابهة لطريقة عمل إضافة Fetch، فسنقوم بتكرار تلك الإضافة.
+
+ومع ذلك، سيظل عليك القيام بأمور مثل:
+
+- تعديل الـ back-end.
+- إضافة رسائل جديدة إلى بروتوكول الرسائل.
+- بناء بعض خدمات الـ back-end من الكود المصدري.
+
+لذا، إذا لم تكن قد مررت بعدُ بعملية [بناء OpenReplay من الكود المصدري](/deployment/deploy-source)، فأنصحك بأن تمرّ بهذه العملية أولًا مع النسخة الحالية من OpenReplay، لأنك ستقوم بها عدة مرات أثناء اختبار الكود الجديد الخاص بك.
+
+أما إذا كنت قد أتقنت هذا الجزء بالفعل، فتابع القراءة!
+
+## ماذا تحتاج لبناء إضافة جديدة؟
+
+هناك ثلاثة أجزاء لبناء إضافة جديدة:
+
+1. أولًا عليك تعريف نوع الرسالة التي ستُرسلها إضافتك إلى المنصة. يجب أن تحتوي هذه الرسالة على كل بيانات القياس (telemetry) التي تريد تتبّعها.
+2. ثم عليك تحديث الـ front-end لإنشاء مكوّن (component) يمكنه عرض البيانات القادمة من الإضافة. في حالتنا، سنضيف تبويبًا في المشغّل (replayer) يسرد جميع الطلبات التي تمّت باستخدام JQuery.
+3. وأخيرًا، سيتعيّن عليك أيضًا إنشاء الإضافة! تذكّر، هذا هو سبب وجودنا هنا. الإضافة هي الجزء الوحيد من كل هذا الذي يمكنك تطويره خارج OpenReplay وستقوم بتثبيته في مكان آخر (تطبيقك).
+
+لاحظ أن بقية الدليل ستفترض أنك قمت بعمل fork لمستودعنا على Github وأنه جاهز ويعمل في مكان ما. إذا لم تكن قد فعلت ذلك، فالرجاء مراجعة [قسم النشر (deployment) في توثيقنا](/deployment) أولًا.
+
+## الخطوة 1: بناء رسالتك الجديدة
+
+أول ما يجب فعله هو فهم البيانات التي تريد التقاطها وعرضها بواسطة إضافتك. في حالتنا، بما أننا نبني شيئًا لتتبّع طلبات GET، فينبغي أن نتأكد من التقاط العناصر التالية:
+
+- URL: بالطبع، عنوان URL الخاص بالطلب
+- Response: سنحاول أيضًا التقاط بعض الاستجابات
+- Status: رمز الحالة المُستلَم من الخادم
+
+سنضيف أيضًا خاصية “duration”، لتتبّع المدة التي يستغرقها تنفيذ الطلب والحصول على بعض البيانات، وسنحتاج لذلك إلى “timestamp” الخاص بالطلب.
+
+للقيام بهذا، سيتعيّن علينا تعديل ملف `mob/messages.rb`. هذا ملف بلغة Ruby، لكن لا تقلق إذا كنت لا تعرف Ruby، فكل ما عليك فعله هو إضافة سجل (record) جديد يصف رسالتك الجديدة، شيء مثل هذا:
+
+```jsx
+message 112, 'JQueryGET' do
+  string 'Method'
+  string 'url'
+  string 'response'
+  string 'status'
+  string 'duration'
+  int  'timestamp'
+end
+```
+
+لاحظ أنني عرّفت أيضًا:
+
+- معرّف رسالة (112)، وهو رقم عشوائي غير مستخدَم بالفعل (يمكنك النظر إلى الرسائل الأخرى في الملف) وأقل من 200.
+- اسم رسالة، وهذا متروك لك تمامًا، فقط تأكّد من أنه يصف نوع رسالتك.
+- حقل “method”، وبهذه الطريقة يمكننا احتمالًا إعادة استخدام الرسالة لطرق أخرى في المستقبل.
+- أنواع الخصائص كـ "string" و "int"، وذلك لأن المُرمِّز (encoder) لدينا سيحوّل المصفوفات والكائنات إلى سلاسل نصية.
+
+
+بعد الانتهاء من هذا، عليك التأكد من أن الرسالة قابلة للوصول من كل مكان، لذا ستُشغّل سكربتين (scripts) داخل هذا المجلد:
+
+```jsx
+$ ruby run.rb
+$ sh format.sh
+```
+
+بمجرد انتهاء هذا، ستُنسَخ الرسالة ومعرّفها وتُضاف في كل مكان في الـ back-end حيث تكون مطلوبة.
+
+لننتقل الآن إلى الـ front-end ولننظر فيما نحتاج إلى تغييره.
+
+## الخطوة 2: تحديث الـ front-end
+
+بعد أن أصبحت الرسالة جاهزة، ستريد تحديث الدالة `messageDistributor` (داخل الملف `frontend/app/player/MessageDistributor/MessageDistributor.ts`)، التي تستقبل جميع الرسائل وتقرّر ما تفعله بها.
+
+داخل الدالة، سترى عبارة `switch` كبيرة وحالة (case) جديدة بداخلها لرسالتك مُضافة بالفعل (ستلاحظ أن الاسم المُستخدَم مكتوب بنمط أحرف مختلف عمّا استخدمته أنت). في حالة هذا المثال، ولنوع الرسالة “JQueryGET”، ستحصل على نوع “j_query_get”.
+
+ستريد الآن إضافة الرسالة إلى قائمة، وستستخدم مكوّنات الـ front-end هذه القوائم. ستفعل ذلك باستخدام الدالة `listAppend`.
+
+يجب أن تبدو الحالة (case) هكذا:
+
+```jsx
+case 'j_query_get':
+    listAppend("jquery", Resource({
+      method: msg.method,
+      url: msg.url,
+      payload: {},
+      response: msg.response,
+      status: msg.status,
+      type: TYPES.JQUERY,
+      time: msg.timestamp - this.sessionStart,
+      duration: msg.duration,
+      index
+    }))
+  break;
+```
+الآن، هناك بعض الأمور التي علينا القيام بها لجعل هذا يعمل:
+
+- علينا إضافة قائمة “jquery”، وللقيام بذلك، سنعدّل الملف `frontend/app/player/lists/index.js` ونضيف “jquery” إلى المصفوفة `entityNamesWithRed`.
+- علينا إضافة `TYPES.JQUERY`، ويمكنك فعل ذلك بتعديل هذا الملف: `frontend/app/types/session/resource.js`
+
+بعد الانتهاء من ذلك، سننشئ المكوّن الفعلي الذي يعرض البيانات داخل المشغّل. شيء مثل هذا:
+
+![النتيجة النهائية](/tutorials/build-plugins/1.png)
+
+للقيام بذلك، سنعتمد على مكوّن موجود، وسننسخ ونلصق مكوّن Fetch. وللقيام بذلك، سنكرّر المجلد `frontend/app/components/Session_/Fetch` ونسمّيه “JQuery”.
+
+سنحدّث كل إشارة إلى fetch داخل المجلد المُنشأ حديثًا للتأكد من أنها تقرأ "jquery" (من المرجّح أن يكون استخدام البحث والاستبدال منطقيًا هنا).
+
+سيؤدي ذلك إلى إنشاء مكوّن العرض المرئي (visualization) الذي سيتعيّن عليك بعد ذلك إضافته يدويًا. أولًا، عليك تعديل الملف `frontend/app/components/Session_/Player/Controls/Controls.js` لإضافة زر “JQuery” في الزاوية السفلية اليمنى من الشاشة، حيث تُعرض جميع عناصر التحكم.
+
+ابحث عن كود JSX وأضِف كتلة مثل هذه:
+
+```jsx
+{showJQuery && (
+  <ControlButton
+    disabled={disabled && !inspectorMode}
+    onClick={() => toggleBottomTools(JQUERY)}
+    active={bottomBlock === JQUERY && !inspectorMode}
+    hasErrors={jqueryRedCount > 0}
+    count={jqueryCount}
+    label="JQUERY"
+    noIcon
+    labelClassName="!text-base font-semibold"
+    containerClassName="mx-2"
+  />
+)}
+```
+
+وبينما أنت في هذا الصدد، تأكّد من تعريف جميع المتغيّرات ذات الصلة، مثل `showJQuery` و `jqueryCount` و `JQUERY` و `jqueryRedCount`. إذا لم تكن متأكدًا من كيفية القيام بذلك، فابحث عن نظائرها الخاصة بـ fetch، وستجدها بسرعة.
+
+بعد إضافة الزر، يمكنك الآن تعديل الملف `frontend/app/components/Session_/Player/Player.js` وإضافة المكوّن الفعلي.
+
+للقيام بذلك، وبعد استيراده، تأكّد من إضافة كتلة مثل التالية داخل قسم JSX:
+
+```jsx
+{ bottomBlock === JQUERY &&
+  <JQuery />
+}
+```
+
+وكجزء من هذا، سيتعيّن عليك أيضًا إضافة الثابت `JQUERY` ليُصدَّر (exported) من الملف `frontend/app/duck/components/player.js`.
+
+سيتكفّل ذلك بكل شيء.
+
+الآن أصبح الـ front-end لديك جاهزًا لعرض المعلومات، ونحتاج إلى إيجاد طريقة لتوليدها. فلننظر إذًا في الكود الفعلي للإضافة!
+
+## الخطوة 3: بناء إضافتك
+
+يمكنك إنشاء هذا المشروع في أي مكان تريده. الهدف هو توفير حزمة قابلة للتثبيت لاستخدامها في مشاريع أخرى.
+
+لذا تأكّد من أن ملف `package.json` يبدو هكذا:
+
+```jsx
+{
+  "name": "tracker-jquery",
+  "version": "1.0.0",
+  "description": "jquery openreplay tracker",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "peerDependencies": {
+    "@openreplay/tracker": ">=3.6.0"
+  },
+  "devDependencies": {
+    "@openreplay/tracker": "<latest version of the tracker>",
+    "prettier": "^1.18.2",
+    "replace-in-files-cli": "^1.0.0"
+  }
+}
+```
+
+وسنضيف ملف `index.js` داخل مجلد `src` الخاص بالمشروع. أنت حرّ في تنظيم هذا المشروع كما تراه مناسبًا طالما أن دوالك المُصدَّرة (exported functions) تتبع معايير معيّنة محدّدة مسبقًا.
+
+بنية الإضافة بسيطة: تعرّف دالة عند استدعائها تُعيد دالة جديدة تتوقّع تمرير خاصية `app` إليها. تحتوي خاصية `app` هذه على نسخة (instance) من الـ tracker. داخل الدالة المُعادة، أنت حرّ في فعل كل ما تريد طالما أنك ترسل رسالة عبر الكائن `app`. ستستقبل المنصة تلك الرسالة وتعالجها وفقًا لمجموعة من القواعد.
+
+سيكون تنسيق الرسالة هو الذي عرّفناه في بداية هذا الدليل.
+
+دعني أريك كيف يبدو كود إضافة JQuery الخاصة بنا:
+
+```jsx
+import { App, Messages } from '@openreplay/tracker';
+
+export default function($) {
+
+    const oldGET = $.get;
+
+    return (app) => {
+
+        const newGET = async (settingsObj) => {
+
+            const startTime = performance.now();
+            let resp = await fetch(settingsObj.url, {
+                method: 'GET'
+            })
+            const duration = performance.now() - startTime;
+
+            let valueResp = null;
+
+            if(settingsObj.json) {
+                valueResp = await resp.json()
+            } else {
+                valueResp = await resp.text()
+            }
+            const getStj = (res) => {
+                let r = {...res}
+                if (r && typeof r.body !== 'string') {
+	                try {
+	                    r.body = JSON.stringify(r.body)
+	                } catch {
+	                    r.body = "<unable to stringify>"
+	                }
+                }
+                return JSON.stringify(r)
+            }
+
+            const msg = Messages.JQueryGET(
+                    'GET',
+                    String(settingsObj.url),
+                    getStj(resp),
+                    resp.status,
+                    duration,
+                    (new Date()).getTime()
+                )
+            console.log("Sending a message to the tracker....", msg)
+
+            app.send(msg, true)
+            return valueResp;
+
+        }
+
+        $.get = newGET;
+
+    }
+}
+```
+
+في الأساس، كل ما أفعله هو استبدال طريقة `.get` الخاصة بـ JQuery بطريقة مخصّصة تستخدم في الواقع `fetch` خلف الكواليس (هذا اختياري تمامًا، إذ يمكنك استخدام طريقة GET الخاصة بـ JQuery أيضًا). وبعد تنفيذ جميع الطلبات، يرسل الكود رسالة باستخدام طريقة `app.send`. تُنشأ الرسالة باستخدام طريقة `Messages.JQueryGET` التي أنشأها لنا سكربت Ruby السابق.
+
+الخصائص التي تستقبلها هذه الرسالة هي، بطبيعة الحال، تلك التي عرّفناها كبنية للرسالة نفسها أثناء **الخطوة 1.** والأهم من ذلك، جميعها إلزامية، فإن اضطررت للتعامل مع قيمة فارغة، فمرّر المصفوفة/الكائن/السلسلة النصية الفارغة/أيًّا كان، لكن **لا تتخطَّ المفتاح (key) أبدًا**.
+
+### نشر الإضافة
+
+بمجرد أن تنتهي من اختباراتك المحلية وتتأكد من أن الإضافة جاهزة، سيتعيّن عليك نشرها على NPM.
+
+اتبع هذا الدليل لفهم كيفية القيام بذلك: [https://docs.npmjs.com/creating-and-publishing-unscoped-public-packages](https://docs.npmjs.com/creating-and-publishing-unscoped-public-packages)
+
+## اختبار الإضافة
+
+بمجرد النشر، ستريد استخدام إضافتك في أماكن مختلفة. آلية استخدام الإضافات مع tracker الخاص بـ OpenReplay هي نفسها دائمًا.
+
+1. عليك أولًا إنشاء نسخة (instance) من الـ tracker.
+2. ثم عليك استدعاء الطريقة `use` وتمرير الدالة الناتجة عن استدعاء إضافتك إليها.
+3. وأخيرًا، شغّل الـ tracker باستخدام الطريقة `start`.
+
+إليك نموذج كود يوضّح كيف يبدو استخدام هذه الإضافة داخل تطبيق React:
+
+```jsx
+import logo from './logo.svg';
+import './App.css';
+import tracker from 'openreplay-tracker'
+import jqueryTracker from 'tracker-jquery'
+import { useEffect } from 'react';
+import $ from 'jquery'
+
+const t = new tracker({
+  __DISABLE_SECURE_MODE: true, //only if you're testing locally
+  ingestPoint: "openreplay.<your custom domain>/ingest",
+  projectKey: "<your project key>",
+})
+
+function App() {
+  useEffect(()=> {
+    t.use(jqueryTracker($))
+    t.start()
+    async function doGet() {
+      let resp = await $.get({
+        url: "http://localhost:3000"
+      })
+      console.log(resp)
+    }
+
+    doGet()
+  }, [])
+  return (
+    <div className="App">
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+        <p>
+          Edit <code>src/App.js</code> and save to reload.
+        </p>
+        <a
+          className="App-link"
+          href="https://reactjs.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn React
+        </a>
+      </header>
+    </div>
+  );
+}
+
+export default App;
+```
+
+يقوم الكود بتنفيذ طلب GET باستخدام طريقة `get` الخاصة بـ Jquery بمجرد تحميل الصفحة، وبما أننا قد أعددنا الـ tracker الصغير الأنيق الخاص بنا، فإننا فعليًا قادرون على تتبّع ذلك الطلب.
+
+إليك كيف ينبغي أن تبدو النتيجة النهائية بالنسبة لك:
+
+![عرض طلبات JQuery](/tutorials//build-plugins/2.png)
+
+---
+
+يمكنك [الاطلاع على هذا المستودع](https://github.com/deleteman/openreplay) للحصول على **الكود المصدري الكامل** لهذا الدليل.
+
+إذا واجهت أي مشكلات في أي من خطوات هذه العملية، فالرجاء التواصل معنا عبر [مجتمعنا على Slack](https://slack.openreplay.com/) واطرح أسئلتك على مطوّرينا مباشرةً!

@@ -1,0 +1,57 @@
+---
+title: "Stackdriver"
+metaTitle: "تكامل Stackdriver"
+metaDescription: "كيفية دمج Stackdriver مع OpenReplay ورؤية أخطاء الواجهة الخلفية إلى جانب عمليات إعادة تشغيل الجلسات."
+---
+
+كيفية دمج Stackdriver مع OpenReplay ورؤية أخطاء الواجهة الخلفية إلى جانب تسجيلات الجلسات.
+
+## 1. إنشاء حساب خدمة Google Cloud
+
+1. في وحدة تحكم GCP، انتقل إلى صفحة [Create Service Account Key](https://console.cloud.google.com/apis/credentials/serviceaccountkey).
+2. من قائمة حسابات الخدمة، حدد *New Service Account*.
+3. في حقل اسم حساب الخدمة، أدخل "openreplay-stackdriver".
+4. من قائمة الأدوار، أضف *Logging > Logs Viewer* و *Stackdriver > Stackdriver Accounts Viewer*.
+5. انقر على *Create* لتنزيل ملف JSON الذي يحتوي على مفتاحك.
+
+## 2. تفعيل Stackdriver في OpenReplay
+
+الصق بيانات اعتماد `Log Name` و `openreplay-stackdriver` في لوحة تحكم OpenReplay ضمن 'Preferences > Integration'.
+
+![تكامل Stackdriver في OpenReplay](/static/stackdriver-1.png#center)
+
+## 3. نشر openReplaySessionToken
+
+لربط حدث Stackdriver بجلسة المستخدم المسجَّلة، يجب نشر رمز فريد من الواجهة الأمامية إلى الواجهة الخلفية في كل طلب ترغب في تتبعه. يمكن القيام بذلك باستخدام ترويسة HTTP مخصصة. في المثال أدناه، نستخدم الدالة `fetch` لإرسال تلك الترويسة.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+لكي يتمكن OpenReplay من ربط إدخال سجل Stackdriver بجلسة المستخدم المسجَّلة، يجب نشر رمز فريد بصفته `label` لكل خطأ في الواجهة الخلفية ترغب في تتبعه.
+
+فيما يلي مثال باستخدام واجهة Python API الخاصة بـ Stackdriver.
+
+```python
+google_logger.log_text("A LOG ENTRY", severity='ERROR', labels={"openReplaySessionToken": OPENREPLAY_SESSION_TOKEN})
+
+#or
+
+google_logger.log_struct({"message": "A LOG ENTRY"}, severity='ERROR', labels={"openReplaySessionToken": OPENREPLAY_SESSION_TOKEN})
+```
+
+اسم الوسم `openReplaySessionToken` حساس لحالة الأحرف.
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات، تواصل معنا عبر [Slack](https://slack.openreplay.com) أو تفقّد [المنتدى](https://forum.openreplay.com) الخاص بنا واحصل على المساعدة من مجتمعنا.

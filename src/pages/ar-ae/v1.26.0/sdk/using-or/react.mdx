@@ -1,0 +1,81 @@
+---
+title: "استخدام OpenReplay مع React"
+metaTitle: "إضافة أداة التتبع OpenReplay Tracker إلى تطبيق React الخاص بك"
+metaDescription: "تعرّف على كيفية تشغيل أداة التتبع في تطبيق React الخاص بك"
+---
+import Aside from '~/components/Aside.astro'
+
+تشغيل أداة التتبع في تطبيق React أمر بسيط للغاية. 
+
+## إضافة كود التتبع
+
+بافتراض أنك تبني تطبيق صفحة واحدة (SPA - Single Page Application)، كل ما عليك فعله هو إضافة الكود التالي إلى نقطة الدخول (entry point) الخاصة بك:
+
+```jsx
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: "<your project key>", 
+  ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
+});
+
+function YourMainComponent({props}) {
+    //some code here...
+
+    useEffect(() => {
+        tracker.start();
+    }, [])
+
+    return //....
+}
+```
+
+وبدلاً من ذلك، يمكنك أيضًا استخدام الفئة `Tracker` مباشرةً لإدارة نسختها يدويًا:
+
+```jsx
+import Tracker from '@openreplay/tracker';
+
+const tracker = new Tracker({
+  projectKey: "<your project key>",  
+  ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
+});
+
+function YourMainComponent({props}) {
+    //some code here...
+
+    useEffect(() => {
+        tracker.start();
+    }, [])
+
+    return //....
+}
+```
+
+بعبارة أخرى، يمكنك إنشاء نسخة من أداة التتبع في بداية السكربت، وبمجرد تحميل الصفحة يمكنك بدء تشغيلها باستخدام الخطّاف (hook) المسمّى `useEffect`.
+
+<Aside type="tip">
+بينما يمكنك الحصول على [نسخة مقتطف JS](/using-or/snippet#getting-the-snippet) من أداة التتبع الخاصة بنا مباشرةً من شبكة CDN عند إنشاء مشروع جديد، فإن هذا الكود أساسي للغاية وسيجعل من الصعب تخصيصه وإضافة إضافات (plugins) أخرى.
+</Aside>
+
+### التعامل مع "projectKey" في الكود الخاص بك
+
+لأسباب أمنية، تجنّب كتابة `projectKey` بشكل ثابت مباشرةً في كود تطبيقك. بدلاً من ذلك، قم بتخزينه في ملف إعدادات أو في نظام بيئة (environment).
+
+تتوفر عدة طرق حسب إعداد مشروعك:
+- **متغيرات البيئة**: إذا كنت تستخدم Create React App، فاستفد من [الدعم المدمج لمتغيرات البيئة](https://create-react-app.dev/docs/adding-custom-environment-variables/)
+- **ملفات الإعدادات**: استخدم ملفات إعدادات مخصّصة يتم استبعادها من نظام التحكم بالإصدارات
+- **إدارة البيئات**: يمكن لأدوات مثل `dotenv` أن تساعدك في إدارة مفاتيح مختلفة عبر البيئات المختلفة
+
+فيما يلي مثال:
+```javascript
+// Access the key from environment variables
+const openReplayKey = process.env.REACT_APP_OPENREPLAY_KEY;
+```
+
+## هل تبني شيئًا أكثر تعقيدًا؟
+
+إذا كنت تبني تطبيقًا معقدًا باستخدام React، فمن المرجّح أنك تستخدم [Next](/using-or/next) أو [Remix](/using-or/remix) أو إطار عمل مشابه. تأكّد من الاطلاع على قسم [إعداد أداة التتبع](/using-or) للعثور على إطار العمل الذي تعمل به.
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات أثناء إعداد أداة التتبع في مشروع React الخاص بك، يُرجى التواصل معنا عبر [مجتمعنا على Slack](https://slack.openreplay.com/) وطرح أسئلتك مباشرةً على مطوّرينا!

@@ -1,0 +1,81 @@
+---
+title: "Развёртывание в OVHcloud"
+metaTitle: "Развёртывание в OVHcloud"
+metaDescription: "Пошаговое руководство по развёртыванию OpenReplay в OVHcloud (выделенный сервер, VPS, виртуальная машина Private Cloud или инстанс Public Cloud)."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+Стек OpenReplay можно установить на одной машине, и выделенный сервер, VPS, виртуальная машина Private Cloud или инстанс Public Cloud от OVHcloud — идеальный кандидат для этого. Вот как это сделать.
+
+## Закажите сервер или запустите инстанс
+
+Для развёртывания OpenReplay вы можете использовать любой из следующих продуктов OVHcloud:
+
+- Выделенный сервер
+- VPS
+- Private Cloud (внутри виртуальной машины)
+- Инстанс Public Cloud
+
+Предварительные требования:
+
+- Выберите *Ubuntu Server 20.04 Focal Fossa* в качестве операционной системы.
+- Минимальные характеристики машины, на которой работает OpenReplay, — `2 vCPUs, 8 GB of RAM, 50 GB of storage`, на архитектуре x86, иначе бэкенд-сервисы OpenReplay просто не запустятся. Этого должно быть достаточно для низкого/умеренного объёма. Если вы ожидаете высокий трафик, отталкивайтесь от этих значений при масштабировании.
+- Публичный IP-адрес, указывающий на ваш сервер/инстанс.
+
+## Разверните OpenReplay
+
+1. Убедитесь, что ваш сервер/инстанс запущен, затем подключитесь к нему по SSH под пользователем root
+
+2. Установите OpenReplay, указав домен, на котором он будет работать (например, DOMAIN_NAME=openreplay.mycompany.com):
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## Настройте TLS/SSL
+
+OpenReplay работает с конфиденциальными данными пользователей, поэтому для его работы требуется HTTPS. Это обязательно, иначе трекер просто не начнёт запись. То же самое касается панели управления: без HTTPS вы не сможете воспроизводить пользовательские сессии.
+
+Поэтому вы должны предоставить (или сгенерировать) собственный SSL-сертификат.
+
+1. Сначала перейдите в панель управления OVHcloud в 'Web cloud' > 'Доменные имена' > ваш домен (т. е. mycompany.com) > 'DNS-зона' (или ваш другой провайдер DNS-услуг) и создайте `A Record`. Используйте домен, который вы указали ранее на этапе установки, и направьте его на сервер/инстанс по его публичному IP.
+
+2. Если вы используете собственный сертификат, создайте SSL-секрет с помощью следующей команды: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
+
+> **Примечание:** Если у вас нет сертификата, сгенерируйте автоматически обновляемый сертификат для вашего поддомена (того, который вы указали при установке) с помощью Let's Encrypt. Просто подключитесь к серверу/инстансу OpenReplay, выполните `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` и следуйте инструкциям.
+
+3. Если вы хотите включить перенаправление с http на https (рекомендуется), раскомментируйте приведённый ниже блок в разделе `ingress-nginx` файла `/var/lib/openreplay/vars.yaml`:
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+Стоит упомянуть, что наш `ingress-nginx` по умолчанию работает на портах `80|443`, но при необходимости это можно легко изменить в `vars.yaml`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. Наконец, переустановите NGINX для OpenReplay:
+
+```bash
+openreplay -R
+```
+
+Теперь всё готово, OpenReplay должен быть доступен на вашем поддомене. Вы можете создать учётную запись, перейдя на страницу `/signup` (т. е. openreplay.mycompany.com/signup).
+
+## Остались вопросы?
+
+Если у вас возникнут какие-либо проблемы, подключайтесь к нашему [сообществу в Slack](https://slack.openreplay.com/) и получите помощь от наших разработчиков.

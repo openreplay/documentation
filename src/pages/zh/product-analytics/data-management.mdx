@@ -1,0 +1,165 @@
+---
+title: "数据管理"
+metaTitle: "数据管理 - OpenReplay"
+metaDescription: "跟踪自定义事件和用户属性，为 OpenReplay 中的产品分析提供支持。"
+---
+
+OpenReplay 中的数据管理功能让你能够跟踪自定义事件和用户属性，为产品分析提供支持。本页面同时介绍用于发送数据的 SDK 集成，以及用于管理数据的用户界面。
+
+如需完整的 SDK 文档，请参阅 [Analytics SDK 参考](/sdk/analytics)。
+
+## 事件概述
+
+OpenReplay 捕获两种类型的事件：
+
+- **自动捕获的事件**：自动跟踪的交互，例如页面浏览、点击和表单提交
+- **自定义事件**：你定义的特定领域事件，例如"购买完成"或"功能已启用"
+
+自定义事件让你能够跟踪对业务至关重要的特定用户操作，并在[趋势](/product-analytics/trends)、[漏斗](/product-analytics/funnels)和[旅程](/product-analytics/journeys)等分析功能中使用它们。
+
+## 捕获事件
+
+要跟踪自定义事件，请使用 SDK 的分析事件模块。如需完整的 API 文档，请参阅 [Events SDK 参考](/sdk/analytics/events)。
+
+### 基本示例
+
+```ts
+// Track a simple event
+tracker.analytics.events.sendEvent("Button Clicked", {
+  button_text: "Start",
+  page: "home",
+})
+```
+
+### 超级属性
+
+超级属性是持久的键/值对，会自动附加到每个被跟踪的事件上：
+
+```ts
+// Set super properties that apply to all events
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  env: "prod",
+})
+
+// This event will include app_version and env automatically
+tracker.analytics.events.sendEvent("Signup Started", {
+  plan: "pro",
+})
+```
+
+## 丰富用户信息
+
+用户属性让你能够存储有关用户的属性，以便进行细分和分析。如需完整的 API 文档，请参阅 [People SDK 参考](/sdk/analytics/people)。
+
+### 识别用户
+
+```ts
+// Identify the current user
+tracker.analytics.people.identify("user_123")
+
+// Set user properties
+tracker.analytics.people.setProperties({
+  email: "user@example.com",
+  plan: "pro",
+})
+```
+
+### 属性类型
+
+OpenReplay 支持多种属性类型：
+
+| 类型 | 描述 | 示例 |
+|------|-------------|----------|
+| **自动跟踪** | 由 SDK 自动捕获 | 设备、浏览器、操作系统、UTM 参数、来源页 |
+| **特殊** | 具有已定义行为的特殊属性 | `$user_id`、`$email`、`$name` |
+| **自定义** | 用户定义的属性 | `plan type`、`company`、`signup date` |
+
+## 在用户界面中管理数据
+
+OpenReplay 提供了一个数据管理界面，用于浏览、筛选和组织你的用户、事件及其各自的属性。
+
+### 用户（People）
+
+<img src="/data-management/people-page.png" alt="事件页面" style={{ width: '700px', height: 'auto' }} />
+
+用户（People）标签页提供了已识别用户的视图：
+
+- 浏览用户及其属性
+- 按用户 ID 或属性值进行搜索
+- 查看用户活动和会话历史
+- 访问单个用户的资料
+
+### 事件
+
+<img src="/data-management/events-page.png" alt="事件页面" style={{ width: '700px', height: 'auto' }} />
+
+事件标签页显示你项目中所有被跟踪的事件类型：
+
+- 按名称浏览和搜索事件
+- 按事件类型筛选（自动捕获 vs 自定义）
+- 编辑事件元数据（显示名称、描述）
+- 控制事件在仪表板和筛选器中的可见性
+
+### 属性
+
+<img src="/data-management/props-page.png" alt="事件页面" style={{ width: '700px', height: 'auto' }} />
+
+属性标签页让你能够同时管理用户属性和事件属性：
+
+- 在用户属性和事件属性之间切换
+- 查看属性类型和值分布
+- 编辑属性的显示名称
+- 控制属性在仪表板和筛选器中的可见性 
+
+### 活动
+
+<img src="/data-management/activity-page.png" alt="事件页面" style={{ width: '700px', height: 'auto' }} />
+
+活动标签页显示实时的事件流：
+
+- 在事件被采集时进行监控
+- 按事件类型或用户进行筛选
+- 验证事件是否被正确捕获
+
+### 操作（Actions）
+
+操作（Actions）让你能够将多个事件归组为一个可重复使用的集合，并为其指定自定义名称和描述。无需每次都选择各个单独的事件，你只需定义一次操作（Action），即可在整个 OpenReplay 中使用。
+
+<img src="/data-management/actions-list.png" alt="操作列表" style={{ width: '700px', height: 'auto' }} />
+
+要创建操作（Action）：
+
+1. 进入数据管理中的 **Actions** 标签页
+2. 点击 **Create Action**
+3. 为其指定一个名称和可选的描述
+4. 选择要包含在集合中的事件
+5. 保存该操作（Action）
+
+创建完成后，操作（Actions）可用于：
+
+- **会话搜索** — 按操作（Action）筛选会话，快速找到相关的用户活动
+- **仪表板** — 将操作（Actions）用作图表和小部件中的指标
+- **用户分析** — 根据操作（Action）的发生情况对用户进行细分和分析
+
+<img src="/data-management/actions-search.png" alt="在会话搜索中使用操作（Actions）" style={{ width: '700px', height: 'auto' }} />
+
+### 兼容 Mixpanel 的别名
+
+所有方法都提供了为方便熟悉而设的兼容层：
+
+```ts
+tracker.analytics.people.set            // setProperties
+tracker.analytics.people.set_once       // setPropertiesOnce
+tracker.analytics.people.append         // appendValues
+tracker.analytics.people.union          // appendUniqueValues
+tracker.analytics.people.incrementBy    // increment
+tracker.analytics.events.register       // setProperty
+tracker.analytics.events.register_once  // setPropertiesOnce
+tracker.analytics.events.unregister     // unsetProperties
+tracker.analytics.events.track          // sendEvent
+```
+
+## 有疑问？
+
+如果你遇到任何问题，请加入我们的 [Slack](https://slack.openreplay.com)，或访问我们的[论坛](https://forum.openreplay.com)，从我们的社区获得帮助。

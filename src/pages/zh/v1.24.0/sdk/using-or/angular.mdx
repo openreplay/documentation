@@ -1,0 +1,229 @@
+---
+title: "在 Angular 中使用 OpenReplay"
+metaTitle: "将 OpenReplay Tracker 添加到你的 Angular 应用"
+metaDescription: "了解如何让 tracker 在你的 Angular 应用中运行"
+---
+请务必牢记，追踪**必须**运行在 Angular 的 Zone.js 钩子之外，以避免重叠和不必要的检查。
+
+下面是一个简单的 tracker 设置示例：
+
+```tsx
+import { Injectable, NgZone } from '@angular/core';
+import Tracker from '@openreplay/tracker';
+import trackerAssist from '@openreplay/tracker-assist';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class OpenReplayService {
+  public tracker?: Tracker | null;
+
+  constructor(private zone: NgZone) {
+    this.zone.runOutsideAngular(() => {
+      this.tracker = new Tracker({
+        projectKey: 'abc123',
+        ingestPoint: 'https://someurl/',
+      });
+
+      this.tracker.use(
+        trackerAssist({
+          confirmText: `You have an incoming call from <Company> Support. Do you want to answer?`,
+        })
+      );
+    });
+  }
+
+  public async start() {
+    this.zone.runOutsideAngular(() => {
+      if (this.tracker) {
+        return this.tracker.start();
+      } else {
+        return {
+          sessionID: null,
+          sessionToken: null,
+          userUUID: null,
+        };
+      }
+    });
+  }
+
+  public setUserData(user: { id: string }): void {
+    this.zone.runOutsideAngular(() => {
+      if (this.tracker && user.id) {
+        this.tracker.setUserID(String(user.id));
+      }
+    });
+  }
+}
+
+```
+
+## 追踪 HTTP 请求
+
+如果你想追踪你的 Angular 应用发送的请求，OpenReplay 并不像为 Fetch 或 Axios 那样提供一个插件。
+
+也就是说，你仍然可以通过 [HTTPInterceptor](https://angular.io/api/common/http/HttpInterceptor) 对其进行配置，以你想要的信息来追踪你的请求。
+
+在本教程中，我将向你展示如何创建一个 HTTPInterceptor，它既能记录请求，也能记录你的 HTTPClient 所发送的响应。
+
+## 创建拦截器
+
+拦截器是一种特殊类型的对象，你可以将它注入到你的 App 代码中，以捕获通过 Angular 默认 HTTP 客户端发送的每一个请求，并捕获其响应。
+
+通过这套逻辑，我们将利用 OpenReplay 的自定义事件，它允许你发送任何你希望在会话中被捕获的事件，因此我们将模拟 Fetch 或 Axios 插件在其他设置中的行为。
+
+拦截器的代码如下：
+
+```tsx
+import { Injectable } from '@angular/core';
+import {
+  HttpInterceptor,
+  HttpRequest,
+  HttpHandler,
+  HttpEvent,
+  HttpResponse,
+} from '@angular/common/http';
+
+import { Observable } from 'rxjs';
+import { filter, map } from 'rxjs/operators';
+import { ReplaySessionService } from '../replay-session.service';
+
+@Injectable({providedIn: 'root'})
+export class HttpConfigInterceptor implements HttpInterceptor {
+  constructor(
+    private replaySessionService: ReplaySessionService,
+  ) { }
+  intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    
+		//This function will be called with the response a few lines below
+		const handleResponse = (request: HttpRequest<any>, response: HttpResponse<any>, event: string) => {
+	     //we forward our data to the service, which will create the custom event and send it
+			this.replaySessionService.sendEventToReplaySession(event, { request, response })
+    }
+    return next.handle(request).pipe(
+      //filter out events that aren't http reponses
+      filter( (event: any) => event instanceof HttpResponse),
+      map( (resp: HttpResponse<any>) => { //for each response, call handleResponse
+        handleResponse(request, resp, `${request.url}`)
+        return resp
+      }),
+      map((event: HttpEvent<any>) => {
+        return event;
+      })
+    );
+  }
+}
+```
+
+我们稍后会看一下 replay 服务，现在只需假设它已经存在。将此文件保存到你的 `app` 文件夹中。
+
+然后编辑 `app.module` 文件，在 @ngModule 指令内添加以下内容：
+
+```tsx
+providers: [
+    {provide: HTTP_INTERCEPTORS, useClass: HttpConfigInterceptor, multi: true}
+  ]
+```
+
+因此 `app.module` 文件大致应如下所示：
+
+```tsx
+import { NgModule } from '@angular/core';
+
+/*
+imports...
+*/
+import { HttpConfigInterceptor } from './interceptor/index';
+
+@NgModule({
+  imports: [
+   /*...*/
+  ],
+  providers: [
+    {provide: HTTP_INTERCEPTORS, useClass: HttpConfigInterceptor, multi: true}
+  ],
+  declarations: [
+    /*...*/
+  ],
+  bootstrap: [ AppComponent ]
+})
+export class AppModule { }
+```
+
+完成这一步后，你的应用现在就知道要在执行的每一个 HTTP 请求上注入你的拦截器了。
+
+现在让我们来看看真正的 session replay 服务。
+
+## 创建 SessionReplayService
+
+首先使用以下命令添加你的新服务：
+
+```tsx
+$ ng generate service replay-session
+```
+
+这将在你的应用根目录下创建一个名为 `replay-session.service.ts` 的新 Angular 服务
+
+该文件的内容应如下所示：
+
+```tsx
+import { Injectable } from '@angular/core';
+import {
+  HttpInterceptor,
+  HttpRequest,
+  HttpHandler,
+  HttpResponse,
+} from '@angular/common/http';
+import OpenReplay from '@openreplay/tracker'
+
+type ReqRespType = {
+  request: HttpRequest<any>,
+  response: HttpResponse<any>
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ReplaySessionService {
+  tracker: OpenReplay|null = null
+
+  constructor() {
+
+    this.tracker = new OpenReplay({
+        projectKey: "<YOUR PROJECT KEY>",
+    })
+		//you can set up any other OR plugins here as well
+
+    this.tracker.start()
+   }
+
+  sendEventToReplaySession(event: string, params: ReqRespType): void {
+    const {request, response} = params
+
+    this.tracker?.event(event + "[request]", {
+      method: request.method,
+      url: request.url,
+      params: request.params
+    })
+    this.tracker?.event(event + "[response]", {
+      body: response.body,
+      status: response.status,
+      headers: response.headers
+    })
+  }
+}
+```
+
+该类的构造函数——由于这是一个服务，我们知道它只会被调用一次——负责实例化 tracker 并将其启动。
+
+然后在我们的 `sendEventToReplaySession` 方法中，我们使用 `event` 方法发送两个自定义事件。
+
+如果你回到拦截器类，你会注意到“event”（我们在此方法中收到的第一个参数）实际上是 URL，所以我给它们附加上“[response]”和“[request]”这些词，以标识什么内容被记录在哪里。然后我为每个事件创建载荷，只保存我想要保存的信息。
+
+事实上，你甚至可以拿这段代码，在调用 `event` 方法之前，对请求或响应中任何你不希望在 replay 内可见的字段进行脱敏处理。
+
+你可以[查看此代码仓库](https://github.com/deleteman/openreplay-angular-example)，获取一个使用 Tracker 的、可运行的基于 Angular 的应用的**完整源代码**。
+
+## 有疑问吗？
+
+如果你在 Angular 项目上设置 Tracker 时遇到任何问题，请通过我们的 [Slack 社区](https://slack.openreplay.com/)联系我们，直接向我们的开发者提问！

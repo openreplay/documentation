@@ -1,0 +1,166 @@
+---
+title: "Administración de OpenReplay"
+metaTitle: "Administración de OpenReplay"
+metaDescription: "Cómo administrar y gestionar fácilmente tu instancia de OpenReplay."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+## CLI
+
+La CLI es útil para gestionar aspectos básicos de tu instancia de OpenReplay, cosas como reiniciar o reinstalar un servicio, acceder a los registros de un componente o simplemente comprobar el estado de tus servicios de backend.
+
+Ejecuta la CLI con la opción `-h`:
+
+```bash
+openreplay -h
+```
+
+Y consulta la lista de todas las opciones disponibles:
+
+```shellsession
+  ___                   ____            _
+ / _ \ _ __   ___ _ __ |  _ \ ___ _ __ | | __ _ _   _
+| | | | '_ \ / _ \ '_ \| |_) / _ \ '_ \| |/ _` | | | |
+| |_| | |_) |  __/ | | |  _ <  __/ |_) | | (_| | |_| |
+ \___/| .__/ \___|_| |_|_| \_\___| .__/|_|\__,_|\__, |
+      |_|                        |_|            |___/
+
+[INFO]
+  Usage: openreplay [ -h | --help ]
+                    [ -s | --status ]
+                    [ -i | --install DOMAIN_NAME ]
+                    [ -u | --upgrade ]
+                    [ -U | --deprecated-upgrade /path/to/old_vars.yaml]
+                    [ -r | --restart ]
+                    [ -R | --Reload ]
+                    [ -c | --cleanup N (in days) ]
+                    [ -e | --edit ]
+                    [ -p | --install-packages ]
+                    [ -l | --logs SERVICE ]
+         Services: alerts assets assist chalice
+                   db ender frontend heuristics
+                   http integrations nginx-controller
+                   peers sink sourcemapreader storage
+```
+
+El backend de OpenReplay depende de los siguientes componentes/servicios:
+
+| Servicio | Descripción |
+|---------|-------------|
+| http | Ingiere eventos y grabaciones de sesiones |
+| sink | Lee datos del pipeline de streaming (Redis o Kafka para la edición enterprise) e inserta en un almacenamiento temporal (NFS) |
+| storage | Mueve los archivos temporales de grabación de sesiones al servicio de almacenamiento de objetos |
+| assets | Para almacenar en caché los recursos (CSS, fuentes e iconos) y renderizar correctamente las grabaciones |
+| db | Lee y escribe en varias bases de datos (Postgres + ClickHouse para la edición enterprise) |
+| ender | Finaliza las sesiones de usuario si están inactivas o desconectadas |
+| chalice | API que sirve el frontend |
+| alerts | Envía notificaciones (correo electrónico, slack, en la aplicación, webhook) cuando se alcanza un umbral definido por el usuario en cualquiera de las métricas de rendimiento |
+| integrations |  Envía y obtiene datos de las API de terceros compatibles (Sentry, Elastic, GitHub, Jira, etc.) |
+
+## Comandos útiles
+
+- Comprobar el estado de salud de OpenReplay
+
+```sh
+openreplay -s
+```
+
+- Comprobar los registros de los servicios
+
+```sh
+openreplay -l <service name>
+```
+
+## Aumentar la capacidad de un servicio
+
+Es posible aumentar la capacidad de cualquier servicio sobrescribiendo los valores predeterminados de asignación de cpu/memoria. Estos últimos se determinan durante el proceso de configuración en función de la capacidad de tu instancia y deberían adecuarse a las necesidades de la mayoría de las instalaciones.
+
+ Si tienes un gran volumen y una máquina potente, simplemente ejecuta el archivo `openreplay -e` y sobrescribe los recursos del servicio. En el siguiente ejemplo, lo hacemos para el worker `http`. Pero esto puede hacerse para cualquier servicio (es decir, sink, storage, postgresql, redis, etc.) descomentando y actualizando el bloque de abajo. Si tienes que hacerlo para más de un servicio, simplemente copia y renombra/actualiza el mismo bloque (cuidado con las duplicaciones).
+
+```yaml
+http:
+  resources:
+    limits:
+      cpu: 4096m
+      memory: 8192Mi
+    requests:
+      cpu: 1024m
+      memory: 2056Mi
+```
+
+Por último, reinstala el servicio para que los nuevos límites surtan efecto (no perderás tus datos):
+
+```bash
+openreplay -R
+```
+
+## Actualizar PostgreSQL
+
+A continuación se presentan las instrucciones para actualizar PostgreSQL a la versión 1.16 o posterior:
+
+1. Realiza el volcado de la base de datos en el volumen persistente:
+
+   Si estás usando una instalación vanilla, ejecuta el siguiente comando para realizar un volcado de la base de datos:
+
+   > Nota: Puedes esperar que los datos se compriman en una proporción de 3:1 (ejemplo: si tienes 15G de datos de postgres, serán 5G en el volcado). Así que asegúrate de tener suficiente espacio en disco.
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'PGPASSWORD=$POSTGRES_PASSWORD PGUSER=postgres pg_dumpall -v > /bitnami/postgresql/dumpall.sql'
+   ```
+
+2. Elimina el directorio de datos existente:
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'rm -rf /bitnami/postgresql/data'
+   ```
+
+3. Escala el StatefulSet de PostgreSQL a cero para detener los pods actuales:
+
+   ```sh
+   kubectl scale sts postgresql --replicas=0 -n db
+   ```
+
+4. Actualiza la imagen de PostgreSQL a la versión 16.3.0 o posterior:
+
+   ```sh
+   kubectl set image statefulset/postgresql postgresql=bitnamilegacy/postgresql:17.2.0 -n db
+   ```
+
+5. Escala de nuevo el StatefulSet a uno para iniciar el pod actualizado:
+
+   ```sh
+   kubectl scale sts postgresql --replicas=1 -n db
+   ```
+
+6. Asegúrate de que el pod esté en ejecución y de que la operación de escalado se haya completado:
+
+   ```sh
+   kg po -n db -l app.kubernetes.io/name=postgresql
+   ```
+
+7. Restaura la base de datos a partir del volcado:
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'PGPASSWORD=$POSTGRES_PASSWORD PGUSER=postgres psql -f /bitnami/postgresql/dumpall.sql'
+   ```
+
+8. Una vez completada la actualización, puedes eliminar el archivo de volcado del pod de PostgreSQL:
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'rm /bitnami/postgresql/dumpall.sql'
+   ```
+
+## Desinstalar OpenReplay
+
+Ejecuta los siguientes comandos para desinstalar OpenReplay:
+
+```bash
+sudo k3s-uninstall.sh
+```
+
+Toda la configuración se almacena en `/var/lib/openreplay/`.
+
+```
+sudo rm -rf /var/lib/openreplay/openreplay
+```

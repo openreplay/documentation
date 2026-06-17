@@ -1,0 +1,86 @@
+---
+title: "Desplegar en Digital Ocean"
+metaTitle: "Desplegar en Digital Ocean"
+metaDescription: "Guía paso a paso para desplegar OpenReplay en Digital Ocean."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+El stack de OpenReplay se puede instalar en una sola máquina (droplet) y Digital Ocean es un candidato ideal. Así es como se hace.
+
+## Crear un droplet
+
+1. Crea un nuevo proyecto (si aún no lo has hecho), luego navega hasta él y haz clic en 'Create' droplet
+2. Elige la imagen *Ubuntu Server 22.04 LTS*
+4. Opta por 'Shared CPU' y selecciona el plan `Regular Intel | 4 CPUs | 8GB` (arquitectura x86). Estas son las especificaciones mínimas, de lo contrario los servicios del backend de OpenReplay simplemente no se iniciarán. Son suficientes para un volumen moderado, pero si esperas tráfico alto, deberías escalar a partir de aquí.
+5. Haz clic en 'New SSH key' en 'Authentication' y sigue las instrucciones para generar una clave
+6. Asigna un nombre a tu máquina y luego pulsa 'Create droplet'
+
+## Desplegar OpenReplay
+
+1. Asegúrate de que tu droplet esté `active` y luego conéctate a él:
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem ## wherever you've saved the SSH key
+INSTANCE_IP=REPLACE_WITH_DROPLET_PUBLIC_IP
+chmod 400 $SSH_KEY
+ssh -i $SSH_KEY root@$INSTANCE_IP
+```
+
+2. Instala OpenReplay proporcionando el dominio en el que se ejecutará (por ejemplo, DOMAIN_NAME=openreplay.mycompany.com):
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## Configurar TLS/SSL
+
+OpenReplay maneja datos sensibles de los usuarios y, por lo tanto, requiere HTTPS para funcionar. Esto es obligatorio, de lo contrario el tracker simplemente no empezaría a grabar. Lo mismo ocurre con el dashboard: sin HTTPS no podrás reproducir las sesiones de los usuarios.
+
+Por lo tanto, debes generar (o aportar) tu propio certificado SSL.
+
+1. Primero, ve a 'Manage' > 'Networking' > 'Domains' (o tu otro proveedor de servicios DNS) y crea un `A Record`. Usa el dominio que proporcionaste anteriormente durante el paso de instalación y apúntalo al droplet mediante su IP pública (se puede encontrar en la pestaña Droplets).
+
+2. Si vas a aportar tu propio certificado, crea un secreto SSL con el siguiente comando: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
+
+> **Nota:** Si no tienes un certificado, genera uno, que se renueve automáticamente, para tu subdominio (el que proporcionaste durante la instalación) usando Let's Encrypt. Simplemente conéctate al droplet de OpenReplay, ejecuta `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` y sigue los pasos.
+
+3. Si deseas habilitar la redirección de http a https (recomendado), descomenta el siguiente bloque, en la sección `ingress-nginx`, en `/var/lib/openreplay/vars.yaml`:
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+Vale la pena mencionar que nuestro `ingress-nginx` se ejecuta por defecto en los puertos `80|443`, pero esto se puede cambiar fácilmente, si es necesario, en `vars.yaml`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. Por último, reinstala el NGINX de OpenReplay:
+
+```bash
+openreplay -R
+```
+
+Ya está todo listo, OpenReplay debería ser accesible en tu subdominio. Puedes crear una cuenta visitando la página `/signup` (es decir, openreplay.mycompany.com/signup).
+
+> **Nota:** También puedes ejecutar OpenReplay detrás de un balanceador de carga existente. Si ese es el caso, configura tu SSL a nivel del LB:
+- En las reglas de reenvío (Load Balancer): selecciona HTTPS (443) en la sección Load Balancer y luego haz clic en 'Certificate' > 'Add a new certificate'. Si tu dominio está gestionado por Digital Ocean, puedes seguir las instrucciones de la opción Let's Encrypt. De lo contrario, debes importar tu propio certificado.
+- En las reglas de reenvío (Droplet): selecciona HTTP (80) en la sección Droplet.
+
+## ¿Tienes preguntas?
+
+Si encuentras algún problema, conéctate a nuestro [Slack](https://slack.openreplay.com) o consulta nuestro [Foro](https://forum.openreplay.com) y obtén ayuda de nuestra comunidad.

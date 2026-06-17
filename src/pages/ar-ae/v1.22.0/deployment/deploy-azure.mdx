@@ -1,0 +1,94 @@
+---
+title: "النشر على Azure"
+metaTitle: "النشر على Azure"
+metaDescription: "دليل خطوة بخطوة لنشر OpenReplay على Azure."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="شاهد كيفية نشر OpenReplay في بنيتك التحتية على Azure"
+  description="إذا كنت لا تحب القراءة، يمكنك متابعة هذا الدليل المصوّر الذي يوضح لك كيفية نشر OpenReplay على Azure"
+  videoURL="https://www.youtube.com/watch?v=bkVw32UKf7Q"
+  />
+
+
+
+يمكن تثبيت حزمة OpenReplay على جهاز واحد، و Microsoft Azure مرشّح مثالي لذلك. إليك كيفية القيام بذلك.
+
+## إطلاق جهاز افتراضي (VM)
+
+1. سجّل الدخول إلى البوابة الخاصة بك
+2. انقر على 'Virtual Machine' إذا كان متاحًا على الشاشة الرئيسية. وإلا، فانقر على 'Create a Resource' > 'Compute' > 'Virtual Machine'
+3. في صفحة 'Virtual Machine'، انقر على 'Add' في حال لم تتم إعادة توجيهك تلقائيًا إلى صفحة الإنشاء
+4. اختر *Ubuntu Server 22.04 LTS* لـ 'Image'
+4. اختر مواصفات جهازك الافتراضي. الموارد **الدنيا** هي `2 vCPUs, 8 GB of RAM, 50 GB of storage` على بنية x86، وإلا فلن تبدأ خدمات الواجهة الخلفية لـ OpenReplay ببساطة. المواصفات الدنيا كافية لحجم منخفض/متوسط. إذا كنت تتوقع حركة مرور عالية، فينبغي عليك التوسّع انطلاقًا من هنا.
+5. فعّل منافذ HTTP (80) و HTTPS (443) و SSH (22)، ودوّن الـ `username`
+6. انقر على 'Review + create'
+
+## نشر OpenReplay
+
+1. تأكّد من أن جهازك الافتراضي في حالة `Running` ثم اتصل به:
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem ## only if you've previously created an SSH key
+chmod 400 $SSH_KEY
+INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
+ssh <username>@$INSTANCE_IP ## or ssh -i $SSH_KEY <username>@$INSTANCE_IP if you have a key
+```
+
+2. ثبّت OpenReplay عن طريق توفير النطاق الذي سيعمل عليه (مثل DOMAIN_NAME=openreplay.mycompany.com):
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## تكوين TLS/SSL
+
+يتعامل OpenReplay مع بيانات المستخدمين الحساسة، وبالتالي يتطلب HTTPS للعمل. هذا إلزامي، وإلا فلن يبدأ المتعقّب (tracker) التسجيل ببساطة. وينطبق الأمر نفسه على لوحة التحكم، فبدون HTTPS لن تتمكّن من إعادة تشغيل جلسات المستخدمين.
+
+لذلك يجب عليك إنشاء (أو إحضار) شهادة SSL الخاصة بك.
+
+1. أولًا، انتقل إلى Azure DNS (أو مزوّد خدمة DNS الآخر الخاص بك) وأنشئ `A Record`. استخدم النطاق الذي وفّرته سابقًا أثناء خطوة التثبيت ووجّهه إلى الجهاز الافتراضي باستخدام عنوان IP العام الخاص به.
+
+2. إذا كنت ستُحضر شهادتك الخاصة، فأنشئ سرّ SSL باستخدام الأمر التالي: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
+
+> **ملاحظة:** إذا لم تكن لديك شهادة، فأنشئ شهادة تُجدَّد تلقائيًا للنطاق الفرعي الخاص بك (الذي وفّرته أثناء التثبيت) باستخدام Let's Encrypt. ما عليك سوى الاتصال بالجهاز الافتراضي لـ OpenReplay، وتشغيل `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` واتباع الخطوات.
+
+3. إذا كنت ترغب في تفعيل إعادة التوجيه من http إلى https (مُوصى به)، فألغِ التعليق عن الكتلة أدناه، ضمن قسم `ingress-nginx`، في `/var/lib/openreplay/vars.yaml`:
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+تجدر الإشارة إلى أن `ingress-nginx` لدينا يعمل افتراضيًا على المنفذين `80|443`، ولكن يمكن تغيير ذلك بسهولة، إذا لزم الأمر، في `vars.yaml`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. أخيرًا، أعِد تثبيت NGINX الخاص بـ OpenReplay:
+
+```bash
+openreplay -R
+```
+
+كل شيء جاهز الآن، ويُفترض أن يكون OpenReplay متاحًا على نطاقك الفرعي. يمكنك إنشاء حساب بزيارة صفحة `/signup` (أي openreplay.mycompany.com/signup).
+
+> **ملاحظة:** لمزيد من الأمان، يمكنك أيضًا تشغيل نسخة OpenReplay خلف Azure Load Balancer. اطّلع على [وثائق Azure LB](https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-overview) لمزيد من التفاصيل.
+
+## لديك أسئلة؟
+
+إذا واجهت أي مشكلات، فتواصل معنا عبر [Slack](https://slack.openreplay.com) أو تفقّد [المنتدى](https://forum.openreplay.com) الخاص بنا واحصل على المساعدة من مجتمعنا.

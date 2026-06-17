@@ -1,0 +1,109 @@
+---
+title: "Zendesk 集成"
+metaTitle: "将 Zendesk 与 OpenReplay 集成"
+metaDescription: "如何将 Zendesk 与 OpenReplay 集成。"
+---
+
+如何将 Zendesk 与 OpenReplay 集成。
+
+## 安装
+
+将 Zendesk 与 OpenReplay 集成的最简单方法是使用 [Zendesk Apps Framework (ZAF)](https://developer.zendesk.com/documentation/apps/getting-started/zendesk-app-quick-start/) 构建一个小型的私有侧边栏应用。该应用会在每个工单内添加一个指向请求者 OpenReplay 用户资料的直接链接，您可以在其中查看其事件和会话（前提是您使用电子邮件作为用户 ID 来标记会话）。
+
+### 1. 创建应用文件
+
+创建一个具有以下结构的文件夹：
+
+```
+openreplay-zendesk-app/
+├── manifest.json
+└── assets/
+    └── iframe.html
+```
+
+**`manifest.json`**
+
+```json
+{
+  "name": "OpenReplay",
+  "author": {
+    "name": "Your Name",
+    "email": "you@example.com"
+  },
+  "defaultLocale": "en",
+  "private": true,
+  "version": "1.0.0",
+  "frameworkVersion": "2.0",
+  "location": {
+    "support": {
+      "ticket_sidebar": {
+        "url": "assets/iframe.html",
+        "flexible": true
+      }
+    }
+  }
+}
+```
+
+**`assets/iframe.html`**
+
+请务必将 `OPENREPLAY_DOMAIN` 和 `PROJECT_ID` 替换为正确的值。如果您不确定应该选择哪些值，请查看任意现有录制的 URL——第一部分是域名，紧随其后的数字是项目 ID。
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://static.zdassets.com/zendesk_app_framework_sdk/2.0/zaf_sdk.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 12px; margin: 0; }
+    a { color: #1f73b7; text-decoration: none; font-size: 14px; }
+    a:hover { text-decoration: underline; }
+    #status { color: #999; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <p id="content">Loading...</p>
+  <script>
+    const client  = ZAFClient.init();
+    const DOMAIN  = '<OPENREPLAY_DOMAIN>';
+    const PROJECT = '<PROJECT_ID>';
+
+    client.get('ticket.requester.email').then(data => {
+      const userId = data['ticket.requester.email'];
+
+      if (!userId) {
+        document.getElementById('content').innerHTML =
+          '<span id="status">No OpenReplay user ID found for this requester.</span>';
+        return;
+      }
+
+      const url = `https://${DOMAIN}/${PROJECT}/data-management/user/${encodeURIComponent(userId)}`;
+      document.getElementById('content').innerHTML =
+        `<a href="${url}" target="_blank">👤 View User in OpenReplay</a>`;
+
+      client.invoke('resize', { width: '100%', height: '50px' });
+    }).catch(() => {
+      document.getElementById('content').innerHTML =
+        '<span id="status">Could not load requester data.</span>';
+    });
+  </script>
+</body>
+</html>
+```
+
+### 2. 打包并安装应用
+
+1. 将 `openreplay-zendesk-app/` 文件夹压缩为 zip（确保 `manifest.json` 位于 zip 的根目录，而不是嵌套在某个子文件夹中）。
+2. 在 Zendesk 中，前往 **管理中心 → 应用与集成 → Support 应用**。
+3. 点击右上角的 **上传私有应用**。
+4. 为应用命名（例如 “OpenReplay”）并上传 zip 文件。
+5. 点击 **安装**。
+
+### 3. 查看链接
+
+打开任意工单，点击右上角的“应用”按钮以打开 **应用面板**。您将看到一个指向请求者 OpenReplay 用户资料的直接链接。
+
+## 有疑问？
+
+如果您遇到任何问题，请加入我们的 [Slack](https://slack.openreplay.com)，或者查看我们的[论坛](https://forum.openreplay.com)，从我们的社区获得帮助。

@@ -8,55 +8,68 @@ import ORCard from '~/components/Card/ORCard.astro'
 
 ## التثبيت
 
-سيقوم السطر التالي بتثبيت المتتبع ومعه الـ SDK لتتمكن من الاستفادة من جميع ميزات المتتبع.
+سيقوم السطر التالي بتثبيت المتتبع، ومعه SDK، لتتمكن من الاستفادة من جميع ميزات المتتبع.
 
 ```bash
 npm i @openreplay/tracker
 ```
 
 ## التهيئة
-عند إنشاء مثيل لمتتبع OpenReplay، هناك عدة خيارات تكوين يمكنك تقديمها لتخصيص العديد من جوانب التسجيل وتجربة التسجيل.
+عند إنشاء نسخة من متتبع OpenReplay، تتوفر لك عدة خيارات تكوين يمكنك توفيرها لتخصيص العديد من جوانب التسجيل وتجربة التسجيل.
 
-يجب عليك تعيين خيار `projectKey` في المُنشئ. يمكنك الحصول على هذه القيمة من لوحة تحكم OpenReplay الخاصة بك تحت 'التفضيلات > المشاريع'.
+يجب عليك تعيين خيار `projectKey` في المُنشئ. يمكنك الحصول على هذه القيمة من لوحة تحكم OpenReplay الخاصة بك ضمن 'Preferences > Projects'.
 
 <Aside type="tip">
-  لاحظ أنه إذا كان لديك مشاريع متعددة، يجب أن تكون حذرًا في اختيار مفتاح المشروع الذي تختاره.
+  لاحظ أنه إذا كان لديك عدة مشاريع، فعليك توخي الحذر بشأن مفتاح المشروع الذي تختاره.
 </Aside>
 
 
 ### تطبيقات الصفحة الواحدة (SPA)
-إذا كان موقعك الإلكتروني هو **تطبيق صفحة واحدة (SPA)** استخدم الكود أدناه:
+إذا كان موقعك الإلكتروني هو **تطبيق صفحة واحدة (SPA)**، يمكنك استخدام المتتبع ككائن مفرد (singleton):
 
 ```js
 import { tracker } from '@openreplay/tracker'
 
 tracker.configure({
 	projectKey: PROJECT_KEY,
-  ingestPoint: "https://openreplay.mydomain.com/ingest", // عند استخدام النسخة المستضافة ذاتيًا
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
 })
 
-tracker.start(); // يُرجع وعدًا بمعلومات الجلسة (sessionID، sessionHash، userUUID)
+tracker.start() // returns a promise with session info (sessionID, sessionHash, userUUID)
+```
+
+بدلاً من ذلك، يمكنك إنشاء نسخة جديدة من الفئة (class):
+
+```js
+import OpenReplay from '@openreplay/tracker';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+tracker.start(); // returns a promise with session info (sessionID, sessionHash, userUUID)
 ```
 
 ### العرض من جانب الخادم (SSR)
-إذا كان تطبيق الويب الخاص بك **معروضًا من جانب الخادم (SSR)** (مثل NextJS، NuxtJS) استخدم الكود أدناه. تأكد من أن `tracker.start()` يتم استدعاؤه بمجرد بدء التطبيق (في `useEffect` أو `componentDidMount`).
+خلاف ذلك، إذا كان تطبيق الويب الخاص بك يستخدم **العرض من جانب الخادم (SSR)** (أي NextJS وNuxtJS)، فاستخدم المقتطف أدناه.
+تأكد من استدعاء `tracker.start()` بمجرد بدء تشغيل التطبيق (في `useEffect` أو `componentDidMount`).
 
 ```js
 import OpenReplay from '@openreplay/tracker/cjs';
 //...
 const tracker = new OpenReplay({
       projectKey: PROJECT_KEY,
+      ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
 });
 //...
 function MyApp() {
-  useEffect(() => { // استخدم componentDidMount في حالة مكون React من النوع Class
-    tracker.start(); // يُرجع وعدًا بمعلومات الجلسة (sessionID، sessionHash، userUUID)
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start(); // returns a promise with session info (sessionID, sessionHash, userUUID)
   }, [])
 }
 ```
 
 <Aside type="tip">
-إذا كنت تستخدم إطار عمل ويب معين، تحقق من [قسم إعداد المتتبع](/using-or) لمعرفة كيفية البدء.
+إذا كنت تستخدم إطار عمل ويب معيناً، فاطلع على قسم [Tracker Setup](/using-or) الخاص بنا لمعرفة كيفية البدء.
 </Aside>
 
 ## مثال
@@ -66,104 +79,108 @@ import OpenReplay from '@openreplay/tracker/cjs';
 //...
 const tracker = new OpenReplay({
       projectKey: PROJECT_KEY,
-      ingestPoint: "https://openreplay.mydomain.com/ingest", // عند التعامل مع النسخة المستضافة ذاتيًا من OpenReplay
+      ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
       capturePerformance: true,
-      __DISABLE_SECURE_MODE: true // للاختبار المحلي
+      __DISABLE_SECURE_MODE: true // for local testing
 });
 ```
 
 ## خيارات التهيئة
 
-هناك مجموعة من الخيارات التي يمكنك تمريرها إلى المُنشئ. فقط `projectKey` مطلوب.
+هناك مجموعة من الخيارات التي يمكنك تمريرها إلى المُنشئ. مطلوب `projectKey` فقط.
 
-### الأغراض العامة 
+### للأغراض العامة
 
-- `projectKey: string` معرف المشروع الذي تقوم بتتبعه.
-- `sessionHash?: string` تجزئة الجلسة الأولية. هذا مفيد عندما تنتقل الجلسات عبر نطاقات فرعية مختلفة في تطبيق الويب الخاص بك ولكنك تريد دمجها في تسجيل واحد. في حالة عدم إمكانية متابعة الجلسة (غير موجودة أو منتهية)، سيبدأ المتتبع تلقائيًا جلسة جديدة. يتم إرجاعه أيضًا عند `stop()`. مزيد من التفاصيل حول هذا [هنا](/troubleshooting/session-recordings#replaysarebrokenacrosssubdomains).
-- `ingestPoint?: string` نطاق OpenReplay الخاص بك (مثل https://openreplay.mydomain.com/ingest)، والذي سيرسل المتتبع إليه الأحداث. هذا اختياري لمستخدمي OpenReplay Cloud. الافتراضي: `https://api.openreplay.com/ingest` (يشير إلى OpenReplay Cloud). 
-- `revID?: string` معرف الإصدار لتطبيق الويب الخاص بك. مفيد عند البحث عن مشكلات تحدث في إصدار محدد.
-- `resourceBaseHref?: string` يشير إلى النطاق العام حيث يمكن لـ OpenReplay جلب الأصول (الأنماط، الخطوط، والرموز). نظرًا لأنها مطلوبة لإعادة تشغيل الجلسة بشكل صحيح، فإن هذا الخيار مفيد لتجاوز قيد استضافة موقعك (وبالتالي الأصول) في نطاق خاص. مثال: `https://mypublicsite.com/assets/`.
-- `captureIFrames?: boolean` لالتقاط جميع إطارات iframe من نفس النطاق في تطبيق الويب الخاص بك. إذا كنت ترغب في تتبع إطار iframe محدد، ببساطة أضف سمة HTML `data-openreplay-capture` إلى علامة `<iframe>`. الافتراضي: `true`.
-- `disableClickmaps?: boolean` لتعطيل حساب محددات CSS (المستخدمة في خرائط النقر). الافتراضي: `false`.
-- `autoResetOnWindowOpen?: boolean` قم بتمكين هذا الخيار لإعادة تعيين sessionID عند فتح علامة تبويب جديدة من تطبيقك. هذا يستبدل طريقة `window.open` لتجنب sessionIDs المكررة بسبب تخزين الجلسة المشتركة بين علامات تبويب المتصفح. الافتراضي: `false`.
-- `forceSingleTab: boolean` يعطل إمكانية التسجيل في علامات تبويب متعددة والتي تدمج جلسات المستخدم، التي تتم عبر علامات تبويب متعددة، في إعادة تشغيل واحدة. بدلاً من ذلك، عند تمكين هذا الخيار، سيتم تسجيل الجلسات التي تم التقاطها في علامات تبويب المتصفح المختلفة في تسجيلات منفصلة. الافتراضي: `false`.
-- `disableStringDict: boolean` يعطل منطق قاموس السلاسل (لتحسين التخزين) في التسجيلات. الافتراضي: `false`.
-- `fixedCanvasScaling: boolean` يجبر صور canvas على أن تُرسم بكثافة بكسل 1 بدلاً من devicePixelRatio. (يقلل من الجودة المحتملة للصورة لجعل النتيجة النهائية أصغر في الحجم). الافتراضي: `false`.
-- `disableCanvas?: boolean` يعطل تسجيل عناصر canvas. الافتراضي: `false`.
-- `assistSocketHost?: string` يمكن استخدامه لتعيين مضيف محدد لاتصال مكون Assist الإضافي. الافتراضي هو قيمة `ingestPoint`.
-- `nodes?: { maintainer: MaintainerOptions }` خيار `nodes.maintainer` الجديد يساعد في إدارة الذاكرة وتنظيف عقد DOM التي لم تعد قيد الاستخدام. لديه المعلمات التالية:
-    - `interval: number`: الفاصل الزمني (بالملي ثانية) بين عمليات التنظيف. الافتراضي: 30 * 1000 (30 ثانية).
-    - `batchSize: number`: عدد العقد للتحقق منها خلال كل عملية تنظيف. الافتراضي: 2500.
-    - `enabled: boolean`: تمكين أو تعطيل مدير العقد. الافتراضي: true.
+- `projectKey: string` معرّف المشروع الذي تتتبعه.
+- `sessionHash?: string` تجزئة (hash) الجلسة الأولية. يكون هذا مفيداً عندما تنتقل الجلسات عبر نطاقات فرعية مختلفة في تطبيق الويب الخاص بك لكنك تريد دمجها في تسجيل واحد. في حال تعذّر متابعة الجلسة (غير موجودة أو منتهية)، سيبدأ المتتبع تلقائياً جلسة جديدة. كما تُعاد هذه القيمة عند استدعاء `stop()`. مزيد من التفاصيل حول هذا [هنا](/troubleshooting/session-recordings#replaysarebrokenacrosssubdomains).
+- `ingestPoint?: string` نطاق OpenReplay الخاص بك (أي https://openreplay.mydomain.com/ingest)، والذي سيرسل إليه المتتبع الأحداث. هذا الخيار اختياري لمستخدمي OpenReplay Cloud. القيمة الافتراضية: `https://api.openreplay.com/ingest` (والذي يشير إلى OpenReplay Cloud).
+- `revID?: string` معرّف المراجعة (revision ID) لتطبيق الويب الخاص بك. مفيد عند البحث عن المشكلات التي تحدث في إصدار إطلاق محدد.
+- `resourceBaseHref?: string` يشير إلى النطاق المتاح للوصول العام الذي يمكن من خلاله لـ OpenReplay جلب الأصول (الأنماط والخطوط والأيقونات). وبما أنها مطلوبة لإعادة تشغيل الجلسة بشكل صحيح، فإن هذا الخيار مفيد للالتفاف على القيد المتمثل في استضافة موقعك (وبالتالي الأصول) على نطاق خاص. مثال: `https://mypublicsite.com/assets/`.
+- `captureIFrames?: boolean` لالتقاط جميع إطارات iFrame من النطاق نفسه في تطبيق الويب الخاص بك. إذا كنت ترغب في تتبع إطار iFrame معين، فما عليك سوى إضافة سمة HTML `data-openreplay-capture` إلى وسم `<iframe>`. القيمة الافتراضية: `true`.
+- `disableClickmaps?: boolean` لتعطيل حساب محدد CSS (المستخدم في خرائط النقر). القيمة الافتراضية: `false`.
+- `__debug__: number` لتمكين سجلات التصحيح. القيمة الافتراضية: `0` (معطّل).
+    - `2`: الأخطاء.
+    - `3`: الأخطاء والتحذيرات.
+    - `4`: الأخطاء والتحذيرات والسجلات.
+    - `5`: مفصّل.
+- `autoResetOnWindowOpen?: boolean` فعّل هذا الخيار لإعادة تعيين sessionID عند فتح علامة تبويب جديدة من تطبيقك. يؤدي هذا إلى الكتابة فوق طريقة `window.open` لتجنب تكرار معرّفات sessionID بسبب تخزين الجلسة المشترك بين علامات تبويب المتصفح. القيمة الافتراضية: `false`.
+- `forceSingleTab: boolean` يعطّل إمكانية التسجيل متعدد علامات التبويب التي تدمج جلسات المستخدم، التي تُجرى عبر عدة علامات تبويب، في إعادة تشغيل واحدة. بدلاً من ذلك، عند تمكين هذا الخيار، سيتم تسجيل الجلسات الملتقطة في علامات تبويب مختلفة في المتصفح في تسجيلات منفصلة. القيمة الافتراضية: `false`.
+- `disableStringDict: boolean` يعطّل منطق قاموس السلاسل النصية (لتحسين التخزين) في التسجيلات. القيمة الافتراضية: `false`.
+- `fixedCanvasScaling: boolean` يفرض عرض صور canvas بكثافة بكسل تساوي 1 بدلاً من devicePixelRatio. (يقلل الجودة المحتملة للصورة لجعل حجم النتيجة النهائية أصغر). القيمة الافتراضية: `false`.
+- `disableCanvas?: boolean` يعطّل تسجيل عناصر canvas. القيمة الافتراضية: `false`.
+- `assistSocketHost?: string` يمكن استخدامه لتعيين مضيف محدد لاتصال المكوّن الإضافي assist. يأخذ افتراضياً قيمة `ingestPoint`.
+- `nodes?: { maintainer: MaintainerOptions }` يساعد خيار `nodes.maintainer` الجديد في إدارة الذاكرة وتنظيف عقد DOM التي لم تعد قيد الاستخدام. ويحتوي على المعلمات التالية:
+    - `interval: number`: الفاصل الزمني (بالميلي ثانية) بين عمليات التنظيف. القيمة الافتراضية: `30 * 1000` (30 ثانية).
+    - `batchSize: number`: عدد العقد التي يتم فحصها خلال كل عملية تنظيف. القيمة الافتراضية: `2500`.
+    - `enabled: boolean`: تمكين أو تعطيل أداة صيانة العقد. القيمة الافتراضية: `true`.
 
-#### مثال
+### أوراق الأنماط
 
-```js
-import { tracker } from '@openreplay/tracker'
-
-tracker.configure({
-	projectKey: PROJECT_KEY
-	ingestPoint: "https://openreplay.mydomain.com/ingest", // عند استخدام النسخة المستضافة ذاتيًا
-	nodes: {
-      maintainer: {
-        interval: 60 * 1000, // تنفيذ التنظيف كل دقيقة
-        batchSize: 2500, // التحقق من العقد في مجموعات من 2500
-        enabled: true, // تمكين مدير العقد
-      }
-    }
-})
-```
+- `inlineCss: number`: يفرض على المتتبع تسجيل أوراق الأنماط البعيدة وإرسالها كرسائل عادية بدلاً من تخزينها مؤقتاً في الواجهة الخلفية. يكون هذا مفيداً عندما تكون ملفات CSS خاصة، وبالتالي لا يمكن تخزينها مؤقتاً بواسطة الواجهة الخلفية لـ OpenReplay. يمكن أن تكون القيم:
+    - `0`: يتم تخزين ملف CSS مؤقتاً بواسطة الواجهة الخلفية. السلوك الافتراضي.
+    - `1`: سيحاول تسجيل ملف css المرتبط ككائن AdoptedStyleSheet.
+    - `2`: يجلب الملف، ثم يحاكي سلوك AdoptedStyleSheets لإعادة التشغيل.
+    - `3`: يجلب الملف، ثم يحفظه كـ css عادي داخل عقدة `<style>` -- استخدم هذا الخيار إذا كان لديك الكثير من الخصائص المختصرة (shorthand) في ملفات CSS الخاصة بك (يعالج خطأً في مواصفات CSSOM).
+- `css: CssRulesOptions`: يوفر دعماً أفضل للتطبيقات المبنية باستخدام مكتبة emotion-js (أي مكونات MUI). ويأتي مع المعلمات أدناه:
+    - `scanInMemoryCSS: boolean`: فعّل هذا إذا كنت تواجه مشكلات مع الأنماط التي أنشأها emotionjs. القيمة الافتراضية: `false`.
+    - `checkCssInterval: number`: عدد مرات فحص أوراق الأنماط المتتبَّعة التي تحتوي على قواعد فارغة. القيمة الافتراضية: `200` (مللي ثانية).
+    - `checkLimit: number`: مفيد للحالات التي يكون فيها عدد محدود من التغييرات و/أو عند ترطيب (hydration) أوراق الأنماط على جهة العميل بعد العرض الأولي. يُطبَّق على كل ورقة أنماط على حدة. يجب أن تكون القيمة = X/checkCssInterval حيث X هي مدة المراقبة بالميلي ثانية. القيمة الافتراضية: `0` (معطّل).
 
 ### الخصوصية
 
-- `respectDoNotTrack?: boolean` لا تبدأ المتتبع إذا تم تمكين علامة عدم التتبع في متصفح المستخدم. الافتراضي: `false`.
-- `obscureTextEmails?: boolean` يخفي عناوين البريد الإلكتروني في عناصر النص. سيتم تحويل عناوين البريد الإلكتروني إلى سلسلة عشوائية من النجوم. الافتراضي: `true`.
-- `obscureTextNumbers?: boolean` يخفي الأرقام في عناصر النص. سيتم تحويل الأرقام إلى سلسلة عشوائية من النجوم. الافتراضي: `false`.
-- `obscureInputEmails?: boolean` يخفي عناوين البريد الإلكتروني في حقول الإدخال. سيتم تحويل قيم البريد الإلكتروني إلى سلسلة عشوائية من النجوم. الافتراضي: `true`.
-- `obscureInputNumbers?: boolean` يخفي الأرقام في حقول الإدخال. سيتم تحويل القيم الرقمية إلى سلسلة عشوائية من النجوم. الافتراضي: `false`.
-- `obscureInputDates?: boolean` يخفي التواريخ في حقول الإدخال. سيتم تحويل قيم التواريخ إلى سلسلة عشوائية من النجوم. الافتراضي: false.
-- `defaultInputMode?: 0 | 1 | 2` وضع الالتقاط الافتراضي لقيم الإدخال. على التوالي: عادي، مخفي، أو متجاهل. الافتراضي: `1` (مخفي).
+- `respectDoNotTrack?: boolean` عدم بدء المتتبع إذا كانت راية do-not-track مفعّلة في متصفح المستخدم. القيمة الافتراضية: `false`.
+- `obscureTextEmails?: boolean` يخفي عناوين البريد الإلكتروني في عناصر النص. سيتم تحويل عناوين البريد الإلكتروني إلى سلسلة عشوائية من العلامات النجمية. القيمة الافتراضية: `true`.
+- `obscureTextNumbers?: boolean` يخفي الأرقام في عناصر النص. سيتم تحويل الأرقام إلى سلسلة عشوائية من العلامات النجمية. القيمة الافتراضية: `false`.
+- `obscureInputEmails?: boolean` يخفي عناوين البريد الإلكتروني في حقول الإدخال. سيتم تحويل قيم البريد الإلكتروني إلى سلسلة عشوائية من العلامات النجمية. القيمة الافتراضية: `true`.
+- `obscureInputNumbers?: boolean` يخفي الأرقام في حقول الإدخال. سيتم تحويل القيم الرقمية إلى سلسلة عشوائية من العلامات النجمية. في حال تعطيله، تأكد من [تنقية حقول الإدخال](/installation/sanitize-data/#granular-level) التي قد تحتوي على بيانات حساسة مثل الرموز البريدية أو تفاصيل بطاقة الائتمان. القيمة الافتراضية: `true`.
+- `obscureInputDates?: boolean` يخفي التواريخ في حقول الإدخال. سيتم تحويل قيم التاريخ إلى سلسلة عشوائية من العلامات النجمية. القيمة الافتراضية: `false`.
+- `defaultInputMode?: 0 | 1 | 2` وضع الالتقاط الافتراضي لقيم الإدخال. على التوالي: عادي، أو مخفي، أو متجاهَل. القيمة الافتراضية: `2` (متجاهَل).
+- `urls`: يتيح لك تخصيص كيفية تسجيل أحداث موقع الصفحة عبر الخيارات التالية:
+	- `urlSanitizer?: (url: string) => string` يتيح لك تنقية عنوان url الصفحة (لإزالة رموز الاستخدام على سبيل المثال).
+	- `titleSanitizer?: (title: string) => string` يتيح لك تنقية عنوان الصفحة.
+- `resourceNameSanitizer?: (url: string) => string` يتيح لك تنقية عناوين URL لموارد الشبكة المسجَّلة.
 
-لاحظ أن البيانات المستبعدة يتم إخفاؤها أو قمعها قبل إرسال البيانات إلى خوادم OpenReplay. لا يمكن أن تكون التغييرات المطبقة على الخيارات المذكورة أعلاه بأثر رجعي وستنطبق فقط على البيانات التي تم جمعها حديثًا. انظر [تنظيف البيانات](/installation/sanitize-data) لمزيد من التفاصيل.
+لاحظ أن البيانات المستبعَدة تُخفى أو تُحجب قبل إرسال البيانات إلى خوادم OpenReplay. لا يمكن أن تكون التغييرات المطبَّقة على الخيارات المذكورة أعلاه بأثر رجعي وستنطبق فقط على البيانات المجموعة حديثاً. راجع [Sanitize Data](/installation/sanitize-data) لمزيد من التفاصيل.
 
-### وحدة التحكم
+### وحدة التحكم (Console)
 
-- `consoleMethods?: Array<'log' | 'info' | 'warn' | 'error'  'debug' | 'assert'> | null` يحدد قائمة طرق وحدة التحكم التي سيتم التقاطها. الافتراضي: `['log', 'info', 'warn', 'error', 'debug', 'assert']`
-- `consoleThrottling?: number` الحد الأقصى لعدد إدخالات وحدة التحكم التي يتم التقاطها في الثانية. الافتراضي: `30`.
+- `consoleMethods?: Array<'log' | 'info' | 'warn' | 'error'  'debug' | 'assert'> | null` يحدد قائمة طرق وحدة التحكم المراد التقاطها. القيمة الافتراضية: `['log', 'info', 'warn', 'error', 'debug', 'assert']`
+- `consoleThrottling?: number` الحد الأقصى لعدد إدخالات وحدة التحكم الملتقطة في الثانية. القيمة الافتراضية: `30`.
 
 ### الاستثناءات
 
-- `captureExceptions?: boolean` يلتقط استثناءات JavaScript وتتبع المكدس. الافتراضي: `true`.
+- `captureExceptions?: boolean` يلتقط استثناءات JavaScript وتتبعات المكدس (stacktraces). القيمة الافتراضية: `true`.
 
 ### التوقيتات
 
-- `captureResourceTimings?: boolean` يسجل توقيتات الموارد. الافتراضي: `true`.
-- `capturePageLoadTimings?: boolean` يسجل توقيتات تحميل الصفحة. الافتراضي: `true`.
-- `capturePageRenderTimings?: boolean` يحسب مقاييس عرض الصفحة مثل Speed Index، Visually Complete أو Time To Interactive. يتطلب `captureResourceTimings = true`. الافتراضي: `true`.
+- `captureResourceTimings?: boolean` يسجّل توقيتات الموارد. القيمة الافتراضية: `true`.
+- `capturePageLoadTimings?: boolean` يسجّل توقيتات تحميل الصفحة. القيمة الافتراضية: `true`.
+- `capturePageRenderTimings?: boolean` يحسب مقاييس عرض الصفحة مثل Speed Index أو Visually Complete أو Time To Interactive. يتطلب `captureResourceTimings = true`. القيمة الافتراضية: `true`.
 
 ### الأداء
 
-- `capturePerformance?: boolean` لالتقاط مقاييس الأداء مثل معدل الإطارات، واستهلاك وحدة المعالجة المركزية والذاكرة. الافتراضي: `true`.
+- `capturePerformance?: boolean` لالتقاط مقاييس الأداء مثل معدل الإطارات واستهلاك وحدة المعالجة المركزية والذاكرة. القيمة الافتراضية: `true`.
+- `longTasks?: boolean` لالتقاط أحداث long-animation-frame. القيمة الافتراضية: `false`.
 
 ### الشبكة
 
-يتعلق خيار `network` بالتقاط طلبات الشبكة والحمولات لـ `fetch` و `XHR`.
+يتعلق خيار `network` بالتقاط طلبات الشبكة والحمولات (payloads) لـ `fetch` و`XHR`.
 
 ```js
 network?: {
     failuresOnly: boolean;
     sessionTokenHeader: string;
     ignoreHeaders: Array<string> | boolean;
-    capturePayload: boolean; // تأكد من تنظيف بياناتك قبل تمكين هذا
+    capturePayload: boolean; // make sure you sanitize your data before enabling it
     sanitizer: (RequestResponseData) => RequestResponseData | null;
-    captureInIframes: boolean;
-    axiosInstances: AxiosInstance[];
+		captureInIframes: boolean;
+  	axiosInstances: AxiosInstance[];
     useProxy?: boolean;
-    tokenUrlMatcher?: (url: string) => boolean;
+		tokenUrlMatcher?: (url: string) => boolean;
   }
 ```
 
-راجع [خيارات الشبكة](/installation/network-options) للحصول على أمثلة ومزيد من التفاصيل حول كيفية تنقيح البيانات الحساسة. 
+راجع [Network Options](/sdk/network-options) للأمثلة ومزيد من التفاصيل حول كيفية حجب البيانات الحساسة.
 
 ### Canvas
 
@@ -178,34 +195,34 @@ canvas?: {
 }
 ```
 
-راجع [Canvas و WebGL](/installation/canvas) لمعرفة كيفية تمكين هذه القدرة ومزيد من التفاصيل حول الخيارات المتاحة.
+راجع [Canvas and WebGL](/session-replay/canvas) لمعرفة كيفية تمكين هذه الإمكانية ومزيد من التفاصيل حول الخيارات المتاحة.
 
-### إطارات iframe عبر النطاقات
+### إطارات iFrame عبر النطاقات
 
-يتعلق خيار `crossdomain` بالتقاط إطارات iframe من نطاقات مختلفة. يتم استخدامه جنبًا إلى جنب مع خيار `captureIFrames` الذي يجب تعيينه على `true`.
+يتعلق خيار `crossdomain` بالتقاط إطارات iFrame من نطاقات مختلفة. ويُستخدم بالاقتران مع خيار `captureIFrames` الذي يجب تعيينه إلى `true`.
 
 ```ts 
- crossdomain?: {
-    /**
-     * تمكين التتبع عبر النطاقات
-     * @default false
-     * */
-    enabled?: boolean
-    /**
-     * يستخدم لتحديد النطاق الأب، سيكون '*' افتراضيًا
-     * (تحقق من إعدادات CSP الخاصة بك)
-     * @default '*'
-     * */
-    parentDomain?: string
-}
+	crossdomain?: {
+		/**
+		 * Enable cross-domain tracking
+		 * @default false
+		 * */
+		enabled?: boolean
+		/**
+		 * Used to specify the parent domain, will be '*' by default
+		 * (Check your CSP settings)
+		 * @default '*'
+		 * */
+		parentDomain?: string
+	}
 ```
-اعتبارًا من إصدار المتتبع [14.0.10](https://github.com/openreplay/openreplay/blob/dev/tracker/tracker/CHANGELOG.md)، لم يعد **مطلوبًا** وجود سمة `data-domain` على عناصر HTML عند العمل مع إطارات iframe عبر النطاقات.
+اعتباراً من إصدار Tracker رقم [14.0.10](https://github.com/openreplay/openreplay/blob/dev/tracker/tracker/CHANGELOG.md)، **لم تعد سمة `data-domain` مطلوبة** على عناصر HTML عند العمل مع إطارات iFrame عبر النطاقات.
 
-راجع [تتبع iframe عبر النطاقات](/tutorials/crossdomain-iframe) للحصول على مزيد من التفاصيل حول كيفية التقاط iframe من نطاق مختلف. 
+راجع [Cross-domain iFrame Tracking](/session-replay/crossdomain-iframe) لمزيد من التفاصيل حول كيفية التقاط إطار iFrame من نطاق مختلف.
 
-### مؤشر الماوس
+### مؤشر الفأرة
 
-يتعلق خيار `mouse` بالتقاط المحددات للنقرات لبناء خرائط النقر.
+يتعلق خيار `mouse` بالتقاط المحددات الخاصة بالنقرات لبناء خرائط النقر.
 
 ```js
 mouse?: 
@@ -217,45 +234,26 @@ mouse?:
   }
 ```
 
-- `disableClickmaps?: boolean` يعطل حساب المحددات تمامًا. الافتراضي: `false`.
-- `minSelectorDepth?: number` الحد الأدنى لطول محدد محسن (الافتراضي 2). مثال: `body > div > div > p => body > p`
-- `nthThreshold?: number` عدد محاولات المحدد قبل الرجوع إلى محددات nth-child. هذه عملية **مكلفة** وقد تفرض عبئًا كبيرًا، لا تقم بتعيينها أعلى من 2000. الافتراضي: `1000`.
-- `maxOptimiseTries?: number` عدد المحاولات لتحسين وتقصير المحدد. الافتراضي: `10 000`.
+- `disableClickmaps?: boolean` يعطّل حساب المحددات بالكامل. القيمة الافتراضية: `false`.
+- `minSelectorDepth?: number` الحد الأدنى لطول المحدد المُحسَّن (افتراضياً 2). مثال: `body > div > div > p => body > p`
+- `nthThreshold?: number` عدد محاولات المحدد قبل الرجوع إلى محددات nth-child. هذه **عملية مكلفة** وقد تتسبب في عبء كبير، لا تعيّنها أعلى من 2000. القيمة الافتراضية: `1000`.
+- `maxOptimiseTries?: number` عدد المحاولات لتحسين المحدد واختصاره. القيمة الافتراضية: `10 000`.
 
-### إعادة الاتصالات
+### عمليات إعادة الاتصال
 
-- `connAttemptCount?: number` الحد الأقصى لعدد المحاولات عند فشل طلبات HTTP الخاصة بالمتتبع في الوصول إلى الخلفية. الافتراضي: `10`.
-- `connAttemptGap?: number` المدة بين كل محاولة إعادة (معبرًا عنها بالمللي ثانية). الافتراضي: `8000`.
-
-### أعلام الميزات
-
-- `onFlagsLoad` رد اتصال يستخدم لأداء إجراء بمجرد تحميل أعلام الميزات (في كل مرة).
-
-```ts
- flags?: {
-    onFlagsLoad?: (flags: IFeatureFlag[]) => void
- } 
-
-// ...
-interface IFeatureFlag {
-  key: string
-  is_persist: boolean
-  value: string | boolean
-  payload: string
-}
-```
+- `connAttemptCount?: number` الحد الأقصى لعدد المحاولات عندما تفشل طلبات HTTP الخاصة بالمتتبع في الوصول إلى الواجهة الخلفية. القيمة الافتراضية: `10`.
+- `connAttemptGap?: number` المدة بين كل محاولة إعادة (مُعبَّر عنها بالميلي ثانية). القيمة الافتراضية: `8000`.
 
 ### الأمان
 
-- `__DISABLE_SECURE_MODE?: boolean` للسماح باتصال غير آمن بين المتتبع والخلفية على المواقع بدون SSL. يجب استخدام هذا **لأغراض التطوير فقط**. الافتراضي: `false`.
+- `__DISABLE_SECURE_MODE?: boolean` للسماح باتصال غير آمن بين المتتبع والواجهة الخلفية على المواقع التي لا تستخدم SSL. ينبغي استخدام هذا **لأغراض التطوير فقط**. القيمة الافتراضية: `false`.
 
 <Aside type="caution">
-    لاحظ أنه عند استخدام `__DISABLE_SECURE_MODE` من محطة العمل المحلية الخاصة بك، **قد** ترى اختلافات بصرية عند مشاهدة إعادة التشغيل، مثل عدم تحميل أنماط CSS بشكل صحيح.
-    للحصول على تسجيل مثالي، يجب إجراء اختباراتك من عنوان URL متاح للجمهور.
+    لاحظ أنه عند استخدام `__DISABLE_SECURE_MODE` من محطة عملك المحلية، **قد** ترى اختلافات بصرية أثناء مشاهدة إعادة التشغيل، مثل عدم تحميل أنماط CSS بشكل صحيح. اتبع [هذا الدليل](/troubleshooting/localhost) لإصلاح الوضع.
 </Aside>
 
 ## الطرق
 
 <div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
-  <ORCard title="تعرف على الطرق" url="/sdk/methods" hideIcon={true} width="100"/>
+  <ORCard title="تعرّف على الطرق" url="/sdk/methods" hideIcon={true} width="100"/>
 </div>

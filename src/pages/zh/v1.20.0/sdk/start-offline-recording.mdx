@@ -1,0 +1,34 @@
+---
+title: "JavaScript SDK - 'startOfflineRecording' 方法"
+metaTitle: "JavaScript SDK - 'startOfflineRecording' 方法"
+metaDescription: "关于 OpenReplay SDK 中 'startOfflineRecording' 方法的详细信息"
+---
+
+以离线模式启动会话录制（在触发上传之前不会发送任何内容），并返回用于控制录制状态的方法。
+
+> 注意：会话和事件的时间戳将从用户的设备中提取，不会与我们的后端同步。
+
+## 签名
+
+```ts
+startOfflineRecording(
+	startOpts?: Partial<StartOptions>, 
+	onSessionSent: () => void
+): { saveBuffer, getBuffer, setBuffer }
+```
+
+### 参数
+
+通过 `startOpts`，你可以自定义录制的各个方面：
+- `userID: string`：用于手动设置 `userID`，以便在多个会话中跟踪它。这是一个字符串值，可以是你想要的任何内容。
+- `metadata: Record<string, string>`：手动设置元数据值。请查看[元数据部分](/installation/metadata/)以了解有关此功能的更多信息。
+- `forceNew: boolean`：用于在页面刷新后强制开始一个新会话。默认情况下设置为 `false`，因此刷新后会话将被保留。
+- `sessionHash: string`：用于粘性会话。如果你有一个多站点应用程序，或者需要将用户重定向到站点外部然后再返回到你的站点（例如跳转到支付网关），这会很有用。
+- `onSessionSent`：会话完全上传后将被调用的回调。
+
+
+### 返回值
+
+- `saveBuffer(): void` - 将当前缓冲区保存到 `localStorage` 对象（可在构造函数中自定义）；调用 `startOfflineRecording` 后，缓冲区将自动加载。
+- `getBuffer(): Messages[]` - 返回当前的消息缓冲区。
+- `setBuffer(buffer: Messages[])` - 用给定的缓冲区替换当前缓冲区（如果你正在使用其他临时保存方法）。

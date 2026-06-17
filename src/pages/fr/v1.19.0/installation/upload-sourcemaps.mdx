@@ -1,0 +1,49 @@
+---
+title: "Téléverser les Source Maps"
+metaTitle: "Téléverser les Source Maps"
+metaDescription: "Téléversez des source maps vers OpenReplay."
+---
+
+OpenReplay prend en charge la dé-minification du JavaScript via les source maps. En les téléversant vers OpenReplay, vous pourrez voir le contexte du code source obtenu à partir des stack traces sous sa forme originale, ce qui est très utile pour déboguer du code minifié (UglifyJS) ou du code transpilé (TypeScript, ES6).
+
+## Installation
+
+Installez le module NPM sourcemap-uploader :
+
+```bash
+npm i -g @openreplay/sourcemap-uploader
+```
+
+## Prérequis
+
+Assurez-vous que votre build génère des fichiers de source map (.map) séparés. Par exemple, si vous utilisez webpack, votre configuration devrait inclure l'option `devtool` ci-dessous :
+
+```js
+{ devtool: ‘source-map’ }
+```
+
+## Téléverser les Source Maps vers OpenReplay
+
+Ensuite, vous devez configurer votre processus de build pour créer les différents fichiers source. Les source maps peuvent être téléversées pour un **seul fichier** :
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY file -m ./dist/index.js.map -u https://myapp.com/index.js
+```
+
+Ou pour un **répertoire** contenant plusieurs fichiers. Dans ce cas, l'URL doit correspondre (chemin exact) à la racine depuis laquelle vous téléversez les fichiers JS du répertoire. Autrement dit, si vous avez votre `app-42.js` accompagné du `app-42.js.map` dans le dossier `./build` et que vous souhaitez ensuite le téléverser vers votre instance OpenReplay afin qu'il soit accessible via le lien `https://myapp.com/static/app-42.js`, alors la commande devrait ressembler à ceci :
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY dir -m ./build -u https://myapp.com/static
+```
+
+## Paramètres
+
+- `-s` : L'URL de votre instance OpenReplay. Veillez à y ajouter /api. Ne spécifiez pas ce paramètre si vous utilisez OpenReplay Cloud.
+- `-k` : API Key (disponible dans 'Preferences' > 'Account' > 'Organization API Key').
+- `-p` : Project Key (disponible dans 'Preferences' > 'Projects').
+- `-m` : Chemin vers le(s) fichier(s) de source map (peut aussi être un répertoire).
+- `-u` : URL vers l'asset JavaScript (s'il s'agit d'un seul fichier) ou URL de base (dans le cas d'un répertoire).
+- `-l` : Pour afficher les journaux de téléversement.
+
+## Vous avez des questions ?
+Si vous avez des questions sur ce processus, n'hésitez pas à nous contacter sur notre [Slack](https://slack.openreplay.com) ou à consulter notre [Forum](https://forum.openreplay.com).

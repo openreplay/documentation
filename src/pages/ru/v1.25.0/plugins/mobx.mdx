@@ -1,0 +1,63 @@
+---
+title: "MobX"
+metaTitle: "MobX"
+metaDescription: "Плагин MobX для OpenReplay."
+---
+
+Этот плагин позволяет захватывать мутации `MobX` и просматривать их позже при воспроизведении записей сессий. Это полезно для понимания и устранения проблем. 
+
+
+## Установка
+
+```bash
+npm i @openreplay/tracker-mobx
+```
+
+## Использование
+
+Инициализируйте пакет `@openreplay/tracker` как обычно и загрузите в него плагин.
+Затем используйте возвращаемое значение для отслеживания observable-объектов MobX.
+
+```js
+import { observable, observe } from 'mobx';
+import Tracker from '@openreplay/tracker';
+import trackerMobX from '@openreplay/tracker-mobx';
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+// this instance can be exported and used for multiple stores
+const mobxObserver = tracker.use(trackerMobX({ ...options }));
+
+const myArray = observable(['foo', 'bar', 42]);
+
+observe(myArray, mobxObserver)
+
+myArray.push("Hello world"); // This mutation will be tracked
+```
+
+## Параметры
+
+Вы можете настроить поведение middleware для очистки ваших данных.
+
+```js
+interface Options {
+    predicate?: (observeEvent: { type: string; name: string; object: any; debugObjectName: string }) => boolean;
+    sanitize?: (resultAction: { state: any; type: string; property: string }) => { state: any; type: string; property: string };
+    update?: boolean;
+    add?: boolean;
+    delete?: boolean;
+}
+
+trackerMobX({
+  predicate: () => true,
+  sanitize: (event) => event
+})
+```
+
+Здесь predicate можно использовать для динамического отключения захвата, а sanitize — для изменения полезной нагрузки перед её отправкой на бэкенд. Большинство действий относятся к типу update; обратитесь к документации mobx для получения дополнительных сведений о add и delete (в основном для Maps)
+
+## Остались вопросы?
+
+Возникли трудности с настройкой этого плагина? Присоединяйтесь к нашему [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com) и получите помощь от нашего сообщества.

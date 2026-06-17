@@ -1,0 +1,115 @@
+---
+title: "VueX"
+metaTitle: "VueX"
+metaDescription: "OpenReplay 的 VueX 插件。"
+---
+import Aside from '~/components/Aside.astro'
+
+该插件允许你捕获 `VueX` 的 mutation/状态，并在稍后回放会话录制时进行检查。这对于理解和修复问题非常有用。
+
+<Aside type="tip">
+  我们还提供了一份详细教程，介绍如何在使用此库时通过 VueX 插件捕获应用程序的状态，你可以在[这里](/tutorials/vuex)查看。
+</Aside>
+
+
+
+## 安装
+
+```bash
+npm i @openreplay/tracker-vuex
+```
+
+## 使用方法
+
+像往常一样初始化 `@openreplay/tracker` 包并将插件加载到其中。然后将生成的插件放入 store 的 `plugins` 字段中。
+
+### 如果你的网站是单页应用程序（SPA）
+
+```js
+import Vuex from 'vuex'
+import OpenReplay from '@openreplay/tracker';
+import trackerVuex from '@openreplay/tracker-vuex';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY,
+  // ... options 
+});
+```
+
+### 如果你的 Web 应用是服务端渲染（SSR）
+
+如果你的应用是 SSR，请参照下面的示例。确保在应用启动后调用 `tracker.start()`（在 `useEffect` 或 `componentDidMount` 中）。
+如果在使用 SSR 时遇到错误，请参阅[故障排除](troubleshooting/js-errors)部分。
+
+```js
+import Vuex from 'vuex'
+import OpenReplay from '@openreplay/tracker/cjs';
+import trackerVuex from '@openreplay/tracker-vuex/cjs';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY,
+  // ... options
+});
+```
+
+#### 使用高于 4.0.0 版本的 tracker-vuex
+
+```js
+// check list of available options below
+const vuexPlugin = tracker.use(trackerVuex(<options>)); 
+
+// add a name to your store, optional (will be randomly generated otherwise)
+const storeTracker = vuexPlugin('STORE NAME') 
+
+const store = createStore({
+  state,
+  mutations,
+  plugins: [storeTracker]
+})
+```
+
+#### 使用低于 3.0.0 版本的 tracker-vuex
+
+```js
+// check list of available options below
+const vuexPlugin = tracker.use(trackerVuex(<options>));  
+
+tracker.start();
+
+const store = new Vuex.Store({
+  //...
+  plugins: [vuexPlugin],
+});
+```
+
+## 选项
+
+你可以使用选项来自定义插件的行为以净化你的数据。它们与标准 `createLogger` 插件的选项类似。
+
+```js
+trackerVuex({
+  filter (mutation, state) {
+    // returns `true` if a mutation should be logged
+    // `mutation` is a `{ type, payload }`
+    return mutation.type !== "aBlacklistedMutation";
+  },
+  transformer (state) {
+    // transforms the state before logging it.
+    // for example return only a specific sub-tree
+    return state.subTree;
+  },
+  mutationTransformer (mutation) {
+    // mutations are logged in the format of `{ type, payload }`
+    // we can format it any way we want.
+    return mutation.type;
+  },
+})
+```
+
+## 教程
+
+如果你想要一个实际示例，了解如何使用此插件在会话回放中捕获状态变化，请查看[我们这里的详细教程](/tutorials/vuex)。
+
+## 有疑问？
+
+在设置此插件时遇到问题？请加入我们的 [Slack](https://slack.openreplay.com) 或查看我们的[论坛](https://forum.openreplay.com)，从我们的社区获得帮助。

@@ -33,7 +33,7 @@ import OpenReplay from '@openreplay/tracker';
 const tracker = new OpenReplay({
   projectKey: PROJECT_KEY
 });
-tracker.start(); // devuelve una promesa con información de sesión (sessionID, sessionHash, userUUID)
+tracker.start(); // returns a promise with session info (sessionID, sessionHash, userUUID)
 ```
 
 ### Renderizado del lado del servidor (SSR)
@@ -47,8 +47,8 @@ const tracker = new OpenReplay({
 });
 //...
 function MyApp() {
-  useEffect(() => { // usa componentDidMount en caso de un componente de clase de React
-    tracker.start(); // devuelve una promesa con información de sesión (sessionID, sessionHash, userUUID)
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start(); // returns a promise with session info (sessionID, sessionHash, userUUID)
   }, [])
 }
 ```
@@ -64,9 +64,9 @@ import OpenReplay from '@openreplay/tracker/cjs';
 //...
 const tracker = new OpenReplay({
       projectKey: PROJECT_KEY,
-      ingestPoint: "https://openreplay.mydomain.com/ingest", // cuando se utiliza la versión autohospedada de OpenReplay
+      ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
       capturePerformance: true,
-      __DISABLE_SECURE_MODE: true // para pruebas locales
+      __DISABLE_SECURE_MODE: true // for local testing
 });
 ```
 
@@ -80,7 +80,7 @@ Hay un conjunto de opciones que puedes pasar al constructor. Solo `projectKey` e
 - `sessionHash?: string` El hash de la sesión inicial. Esto es útil cuando las sesiones atraviesan diferentes subdominios en tu aplicación web pero quieres unirlas en una sola grabación. En caso de que no sea posible continuar la sesión (no existe o ha finalizado), el tracker iniciará automáticamente una nueva. También se devuelve en `stop()`. Más detalles sobre esto [aquí](/troubleshooting/session-recordings#replaysarebrokenacrosssubdomains).
 - `ingestPoint?: string` Tu dominio de OpenReplay (por ejemplo, https://openreplay.mydomain.com/ingest), al que el tracker enviará eventos. Esto es opcional para los usuarios de OpenReplay Cloud. Valor por defecto: `https://api.openreplay.com/ingest` (que apunta a OpenReplay Cloud). 
 - `revID?: string` El ID de revisión de tu aplicación web. Útil al buscar problemas que ocurren en una versión específica.
-- `resourceBaseHref?: string` Se refiere al dominio accesible públicamente donde OpenReplay puede obtener los recursos (estilos, fuentes e íconos). Dado que son necesarios para una correcta reproducción de la sesión, esta opción es útil para sortear la limitación de tener tu sitio (y por lo tanto los recursos) alojado en un dominio privado. Ejemplo: `https://misitiopublico.com/assets/`.
+- `resourceBaseHref?: string` Se refiere al dominio accesible públicamente donde OpenReplay puede obtener los recursos (estilos, fuentes e íconos). Dado que son necesarios para una correcta reproducción de la sesión, esta opción es útil para sortear la limitación de tener tu sitio (y por lo tanto los recursos) alojado en un dominio privado. Ejemplo: `https://mypublicsite.com/assets/`.
 - `captureIFrames?: boolean` Para capturar todos los iFrames del mismo dominio en tu aplicación web. Si deseas rastrear un iFrame específico, simplemente agrega el atributo HTML `data-openreplay-capture` a la etiqueta `<iframe>`. Valor por defecto: `true`.
 - `disableClickmaps?: boolean` Para deshabilitar el cálculo del selector CSS (utilizado en mapas de clics). Valor por defecto: `false`.
 - `verbose?: boolean` Para habilitar los registros. Valor por defecto: `false`.
@@ -89,7 +89,7 @@ Hay un conjunto de opciones que puedes pasar al constructor. Solo `projectKey` e
 - `disableStringDict: boolean` Deshabilita la lógica del diccionario de cadenas (para optimizar el almacenamiento) en las grabaciones. Valor por defecto: `false`.
 - `fixedCanvasScaling: boolean` Fuerza a que las imágenes de canvas se rendericen con una densidad de píxeles de 1 en lugar de devicePixelRatio. (reduce la calidad potencial de una imagen para hacer que el resultado final sea más pequeño en tamaño). Valor por defecto: `false`.
 - `disableCanvas?: boolean` Deshabilita la grabación de elementos canvas. Valor por defecto: `false`.
-- `assistSocketHost?: string` Se puede utilizar para establecer un host específico para la conexión del plugin de asistencia. Por defecto es el valor de `ingestPoint`.
+- `assistSocketHost?: string` Se puede utilizar para establecer un host específico para la conexión del plugin Assist. Por defecto es el valor de `ingestPoint`.
 - `nodes?: { maintainer: MaintainerOptions }` La nueva opción `nodes.maintainer` ayuda a gestionar la memoria y limpiar nodos DOM que ya no se usan. Tiene los siguientes parámetros:
     - `interval: number`: Intervalo de tiempo (en milisegundos) entre ejecuciones de limpieza. Valor por defecto: 30 * 1000 (30 segundos).
     - `batchSize: number`: Número de nodos a verificar durante cada ejecución de limpieza. Valor por defecto: 2500.
@@ -105,9 +105,9 @@ const tracker = new OpenReplay({
   projectKey: 'your_project_key',
   nodes: {
     maintainer: {
-      interval: 60 * 1000, // Ejecutar limpieza cada minuto
-      batchSize: 2500, // Verificar nodos en lotes de 2500
-      enabled: true, // Habilitar el mantenedor de nodos
+      interval: 60 * 1000, // Run cleanup every minute
+      batchSize: 2500, // Check nodes in batches of 2500
+      enabled: true, // Enable the node maintainer
     }
   }
 });
@@ -139,7 +139,7 @@ Ten en cuenta que los datos excluidos se ocultan o suprimen antes de enviar los 
 
 - `captureResourceTimings?: boolean` Registra los tiempos de recursos. Valor por defecto: `true`.
 - `capturePageLoadTimings?: boolean` Registra los tiempos de carga de la página. Valor por defecto: `true`.
-- `capturePageRenderTimings?: boolean` Calcula métricas de renderizado de página como Índice de Velocidad, Visualmente Completo o Tiempo para Interactivo. Requiere `captureResourceTimings = true`. Valor por defecto: `true`.
+- `capturePageRenderTimings?: boolean` Calcula métricas de renderizado de página como Speed Index, Visually Complete o Time To Interactive. Requiere `captureResourceTimings = true`. Valor por defecto: `true`.
 
 ### Rendimiento
 
@@ -154,12 +154,12 @@ network?: {
     failuresOnly: boolean;
     sessionTokenHeader: string;
     ignoreHeaders: Array<string> | boolean;
-    capturePayload: boolean; // asegúrate de sanitizar tus datos antes de habilitar esto
+    capturePayload: boolean; // make sure you sanitize your data before enabling it
     sanitizer: (RequestResponseData) => RequestResponseData | null;
-    captureInIframes: boolean;
-    axiosInstances: AxiosInstance[];
+		captureInIframes: boolean;
+  	axiosInstances: AxiosInstance[];
     useProxy?: boolean;
-    tokenUrlMatcher?: (url: string) => boolean;
+		tokenUrlMatcher?: (url: string) => boolean;
   }
 ```
 
@@ -185,19 +185,19 @@ Consulta [Canvas y WebGL](/installation/canvas) para saber cómo habilitar esta 
 La opción `crossdomain` se relaciona con capturar iFrames de diferentes dominios. Se utiliza junto con la opción `captureIFrames` que debe establecerse en `true`.
 
 ```ts 
- crossdomain?: {
-    /**
-     * Habilitar seguimiento de dominio cruzado
-     * @default false
-     * */
-    enabled?: boolean
-    /**
-     * Se utiliza para especificar el dominio padre, será '*' por defecto
-     * (Verifica tus configuraciones CSP)
-     * @default '*'
-     * */
-    parentDomain?: string
-}
+	crossdomain?: {
+		/**
+		 * Enable cross-domain tracking
+		 * @default false
+		 * */
+		enabled?: boolean
+		/**
+		 * Used to specify the parent domain, will be '*' by default
+		 * (Check your CSP settings)
+		 * @default '*'
+		 * */
+		parentDomain?: string
+	}
 ```
 A partir de la versión del Tracker [14.0.10](https://github.com/openreplay/openreplay/blob/dev/tracker/tracker/CHANGELOG.md), el atributo **`data-domain` ya no es requerido** en elementos HTML al trabajar con iFrames de dominio cruzado.
 
@@ -233,7 +233,7 @@ mouse?:
 
 ```ts
  flags?: {
-    onFlagsLoad?: (flags: IFeatureFlag[]) => void
+ 	onFlagsLoad?: (flags: IFeatureFlag[]) => void
  } 
 
 // ...

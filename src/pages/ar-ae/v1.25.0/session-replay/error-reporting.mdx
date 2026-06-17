@@ -1,0 +1,104 @@
+---
+title: "تتبّع الأخطاء"
+metaTitle: "تتبّع الأخطاء"
+metaDescription: "تعرّف على كيفية تتبّع الأخطاء وحلّها باستخدام OpenReplay. احصل على رؤية تفصيلية للأخطاء عبر تطبيقات الويب الخاصة بك وقم باستكشاف المشكلات وحلّها بسياق كامل."
+---
+
+احصل على رؤية شاملة ودقيقة للأخطاء داخل تطبيقات الويب الخاصة بك. مع OpenReplay، يمكنك استكشاف المشكلات وحلّها بسياق كامل، مما يتيح حلًّا أسرع للمشكلات.
+
+## رؤى تتبّع الأخطاء عبر العروض المختلفة
+
+### من عرض الجلسات (Sessions)
+
+1. انتقل إلى عرض الجلسة > علامة التبويب **Errors**
+2. **استخدم Omnisearch**: حدّد الحدث **“Error Message”** وأدخِل رسالة الخطأ المحددة.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/error-tracking/errors_sessions_view.gif" alt="الأخطاء في الجلسات" style={{ width: '600px', height: 'auto' }} />
+</div>
+
+### داخل جلسة واحدة
+
+1. انتقل إلى **Console > علامة التبويب Errors**
+2. افتح الخطأ لعرض ملفات sourcemaps الكاملة.
+3. انقر على **"Find all sessions with this error"** لرؤية قائمة الجلسات التي حدث فيها الخطأ.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/error-tracking/errors_session_view.gif" alt="خطأ الجلسة" style={{ width: '600px', height: 'auto' }} />
+</div>
+
+### من عرض البطاقات (Cards)
+
+1. انتقل إلى Cards > Add Card > Monitors
+2. حدّد البطاقة **Table of Errors**
+
+{/* <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/error-tracking/errors_cards_view.gif" alt="جدول الأخطاء" style={{ width: '600px', height: 'auto' }} />
+</div> */}
+
+## تسجيل الاستثناءات يدويًا
+
+يدعم متتبّع OpenReplay تسجيل ثلاثة أنواع من الأخطاء:
+
+1. **الاستثناءات الملتقطة (Caught Exceptions)** - [Error](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error)
+2. **الوعود المرفوضة (Rejected Promises)** - [PromiseRejectionEvent](https://developer.mozilla.org/en-US/docs/Web/API/PromiseRejectionEvent)
+3. **أحداث الأخطاء (onError)** - [ErrorEvent](https://developer.mozilla.org/en-US/docs/Web/API/ErrorEvent)
+
+يمكن الإبلاغ عن كل هذه الأنواع باستخدام طريقة واحدة:
+
+```javascript
+tracker.handleError(error, metaObject); // metaObject is optional and is a flat object
+```
+
+لنستعرض أمثلة لكل نوع من أنواع الأخطاء:
+
+### الاستثناءات الملتقطة (Error)
+
+بشكل افتراضي، لا يتم تسجيل الاستثناءات الملتقطة في علامة التبويب 'Console'. للإبلاغ عن خطأ، استخدم النمط التالي:
+
+```javascript
+try {
+    // application code
+} catch (err) {
+    // application code that handles the error
+    tracker.handleError(err, metaObject); // metaObject is optional and is a flat object
+}
+```
+
+### الوعود المرفوضة (PromiseRejectionEvent)
+
+إذا تم رفض وعد (promise) وكان يلزم الإبلاغ عنه إلى OpenReplay، فاستخدم هذا الأسلوب:
+
+```javascript
+function myFunc() {
+    doSomeAsyncStuff()
+        .then((result) => {
+            // application code
+        })
+        .catch(promiseRejectionErr => {
+            // application code to handle the error
+            tracker.handleError(promiseRejectionErr, metaObject); // metaObject is optional and is a flat object
+        });
+}
+```
+
+### onError (ErrorEvent)
+
+أبلِغ عن الأخطاء التي تطلقها الأحداث، مثل فشل تحميل عنصر `<img>`:
+
+```javascript
+<img id="myImg" src="image.gif">
+<p id="demo"></p>
+
+<script>
+document.getElementById("myImg").addEventListener("error", myFunction);
+
+function myFunction(errorEvent) {
+    document.getElementById("demo").innerHTML = "The image could not be loaded.";
+    tracker.handleError(errorEvent, { context: "demo" });
+}
+</script>
+```
+
+## هل لديك أسئلة؟
+إذا كانت لديك أي أسئلة حول هذه العملية، فلا تتردد في التواصل معنا عبر [Slack](https://slack.openreplay.com) الخاص بنا أو الاطلاع على [المنتدى](https://forum.openreplay.com) الخاص بنا.

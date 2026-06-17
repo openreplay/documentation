@@ -1,0 +1,99 @@
+---
+title: "事件"
+metaTitle: "事件"
+metaDescription: "如何拉取特定录制的所有事件。"
+---
+
+## 检索事件
+
+返回在特定会话中捕获的事件列表（点击、页面访问、输入、自定义事件等）。会话范围由服务器强制限定——`sessionID` 路径参数会自动添加为事件过滤器。
+
+### 方法
+`POST`
+
+### URL
+`/public/:projectKey/sessions/:sessionId/events`
+
+### 参数
+
+| 名称       | 类型   | 描述                                                       |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | 项目密钥（必填）                                           |
+| sessionId  | string | 会话的 ID（必填，最大 256）                                |
+
+### 请求体
+
+| 名称           | 类型       | 描述                                                                 |
+|----------------|------------|----------------------------------------------------------------------|
+| startTimestamp | epoch (ms) | 时间窗口的起点（必填，最小 946684800000）                            |
+| endTimestamp   | epoch (ms) | 时间窗口的终点（必填，> startTimestamp）                             |
+| limit          | integer    | 每页大小，1-200（必填）                                              |
+| page           | integer    | 页码，从 1 开始（必填）                                              |
+| sortBy         | string     | 用于排序的事件列（可选）                                             |
+| sortOrder      | string     | `asc` 或 `desc`（可选）                                              |
+| filters        | array      | 额外的事件过滤器（可选）——参见下方的过滤器结构                       |
+| columns        | array      | 要包含在响应中的事件列（可选）                                       |
+
+过滤器对象：
+
+| 名称     | 类型     | 描述                                                          |
+|----------|----------|---------------------------------------------------------------|
+| name     | string   | 过滤器属性名称（必填，最大 256）                              |
+| operator | string   | 比较运算符（例如 `is`、`contains`）                          |
+| value    | string[] | 最多 10 个值，每个最大 256 个字符                             |
+| isEvent  | boolean  | 过滤器是否针对事件属性                                        |
+| dataType | string   | `string`、`number`、`boolean`、`integer`、`timestamp` 之一    |
+
+### 请求头
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### 状态码
+
+`200`：响应以 JSON 形式发送在正文中  
+`400`：正文无效或 `sessionID` 无效（为空或 > 256 个字符）
+
+### 请求示例
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/sessions/4813023023591169/events \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "startTimestamp": 1623440000000,
+    "endTimestamp":   1623441000000,
+    "limit": 100,
+    "page":  1,
+    "sortOrder": "asc"
+  }'
+```
+
+### 响应示例
+
+```json
+{
+  "data": {
+    "total": 3,
+    "events": [
+      {
+        "event_id": "01H7Z...",
+        "$event_name": "$pageview",
+        "created_at": 1623440905732,
+        "distinct_id": "mickael@openreplay.com",
+        "session_id": "4813023023591169",
+        "properties": { "path": "/my-account/" }
+      },
+      {
+        "event_id": "01H7Z...",
+        "$event_name": "$click",
+        "created_at": 1623440915126,
+        "distinct_id": "mickael@openreplay.com",
+        "session_id": "4813023023591169",
+        "$properties": { "label": "Shop" },
+        "$auto_captured": true
+      }
+    ]
+  }
+}
+```

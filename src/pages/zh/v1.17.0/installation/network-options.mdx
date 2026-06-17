@@ -1,0 +1,133 @@
+---
+title: "网络选项（Web）"
+metaTitle: "网络选项（Web）"
+metaDescription: "OpenReplay 的网络选项插件。"
+---
+import Aside from '~/components/Aside.astro'
+
+本页介绍 OpenReplay JavaScript SDK [选项](/sdk/constructor) 的 `network` 命名空间。它涉及捕获网络请求（例如 `fetch` 和 `XHR`），必要时包括负载，并在稍后回放会话录制时进行检查。这对于理解和修复问题非常有用。
+
+## 选项
+
+```js
+network?: {
+  failuresOnly: boolean;
+  sessionTokenHeader: string | boolean;
+  ignoreHeaders: Array<string> | boolean;
+  capturePayload: boolean;
+  sanitizer: (RequestResponseData) => RequestResponseData | null;
+  captureInIframes: boolean;
+  axiosInstances: AxiosInstance[];
+  useProxy?: boolean;
+	tokenUrlMatcher?: (url: string) => boolean;
+}
+```
+
+- `useProxy`：将 tracker 从修补 window.fetch/window.XMLRequest 切换为使用代理对象。默认值：`true`。
+- `failuresOnly`：捕获 HTTP 状态码为 4xx-5xx 的请求。默认值：`false`。
+- `sessionTokenHeader`：如果你启用了我们的某些后端[集成](/integrations)（例如 Sentry），你可以使用此选项指定请求头名称（或通过将该选项设置为 `true` 来激活默认值 'X-OpenReplay-SessionToken'）。后者会自动附加到每个 fetch/XHR 请求中，以包含 OpenReplay sessionToken 的值。默认值：`false`。
+- `tokenUrlMatcher`：获取当前 tracker 请求的 url 并返回 `boolean`。如果存在，`sessionTokenHeader` 仅在此函数返回 `true` 时才会应用。默认值：`undefined`。
+- `ignoreHeaders`：帮助定义一个你不希望捕获的请求头列表。将其值设置为 `false` 以捕获所有请求头（设置为 `true` 则不捕获任何请求头）。默认值：`['Cookie', 'Set-Cookie', 'Authorization']`，因此敏感请求头不会被捕获。
+- `capturePayload`：存储请求/响应正文负载。这对于故障排查可能非常有用，但如果你的应用程序大量使用 Fetch/XHR 请求，可能会对网络使用造成较大负担。默认值：`false`。
+
+<Aside type="caution">
+	捕获 HTTP 负载可能会记录你的应用程序在 Fetch/XHR 请求/响应中发送/接收的高度敏感数据（例如密码）或私密信息，因此请确保使用下面的 `sanitizer` 选项对这些数据进行清理。
+</Aside>
+
+- `captureInIframes`：用于禁用 iFrame 内部的网络跟踪。默认值：`true`。
+- `axiosInstances`：在特定情况下很有用，可用于跟踪自定义 axios 实例（如果常规配置（proxy api）不起作用）。默认值：`undefined`。
+- `sanitizer`：清理 Fetch/XHR 请求/响应中的敏感数据，或完全忽略请求。你可以通过修改请求对象然后从函数中返回它来编辑请求对象上的字段（见下面的示例）。清理操作会在其他选项引发的所有过滤和修改**之后**应用（也就是说，如果未将 `capturePayload` 显式设置为 `true`，则参数不会包含 `body` 负载）。
+
+```typescript
+interface RequestData {
+  body: BodyInit | null | undefined; // whatewer you've put in the init.body in fetch(url, init) or xhr.send(body)
+  headers: Record<string, string>;
+}
+
+interface ResponseData {
+  body: string | Object | null;  // Object if response is of JSON type
+  headers: Record<string, string>;
+}
+
+interface RequestResponseData {
+  readonly status: number;
+  readonly method: string;
+  url: string;
+  request: RequestData;
+  response: ResponseData;
+}
+
+sanitizer: (data: RequestResponseData) => { // sanitise the body or headers
+  if (data.url === "/auth") {
+    data.request.body = null
+  }
+
+  if (data.request.headers['x-auth-token']) { // can also use ignoreHeaders option instead
+    data.request.headers['x-auth-token'] = 'SANITISED';
+  }
+
+  // Sanitize response
+  if (data.status < 400 && data.response.body.token) {
+    data.response.body.token = "<TOKEN>"  
+  }
+
+  return data
+}
+
+// OR
+
+sanitizer: data => { // ignore requests that start with /secure
+  if (data.url.startsWith("/secure")) {
+    return null
+  }
+  return data
+}
+
+// OR
+
+sanitizer: data => { // sanitize request url: replace all numbers
+  data.url = data.url.replace(/\d/g, "*")
+  return data
+}
+```
+
+## 示例
+
+以下是如何使用 `network` 选项的示例。
+
+### 使用 NPM
+
+```js
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY,
+  network: {
+    capturePayload: true // Capture HTTP payload
+  }
+});
+```
+
+### 使用 JavaScript 代码片段
+
+请注意用于设置 `network` 选项的 `initOpts` 变量/行。
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { 
+  projectKey: "GxPpaDARdn2345fgt321", 
+  network: { // Enable HTTP payload capture in the network option
+    capturePayload: true
+  } 
+};
+
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+```
+
+## 故障排查
+
+在配置这些选项时遇到问题？请加入我们的 [Slack](https://slack.openreplay.com)，或查看我们的[论坛](https://forum.openreplay.com)，从我们的社区获得帮助。

@@ -1,0 +1,161 @@
+---
+title: "Comment utiliser OmniSearch"
+metaTitle: "Tirer parti d'OmniSearch"
+metaDescription: "Profitez de la puissante fonction de recherche d'OpenReplay"
+---
+## Tirer parti d'Omnisearch
+
+La barre de recherche en haut que vous voyez dans l'interface d'OpenReplay est bien plus qu'une simple barre de recherche : elle vous permet de construire des requêtes de recherche très complexes avec très peu d'efforts.
+
+Pour les exemples présentés ici, nous allons parler de l'application de test appelée « I'm bored », qui vous suggère des activités pour vous et votre groupe d'amis en fonction de différents paramètres de recherche.
+
+Voici une capture d'écran de l'interface avec laquelle nos utilisateurs fictifs interagiraient :
+
+![](https://i.imgur.com/6BtPzTs.png)
+
+## Effectuer une recherche simple
+Le cas d'usage le plus basique de la barre de recherche consiste à rechercher les sessions d'un utilisateur particulier. Soit parce qu'il s'agit de votre utilisateur de test, soit parce que vous recherchez la session d'un client qui se plaint de votre produit.
+Si vous définissez l'ID utilisateur lorsque vous instanciez le tracker, vous pourrez voir les différents IDs dans la liste des sessions.
+
+Pour ce faire, lorsque vous cliquez sur la barre de recherche, sélectionnez l'option « User Id », comme illustré ci-dessous :
+
+![](https://i.imgur.com/jZU6hwG.png)
+
+Lorsque vous faites cela, vous verrez l'option permettant de spécifier l'id utilisateur dans le cadre des filtres.
+
+![](https://i.imgur.com/6Ac5cDB.png)
+
+À noter, la liste complète des filtres auxquels vous avez accès est la suivante :
+
+- **Click** : filtre selon l'endroit _où_ l'utilisateur clique.
+- **Input** : filtre selon la saisie effectuée par l'utilisateur.
+- **Page** : filtre selon l'URI de la page utilisée pendant la session de relecture.
+- **RevId** : filtre selon l'ID de révision de votre application (uniquement si utilisé avec le SDK).
+- **Referrer** : l'URL depuis laquelle l'utilisateur arrive sur votre application.
+- **Duration** : filtre les relectures selon leur durée.
+- **User** Country : filtre selon le pays de l'utilisateur qui interagit avec votre application (calculé à partir de son adresse IP publique).
+- **Custom Events** : filtre selon l'événement personnalisé déclenché depuis le SDK.
+- **Network Request** : filtre selon les propriétés de la requête émise par l'interface (payload, URL, etc.).
+- **GraphQL** : filtre selon les propriétés de la requête GraphQL (nom, méthode et payload).
+- **StateAction** : filtre selon l'action sur le store d'état (c.-à-d. Redux, VueX, etc.).
+- **Error** : filtre selon le message d'erreur (c.-à-d. le message utilisé lors du lancement d'une exception).
+- **Issue** : filtre selon le type de problème (Click Rage, Dead Click, Excessive Scrolling, Bad Request, Missing Resources et Memory).
+- **User OS** : filtre selon le système d'exploitation de vos utilisateurs.
+- **User Browser** : filtre selon le nom du navigateur utilisé par votre utilisateur (filtre uniquement selon les données réelles, donc si vous ne trouvez pas de résultats en recherchant « Chrome », cela signifie qu'aucun de vos utilisateurs ne l'utilise).
+- **User Device** : filtre selon la version mobile de l'appareil utilisé par l'utilisateur.
+- **Platform** : filtre selon la plateforme utilisée par votre utilisateur (Mobile, Tablet ou Desktop).
+- **User Id** : filtre selon l'ID de votre utilisateur (défini avec la méthode `setUserID`).
+- **DOM complete** : filtre selon le temps que met l'événement DOM Complete à se déclencher.
+- **Largest contentful paint** : filtre selon le temps que met l'événement DOM Complete à se déclencher.
+- **Time to First Byte** : filtre selon le temps que met l'[événement TTFB](https://fr.wikipedia.org/wiki/Time_to_first_byte) à se déclencher.
+- **AVG CPU Load** : filtre selon la charge CPU moyenne pendant la session.
+- **AVG Memory Usage** : filtre selon l'utilisation moyenne de la mémoire pendant la session.
+- **Failed Request** : booléen, filtre les sessions qui n'ont pas de requêtes ayant échoué.
+
+ 
+
+Pour continuer, par défaut le filtre va tenter de faire correspondre exactement le mot que vous y placez. C'est à cause du modificateur « is » situé à côté du champ de saisie. Vous pouvez le remplacer par d'autres comportements, tels que :
+
+- is any
+- is not
+- starts with
+- ends with
+- contains
+- not contains
+- is undefined
+
+Pour notre exemple, nous allons le laisser sur « is » puisque nous connaissons l'adresse e-mail exacte de notre utilisateur.
+Comme vous pouvez le voir sur l'image suivante, lorsque nous filtrons par l'id « thisisatest@gmail.com », nous obtenons uniquement ces résultats :
+
+![](https://i.imgur.com/kAjALWs.png)
+
+Mais que faire si nous en voulons plus ?
+
+## Ajouter plusieurs étapes à notre recherche
+Que faire si nous voulons rechercher des sessions où l'utilisateur clique sur un lien particulier, puis où l'application envoie une requête à un endpoint particulier, et enfin où nous recevons un code de réponse spécifique du serveur ?
+
+Individuellement, chaque condition n'est pas si complexe, mais nous les recherchons toutes ensemble.
+Ce n'est pas un problème pour notre Omnisearch.
+Dans le coin inférieur gauche de la section des filtres, vous disposez de l'option « +ADD STEP » pour ajouter plusieurs facteurs aux filtres.
+
+Lorsque vous cliquez dessus, vous verrez les mêmes options que celles affichées en cliquant sur la barre de recherche.
+Ici, vous pourrez choisir toutes les options selon la manière dont vous pensez devoir construire la recherche.
+
+Dans notre cas, nous voulons rechercher :
+
+- Un id utilisateur particulier.
+- Toutes les sessions avec un clic sur un lien spécifique.
+    - Toutes les sessions avec des requêtes vers une URL particulière.
+- Enfin, toutes les sessions partageant la même famille de codes de statut.
+
+Lorsque vous liez tous ces filtres ensemble, vous obtenez un filtre de recherche complexe qui correspond à vos sessions particulières.
+Voyons à quoi cela ressemblerait dans l'interface :
+
+![](https://i.imgur.com/RX9PeH3.png)
+
+Plusieurs éléments sont à noter ici :
+
+1. L'id utilisateur est traité comme un filtre normal tandis que le reste des paramètres est traité comme des événements. C'est parce que vous pouvez également spécifier l'ordre dans lequel ces événements se produisent (et l'id utilisateur sera toujours présent).
+2. L'événement de clic spécifie le texte du bouton sur lequel nous cliquons (remarquez la chaîne « Get me something! »). Cela se **complétera automatiquement** une fois que vous commencerez à taper.
+3. Le modificateur de l'URL est passé de « is » à « contains ». C'est important car l'autocomplétion ne tiendra pas compte des paramètres de l'URL, mais dans le cadre de cette requête, nous envoyons tous les attributs du formulaire en tant que paramètres d'URL (c.-à-d. qu'il s'agit d'une requête GET). De cette manière, nous pouvons englober toutes les requêtes, quelle que soit la combinaison utilisée.
+4. Nous avons changé le modificateur de la valeur « status code » de `=` à `<` car je recherche tous les codes de réponse de succès (2XX).
+5. Remarquez le « AND » mis en évidence dans le coin supérieur droit à côté de « OR » et « THEN ». Ce modificateur fait en sorte que toutes les étapes et tous les filtres soient évalués avec un AND. Nous pourrions les changer en OR (par exemple), si nous voulions qu'ils soient tous évalués individuellement.
+
+Vous pouvez modifier les filtres, ou même les conditions booléennes, pour que votre filtre soit exactement comme vous en avez besoin.
+
+Mais que faire si votre recherche nécessite plusieurs étapes ? Que faire si vous recherchez des sessions qui se conforment à un certain entonnoir (funnel) ? Voyons comment vous pouvez configurer un entonnoir à plusieurs étapes avec les filtres de recherche.
+
+## Créer un entonnoir à partir des filtres de recherche
+
+Un entonnoir n'est rien d'autre qu'un ensemble d'étapes que vos utilisateurs doivent franchir pour parvenir à un certain point. Habituellement, lorsque cela se produit, certains utilisateurs n'iront pas jusqu'au bout, peut-être parce qu'ils ont perdu leur intérêt ou peut-être à cause d'erreurs dans votre application.
+Et c'est pour le second scénario qu'OpenReplay peut vous aider à identifier les problèmes.
+
+La première chose à faire est de définir l'entonnoir à l'aide d'OmniSearch. Pour ce faire, indiquez simplement les étapes requises à l'aide des nombreux filtres énumérés ci-dessus.
+
+Pour notre exemple, je vais rechercher des sessions dans lesquelles les éléments suivants se produisent :
+
+- L'utilisateur visite la page d'accueil de mon application (l'URI étant « / »).
+- L'utilisateur interagit avec le champ de saisie « first name ».
+- L'utilisateur clique ensuite sur le lien « second page ».
+- L'utilisateur est dirigé vers une page différente avec l'URI « /second-page ».
+- L'utilisateur clique ensuite sur le lien « Home page ».
+
+Comme vous pouvez le voir, la liste des étapes peut être n'importe quelle combinaison aléatoire qui a du sens au sein de votre application.
+Cet exemple particulier ressemblerait à ceci :
+
+![](https://i.imgur.com/uEx2yGZ.png)
+
+À elle seule, cette recherche listerait les sessions correspondant au modèle. Cependant, nous pouvons aller un peu plus loin en l'enregistrant en tant qu'entonnoir, puis en analysant les informations recueillies par OpenReplay.
+
+Cliquer sur « Save funnel » vous invitera à ajouter un nom à votre entonnoir, et il apparaîtra dans le coin inférieur gauche de l'écran.
+
+![](https://i.imgur.com/bt5O08M.png)
+
+Et une fois que vous entrez dans l'entonnoir, vous obtiendrez une vue d'ensemble de ce qui se passe pendant l'entonnoir :
+
+![](https://i.imgur.com/cgyJaKO.png)
+
+Comme vous pouvez le constater, dans cet exemple nous pouvons voir des problèmes de Dead Clicks et de Click Rages dans 3 sessions différentes.
+
+## Enregistrer vos filtres
+Cette fonctionnalité garantit que vous n'avez pas à recréer vos filtres complexes chaque fois que vous voulez les utiliser.
+Et le faire est extrêmement simple.
+
+Supposons que nous ayons un filtre qui n'affiche que les sessions avec des dead clicks (des clics qui ne font rien) sur la page d'accueil. Nous voulons conserver cette recherche afin de pouvoir vérifier en permanence si de nouveaux problèmes comme celui-ci apparaissent à l'avenir.
+Il nous suffit de la configurer et de cliquer sur le lien « SAVE SEARCH » dans le coin inférieur droit de la boîte de recherche.
+Comme illustré sur l'image suivante :
+
+![](https://i.imgur.com/b3GP8xh.png)
+
+Donnez-lui un nom et cliquez sur le bouton « Create ».
+
+![](https://i.imgur.com/TONFroV.png)
+
+Après cela, votre recherche enregistrée apparaîtra à côté de la barre de recherche, comme ceci :
+
+![](https://i.imgur.com/n1GsndD.png)
+
+Omnisearch vous dote de super-pouvoirs de recherche, mais pour en tirer parti, vous devez choisir les bonnes options.
+## Vous avez des questions ?
+
+Si vous avez encore des questions, n'hésitez pas à contacter nos développeurs sur notre [communauté Slack](https://slack.openreplay.com/).

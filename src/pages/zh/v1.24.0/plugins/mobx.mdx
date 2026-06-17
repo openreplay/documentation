@@ -1,0 +1,63 @@
+---
+title: "MobX"
+metaTitle: "MobX"
+metaDescription: "OpenReplay 的 MobX 插件。"
+---
+
+该插件允许你捕获 `MobX` 的变更（mutations），并在回放会话录像时进行查看。这有助于理解和修复问题。 
+
+
+## 安装
+
+```bash
+npm i @openreplay/tracker-mobx
+```
+
+## 使用方法
+
+像往常一样初始化 `@openreplay/tracker` 包，并将插件加载到其中。
+然后使用返回的值来追踪 MobX 的可观察对象（observables）。
+
+```js
+import { observable, observe } from 'mobx';
+import Tracker from '@openreplay/tracker';
+import trackerMobX from '@openreplay/tracker-mobx';
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+// this instance can be exported and used for multiple stores
+const mobxObserver = tracker.use(trackerMobX({ ...options }));
+
+const myArray = observable(['foo', 'bar', 42]);
+
+observe(myArray, mobxObserver)
+
+myArray.push("Hello world"); // This mutation will be tracked
+```
+
+## 选项
+
+你可以自定义中间件的行为以净化你的数据。
+
+```js
+interface Options {
+    predicate?: (observeEvent: { type: string; name: string; object: any; debugObjectName: string }) => boolean;
+    sanitize?: (resultAction: { state: any; type: string; property: string }) => { state: any; type: string; property: string };
+    update?: boolean;
+    add?: boolean;
+    delete?: boolean;
+}
+
+trackerMobX({
+  predicate: () => true,
+  sanitize: (event) => event
+})
+```
+
+其中 predicate 可用于动态关闭捕获，sanitize 可用于在将载荷发送到后端之前对其进行修改。大多数操作属于 update 类型，关于 add 和 delete 的更多细节请参阅 mobx 文档（主要用于 Maps）
+
+## 还有疑问？
+
+在设置此插件时遇到问题？请加入我们的 [Slack](https://slack.openreplay.com)，或访问我们的[论坛](https://forum.openreplay.com)，从我们的社区获得帮助。

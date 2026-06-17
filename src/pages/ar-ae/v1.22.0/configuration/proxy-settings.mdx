@@ -1,0 +1,74 @@
+---
+title: "إعدادات الوكيل (Proxy)"
+metaTitle: "إعدادات الوكيل (Proxy)"
+metaDescription: "إعدادات تشغيل OpenReplay خلف وكيل مثل NGINX أو Apache2."
+---
+
+## استضافة OpenReplay مع تطبيقات أخرى باستخدام وكيل عكسي
+
+عند تشغيل OpenReplay على جهاز، فإنه يستخدم المنفذ 80/443 لإتاحة الوصول إلى التطبيق. لكن عند استخدام وكيل عكسي، يمكن تهيئة OpenReplay لاستخدام منفذ آخر للوصول إلى التطبيق. فيما يلي خطوات القيام بذلك:
+
+1. حرّر ملف الإعداد:
+
+```bash
+openreplay -e
+```
+
+2. غيّر قسم إعداد nginx:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+	...
+	...
+    service:
+      externalTrafficPolicy: "Local"
+      ports:
+        http: 880   # Change this port for http
+        https: 8443 # Change this port for https
+```
+3. احفظ وأغلق الإعداد باستخدام `:wq` حتى يتمكن OpenReplay من إعادة تحميل الإعداد.
+
+بعد ذلك يمكن تهيئة الوكيل العكسي الخاص بك. راجع الأقسام أدناه للقيام بذلك.
+
+### إعدادات NGINX
+
+تأكد من أن الوكيل الخاص بك يرسل الترويستين `X-Forwarded-For` و`X-Forwarded-Proto`. يجب أيضًا تمكين SSL حتى يعمل OpenReplay. أما بقية الإعداد فينبغي أن تبدو على النحو التالي:
+
+```nginx
+location / {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        proxy_pass http://1.2.3.4:880; # replace with OpenReplay instance IP
+    }
+```
+
+### إعدادات Apache2
+
+تأكد من تمكين الوحدات `proxy` و`proxy_http` و`proxy_html`. كما يجب تهيئة SSL، وينبغي أن تكون بقية الإعدادات مشابهة لما يلي:
+
+```
+<VirtualHost *:443>
+    ProxyPass / http://1.2.3.4:880 <!-- replace with instance IP -->
+    RequestHeader set X-Forwarded-Proto expr=%{REQUEST_SCHEME}
+    # SSL + other config here
+</VirtualHost>
+```
+
+## نقاط النهاية العامة
+
+في حال كنت تحمي نسخة OpenReplay الخاصة بك بوكيل، تأكد من أن نقاط النهاية أدناه يمكن الوصول إليها بشكل عام حتى يعمل OpenReplay بشكل صحيح.
+
+| نقطة النهاية | الوصف |
+|----------|-------------|
+| /ingest | لالتقاط الأحداث والتسجيلات |
+| /api | لجلب بيانات المستخدمين وإدارتها |
+| /assist | للفيديو/المكالمات المباشرة مع المستخدمين النهائيين (WebRTC) |
+| /ws-assist | لإعادة تشغيل الجلسات المباشرة مع المستخدمين النهائيين |
+| /static/openreplay.js | شيفرة JavaScript التي تحمّل OpenReplay |
+
+## لديك أسئلة؟
+
+إذا كان لديك أي أسئلة حول هذه العملية، فلا تتردد في التواصل معنا عبر [Slack](https://slack.openreplay.com) الخاص بنا أو الاطلاع على [المنتدى](https://forum.openreplay.com) الخاص بنا.

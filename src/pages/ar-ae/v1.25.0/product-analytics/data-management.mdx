@@ -1,0 +1,143 @@
+---
+title: "إدارة البيانات"
+metaTitle: "إدارة البيانات - OpenReplay"
+metaDescription: "تتبّع الأحداث المخصصة وخصائص المستخدمين لتعزيز تحليلات المنتج لديك في OpenReplay."
+---
+
+تتيح لك إدارة البيانات في OpenReplay تتبّع الأحداث المخصصة وخصائص المستخدمين لتعزيز تحليلات المنتج لديك. تغطي هذه الصفحة كلًّا من تكامل SDK لإرسال البيانات وواجهة المستخدم لإدارتها.
+
+للاطلاع على وثائق SDK الكاملة، راجع [مرجع SDK الخاص بالتحليلات](/sdk/analytics).
+
+## نظرة عامة على الأحداث
+
+يلتقط OpenReplay نوعين من الأحداث:
+
+- **الأحداث المُلتقطة تلقائيًا**: التفاعلات التي يتم تتبّعها تلقائيًا مثل مشاهدات الصفحات والنقرات وعمليات إرسال النماذج
+- **الأحداث المخصصة**: الأحداث الخاصة بمجالك التي تحددها بنفسك، مثل "اكتمال عملية الشراء" أو "تفعيل الميزة"
+
+تتيح لك الأحداث المخصصة تتبّع إجراءات المستخدمين المحددة التي تهمّ عملك واستخدامها في ميزات التحليلات مثل [الاتجاهات](/product-analytics/trends) و[مسارات التحويل](/product-analytics/funnels) و[الرحلات](/product-analytics/journeys).
+
+## التقاط الأحداث
+
+لتتبّع الأحداث المخصصة، استخدم وحدة أحداث التحليلات في SDK. للاطلاع على وثائق API الكاملة، راجع [مرجع SDK الخاص بالأحداث](/sdk/analytics/events).
+
+### مثال أساسي
+
+```ts
+// Track a simple event
+tracker.analytics.events.sendEvent("Button Clicked", {
+  button_text: "Start",
+  page: "home",
+})
+```
+
+### الخصائص الفائقة
+
+الخصائص الفائقة هي أزواج مفتاح/قيمة دائمة تُرفق تلقائيًا بكل حدث يتم تتبّعه:
+
+```ts
+// Set super properties that apply to all events
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  env: "prod",
+})
+
+// This event will include app_version and env automatically
+tracker.analytics.events.sendEvent("Signup Started", {
+  plan: "pro",
+})
+```
+
+## إثراء بيانات المستخدمين
+
+تتيح لك خصائص المستخدم تخزين سمات حول مستخدميك من أجل التقسيم والتحليل. للاطلاع على وثائق API الكاملة، راجع [مرجع SDK الخاص بالأشخاص](/sdk/analytics/people).
+
+### تعريف المستخدمين
+
+```ts
+// Identify the current user
+tracker.analytics.people.identify("user_123")
+
+// Set user properties
+tracker.analytics.people.setProperties({
+  email: "user@example.com",
+  plan: "pro",
+})
+```
+
+### أنواع الخصائص
+
+يدعم OpenReplay عدة أنواع من الخصائص:
+
+| النوع | الوصف | أمثلة |
+|------|-------------|----------|
+| **متتبَّعة تلقائيًا** | تُلتقط تلقائيًا بواسطة SDK | الجهاز، المتصفح، نظام التشغيل، معاملات UTM، المُحيل |
+| **خاصة** | خصائص خاصة ذات سلوك محدد | `$user_id`، `$email`، `$name` |
+| **مخصصة** | خصائص يحددها المستخدم | `plan type`، `company`، `signup date` |
+
+## إدارة البيانات في واجهة المستخدم
+
+يوفر OpenReplay واجهة لإدارة البيانات لتصفّح مستخدميك وأحداثك وخصائصها المختلفة وتصفيتها وتنظيمها.
+
+### People
+
+<img src="/data-management/people-page.png" alt="صفحة الأحداث" style={{ width: '700px', height: 'auto' }} />
+
+توفر علامة التبويب People عرضًا لمستخدميك المُعرَّفين:
+
+- تصفّح المستخدمين وخصائصهم
+- ابحث حسب معرّف المستخدم أو قيم الخصائص
+- اطّلع على نشاط المستخدم وسجل الجلسات
+- ادخل إلى الملفات الشخصية الفردية للمستخدمين
+
+### Events
+
+<img src="/data-management/events-page.png" alt="صفحة الأحداث" style={{ width: '700px', height: 'auto' }} />
+
+تعرض علامة التبويب Events جميع أنواع الأحداث المتتبَّعة في مشروعك:
+
+- تصفّح الأحداث وابحث عنها حسب الاسم
+- صفِّ حسب نوع الحدث (مُلتقط تلقائيًا مقابل مخصص)
+- حرّر بيانات الحدث الوصفية (الاسم المعروض، الوصف)
+- تحكّم في ظهور الأحداث في لوحات المعلومات والمرشحات
+
+### Properties
+
+<img src="/data-management/props-page.png" alt="صفحة الأحداث" style={{ width: '700px', height: 'auto' }} />
+
+تتيح لك علامة التبويب Properties إدارة كلٍّ من خصائص المستخدمين وخصائص الأحداث:
+
+- بدّل بين خصائص المستخدمين وخصائص الأحداث
+- اطّلع على أنواع الخصائص وتوزيعات القيم
+- حرّر الأسماء المعروضة للخصائص
+- تحكّم في ظهور الخصائص في لوحات المعلومات والمرشحات 
+
+### Activity
+
+<img src="/data-management/activity-page.png" alt="صفحة الأحداث" style={{ width: '700px', height: 'auto' }} />
+
+تعرض علامة التبويب Activity تدفقًا للأحداث في الوقت الفعلي:
+
+- راقب الأحداث أثناء استيعابها
+- صفِّ حسب نوع الحدث أو المستخدم
+- تحقق من أن الأحداث يتم التقاطها بشكل صحيح
+
+### الأسماء المستعارة المتوافقة مع Mixpanel
+
+تدعم جميع الدوال طبقة توافق مُوفَّرة لمنح شعور بالألفة:
+
+```ts
+tracker.analytics.people.set            // setProperties
+tracker.analytics.people.set_once       // setPropertiesOnce
+tracker.analytics.people.append         // appendValues
+tracker.analytics.people.union          // appendUniqueValues
+tracker.analytics.people.incrementBy    // increment
+tracker.analytics.events.register       // setProperty
+tracker.analytics.events.register_once  // setPropertiesOnce
+tracker.analytics.events.unregister     // unsetProperties
+tracker.analytics.events.track          // sendEvent
+```
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات، تواصل معنا عبر [Slack](https://slack.openreplay.com) أو اطّلع على [المنتدى](https://forum.openreplay.com) واحصل على المساعدة من مجتمعنا.

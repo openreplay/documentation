@@ -1,0 +1,363 @@
+---
+title: "استخدام إضافة Redux لالتقاط تغييرات الحالة"
+metaTitle: "استخدام إضافة Redux لالتقاط تغييرات الحالة"
+metaDescription: "تعرّف على كيفية التقاط تغييرات الحالة باستخدام إضافة Redux وعرضها مرئيًا في عمليات إعادة تشغيل الجلسات"
+---
+import Aside from '~/components/Aside.astro'
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="شاهد كيفية تتبّع الحالة باستخدام Redux"
+  description="إذا كنت لا تحب القراءة، يمكنك متابعة هذا الدرس المصوّر الذي يوضّح لك كيفية تتبّع حالة تطبيقات React الخاصة بك عند استخدام Redux"
+  videoURL="https://www.youtube.com/watch?v=vSg4_i-jCj0"
+  />
+
+إذا كنت بحاجة إلى رؤية إضافية عند إعادة تشغيل جلسات مستخدميك، فإن إلقاء نظرة على حالة التطبيق يمكن أن يكون مفيدًا للغاية.
+
+في حالة Redux، يوفّر OpenReplay [إضافة](https://docs.openreplay.com/plugins/redux) تتيح لك الاندماج في الآلية الداخلية للـ store. ستتيح لك هذه الإضافة رؤية حالة (state) الـ store الخاص بـ Redux والإجراءات (actions) التي تم إرسالها على مدار الجلسة المسجَّلة.
+
+بمجرد الإعداد، ينبغي أن تكون قادرًا على مشاهدة التغييرات في الـ store كما هو موضّح في لقطة الشاشة التالية:
+
+![النتيجة المتوقعة](/images/redux-outcome.png)
+
+## إعداد Redux في مشروع Next.js
+
+في هذا الدرس، سنستخدم [هذا المستودع](https://github.com/deleteman/nextjs-commerce-example/tree/redux-store) (الفرع **redux-store**) الخاص بموقع تجارة إلكترونية عام مبني باستخدام Next.js.
+
+في هذا المشروع، سنستبدل مجموعة من المنتجات المميَّزة بمجموعة من المنتجات الجديدة المأخوذة من واجهة برمجة تطبيقات (API) خارجية.
+
+ولأجل ذلك، سنضيف دالة لطلب المنتجات باستخدام Axios، وسنقوم بذلك من داخل إجراء (action) في Redux.
+
+**ملاحظة:** هذا تطبيق Next.js معقّد، لذا قد لا يتّبع البنية القياسية الموجودة في تطبيقات قوائم المهام (To-Do) التقليدية، ولكن باتّباع هذا الدرس ينبغي أن تكون قادرًا على مواكبة التغييرات.
+
+**تذكّر:** يمكنك دائمًا استنساخ المستودع ومراجعة الكود بنفسك.
+
+سنبدأ بتثبيت جميع التبعيات الرئيسية باستخدام:
+
+```bash
+npm i next-redux-wrapper redux react-redux redux-thunk redux-devtools-extension
+```
+
+بعد الانتهاء من ذلك، أنشئ مجلدًا باسم `store` في الدليل الجذر لمشروعك وأعد إنشاء البنية التالية:
+
+![بنية المجلدات](/images/folder-structure.png)
+
+سيحتوي الملف `types.js` على تعريف النوع للإجراءين (actions) اللذين سنقوم بتعريفهما:
+
+```bash
+export const GET_PRODUCTS = 'GET_PRODUCTS'
+export const PRODUCTS_ERROR = 'PRODUCTS_ERROR'
+```
+
+سيصدّر الملف `store.js` دالة تقوم، عند استدعائها، بإنشاء store جديد لـ Redux. وذلك لأننا سنحتاج إلى إضافة middleware جديد لـ Redux يُعاد من إضافة Redux (المزيد عن ذلك بعد قليل).
+
+```jsx
+import { createStore, applyMiddleware } from 'redux'
+import thunk from 'redux-thunk'
+import { composeWithDevTools } from 'redux-devtools-extension'
+
+import rootReducer from './reducers'
+
+const initalState = {}
+
+export default function createReduxStore(extraMiddleware = []) {
+  const middleware = [thunk, ...extraMiddleware]
+
+  const store = createStore(
+    rootReducer,
+    initalState,
+    composeWithDevTools(applyMiddleware(...middleware))
+  )
+  return store
+}
+```
+
+سيقوم ملف الـ reducer الخاص بنا (`makeUpReducer.js`) بتحديث الحالة إما بقائمة المنتجات أو برسالة الخطأ التي تُعاد عند وجود مشكلة.
+
+```jsx
+import { GET_PRODUCTS, PRODUCTS_ERROR } from '../types'
+
+const initialState = {
+  makeUpProducts: [],
+  loading: true,
+}
+
+export default function (state = initialState, action) {
+  switch (action.type) {
+    case GET_PRODUCTS:
+      return {
+        ...state,
+        makeUpProducts: action.payload,
+        loading: false,
+      }
+    case PRODUCTS_ERROR:
+      return {
+        loading: false,
+        error: action.payload,
+      }
+    default:
+      return state
+  }
+}
+```
+
+وأخيرًا، سيعرّف ملف الإجراء (action) دالة واحدة، تتولى جلب قائمة المنتجات من واجهة برمجة تطبيقات خارجية وإرسال الإجراء والـ payload الصحيحين:
+
+```jsx
+import { GET_PRODUCTS, PRODUCTS_ERROR } from '../types'
+import axios from 'axios'
+import slugify from 'slugify'
+
+export const getMakeUpProducts = () => async (dispatch: any) => {
+  console.log('Getting the makeup products')
+
+  try {
+    let { data } = await axios.get(
+      'https://makeup-api.herokuapp.com/api/v1/products.json?brand=maybelline&apiKey=123fff132'
+    )
+    const products = data
+
+    let newProds = products.map((p: any) => {
+      return {
+        id: '' + p.id,
+        slug: slugify(p.name),
+        name: p.name,
+        description: '',
+        images: [{ url: p.image_link }],
+        variants: [],
+        price: {
+          value: +p.price,
+        },
+        options: [],
+      }
+    })
+
+    dispatch({
+      type: GET_PRODUCTS,
+      payload: newProds,
+    })
+  } catch (e) {
+    dispatch({
+      type: PRODUCTS_ERROR,
+      payload: e,
+    })
+  }
+}
+```
+
+## إعداد مزوّد التتبّع (tracker provider)
+
+لحقن أداة التتبّع (tracker) في التطبيق، سنستخدم context يتم توفيره كما هو موضّح في [درس Next.js](https://docs.openreplay.com/tutorials/next).
+
+سيتيح لك هذا المزوّد إعداد مجموعة من الإضافات؛ وفي حالتنا، سنستخدم إضافة Redux، على النحو التالي (من داخل الملف `_app.tsx`)
+
+```jsx
+//...more imports here....
+import TrackerProvider from '../context/trackerProvider'
+import trackerRedux from '@openreplay/tracker-redux'
+
+// ... more code here....
+
+export default function MyApp({ Component, pageProps }: AppProps) {
+  const Layout = (Component as any).Layout || Noop
+
+  useEffect(() => {
+    document.body.classList?.remove('loading')
+  }, [])
+
+  let plugins = [
+    {
+      fn: trackerRedux,
+      name: 'redux',
+      config: {},
+    },
+  ]
+
+  return (
+    <TrackerProvider config={{ plugins }}>
+      <Head />
+      <ManagedUIContext>
+        <Layout pageProps={pageProps}>
+          <Component {...pageProps} />
+        </Layout>
+      </ManagedUIContext>
+    </TrackerProvider>
+  )
+}
+```
+
+الآن، يتيح لك هذا الكود إعداد أداة التتبّع بالإضافة الصحيحة، ولكن لكي تعمل الإضافة، سنحتاج إلى الوصول إلى الـ middleware الذي يُعاد عند استدعاء الإضافة. وهذا يعني أنه سيتعيّن علينا تتبّع القيم التي تعيدها إضافاتنا حتى يمكن استخدامها في مكان آخر. في هذه الحالة، سنحتاج إلى استخدامه عند استدعاء الدالة `createReduxStore` المذكورة أعلاه.
+
+للقيام بذلك، علينا توسيع الـ `TrackerProvider` للتأكد من أننا نحتفظ بالقيمة المُعادة داخل الحالة، على النحو التالي (يمكنك مراجعة النسخة الكاملة من هذا الملف [هنا](https://github.com/deleteman/nextjs-commerce-example/blob/redux-store/site/context/trackerProvider.js)):
+
+```jsx
+import { createContext, useCallback } from 'react'
+import Tracker from '@openreplay/tracker'
+import { v4 as uuidV4 } from 'uuid'
+import { useReducer } from 'react'
+
+export const TrackerContext = createContext()
+function defaultGetUserId() {
+  return uuidV4()
+}
+function newTracker(config) {
+  ///code here
+}
+function reducer(state, action) {
+  switch (action.type) {
+    case 'init': {
+      if (!state.tracker) {
+        console.log('Instantiaing the tracker for the first time...')
+        let t = newTracker(state.config)
+        let pluginsReturnedValue = {}
+        if (state.config.plugins) {
+          state.config.plugins.forEach((p) => {
+            console.log('Using plugin...')
+            pluginsReturnedValue[p.name] = t.use(p.fn(p.config)) //keep track
+          })
+        }
+        return {
+          ...state,
+          pluginsReturnedValue: pluginsReturnedValue, //update the state
+          tracker: t,
+        }
+      }
+      return state
+    }
+    case 'start': {
+      console.log('Starting tracker...')
+      state.tracker.start()
+      return state
+    }
+  }
+}
+export default function TrackerProvider({ children, config = {} }) {
+  let [state, dispatch] = useReducer(reducer, {
+    tracker: null,
+    pluginsReturnedValue: {},
+    config,
+  })
+  let value = {
+    startTracking: () => dispatch({ type: 'start' }),
+    initTracker: () => dispatch({ type: 'init' }),
+    pluginsReturnedValues: { ...state.pluginsReturnedValue }, //inject the state
+  }
+  return (
+    <TrackerContext.Provider value={value}>{children}</TrackerContext.Provider>
+  )
+}
+```
+
+داخل الإجراء `init`، نقوم أيضًا بتتبّع القيم التي تعيدها الطريقة `use` عند استدعائها مع إضافاتنا. ونحتفظ بهذا القاموس (dictionary) داخل الخاصية `state.pluginsReturnedValue`. والتي نتيحها لجميع العناصر الفرعية (children) عبر المتغيّر `pluginsReturnedValues`.
+
+يتيح لك هذا المنطق استخدام الإضافة عند تهيئة أداة التتبّع، ثم الوصول إلى الـ middleware واستخدامه لاحقًا.
+
+## إنشاء store الخاص بـ Redux باستخدام الـ middleware الجديد
+
+الآن بعد أن أصبحت الإضافة تعمل، نحتاج إلى تهيئة store الخاص بـ Redux، وعلينا القيام بذلك بعد أن تتم تهيئة أداة التتبّع (Tracker) وقبل استدعاء الطريقة `start`.
+
+ولأجل ذلك، اخترت المكوّن `ManagedUI`، الذي يُستخدم مباشرة في الملف `_app.tsx`. هذا المكوّن مُغلَّف بواسطة الـ Tracker Provider الخاص بنا، مما يعني أنه سيتمكّن من الوصول إلى الـ context الذي نشاركه.
+
+يبدو المكوّن على النحو التالي:
+
+```jsx
+export const ManagedUIContext: FC = ({ children }) => {
+  const { initTracker, pluginsReturnedValues } = useContext(TrackerContext)
+  const [store, setStore] = useState<Store>()
+
+  useEffect(() => {
+    initTracker()
+  }, [])
+
+  useEffect(() => {
+    if (!pluginsReturnedValues['redux']) return
+    let middleWares = pluginsReturnedValues['redux']
+      ? [pluginsReturnedValues['redux']]
+      : []
+    setStore(createReduxStore(middleWares))
+  }, [pluginsReturnedValues])
+
+  return (
+    <div>
+      {store && (
+        <Provider store={store}>
+          <UIProvider>
+            <ThemeProvider>{children}</ThemeProvider>
+          </UIProvider>
+        </Provider>
+      )}
+    </div>
+  )
+}
+```
+
+النقاط الرئيسية المستفادة من هذا الملف هي:
+
+1. نحصل على الدالة `initTracker` والخاصية `pluginsReturnedValues` من الـ context.
+2. نستدعي الأولى مرة واحدة فقط، عند تركيب المكوّن (من خلال أول `useEffect`).
+3. ثم ننشئ store الخاص بـ Redux فقط بعد أن يحتوي المتغيّر `pluginsReturnedValues` على قيمتنا المُعادة. سيتم استدعاء الـ `useEffect` الثاني مرتين، مرة عند تحميل الصفحة ثم عندما تقوم الطريقة `initTracker` بتعديل متغيّر الحالة الخاص بنا. في المرة الثانية، سننشئ الـ store باستخدام الـ middleware المخزَّن في `pluginsReturnedValues`.
+
+## تشغيل أداة التتبّع
+
+بعد إعداد الإضافة، وإنشاء store الخاص بـ Redux بشكل صحيح، كل ما علينا فعله الآن هو استدعاء الطريقة `start` من أداة التتبّع.
+
+سيُضاف المنطق الخاص بذلك إلى الملف index.tsx، ويمكنك الاطّلاع على الكود المصدري الكامل لـ [هذا الملف هنا](https://github.com/deleteman/nextjs-commerce-example/blob/redux-store/site/pages/index.tsx).
+
+الجزء ذو الصلة من هذا الكود الذي سنحتاج إلى الاطّلاع عليه هو التالي:
+
+```jsx
+// imports and more logic goes here...
+
+export default function Home({
+  products,
+}: InferGetStaticPropsType<typeof getStaticProps>) {
+
+  const { startTracking } = useContext(TrackerContext)
+  const dispatch = useDispatch()
+  const makeUpProductsList = useSelector((state: any) => state.makeUpProducts)
+  const { makeUpProducts } = makeUpProductsList
+
+  useEffect(() => {
+    async function getProds() {
+      await startTracking()
+      dispatch(getMakeUpProducts() as any)
+    }
+    getProds()
+  }, [dispatch])
+
+  return (
+    <>
+      <Grid variant="filled">
+        {products.slice(0, 3).map((product: any, i: number) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            imgProps={{
+              width: i === 0 ? 1080 : 540,
+              height: i === 0 ? 1080 : 540,
+              priority: true,
+            }}
+          />
+        ))}
+      </Grid>
+      <Marquee variant="secondary">
+        {makeUpProducts.slice(0, 3).map((product: any, i: number) => (
+          <ProductCard key={product.id} product={product} variant="slim" />
+        ))}
+      </Marquee>
+      <!-- more code here -->
+    </>
+  )
+}
+```
+
+سنستخدم فقط الدالة `startTracking` من مزوّد context أداة التتبّع والـ hook المسمّى `useSelector` من Redux لالتقاط قائمة المنتجات المُعادة.
+
+سيؤدي الـ hook المسمّى `useEffect` إلى تشغيل استدعاء `startTracking` وجلب قائمة منتجات مستحضرات التجميل الجديدة من خلال إرسال استدعاء الدالة `getMakeUpProducts`.
+
+وبذلك، ينبغي أن تكون قادرًا على نشر تطبيقك (شريطة أن تكون قد قمت بإعداد مفتاح API كما هو مذكور [في هذا الدرس](https://docs.openreplay.com/tutorials/next))
+
+## هل لديك أسئلة؟
+
+يمكنك [الاطّلاع على هذا المستودع](https://github.com/deleteman/nextjs-commerce-example/tree/redux-store) للحصول على **الكود المصدري الكامل** لتطبيق فعّال قائم على Next.js مع store خاص بـ Redux.
+
+إذا واجهتك أي مشكلات في إعداد إضافة Redux، فيُرجى التواصل معنا عبر [مجتمع Slack](https://slack.openreplay.com/) الخاص بنا وطرح أسئلتك مباشرة على مطوّرينا!

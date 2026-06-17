@@ -1,0 +1,113 @@
+---
+title: "React Native SDK - Инициализация SDK"
+metaTitle: "React Native SDK - Инициализация SDK"
+metaDescription: "Параметры конфигурации для метода-конструктора трекера React Native для iOS"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	React Native SDK находится в стадии бета-тестирования. Не стесняйтесь оставлять нам отзывы или сообщать о любых проблемах, с которыми вы столкнётесь, в нашем [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com).
+</Aside>
+
+## Установка
+
+Следующая команда установит трекер, а вместе с ним и SDK, чтобы вы могли воспользоваться всеми возможностями трекера.
+
+```bash
+npm i @openreplay/react-native
+```
+
+## Инициализация
+
+При создании экземпляра трекера OpenReplay доступно несколько параметров конфигурации, которые вы можете указать для настройки многих аспектов записи и процесса записи. Вы должны задать параметр `projectKey` в конструкторе. Это значение можно получить в панели управления OpenReplay в разделе 'Preferences > Projects'.
+
+<Aside type="tip">
+	Обратите внимание, что если у вас несколько проектов, вам нужно внимательно выбирать ключ проекта.
+</Aside>
+
+
+### Добавление кода отслеживания
+
+Добавьте следующий код в ваш корневой файл:
+
+```js
+import Openreplay from '@openreplay/react-native';
+
+// ...
+useEffect(() => {
+	Openreplay.tracker.startSession(
+		'yourProjectKey',
+		options, // explained below, set {} if empty
+		'https://local.openreplay.instance/ingest' // if you're using our Serverless/SaaS plan then 'https://api.openreplay.com/ingest'
+	);
+}, [])
+```
+
+### Добавление расширенных компонентов
+
+Чтобы отслеживать взаимодействия пользователя внутри приложения, вам потребуется добавить в ваше приложение следующие компоненты:
+
+- `ORTouchTrackingView` - добавляется на корневом уровне для отслеживания касаний
+- `ORTrackedInput` - обёртка вокруг Input из React-Native, которая отправляет сигналы каждый раз, когда пользователь завершает ввод
+- `ORSanitizedView` - размывает содержимое внутри
+
+```js
+// App.tsx
+import Openreplay from '@openreplay/react-native';
+
+function App() {
+	const start = () => {
+	    Openreplay.tracker.startSession(
+	      process.env.REACT_APP_KEY!,
+	      {},
+	      process.env.REACT_APP_INGEST
+	    );
+	    Openreplay.tracker.setMetadata('key', 'value');
+	    Openreplay.tracker.setUserID('user-id');
+	    Openreplay.patchNetwork(global, () => false, {});
+	};
+	
+	React.useEffect(() => start(), []);
+	
+	return (
+		// this top-level view is required to track touch interactions
+		<Openreplay.ORTouchTrackingView style={styles.container}> 
+		      <View style={styles.container}>
+		         <Openreplay.ORTrackedInput
+		          style={styles.input}
+		          onChangeText={onChangeNumber}
+		          value={number}
+		          placeholder="Trackable input"
+		          numberOfLines={1}
+		        />
+		
+		        <Openreplay.ORSanitizedView style={styles.sanitizedView}>
+		          <Text>Contents of this view are sanitized and invisible on the recording</Text>
+		        </Openreplay.ORSanitizedView>
+		      </View>
+		</Openreplay.ORTouchTrackingView>
+	)
+}
+```
+
+
+### Очистка данных
+
+Подробнее см. [как очищать данные в записях React Native](/rn-sdk/sanitization).
+
+## Параметры инициализации
+
+По умолчанию все параметры установлены в `true`:
+
+- `crashes: Bool` Включает crashlytics.
+- `analytics: Bool` Включает аналитическое отслеживание помеченных представлений.
+- `performances: Bool` Включает слушатель производительности.
+- `logs: Bool` Включает слушатель логов.
+- `screen: Bool` Включает запись экрана.
+
+## Методы
+
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="Познакомьтесь с методами и модулями React Native SDK" url="/rn-sdk/modules" hideIcon={true} width="100"/>
+</div>

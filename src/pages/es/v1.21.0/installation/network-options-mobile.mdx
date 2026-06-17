@@ -1,0 +1,140 @@
+---
+title: "Opciones de red (Móvil)"
+metaTitle: "Opciones de red (Móvil)"
+metaDescription: "Plugin de opciones de red para los SDK móviles de OpenReplay (iOS y Android)."
+---
+
+Esta página describe cómo interceptar y sanear las solicitudes y respuestas de red utilizando los SDK móviles de OpenReplay para iOS y Android. Capturar los datos de red puede ayudar a los desarrolladores a comprender y solucionar problemas de forma eficaz.
+
+## SDK de iOS: interceptar la red
+
+El SDK de iOS proporciona una clase `NetworkListener` para capturar las solicitudes y respuestas de red, incluyendo las cabeceras y los cuerpos de los mensajes. Así es como puedes usarla:
+
+```swift
+import ORTracker
+
+func fetchPokemonData(for name: String) {
+    let networkListener = NetworkListener()
+    let url = URL(string: "https://pokeapi.co/api/v2/pokemon/ditto")!
+    var request = URLRequest(url: url)
+    request.httpMethod = "GET" // This is the default, so it's optional in this case.
+
+    // Start the network listener with the request
+    networkListener.start(request: request)
+
+    // Create a data task
+    let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        if let error = error {
+            print("Error: \(error.localizedDescription)")
+            return
+        }
+        
+        if let data = data {
+            do {
+                let json = try JSONSerialization.jsonObject(with: data, options: [])
+                print(json)
+            } catch {
+                print("Error deserializing JSON: \(error)")
+            }
+        }
+        
+        networkListener.finish(response: response, data: data)
+    }
+
+    task.resume()
+}
+```
+
+### Saneamiento de la solicitud
+
+Puedes sanear los datos de la solicitud y de la respuesta definiendo claves ignoradas para los cuerpos JSON y cabeceras ignoradas. Se admite el saneamiento tanto de la solicitud como de la respuesta. El saneamiento del cuerpo se aplica únicamente a los cuerpos JSON válidos.
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+Para modificar los datos de la respuesta antes de pasarlos al listener:
+
+```swift
+var sanitizedData
+if let data = data {
+    do {
+        let json = try JSONSerialization.jsonObject(with: data, options: [])
+        sanitizedData = customSanitizeFunction(data)
+        print(json)
+    } catch {
+        print("Error deserializing JSON: \(error)")
+    }
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```
+
+## SDK de Android: interceptar la red
+
+El SDK de Android también proporciona una clase `NetworkListener` para capturar las solicitudes y respuestas de red. A continuación se muestra un ejemplo de implementación:
+
+```java
+import com.openreplay.tracker.NetworkListener;
+
+public void makeSampleRequest() {
+    new Thread(() -> {
+        try {
+            URL url = new URL("https://jsonplaceholder.typicode.com/posts/1");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+
+            // Optionally set request headers
+            connection.setRequestProperty("Content-Type", "application/json");
+
+            // Initialize the network listener for this connection
+            NetworkListener networkListener = new NetworkListener(connection);
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+            reader.close();
+
+            // Using the network listener to log the finish event
+            networkListener.finish(connection, response.toString().getBytes());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }).start();
+}
+```
+
+### Saneamiento de la solicitud
+
+Al igual que el SDK de iOS, el SDK de Android te permite sanear los datos de la solicitud y de la respuesta definiendo claves ignoradas para los cuerpos JSON y cabeceras ignoradas.
+
+```java
+NetworkListener networkListener = new NetworkListener(connection);
+networkListener.setIgnoredHeaders(Arrays.asList("mySecretToken"));
+networkListener.setIgnoredKeys(Arrays.asList("password"));
+```
+
+Para modificar los datos de la respuesta antes de pasarlos al listener:
+
+```java
+String sanitizedData = null;
+if (responseData != null) {
+    sanitizedData = customSanitizeFunction(responseData);
+}
+
+// Pass the sanitized data to the NetworkListener
+if (sanitizedData != null) {
+    networkListener.finish(connection, sanitizedData.getBytes());
+} else {
+    networkListener.finish(connection, new byte[0]); // Handle cases where sanitized data is null
+}
+```
+
+## ¿Tienes preguntas?
+
+Si tienes alguna pregunta sobre el saneamiento de las solicitudes de red, no dudes en contactarnos en nuestro [Slack](https://slack.openreplay.com) o consultar nuestro [Foro](https://forum.openreplay.com).

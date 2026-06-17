@@ -1,0 +1,71 @@
+---
+title: "Android SDK - 清理敏感数据"
+metaTitle: "Android SDK - 清理敏感数据"
+metaDescription: "关于在 Android tracker 中清理录制内容和网络数据的详细信息"
+---
+
+## UI 组件
+
+被清理的视图将在生成的回放中被模糊处理。你可以添加任意 UI 组件，并且一旦它离开屏幕，就会被自动移除（以节省内存）。
+
+### View
+
+```kotlin
+import com.openreplay.tracker.OpenReplay
+
+OpenReplay.addIgnoredView(view)
+```
+
+#### Jetpack Compose
+```kotlin
+import com.openreplay.tracker.Sanitize
+
+Sanitize {
+		Button(
+				modifier = Modifier
+						.fillMaxWidth()
+						.padding(top = 28.dp, bottom = 3.dp)
+						.trackTouchEvents("Continue Button"),
+				onClick = onSubmit,
+		) {
+				Text(
+						text = "Submit",
+						style = MaterialTheme.typography.titleSmall
+				)
+		}
+}
+```
+
+## 网络请求
+
+系统导出了两个键以自动裁剪请求/响应数据：`ignoredKeys` 用于请求体，`ignoredHeaders` 用于请求头。请求和响应都会被清理，但请求体仅在其为有效的 JSON 时才会受到影响。
+
+只需赋值一个你想要清理的字符串列表即可：
+
+```kotlin
+val networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+也可以在将响应数据传递给监听器之前对其进行修改：
+
+```kotlin
+// ... request
+
+var sanitizedData: Any? = null
+data?.let {
+    try {
+        val json = JSONTokener(it).nextValue()
+        sanitizedData = customSanitizeFunction(it)
+        println(json)
+    } catch (error: JSONException) {
+        println("Error deserializing JSON: $error")
+    }
+}
+
+networkListener.finish(response, sanitizedData)
+```
+
+## 有疑问？
+如果你对此过程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的 [论坛](https://forum.openreplay.com)。

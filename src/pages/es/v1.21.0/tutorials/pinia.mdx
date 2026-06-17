@@ -1,0 +1,175 @@
+---
+title: "Seguimiento de los cambios de estado con el plugin de Pinia"
+metaTitle: "Seguimiento de los cambios de estado con el plugin de Pinia"
+metaDescription: "Mantén el control de los cambios de estado al usar Pinia con el plugin de Pinia"
+minVersion: "1.6.0"
+---
+import Aside from '~/components/Aside.astro'
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="Mira cómo hacer el seguimiento del estado con Pinia"
+  description="Si no te gusta leer, puedes seguir este videotutorial que te muestra cómo hacer el seguimiento del estado de tus aplicaciones Vue cuando usas Pinia"
+  videoURL="https://youtu.be/0TE5dfzz4-c"
+/>
+
+Pinia es la biblioteca de gestión de estado que reemplaza a VueX en los proyectos de Vue. Donde antes usabas VueX, ahora usarás Pinia. Con nuestro [plugin de Pinia](/plugins/pinia), puedes hacer el seguimiento de los cambios de estado a lo largo de todo el ciclo de vida de tu aplicación.
+
+## Instalación del plugin
+
+El plugin se puede instalar fácilmente con el siguiente comando:
+
+```jsx
+npm i @openreplay/tracker-vuex
+```
+
+## Uso del plugin dentro de tu aplicación Vue
+
+Para este ejemplo, usaremos una aplicación Vue de muestra para mostrar cómo puedes añadir e interactuar con este plugin dentro de una aplicación real.
+
+**Nota**: el código fuente completo de este ejemplo se encuentra en este [repositorio de GitHub](https://github.com/deleteman/openreplay-vue-pinia-example), échale un vistazo si necesitas más detalles.
+
+Después de instalar el plugin, modificaremos el archivo `main.js` añadiendo la siguiente sentencia de importación:
+
+```jsx
+import trackerVuex from '@openreplay/tracker-vuex/cjs';
+```
+
+Y luego, usaremos la función `startTracker` para instanciar el tracker y utilizar el plugin todo a la vez.
+
+El resultado de llamar a esta función será un objeto que contiene los resultados de usar el método `use` con el plugin.
+
+**Observa** cómo el nombre de la propiedad desestructurada es el mismo que el valor de la propiedad `name`. Mientras mantengas esos dos iguales, todo estará bien.
+
+```jsx
+const {piniaPlugin} = startTracker({
+    projectKey: "<your project key>",
+    plugins: [{
+        name: 'piniaPlugin',
+        fn: trackerVuex
+    }]
+})
+```
+
+Lo siguiente es crear un envoltorio (wrapper) de store con nombre que usaremos más adelante para configurar el plugin en el store deseado.
+
+```jsx
+const piniaStoreWrapper = piniaPlugin("products")
+saveStore(piniaStoreWrapper)
+```
+
+El `piniaStoreWrapper` tendrá que usarse más adelante con el store que decidamos rastrear. Sin embargo, el store aún no está creado en este momento, así que lo guardaremos mediante la función `saveStore`.
+
+### Funciones de utilidad
+
+Antes de continuar, veamos las funciones `saveStore` y `startTracker`.
+
+La primera forma parte del módulo `storesManager`, que tiene este aspecto:
+
+```jsx
+let storeWrapper = null;
+
+export function saveStore(s) {
+    storeWrapper = s;
+}
+
+export function getStore(store) {
+    return storeWrapper;
+}
+```
+
+Este módulo nos permitirá usar el `piniaStoreWrapper` que creamos antes en otro lugar.
+
+En cuanto a la función `startTracker`, el código tiene este aspecto:
+
+```jsx
+export function startTracker(config) {
+    console.log("Starting tracker...")
+
+    console.log("Project key used: ", config.projectKey)
+    const trackerConfig = {
+        projectKey: config.projectKey,
+         //ingestPoint: config.ingestPoint,
+        __DISABLE_SECURE_MODE: true
+    }
+
+    const tracker = new Tracker(trackerConfig);
+
+    const pluginReturns = {}
+    config?.plugins.forEach( p => {
+        console.log("Using plugin...", p.name)
+        pluginReturns[p.name] = tracker.use(p.fn())
+    })
+
+    tracker.start();
+    return {
+        tracker,
+        ...pluginReturns
+    }
+}
+```
+
+Esta función instancia el tracker con la configuración que le proporcionamos. Observa cómo he dejado comentada la opción `ingestPoint`, eso se debe a que estamos trabajando directamente con la versión SaaS, pero si quieres usar este código con una versión autoalojada (self-hosted), tendrás que especificarlo, y debería verse algo similar a esto: `<your-instance>.yourhost/ingest`
+
+### Seguimiento de tus stores de Pinia
+
+Una vez que todo el código de configuración esté listo, ve al lugar donde estás usando el store; en el caso de nuestro ejemplo, editemos el archivo `App.vue` para llamar a la función `getStore`, que devolverá el envoltorio del store que guardamos antes.
+
+Y lo usaremos para envolver el store que queremos rastrear:
+
+```jsx
+<template>
+  <!-- template code -->
+</template>
+
+<script lang="ts">
+import { computed, defineComponent, onMounted, ref } from 'vue'
+import { Product, useProductStore } from './store/products'
+import { useCartStore } from './store/cart'
+import {getStore} from './store/storesManager.js'
+
+export default defineComponent({
+  setup() {
+
+    const productStore = useProductStore()
+    const loading = ref(true)
+    //we get the wrapper here
+	  const storeWrapper = getStore()
+
+    onMounted(async () => {
+      await productStore.fetchAll()
+      loading.value = false
+    })
+
+    const cartStore = useCartStore()
+
+		//we wrap the cart store here
+    storeWrapper(cartStore)
+    return {
+      products: computed(() => productStore.list),
+      cart: computed(() => cartStore.formattedCart),
+      total: computed(() => cartStore.total),
+      loading,
+      add: (product: Product) => cartStore.add(product),
+      remove: (product: Product) => cartStore.remove(product),
+    }
+  }
+})
+
+</script>
+```
+
+## Observar el estado en la repetición
+
+Para revisar los cambios de estado durante la repetición, haz clic en la nueva pestaña VueX en la esquina inferior derecha:
+
+![La nueva pestaña VueX](/tutorials//pinia/new-tab.png)
+
+Al hacer clic en ella, verás el contenido del store y podrás entender cómo cambia y los datos guardados dentro de él:
+
+![Mutaciones de estado](/tutorials//pinia/state-changes.png)
+
+Fíjate en el nombre del store, es el nombre que usamos al llamar al plugin de Pinia la primera vez.
+
+## ¿Tienes preguntas?
+
+Puedes [consultar este repositorio](https://github.com/deleteman/openreplay-vue-pinia-example) para ver el **código fuente completo** de una aplicación Pinia/Vue en funcionamiento con el plugin de Pinia. Si tienes algún problema al configurar el plugin de Pinia en tu proyecto, ponte en contacto con nosotros en nuestra [comunidad de Slack](https://slack.openreplay.com/) y pregunta directamente a nuestros desarrolladores.

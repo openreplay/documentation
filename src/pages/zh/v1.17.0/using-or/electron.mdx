@@ -1,0 +1,64 @@
+---
+title: "在 Electron 中使用 OpenReplay"
+metaTitle: "使用 OpenReplay 录制 Electron 应用"
+metaDescription: "如何使用 OpenReplay 录制 Electron 应用。"
+---
+import Aside from '~/components/Aside.astro'
+
+<Aside type="caution">
+	为了支持 Cobrowsing，需要 Tracker@11.0.0 和 Tracker-assist@7.0.0 或更高版本。
+</Aside>
+
+将 OpenReplay 集成到 Electron 应用中有两种不同的方式。
+
+无论你选择哪一种，都需要检查 CSP 设置，以允许以下 API：
+- WebWorkers（用于存储、编码和发送消息批次）
+- Websockets（用于 assist 插件实时传输会话）
+- Peers（用于 assist 插件的通话）
+
+## 添加代码片段
+
+你可以将 OpenReplay 代码片段直接添加到应用 HTML 文件的根部。
+这是最简单的方式，但它也带有 JS 代码片段的所有限制。
+
+## 使用 NPM 库
+
+如果你使用 React、Angular 或 Vue，你可以采用完全相同的方式，在应用的渲染进程中创建 tracker 实例。
+这将使你能够使用 OpenReplay 的所有功能，包括所有插件。
+
+若要在渲染上下文之外使用 tracker API，你需要通过 IPC，借助你从主进程发送的事件来触发操作。
+
+## 与 Assist 插件一起使用
+
+
+对于 Tracker-Assist 插件，你需要添加 `socketHost` 属性，该属性指向你的 ingest 接入点，
+且不带 `/ingest` 后缀，以确保默认的 WS 路由正确。
+
+对于 NPM 库：
+```js
+new Tracker({ ingestPoint: 'https://mywebsite.com/ingest' })
+
+// ...
+
+// or https://app.openreplay.com if you're using SaaS version
+tracker.use(trackerAssist({ socketHost: 'https://mywebsite.com' }))
+```
+
+对于代码片段：
+```js
+  var initOpts = {
+    projectKey: "...",
+		ingestPoint: "https://mywebsite.com/ingest",
+    assistSocketHost: "https://mywebsite.com"
+  };
+```
+
+否则 WS 将尝试在 `ws://file/ingest` 上创建连接，这将会失败。
+
+
+<Aside type="tip">
+	本文基于我们使用 Electron@26.2.1 和 React@16.13.1 内部制作的概念验证应用，该应用已配置为
+	处理 ESM 打包。如果你的配置有所不同，或你有任何建议或问题，请通过
+	我们的
+	[Slack 社区](https://slack.openreplay.com/)与我们联系
+</Aside>

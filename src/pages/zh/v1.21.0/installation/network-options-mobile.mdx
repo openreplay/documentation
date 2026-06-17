@@ -1,0 +1,140 @@
+---
+title: "网络选项（移动端）"
+metaTitle: "网络选项（移动端）"
+metaDescription: "OpenReplay 移动端 SDK（iOS 和 Android）的网络选项插件。"
+---
+
+本页介绍如何使用 OpenReplay 适用于 iOS 和 Android 的移动端 SDK 拦截并净化网络请求和响应。捕获网络数据可以帮助开发者高效地理解和排查问题。
+
+## iOS SDK - 拦截网络
+
+iOS SDK 提供了一个 `NetworkListener` 类，用于捕获网络请求和响应，包括请求头和负载。下面是它的使用方法：
+
+```swift
+import ORTracker
+
+func fetchPokemonData(for name: String) {
+    let networkListener = NetworkListener()
+    let url = URL(string: "https://pokeapi.co/api/v2/pokemon/ditto")!
+    var request = URLRequest(url: url)
+    request.httpMethod = "GET" // This is the default, so it's optional in this case.
+
+    // Start the network listener with the request
+    networkListener.start(request: request)
+
+    // Create a data task
+    let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        if let error = error {
+            print("Error: \(error.localizedDescription)")
+            return
+        }
+        
+        if let data = data {
+            do {
+                let json = try JSONSerialization.jsonObject(with: data, options: [])
+                print(json)
+            } catch {
+                print("Error deserializing JSON: \(error)")
+            }
+        }
+        
+        networkListener.finish(response: response, data: data)
+    }
+
+    task.resume()
+}
+```
+
+### 净化请求
+
+你可以通过为 JSON 主体定义需要忽略的键以及需要忽略的请求头来净化请求和响应数据。请求和响应的净化均受支持。主体净化仅适用于有效的 JSON 负载。
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+要在将响应数据传递给监听器之前对其进行修改：
+
+```swift
+var sanitizedData
+if let data = data {
+    do {
+        let json = try JSONSerialization.jsonObject(with: data, options: [])
+        sanitizedData = customSanitizeFunction(data)
+        print(json)
+    } catch {
+        print("Error deserializing JSON: \(error)")
+    }
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```
+
+## Android SDK - 拦截网络
+
+Android SDK 同样提供了一个 `NetworkListener` 类，用于捕获网络请求和响应。下面是一个实现示例：
+
+```java
+import com.openreplay.tracker.NetworkListener;
+
+public void makeSampleRequest() {
+    new Thread(() -> {
+        try {
+            URL url = new URL("https://jsonplaceholder.typicode.com/posts/1");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+
+            // Optionally set request headers
+            connection.setRequestProperty("Content-Type", "application/json");
+
+            // Initialize the network listener for this connection
+            NetworkListener networkListener = new NetworkListener(connection);
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+            reader.close();
+
+            // Using the network listener to log the finish event
+            networkListener.finish(connection, response.toString().getBytes());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }).start();
+}
+```
+
+### 净化请求
+
+与 iOS SDK 类似，Android SDK 允许你通过为 JSON 主体定义需要忽略的键以及需要忽略的请求头来净化请求和响应数据。
+
+```java
+NetworkListener networkListener = new NetworkListener(connection);
+networkListener.setIgnoredHeaders(Arrays.asList("mySecretToken"));
+networkListener.setIgnoredKeys(Arrays.asList("password"));
+```
+
+要在将响应数据传递给监听器之前对其进行修改：
+
+```java
+String sanitizedData = null;
+if (responseData != null) {
+    sanitizedData = customSanitizeFunction(responseData);
+}
+
+// Pass the sanitized data to the NetworkListener
+if (sanitizedData != null) {
+    networkListener.finish(connection, sanitizedData.getBytes());
+} else {
+    networkListener.finish(connection, new byte[0]); // Handle cases where sanitized data is null
+}
+```
+
+## 有疑问？
+
+如果你对净化网络请求有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

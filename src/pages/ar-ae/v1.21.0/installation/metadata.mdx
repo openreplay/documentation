@@ -1,0 +1,118 @@
+---
+title: "إرسال البيانات الوصفية"
+metaTitle: "البيانات الوصفية"
+metaDescription: "كيفية تمرير البيانات الوصفية للمستخدم إلى OpenReplay. تُعرف أيضًا باسم traits أو متغيرات المستخدم في المنصات الأخرى."
+---
+import Aside from '~/components/Aside.astro'
+
+تتيح لك البيانات الوصفية إضافة معلومات إضافية حول المستخدمين إلى عمليات إعادة تشغيل الجلسات على شكل أزواج من المفاتيح والقيم. تعزّز هذه الميزة قدرتك على تصفية تسجيلات الجلسات والبحث فيها، مما يسهّل تحديد الجلسات ذات الصلة. راجع هذا [الدليل التعليمي](/tutorials/metadata) لمزيد من التفاصيل حول كيفية إرسال البيانات الوصفية.
+
+<Aside>
+
+**مفاتيح البيانات الوصفية خاصة بكل مشروع**: يجب تعريف مفاتيح البيانات الوصفية في الـ dashboard قبل أن تتمكن من إرسال البيانات الوصفية إلى OpenReplay. يمكن أن يكون لكل مشروع مجموعته الخاصة من مفاتيح البيانات الوصفية.
+
+</Aside>
+
+## إضافة مفاتيح البيانات الوصفية إلى مشروع
+
+لإعداد مفاتيح البيانات الوصفية:
+
+1. انتقل إلى **Preferences > Metadata** في OpenReplay.
+2. اختر المشروع الذي تريد إضافة البيانات الوصفية إليه.
+3. انقر على **Add Metadata**.
+4. أدخل اسم المفتاح المطلوب في حقل **Field Name**.
+5. انقر على **Add** لحفظ مفتاح البيانات الوصفية.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/send-metadata/send_metadata.gif" alt="إرسال البيانات الوصفية" style={{ width: '600px', height: 'auto' }} />
+</div>
+
+
+> **الحد الأقصى:** يمكنك إضافة ما يصل إلى 10 مفاتيح للبيانات الوصفية لكل مشروع.
+
+## حقن البيانات الوصفية في عمليات إعادة تشغيل الجلسات
+
+بمجرد تعريف مفاتيح البيانات الوصفية، يمكنك إرسال البيانات الوصفية عند تسجيل الجلسات. فيما يلي طرق التنفيذ المتاحة:
+
+### 1. باستخدام NPM
+
+احقن البيانات الوصفية عند بدء تشغيل الـ tracker:
+
+```js
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+
+tracker.start({
+  userID: "john@doe.com",
+  metadata: {
+    balance: "10M",
+    plan: "free"
+  }
+});
+```
+
+إذا كانت البيانات الوصفية متاحة فقط بعد بدء تشغيل الـ tracker، فاستخدم طريقة `setMetadata`:
+
+```javascript
+tracker.setMetadata('plan', 'free'); // after tracker.start()
+```
+
+### 2. باستخدام مقتطف JavaScript
+
+لتضمين البيانات الوصفية مع المقتطف، عدّل المتغير `startOpts`:
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+  var initOpts = {
+    projectKey: "project_key",
+    defaultInputMode: 2,
+    obscureTextNumbers: false,
+    obscureTextEmails: true,
+  };
+  const yourMetadata = { yourKey: 'yourValue' };
+  var startOpts = { userID: "", metadata: yourMetadata };
+  (function(A,s,a,y,e,r){
+    r=window.OpenReplay=[e,r,y,[s-1, e]];
+    s=document.createElement('script');s.src=A;s.async=!a;
+    ...
+  })("//static.openreplay.com/latest/openreplay.js",1,0,initOpts,startOpts);
+
+</script>
+```
+
+إذا أصبحت البيانات الوصفية متاحة لاحقًا:
+
+```html
+<script>
+  OpenReplay.setMetadata("plan", "free");
+</script>
+```
+
+### 3. باستخدام iOS SDK
+
+احقن البيانات الوصفية في تطبيق iOS الخاص بك:
+
+```swift
+import ORTracker
+
+ORTracker.shared.setMetadata(key: String, value: String)
+```
+
+## تصفية الجلسات والبحث فيها باستخدام البيانات الوصفية
+
+تتيح لك مفاتيح البيانات الوصفية تصفية الجلسات والبحث فيها في OpenReplay:
+
+1. افتح **Omni-Search** في عرض Sessions.
+2. اختر مفتاح البيانات الوصفية الخاص بك (على سبيل المثال، `plan`).
+3. أدخل قيمة البيانات الوصفية (على سبيل المثال، `free`) لتصفية تسجيلات الجلسات.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/send-metadata/filter_metatdata.gif" alt="تصفية البيانات الوصفية" style={{ width: '600px', height: 'auto' }} />
+</div>
+
+تتيح هذه الميزة تحديد الجلسات بسرعة ودقة بناءً على التفاصيل الخاصة بكل مستخدم.
+
+## هل لديك أسئلة؟
+إذا كانت لديك أي أسئلة حول هذه العملية، فلا تتردد في التواصل معنا عبر [Slack](https://slack.openreplay.com) الخاص بنا أو اطّلع على [المنتدى](https://forum.openreplay.com) الخاص بنا.

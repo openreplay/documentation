@@ -1,0 +1,160 @@
+---
+title: "数据脱敏（Web）"
+metaTitle: "数据脱敏（Web）"
+metaDescription: "如何对数据进行脱敏并确保用户的隐私安全。"
+---
+import Aside from '~/components/Aside.astro'
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<Aside type="tip">
+正在寻找[如何对 iOS 回放中的数据进行脱敏](/installation/sanitize-data-ios)？如果不是，请继续阅读，了解如何对 Web 录制进行脱敏的更多细节。
+</Aside>
+
+## 对回放数据进行脱敏
+
+你可以在全局和/或细粒度级别对 OpenReplay 捕获的内容进行脱敏。任何被遮蔽或忽略的数据都不会在源头被捕获。换句话说，这些数据永远不会离开用户的浏览器。
+
+<YoutubeVideo title="观看如何在回放中对敏感数据进行脱敏"
+  description="如果你不喜欢阅读，可以观看这个视频教程，了解如何对录制内容中的数据进行脱敏。"
+  videoURL="https://youtu.be/22-UCoocy6s"
+/>
+
+### 全局级别
+
+在设置 OpenReplay 时，可以在 tracker 级别对数据进行脱敏。
+
+#### 我使用的是 OpenReplay 脚本
+
+![OpenReplay 中的项目配置](/static/gdpr-1.png#center)
+
+1) 在 'Preferences > Projects' 下点击你项目的 *Tracking Code*。
+2) 数据录制选项应当显示在代码片段的正上方：
+- **Inputs**：用于忽略、遮蔽或录制所有用户输入的值。
+- **Do not record any numeric text**：用于忽略文本元素中包含的数字值。
+- **Do not record email addresses**：默认情况下，文本元素中包含的所有电子邮件都会被遮蔽，不会出现在回放中。你可以通过取消勾选此项来禁用该功能。
+3) 更改数据录制选项会影响代码片段。请务必将更新后的脚本复制并粘贴到你的 Web 应用中。
+
+#### 我使用的是 OpenReplay NPM
+
+你可以向构造函数传入一组与隐私相关的选项：
+- `obscureTextEmails?: boolean` 遮蔽文本元素中的电子邮件。电子邮件将被转换为一串随机的星号。默认值：true。
+- `obscureTextNumbers?: boolean` 遮蔽文本元素中的数字。数字将被转换为一串随机的星号。默认值：false。
+- `obscureInputEmails?: boolean` 遮蔽输入框中的电子邮件。电子邮件值将被转换为一串随机的星号。默认值：true。
+- `obscureInputNumbers?: boolean` 遮蔽输入框中的数字。数字值将被转换为一串随机的星号。默认值：false。
+- `obscureInputDates?: boolean` 遮蔽输入框中的日期。日期值将被转换为一串随机的星号。默认值：false。
+- `defaultInputMode?: 0 | 1 | 2` 输入值的默认捕获模式。分别为：明文、遮蔽或忽略。默认值：1（遮蔽）。
+
+经过脱敏的文本、电子邮件和数字会在数据发送到 OpenReplay 服务器之前被遮蔽或抑制。因此，对上述选项所做的更改无法追溯生效，只会应用于新收集的数据。
+
+### 细粒度级别
+
+你还可以在代码级别对数据进行脱敏，以获得更细的粒度。这对于遮蔽或忽略 DOM 元素和输入框非常有用。
+
+#### 使用 HTML 属性
+
+- `data-openreplay-obscured` 用于遮蔽 `<input>` 标签、`<img>` 以及其他 HTML 元素（例如 `<div>`）的文本内容，但 `<svg>` 和 `<canvas>` 除外。
+
+```html
+<!--Obscuring input fields-->
+<form action="/action_page.php">
+  Name: <input type="text" name="fname" data-openreplay-obscured><br>
+  <input type="submit" value="Submit">
+</form>
+<!--Obscuring a div element-->
+<div style="background-color:lightblue" data-openreplay-obscured>
+  <h3>This is a sensitive information</h3>
+  <p>This is an important paragraph</p>
+  <img src="important_image.jpg">
+</div>
+```
+
+- `data-openreplay-hidden` 用于删除 `<input>` 标签、`<img>`、`<svg>` 以及其他 HTML 元素（例如 `<div>`）的内容，但 `<canvas>` 除外。元素的内容（包括其子组件）会被移除，但其属性和参数会被保留，如下例所示：
+
+```html
+<div style="background-color:lightblue" data-openreplay-hidden>
+  <div>This is a sensitive information</div>
+  <svg>An important chart</svg>
+</div>
+```
+
+这将导致 tracker 录制到以下 DOM：
+
+```html
+<div style="background-color:lightblue" data-openreplay-hidden>
+</div>
+```
+
+#### 使用 domSanitizer 函数
+
+- `domSanitizer: (node: Element) => SanitizeLevel` 函数可以避免必须对每个需要脱敏的 HTML 组件进行单独标记。`SanitizeLevel` 可以是 `Plain`（0）、`Obscured`（1）或 `Hidden`（2）。该函数会被传入 tracker 的构造函数。下面是一个删除所有具有特定 CSS 类名的 HTML 元素的示例：
+
+```js
+// Import SanitizeLevel enum
+import Tracker, { SanitizeLevel } from "@openreplay/tracker";
+
+const tracker = new Tracker({
+  projectKey: PROJECT_KEY,
+  domSanitizer: (node: Element) => {
+    const elementClassNames = node.classList
+
+    if (elementClassNames.contains('to_be_redacted_class')) {
+      return SanitizeLevel.Hidden
+    }
+
+    if (node.id === 'sensitiveData') {
+      return SanitizeLevel.Obscured
+    }
+
+    return SanitizeLevel.Plain
+  }
+})
+tracker.start()
+```
+
+> **注意：** 所有经过脱敏的元素都会在源头（tracker）级别被遮蔽/删除，因此敏感数据永远不会到达 OpenReplay 实例。
+
+## 对 DevTools 数据进行脱敏
+
+你可以使用 OpenReplay SDK 对网络数据和应用程序状态进行脱敏。
+
+### 网络
+
+捕获请求/响应可能会记录你的应用程序正在发送/接收的高度敏感或私密的信息。请务必妥善删除你的网络数据。
+
+#### Fetch/XHR
+
+使用 `sanitizer` 选项删除 Fetch/XHR 请求/响应中的敏感数据。更多细节请参阅[网络选项](/installation/network-options#options)。
+
+此外，请查看这篇关于如何[捕获并对网络请求进行脱敏](/tutorials/capture-request)的分步教程。
+
+#### GraphQL
+
+要对 GraphQL 数据进行脱敏，你需要在调用 tracker 之前克隆操作中的关键变量和结果。更多细节请参阅如何[对 GraphQL 中记录的数据进行脱敏](/tutorials/graphql/#sanitizing-the-recorded-data)。
+
+### 状态管理
+
+使用 OpenReplay SDK 清除前端状态存储中的敏感数据。
+
+#### Redux
+
+使用 `actionFilter`、`actionTransformer` 和 `stateTransformer` 选项删除存储中的敏感 action 和子树。更多细节请参阅 [redux 插件文档](/plugins/redux/#options)。
+
+#### VueX
+
+使用 `filter`、`transformer` 和 `mutationTransformer` 选项删除存储中的敏感 mutation 和子树。更多细节请参阅 [vuex 插件文档](/plugins/vuex/#options)。
+
+#### Zustand
+
+使用 `filter`、`transformer` 和 `mutationTransformer` 选项删除存储中的敏感 mutation 和子树。更多细节请参阅 [zustand 插件文档](/plugins/zustand/#options)。
+
+#### Pinia
+
+使用 `filter`、`transformer` 和 `mutationTransformer` 选项删除存储中的敏感 mutation 和子树。更多细节请参阅 [pinia 插件文档](/plugins/pinia/#options)。
+
+#### NgRx
+
+使用 `actionFilter`、`actionTransformer` 和 `stateTransformer` 选项删除存储中的敏感 action 和子树。更多细节请参阅 [ngrx 插件文档](/plugins/ngrx/#options)。
+
+## 有疑问吗？
+
+我们一直在不断完善与隐私相关的功能，所以如果你需要我们尚未支持的功能，请告诉我们。如果你在对数据进行脱敏时遇到困难，请通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)并从我们的社区获取帮助。

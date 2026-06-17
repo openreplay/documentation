@@ -1,0 +1,170 @@
+---
+title: "Dynatrace"
+metaTitle: "Интеграция Dynatrace с OpenReplay"
+metaDescription: "Узнайте, как интегрировать бэкенд-логи Dynatrace с воспроизведениями сессий OpenReplay."
+---
+
+Узнайте, как интегрировать бэкенд-логи [Dynatrace](https://www.dynatrace.com/) с воспроизведениями сессий [OpenReplay](https://www.openreplay.com/), чтобы расширить свои возможности мониторинга и отладки.
+
+> Эта интеграция доступна для пользователей **Cloud** (Serverless, Dedicated) и **Self-Host (Community, Enterprise)**.
+
+## 1. Сгенерируйте учётные данные Dynatrace
+
+Выполните следующие шаги, чтобы получить необходимые учётные данные в Dynatrace:
+
+1. Войдите в свою учётную запись Dynatrace.
+2. Перейдите в **Account Management**
+3. Создайте OAuth Client:
+  - Нажмите на **Identity & Access Management**
+  - Выберите **OAuth clients**
+  - Нажмите **Create client**, чтобы сгенерировать необходимые учётные данные.
+4. Сохраните свои учётные данные:
+- После создания клиента сохраните следующее:
+  - Client ID
+  - Client Secret
+  - Account URN
+5. Получите свой `environment ID`:
+        ```javascript
+        // Example
+        Dynatrace URL: https://rzr85764.app.dynatrace.com/
+        Environment ID: rzr85764
+        ``` 
+
+
+
+## 2. Передавайте openReplaySession.id на бэкенд
+
+Чтобы связать логи Dynatrace с сессиями OpenReplay, уникальный идентификатор сессии `openReplaySession.id` должен передаваться с вашего фронтенда на бэкенд при каждом запросе, который вы хотите отслеживать.
+
+### Добавьте openReplaySession.id во фронтенд-запросы к API
+
+Измените код своего фронтенда, чтобы добавить `openReplaySession.id` в заголовки ваших запросов к API:
+
+```javascript
+
+// JavaScript Example for for Single Page Applications (SPA):
+
+// Import OpenReplay
+import OpenReplay from '@openreplay/tracker';
+
+// Initialize the tracker
+const tracker = new OpenReplay({
+  projectKey: 'YOUR_PROJECT_KEY',
+});
+
+// Start the tracker and wait for it to resolve
+tracker.start().then(() => {
+  // Get the session ID after the tracker has started
+  const sessionId = tracker.getSessionID();
+
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+// Get the session ID
+const sessionId = tracker.getSessionID();
+
+const headers = {
+  'Content-Type': 'application/json',
+};
+
+if (sessionId) {
+  headers['openReplaySession.id'] = sessionId;
+}
+
+// Make the API request
+fetch('/api/endpoint', {
+  method: 'GET', // or 'POST', etc.
+  headers,
+  // ...other options
+})
+  .then(response => {
+    // Handle response
+  })
+  .catch(error => {
+    // Handle error
+  });
+
+```
+
+### Добавьте openReplaySession.id в бэкенд-логи
+
+В своём бэкенд-приложении извлекайте `openReplaySession.id` из входящих запросов и включайте его в свои логи, используя специальный формат «ключ-значение» `openReplaySession.id=<sessionId>`:
+
+```javascript
+
+//  Example.....
+// Middleware to extract the session ID
+app.use((req, res, next) => {
+  const sessionId = req.headers['openreplaysession.id'];
+  req.sessionId = sessionId; // Attach to request object
+  next();
+});
+
+// When logging events or errors
+app.get('/api/endpoint', (req, res) => {
+  // Your logic here
+
+  // Log with the session ID in the required format
+  console.log(`openReplaySession.id=${req.sessionId} - Endpoint accessed`);
+
+  res.send('Success');
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(`openReplaySession.id=${req.sessionId} - Error: ${err.message}`);
+  res.status(500).send('Internal Server Error');
+});
+
+```
+
+Когда вы включаете `openReplaySession.id` в свои бэкенд-логи, Dynatrace может собирать логи, связанные с конкретными сессиями OpenReplay. Это позволяет просматривать эти логи во время воспроизведения сессий в OpenReplay, предоставляя полную картину действий пользователя и бэкенд-логов.
+
+
+## 3. Создайте пользовательский атрибут лога в Dynatrace
+
+Создайте пользовательский атрибут лога в Dynatrace, чтобы извлекать `openReplaySession.id` из ваших логов.
+
+1. Войдите в свою SaaS-учётную запись Dynatrace.
+2. Перейдите в Settings.
+3. Выберите **Log Monitoring > Custom attributes**, а затем выберите **Add custom attribute**.
+4. Введите ключ `openReplaySession.id`.
+
+> **Справка**: Подробные шаги см. в документации Dynatrace: [Log custom attributes](https://docs.dynatrace.com/docs/observe-and-explore/logs/lma-analysis/logs-and-events/lma-log-custom-attributes).
+
+## 4. Настройте интеграцию Dynatrace в OpenReplay
+В своей учётной записи OpenReplay выполните эти 3 шага, чтобы завершить сопоставление воспроизведений сессий с бэкенд-логами Dynatrace.
+
+### Включите интеграцию Dynatrace
+1. Перейдите в **Preferences > Integrations** в OpenReplay.
+2. Выберите вкладку **Backend Logging**.
+3. Выберите проект, для которого вы хотите включить интеграцию Dynatrace: Найдите карточку интеграции Dynatrace > Нажмите на неё.
+
+### Введите учётные данные Dynatrace
+В боковой панели интеграции Dynatrace введите:
+
+1. **Environment ID**: Идентификатор окружения вашего Dynatrace для внешнего доступа.
+2. **Client ID** и **Client Secret**: Сохранённые на первом шаге.
+3. **Dynatrace Account URN**: Ваш уникальный идентификатор, используемый внутри платформы Dynatrace, также сохранённый на первом шаге.
+
+
+### Проверьте соединение
+1. Нажмите **Add**, чтобы протестировать соединение: Сообщение об успехе подтвердит, что интеграция настроена правильно.
+
+![Интеграция Dynatrace в OpenReplay](/static/dynatrace-openreplay.png#center)
+
+## 5. Просмотр логов Dynatrace в OpenReplay
+1. Перейдите в Sessions в OpenReplay.
+2. Откройте любое воспроизведение сессии.
+3. Нажмите на кнопку **Traces**.
+4. Отобразятся логи Dynatrace, связанные с этой сессией.
+5. Нажмите на любую запись лога, чтобы просмотреть подробную информацию.
+
+![Трассировки Dynatrace в OpenReplay](/static/traces-dynatrace.png#center)
+
+> Логи типа `LOG` со статусами `WARN`, `ERROR`, `INFO` и `NONE` извлекаются с помощью Dynatrace Log Monitoring API v2.
+
+## Остались вопросы?
+
+Если у вас возникнут какие-либо проблемы, подключайтесь к нашему [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com) и получите помощь от нашего сообщества.

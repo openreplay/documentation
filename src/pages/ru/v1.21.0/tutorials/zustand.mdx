@@ -1,0 +1,185 @@
+---
+title: "Отслеживание изменений состояния с помощью плагина Zustand"
+metaTitle: "Zustand"
+metaDescription: "Отслеживание изменений состояния с помощью плагина Zustand"
+---
+Zustand — это очень быстрая и минималистичная замена решениям для управления состоянием, таким как Redux. С помощью нашего [плагина Zustand](https://www.npmjs.com/package/@openreplay/tracker-zustand) вы можете отслеживать изменения состояния на протяжении всего жизненного цикла вашего приложения.
+
+## Установка плагина
+
+Плагин можно легко установить с помощью следующей команды:
+
+```jsx
+npm i @openreplay/tracker-zustand
+```
+
+## Использование плагина в приложении Next.js
+
+Для этого примера мы будем использовать то же приложение, что показано в [руководстве по Next.js для нашего трекера](https://docs.openreplay.com/tutorials/next), поэтому, если вам нужны дополнительные сведения об используемом провайдере Context, сначала ознакомьтесь с ним.
+
+**Примечание**: полный исходный код этого примера находится в этом [репозитории Github](https://github.com/deleteman/nextjs-commerce-example/tree/zustand-store), загляните туда, если вам нужны дополнительные сведения.
+
+Используемый мной провайдер Context позволяет настраивать Tracker Plugins, поэтому после установки плагина мы изменим файл _app.tsx, добавив приведённую ниже инструкцию импорта:
+
+```jsx
+import trackerZustand from '@openreplay/tracker-zustand'
+```
+
+А затем основная функция App должна выглядеть так:
+
+```jsx
+export default function MyApp({ Component, pageProps }: AppProps) {
+  const Layout = (Component as any).Layout || Noop
+
+  useEffect(() => {
+    document.body.classList?.remove('loading')
+  }, [])
+
+  let plugins = [
+    {
+      fn: trackerZustand,
+      name: 'zustand',
+    },
+  ]
+
+  return (
+    <TrackerProvider
+      config={{
+        plugins
+      }}
+    >
+      <Head />
+      <ManagedUIContext>
+        <Layout pageProps={pageProps}>
+          <Component {...pageProps} />
+        </Layout>
+      </ManagedUIContext>
+    </TrackerProvider>
+  )
+}
+```
+
+Это автоматически инициализирует плагин вместе с трекером, а также сделает доступными данные, возвращаемые при выполнении основной функции плагина.
+
+Следующий шаг — создать store; через минуту мы будем добавлять в этот store товары с сайта электронной коммерции.
+
+### Создание store с помощью плагина Zustand
+
+Использование плагина требует изменить способ, которым вы обычно создаёте экземпляр store в Zustand, поэтому смело копируйте и вставляйте следующий код в качестве шаблона:
+
+```jsx
+import create from 'zustand'
+
+const productStore = null
+export const useProductsStore = (logger) => {
+  if (!productStore) {
+    //use a singleton pattern to make sure we only create the store the first time around
+    productStore = createProductStore(logger)
+  }
+  return productStore
+}
+
+function createProductStore(logger) {
+  return create(
+    logger((set) => ({
+      products: [],
+      addProduct: (p) =>
+        set((state) => {
+          const prodFound = state.products.find((prod) => {
+            return p.id == prod.id
+          })
+          if (prodFound) {
+            p.amount = prodFound.amount + 1
+          } else {
+            p.amount = 1
+          }
+
+          return {
+            products: [...state.products.filter((prod) => p.id != prod.id), p],
+          }
+        }),
+    }))
+  )
+}
+```
+
+Экспортируемая функция создаст store при первом использовании, но впоследствии она просто вернёт уже существующий.
+
+С другой стороны, функция createProductStore создаст store, задаст логику для метода addProduct и использует функцию logger, которую мы ей предоставляем. Этот logger, как вы, вероятно, уже догадались, — это тот, который мы получили при использовании плагина Zustand.
+
+Когда store готов, мы можем начать добавлять в него товары.
+
+## Добавление товаров в наш store
+
+Store экспортирует метод addProduct, который отвечает за отслеживание товаров в нашей корзине.
+
+Чтобы импортировать функцию в ваш код, вам нужно:
+
+1. Импортировать и использовать провайдер контекста Tracker.
+2. Получить атрибут pluginsReturnedValue из контекста.
+3. Использовать его для вызова метода zustand (обратите внимание, что метод назван в соответствии с атрибутом name, который мы указали при настройке плагина выше), и передать строковый атрибут, чтобы дать store имя (это имя будет использоваться во время воспроизведения).
+4. Метод zustand вернёт logger, который мы будем использовать при вызове хука useProductStore из zustand (того, который мы создали для store).
+
+Всё это кажется слишком сложным, но по сути сводится к следующему:
+
+```jsx
+const { pluginsReturnedValues } = useContext(TrackerContext)
+
+const useProductStoreTracked = useProductsStore(
+  pluginsReturnedValues.zustand('products_store')
+)
+const { addProduct } = useProductStoreTracked()
+```
+
+Теперь вы можете просто вызвать метод addProduct, и он добавит товары из корзины в store.
+
+## Чтение данных из store
+
+Как вы, вероятно, можете догадаться, если вы хотите прочитать данные из store Zustand, вам нужно выполнить тот же набор шагов. Но вместо того чтобы брать метод addProduct, мы деструктурируем массив products.
+
+Вот так:
+
+```jsx
+const { pluginsReturnedValues } = useContext(TrackerContext)
+
+const useProductStoreTracked = useProductsStore(
+  pluginsReturnedValues.zustand('products_store')
+)
+const { products } = useProductStoreTracked()
+```
+
+Затем вы можете обычным образом перебирать products:
+
+```jsx
+<div>
+  {products.map((p: Product, idx: Number) => {
+    return (
+      <div key={+idx}>
+        {p.name}({p.amount})
+      </div>
+    )
+  })}
+</div>
+```
+
+Приведённый выше код перебирает список products и отображает их на экране. Каждый раз, когда вы добавляете в store ещё один товар, он также обновляется здесь.
+
+## Синхронизация состояния с воспроизведением сессии
+
+Чтобы просмотреть изменения состояния во время воспроизведения, просто нажмите на новую вкладку Zustand в правом нижнем углу:
+
+![Новая вкладка для отслеживаемых данных Zustand](/tutorials//zustand/zustand-tab.png)
+
+При нажатии на неё вы увидите содержимое store и сможете понять, как оно изменяется, а также какие данные в нём сохранены:
+
+![Данные состояния, отображаемые во время воспроизведения](/tutorials//zustand/state-replay.png)
+
+Обратите внимание на имя store — это как раз то имя, которое мы использовали при первом вызове метода zustand.
+
+## Есть вопросы?
+
+Если вы используете не Next.js, а другой фреймворк, способ использования должен быть похожим; ключевым моментом является то, как вы создаёте store. Пока вы находите способ использовать функцию logger при его создании, вы сможете отслеживать состояние во время воспроизведения.
+
+Вы можете [ознакомиться с этим репозиторием](https://github.com/deleteman/nextjs-commerce-example/tree/zustand-store), чтобы увидеть **полный исходный код** работающего приложения Next.js с плагином Zustand.
+
+Если у вас возникнут какие-либо проблемы с настройкой плагина Zustand в вашем проекте, свяжитесь с нами в нашем [сообществе Slack](https://slack.openreplay.com/) и задайте вопрос напрямую нашим разработчикам!

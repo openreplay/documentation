@@ -1,0 +1,43 @@
+---
+title: "Feature Flags"
+metaTitle: "Feature Flags"
+metaDescription: "Как использовать и задействовать всю мощь feature-флагов в вашем веб-приложении"
+---
+
+Feature-флаги, также известные как feature toggles, — это методика разработки программного обеспечения, которая позволяет разработчикам включать или отключать функциональность в своём приложении без необходимости повторного развёртывания кода. Feature-флаги можно использовать для A/B-тестирования и постепенного развёртывания, в качестве функции персонализации или просто как аварийный выключатель для быстрого отключения определённых функций, вызывающих ошибки в продакшене.
+
+### Общий интерфейс флага
+
+```js
+interface IFeatureFlag {
+  key: string
+  is_persist: boolean
+  value: string | boolean
+  payload: string
+}
+```
+
+### Tracker SDK
+
+#### Параметры
+
+```js
+const tracker = new Tracker({
+	projectKey: 'your. project key',
+	// the rest of your tracker options
+	flags: {
+		onFlagsLoad: (flags: IFeatureFlag[]) => {
+			// handle active flags
+		},
+	}
+})
+```
+
+#### Методы
+
+- `tracker.clearPersistFlags()` — Удаляет постоянные Feature Flags из sessionStorage браузера.
+- `tracker.reloadFlags(): Promise<void>` — Перезагружает все флаги (может быть полезно, если в сессии пользователя изменились метаданные, userId или любая другая информация, которая может потребоваться для определённых условий флага).
+- `tracker.getFeatureFlag(flagKey: string)`: Возвращает `IFeatureFlag` по ключу, если он существует.
+- `tracker.getAllFeatureFlags()`: Возвращает все флаги (`IFeatureFlag[]`), активные в данный момент.
+- `tracker.isFlagEnabled(flagKey: string)`: Возвращает `true`, если флаг с этим ключом существует и активен.
+- `tracker.onFlagsLoad(callback)`: Устанавливает колбэк, который будет использован при загрузке Feature Flags.

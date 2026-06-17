@@ -1,0 +1,80 @@
+---
+title: "Datadog"
+metaTitle: "تكامل Datadog"
+metaDescription: "كيفية دمج Datadog مع OpenReplay ومشاهدة أخطاء الواجهة الخلفية جنبًا إلى جنب مع عمليات إعادة تشغيل الجلسات."
+---
+
+كيفية دمج Datadog مع OpenReplay ومشاهدة أخطاء الواجهة الخلفية جنبًا إلى جنب مع تسجيلات الجلسات.
+
+## 1. إنشاء API Key و Application Key الخاصة بـ Datadog
+
+انتقل إلى [Datadog > Integrations > APIs](https://app.datadoghq.com/account/settings#api) وأنشئ API Key، أو استخدم المفتاح الموجود مسبقًا.
+
+![Datadog API Key](/static/datadog-1.png#center)
+
+في الصفحة نفسها، انقر على Application Keys وأنشئ application key جديدًا.
+
+![Datadog Application Key](/static/datadog-2.png#center)
+
+## 2. تفعيل التكامل في OpenReplay
+
+الصق `API Key` و `Application Key` الخاصين بـ Datadog في لوحة تحكم OpenReplay ضمن 'Preferences > Integration'.
+
+![Datadog Integration in OpenReplay](/static/datadog-3.png#center)
+
+## 3. تمرير openReplaySessionToken
+
+لربط حدث Datadog بجلسة المستخدم المسجَّلة، يجب تمرير رمز فريد من الواجهة الأمامية إلى الواجهة الخلفية في كل طلب ترغب في تتبعه. يمكن القيام بذلك باستخدام ترويسة HTTP مخصصة. في المثال أدناه، نستخدم الدالة `fetch` لإرسال تلك الترويسة.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+لكي يتمكن OpenReplay من ربط إدخال سجل Datadog بجلسة المستخدم المسجَّلة، يجب تمرير رمز فريد إلى كل خطأ في الواجهة الخلفية ترغب في تتبعه.
+
+فيما يلي مثال بلغة Python باستخدام Monkey Patching.
+
+```python
+import sys
+import traceback
+#...
+old_tb = traceback.print_exception
+old_f = sys.stdout
+old_e = sys.stderr
+OPENREPLAY_SESSION_TOKEN = None
+
+class F:
+    def write(self, x):
+        if OPENREPLAY_SESSION_TOKEN is not None and x != '\n':
+            old_f.write(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] {x}")
+        else:
+            old_f.write(x)
+
+    def flush(self):
+        pass
+
+def tb_print_exception(etype, value, tb, limit=None, file=None, chain=True):
+    if OPENREPLAY_SESSION_TOKEN is not None:
+        value = type(value)(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] " + str(value))
+    old_tb(etype, value, tb, limit, file, chain)
+
+traceback.print_exception = tb_print_exception
+
+sys.stderr = F()
+```
+
+اسم الوسم `openReplaySessionToken` حساس لحالة الأحرف.
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات، تواصل معنا عبر [Slack](https://slack.openreplay.com) أو تفقّد [المنتدى](https://forum.openreplay.com) الخاص بنا واحصل على المساعدة من مجتمعنا.

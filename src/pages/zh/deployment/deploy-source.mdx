@@ -1,0 +1,172 @@
+---
+title: "从源代码部署"
+metaTitle: "从源代码部署"
+metaDescription: "从源代码部署 OpenReplay 的分步指南。"
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+OpenReplay 可以从源代码部署。在进行安装之前，需要先构建其主要组件（Backend、API 和 Frontend）并将其推送到你自己的容器镜像仓库。
+
+运行 OpenReplay 的机器的最低配置为 `2 vCPUs, 8 GB of RAM, 50 GB of storage`，并采用 x86 架构，否则 OpenReplay 后端服务根本无法启动。这对于低/中等流量应该足够了。如果你预期会有高流量，则应在此基础上进行扩展。
+
+## 1. 前提条件
+
+1. 安装 docker：
+
+```bash
+sudo apt update
+sudo apt install docker.io -y
+user=`whoami`
+sudo chown $user /var/run/docker.sock
+```
+
+2. 克隆 OpenReplay 仓库：
+
+```bash
+git clone https://github.com/openreplay/openreplay
+```
+
+## 2. 构建 Backend 服务
+
+1. 使用 `docker login <registry_url>` 登录你的容器镜像仓库。如果你有 Docker Hub 账户，只需运行 `docker login` 即可。
+
+2. 构建后端组件，然后将它们推送到你的容器镜像仓库：
+
+```bash
+cd openreplay/backend
+sudo IMAGE_TAG=<my_tag_number> PUSH_IMAGE=1 DOCKER_REPO=index.docker.io/<username> bash build.sh 
+```
+
+*请注意*，标签名称可以是你想要的任意字符串，它会在你的 Docker Registry 中创建，并用于标识此特定版本的代码（如果你同时也在修改代码，这会很有用）。
+
+如果一切顺利，你应该会在你的 Docker registry 中看到一系列从你拥有的源代码构建出来的镜像，可供安装。
+镜像列表如下：
+
+- Storage
+- Sink
+- Integrations
+- HTTP
+- Heuristics
+- Ender
+- DB
+- Assets
+- Alerts
+- Chalice
+
+## 3. 更新镜像
+
+1. 创建你的容器镜像仓库密钥：
+
+```bash
+kubectl create secret -n app docker-registry my-registry-secret \
+        --docker-server=MY_CONTAINER_REGISTRY_URL \ # not required if docker hub
+        --docker-username=MY_CONTAINER_REGISTRY_USERNAME \
+        --docker-password=MY_CONTAINER_REGISTRY_PASSWORD \
+        --docker-email=no@email.local 
+```
+
+2. 要使用你刚刚构建并推送到容器镜像仓库的组件，请更新位于 `openreplay/scripts/helmcharts` 文件夹中的 `vars.yaml` 文件。 
+只需为你 docker registry 中的每个镜像添加一个部分，并填入以下信息：
+
+- `repository`：应指向 MY_CONTAINER_REGISTRY_URL/COMPONENT_NAME（如果你使用的是 Docker Hub，请改用 `<username>/<component name>` 格式）
+- `pullPolicy`：设置为 "Always"
+- `tag`：构建 Backend 和 API 时使用的 IMAGE_TAG 的值
+- `imagePullSecrets`：容器镜像仓库密钥
+
+请注意，任何你未在 `vars.yaml` 文件中引用的镜像都将从 OpenReplay 的**官方仓库**部署和安装，这意味着你不会使用从你的源代码构建的版本。
+
+下面是 `alerts` 服务的一个示例：
+
+```yaml
+alerts:
+  image:
+    repository: rg.fr-par.scw.cloud/foss/alerts
+    pullPolicy: Always
+    tag: "v1.4.2"
+  imagePullSecrets: 
+    - name: my-registry-secret
+```
+
+### 安装 OpenReplay
+
+1. 打开 `vars.yaml`，然后编辑：
+- `domainName`：这是 OpenReplay 将可被访问的地址（即 openreplay.mycompany.com）
+
+2. 安装 OpenReplay：
+
+```bash
+cd openreplay/scripts/helmcharts
+helm upgrade --install databases ./databases -n db --create-namespace --wait -f ./vars.yaml --atomic
+helm upgrade --install openreplay ./openreplay -n app --create-namespace --wait -f ./vars.yaml --atomic
+```
+
+如果你曾经修改了后端服务或 DB 服务的源代码，你将不得不返回第 3 步，然后再次运行上述命令。
+
+### 配置 TLS/SSL
+
+OpenReplay 处理敏感的用户数据，因此需要 HTTPS 才能运行。这是强制性的，否则 tracker 根本不会开始录制。仪表盘也是如此，没有 HTTPS 你将无法回放用户会话。
+
+因此，你必须自带（或生成）你自己的 SSL 证书。
+
+1. 首先，前往 DNS 服务提供商并创建一条 `A Record`。使用你之前在安装步骤中提供的域名，并使用其公网 IP 将其指向你的机器。
+
+2. 如果你要自带证书，请使用以下命令创建 Kubernetes SSL 密钥：`kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`。
+
+> **注意：** 如果你没有证书，请使用 Let's Encrypt 为你的子域名（安装期间提供的那个）生成一个可自动续期的证书。运行 `cd openreplay/scripts/helmcharts && bash certmanager.sh` 并按照步骤操作。
+
+3. 如果你希望启用 http 到 https 的重定向（推荐），请取消注释 `vars.yaml` 中 `ingress-nginx` 部分下方的以下代码块：
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+值得一提的是，我们的 `ingress-nginx` 默认在端口 `80|443` 上运行，但如有需要，可以在 `vars.yaml` 中轻松更改：
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. 最后，重新安装 OpenReplay NGINX：
+
+```bash
+ openreplay -R
+```
+
+## 4. 构建并部署 Frontend
+
+最后，如果你也想构建前端，你需要使用以下命令构建镜像：
+
+```bash
+cd openreplay/frontend
+IMAGE_TAG=<your tag> PUSH_IMAGE=1 DOCKER_REPO=myDockerHubID bash build.sh
+```
+
+完成后，返回 `vars.yaml` 文件并添加一个专门用于前端的部分，它看起来应该与你之前为 `alerts` 和 `chalice` 添加的部分类似：
+
+```yaml
+frontend:
+  image:
+    repository: <YOUR DOCKER REGISTRY>/frontend
+    pullPolicy: Always
+    tag: <YOUR TAG>
+  imagePullSecrets: 
+    - name: <YOUR SECRET>
+```
+
+在文件中添加了新部分后，执行 `openreplay -R` 命令（该命令位于 `scripts/helmcharts` 文件夹中），你的新前端应该就会运行起来。
+
+现在一切就绪，OpenReplay 应该可以在你的子域名上访问了。你可以通过访问 `/signup` 页面（即 openreplay.mycompany.com/signup）来创建账户。
+
+## 有疑问？
+
+如果你遇到任何问题，请连接到我们的 [Slack](https://slack.openreplay.com) 或查看我们的[论坛](https://forum.openreplay.com)，从我们的社区获得帮助。

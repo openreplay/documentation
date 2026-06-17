@@ -1,0 +1,184 @@
+---
+title: "Événements"
+metaTitle: "SDK Analytics d'OpenReplay — Événements"
+metaDescription: "Définissez et gérez les super propriétés pour les événements analytics du tracker OpenReplay."
+---
+
+## Événements
+
+Ce module vous permet de gérer les **événements** et les **propriétés** — des paires clé/valeur persistantes qui sont automatiquement attachées à chaque événement suivi.
+
+Les super propriétés sont stockées localement et fusionnées dans le payload de chaque événement lorsque vous suivez des événements.
+
+Disponible sur :
+
+`tracker.analytics.events`
+
+## Concepts
+
+### Super propriétés
+
+Les super propriétés sont stockées dans le SDK et fusionnées dans chaque événement sous `properties`.
+
+### Propriétés d'événement
+
+Les propriétés d'événement ne sont transmises que pour un seul appel à `track/sendEvent` et **ne sont pas enregistrées** en tant que super propriétés.
+
+## Clés réservées
+
+Ces clés sont réservées et ne peuvent pas être créées/supprimées via les helpers de super propriétés :
+
+- `properties`
+- `token`
+- `timestamp`
+
+## Signatures de haut niveau
+
+```ts
+// Track an event.
+// The `properties` argument is per-event only (not persisted).
+tracker.analytics.events.sendEvent(eventName: string, properties?: Record<string, any>, options?: { send_immediately: boolean })
+
+// Create/update super properties (persisted)
+tracker.analytics.events.setProperty(name: string, value: any): void
+tracker.analytics.events.setProperty(properties: Record<string, any>): void
+
+// Create super properties only if they don't exist yet (persisted)
+tracker.analytics.events.setPropertiesOnce(name: string, value: any): void
+tracker.analytics.events.setPropertiesOnce(properties: Record<string, any>): void
+
+// Remove super properties (persisted)
+tracker.analytics.events.unsetProperties(name: string): void
+tracker.analytics.events.unsetProperties(names: string[]): void
+
+// Clear all super properties
+tracker.analytics.events.reset(): void
+```
+
+## Suivre des événements avec des propriétés
+
+### Propriétés par événement (non persistantes)
+
+```ts
+tracker.analytics.events.sendEvent("Button Clicked", {
+  button_text: "Start",
+  page: "home",
+})
+```
+
+Ces propriétés ne s'appliquent qu'à cet événement.
+
+### Super propriétés + propriétés par événement (fusionnées)
+
+Lorsque vous définissez des super propriétés, elles sont automatiquement incluses dans chaque événement, puis fusionnées avec les propriétés par événement :
+
+```ts
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  env: "prod",
+})
+
+tracker.analytics.events.sendEvent("Signup Started", {
+	// per-event, can override a super property with the same key
+  plan: "pro", 
+})
+```
+
+Ordre de fusion :
+
+- les super propriétés sont ajoutées en premier
+- les propriétés par événement sont fusionnées par-dessus
+
+Ainsi, les propriétés par événement l'emportent en cas de collision de clés.
+
+## setProperty
+
+Crée ou écrase des super propriétés.
+
+```ts
+// object form
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  region: "eu",
+})
+
+// key/value form
+tracker.analytics.events.setProperty("build_sha", "3f2c9a1")
+```
+
+### Notes :
+
+- Les clés par défaut/internes (suivies par le SDK) sont ignorées et ne seront pas ajoutées en tant que super propriétés.
+- Les modifications ne sont enregistrées localement que si quelque chose a réellement changé.
+
+## setPropertiesOnce
+
+Crée des super propriétés uniquement si elles n'existent pas encore.
+
+```ts
+tracker.analytics.events.setPropertiesOnce({
+  first_seen_at: Date.now(),
+  signup_source: "docs",
+})
+
+// key/value form
+tracker.analytics.events.setPropertiesOnce("initial_referrer", document.referrer)
+```
+
+### Notes :
+
+- Les propriétés ne sont définies que si la clé est absente.
+- Les clés réservées (`properties`, `token`, `timestamp`) sont ignorées.
+
+## unsetProperties
+
+Supprime une ou plusieurs super propriétés.
+
+```ts
+// single
+tracker.analytics.events.unsetProperties("region")
+
+// multiple
+tracker.analytics.events.unsetProperties(["app_version", "build_sha"])
+```
+
+### Notes :
+
+- Les clés réservées ne peuvent pas être supprimées.
+- La suppression est persistante.
+
+## reset
+
+Efface toutes les super propriétés.
+
+```ts
+tracker.analytics.events.reset()
+```
+
+## Envoi immédiat
+
+Par défaut, les événements sont mis en file d'attente/regroupés par lots. Vous pouvez demander un envoi immédiat pour un événement :
+
+```ts
+tracker.analytics.events.sendEvent(
+  "Checkout Completed",
+  { value: 199, currency: "EUR" },
+  { send_immediately: true },
+)
+```
+
+## Alias compatibles avec Mixpanel
+
+Toutes les méthodes prennent en charge une couche de compatibilité fournie par souci de familiarité :
+
+```ts
+tracker.analytics.events.register       // setProperty
+tracker.analytics.events.register_once  // setPropertiesOnce
+tracker.analytics.events.unregister     // unsetProperties
+tracker.analytics.events.track          // sendEvent
+```
+
+
+## Vous avez des questions ?
+
+Si vous rencontrez des problèmes, rejoignez notre [Slack](https://slack.openreplay.com) ou consultez notre [Forum](https://forum.openreplay.com) et obtenez de l'aide de notre communauté.

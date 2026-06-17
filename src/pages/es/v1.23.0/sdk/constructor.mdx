@@ -17,46 +17,59 @@ npm i @openreplay/tracker
 ## Inicialización
 Al instanciar el tracker de OpenReplay, hay varias opciones de configuración que puedes proporcionar para personalizar muchos aspectos de la grabación y la experiencia de grabación.
 
-Debes establecer la opción `projectKey` en el constructor. Puedes obtener este valor desde tu panel de control de OpenReplay en 'Preferencias > Proyectos'.
+Debes establecer la opción `projectKey` en el constructor. Puedes obtener este valor desde tu panel de control de OpenReplay en 'Preferences > Projects'.
 
 <Aside type="tip">
-  Ten en cuenta que si tienes múltiples proyectos, debes tener cuidado al elegir la clave del proyecto que utilizas.
+  Ten en cuenta que si tienes múltiples proyectos, debes tener cuidado con la clave de proyecto que elijas.
 </Aside>
 
 
-### Aplicaciones de Página Única (SPA)
-Si tu sitio web es una **Aplicación de Página Única (SPA)** utiliza el siguiente código:
+### Single Page Applications (SPA)
+Si tu sitio web es una **Single Page Application (SPA)** puedes usar el tracker como singleton:
 
 ```js
 import { tracker } from '@openreplay/tracker'
 
 tracker.configure({
 	projectKey: PROJECT_KEY,
-	ingestPoint: "https://openreplay.mydomain.com/ingest", // cuando se utiliza la versión autohospedada
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
 })
 
-tracker.start() // devuelve una promesa con información de sesión (sessionID, sessionHash, userUUID)
+tracker.start() // returns a promise with session info (sessionID, sessionHash, userUUID)
 ```
 
-### Renderizado del lado del servidor (SSR)
-De lo contrario, si tu aplicación web es **Renderizada del Lado del Servidor (SSR)** (por ejemplo, NextJS, NuxtJS) utiliza el siguiente fragmento de código. Asegúrate de que `tracker.start()` se llame una vez que la aplicación haya iniciado (en `useEffect` o `componentDidMount`).
+Como alternativa, puedes crear una nueva instancia de clase:
+
+```js
+import OpenReplay from '@openreplay/tracker';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+tracker.start(); // returns a promise with session info (sessionID, sessionHash, userUUID)
+```
+
+### Server-side Rendered (SSR)
+De lo contrario, si tu aplicación web es **Server-Side-Rendered (SSR)** (por ejemplo, NextJS, NuxtJS), utiliza el siguiente fragmento de código.
+Asegúrate de que `tracker.start()` se llame una vez que la aplicación haya iniciado (en `useEffect` o `componentDidMount`).
 
 ```js
 import OpenReplay from '@openreplay/tracker/cjs';
 //...
 const tracker = new OpenReplay({
       projectKey: PROJECT_KEY,
+      ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
 });
 //...
 function MyApp() {
-  useEffect(() => { // usa componentDidMount en caso de un componente de clase de React
-    tracker.start(); // devuelve una promesa con información de sesión (sessionID, sessionHash, userUUID)
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start(); // returns a promise with session info (sessionID, sessionHash, userUUID)
   }, [])
 }
 ```
 
 <Aside type="tip">
-Si estás utilizando un framework web en particular, consulta nuestra [sección de Configuración del Tracker](/using-or) para saber cómo comenzar.
+Si estás utilizando un framework web en particular, consulta nuestra sección [Tracker Setup](/using-or) para saber cómo comenzar.
 </Aside>
 
 ## Ejemplo
@@ -66,9 +79,9 @@ import OpenReplay from '@openreplay/tracker/cjs';
 //...
 const tracker = new OpenReplay({
       projectKey: PROJECT_KEY,
-      ingestPoint: "https://openreplay.mydomain.com/ingest", // cuando se utiliza la versión autohospedada de OpenReplay
+      ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
       capturePerformance: true,
-      __DISABLE_SECURE_MODE: true // para pruebas locales
+      __DISABLE_SECURE_MODE: true // for local testing
 });
 ```
 
@@ -82,14 +95,14 @@ Hay un conjunto de opciones que puedes pasar al constructor. Solo `projectKey` e
 - `sessionHash?: string` El hash de la sesión inicial. Esto es útil cuando las sesiones atraviesan diferentes subdominios en tu aplicación web pero quieres unirlas en una sola grabación. En caso de que no sea posible continuar la sesión (no existe o ha finalizado), el tracker iniciará automáticamente una nueva. También se devuelve en `stop()`. Más detalles sobre esto [aquí](/troubleshooting/session-recordings#replaysarebrokenacrosssubdomains).
 - `ingestPoint?: string` Tu dominio de OpenReplay (por ejemplo, https://openreplay.mydomain.com/ingest), al que el tracker enviará eventos. Esto es opcional para los usuarios de OpenReplay Cloud. Valor por defecto: `https://api.openreplay.com/ingest` (que apunta a OpenReplay Cloud). 
 - `revID?: string` El ID de revisión de tu aplicación web. Útil al buscar problemas que ocurren en una versión específica.
-- `resourceBaseHref?: string` Se refiere al dominio accesible públicamente donde OpenReplay puede obtener los recursos (estilos, fuentes e íconos). Dado que son necesarios para una correcta reproducción de la sesión, esta opción es útil para sortear la limitación de tener tu sitio (y por lo tanto los recursos) alojado en un dominio privado. Ejemplo: `https://misitiopublico.com/assets/`.
+- `resourceBaseHref?: string` Se refiere al dominio accesible públicamente donde OpenReplay puede obtener los recursos (estilos, fuentes e íconos). Dado que son necesarios para una correcta reproducción de la sesión, esta opción es útil para sortear la limitación de tener tu sitio (y por lo tanto los recursos) alojado en un dominio privado. Ejemplo: `https://mypublicsite.com/assets/`.
 - `captureIFrames?: boolean` Para capturar todos los iFrames del mismo dominio en tu aplicación web. Si deseas rastrear un iFrame específico, simplemente agrega el atributo HTML `data-openreplay-capture` a la etiqueta `<iframe>`. Valor por defecto: `true`.
 - `disableClickmaps?: boolean` Para deshabilitar el cálculo del selector CSS (utilizado en mapas de clics). Valor por defecto: `false`.
 - `__debug__: number` Para habilitar registros de depuración. Valor por defecto: `0` (deshabilitado).
-     - `2`: Errores.
-     - `3`: Errores y advertencias.
-     - `4`: Errores, advertencias y logs.
-     - `5`: Verboso.
+    - `2`: Errores.
+    - `3`: Errores y advertencias.
+    - `4`: Errores, advertencias y logs.
+    - `5`: Verboso.
 - `autoResetOnWindowOpen?: boolean` Habilita esta opción para restablecer el sessionID al abrir una nueva pestaña desde tu aplicación. Esto sobrescribe el método `window.open` para evitar sessionIDs duplicados debido al almacenamiento de sesión compartido entre pestañas del navegador. Valor por defecto: `false`.
 - `forceSingleTab: boolean` Deshabilita la capacidad de grabación en múltiples pestañas que une sesiones de usuario, realizadas en múltiples pestañas, en una sola reproducción. En cambio, al habilitar esta opción, las sesiones capturadas en diferentes pestañas del navegador se grabarán en grabaciones separadas. Valor por defecto: `false`.
 - `disableStringDict: boolean` Deshabilita la lógica del diccionario de cadenas (para optimizar el almacenamiento) en las grabaciones. Valor por defecto: `false`.
@@ -97,29 +110,21 @@ Hay un conjunto de opciones que puedes pasar al constructor. Solo `projectKey` e
 - `disableCanvas?: boolean` Deshabilita la grabación de elementos canvas. Valor por defecto: `false`.
 - `assistSocketHost?: string` Se puede utilizar para establecer un host específico para la conexión del plugin de asistencia. Por defecto es el valor de `ingestPoint`.
 - `nodes?: { maintainer: MaintainerOptions }` La nueva opción `nodes.maintainer` ayuda a gestionar la memoria y limpiar nodos DOM que ya no se usan. Tiene los siguientes parámetros:
-    - `interval: number`: Intervalo de tiempo (en milisegundos) entre ejecuciones de limpieza. Valor por defecto: 30 * 1000 (30 segundos).
-    - `batchSize: number`: Número de nodos a verificar durante cada ejecución de limpieza. Valor por defecto: 2500.
-    - `enabled: boolean`: Habilita o deshabilita el mantenedor de nodos. Valor por defecto: true.
+    - `interval: number`: Intervalo de tiempo (en milisegundos) entre ejecuciones de limpieza. Valor por defecto: `30 * 1000` (30 segundos).
+    - `batchSize: number`: Número de nodos a verificar durante cada ejecución de limpieza. Valor por defecto: `2500`.
+    - `enabled: boolean`: Habilita o deshabilita el mantenedor de nodos. Valor por defecto: `true`.
 
-#### Ejemplo
+### Hojas de Estilo
 
-```js
-
-import { tracker } from '@openreplay/tracker';
-
-tracker.configure({
-  projectKey: 'your_project_key',
-  ingestPoint: "https://openreplay.mydomain.com/ingest", // cuando se utiliza la versión autohospedada
-  nodes: {
-    maintainer: {
-      interval: 60 * 1000, // Ejecutar limpieza cada minuto
-      batchSize: 2500, // Verificar nodos en lotes de 2500
-      enabled: true, // Habilitar el mantenedor de nodos
-    }
-  }
-});
-
-```
+- `inlineCss: number`: Obliga al tracker a registrar y enviar las hojas de estilo remotas como mensajes normales en vez de cachearlas en el backend. Esto es útil cuando los archivos CSS son privados y, por lo tanto, no pueden ser cacheados por el backend de OpenReplay. Los valores pueden ser:
+    - `0`: El archivo CSS se cachea en el backend. Comportamiento por defecto.
+    - `1`: Intentará registrar el archivo css enlazado como un objeto AdoptedStyleSheet.
+    - `2`: Obtiene el archivo y luego simula el comportamiento de AdoptedStyleSheets para la reproducción.
+    - `3`: Obtiene el archivo y luego lo guarda como css plano dentro de un nodo `<style>` -- usa esta opción si tienes muchas propiedades abreviadas en tus archivos CSS (cubre un error de la especificación CSSOM).
+- `css: CssRulesOptions`: Proporciona un mejor soporte para aplicaciones construidas con la biblioteca emotion-js (por ejemplo, componentes MUI). Viene con los siguientes parámetros:
+    - `scanInMemoryCSS: boolean`: Actívalo si tienes problemas con los estilos creados por emotionjs. Valor por defecto: `false`.
+    - `checkCssInterval: number`: Con qué frecuencia escanear las hojas de estilo rastreadas que tienen reglas vacías. Valor por defecto: `200` (ms).
+    - `checkLimit: number`: Útil para casos con un número limitado de mutaciones y/o cuando las hojas de estilo se hidratan en el cliente después del render inicial. Se aplica a cada hoja de estilo individualmente. El valor debe ser = X/checkCssInterval donde X es la duración de observación en ms. Valor por defecto: `0` (deshabilitado). 
 
 ### Privacidad
 
@@ -127,23 +132,15 @@ tracker.configure({
 - `obscureTextEmails?: boolean` Oculta correos electrónicos en elementos de texto. Los correos electrónicos se convertirán en una cadena aleatoria de asteriscos. Valor por defecto: `true`.
 - `obscureTextNumbers?: boolean` Oculta números en elementos de texto. Los números se convertirán en una cadena aleatoria de asteriscos. Valor por defecto: `false`.
 - `obscureInputEmails?: boolean` Oculta correos electrónicos en campos de entrada. Los valores de correo electrónico se convertirán en una cadena aleatoria de asteriscos. Valor por defecto: `true`.
-- `obscureInputNumbers?: boolean` Oculta números en campos de entrada. Los valores numéricos se convertirán en una cadena aleatoria de asteriscos. Valor por defecto: `false`.
+- `obscureInputNumbers?: boolean` Oculta números en campos de entrada. Los valores numéricos se convertirán en una cadena aleatoria de asteriscos. Si se deshabilita, asegúrate de [sanitizar los campos de entrada](/installation/sanitize-data/#granular-level) que puedan contener datos sensibles como códigos postales o detalles de tarjetas de crédito. Valor por defecto: `true`.
 - `obscureInputDates?: boolean` Oculta fechas en campos de entrada. Los valores de fecha se convertirán en una cadena aleatoria de asteriscos. Valor por defecto: `false`.
-- `defaultInputMode?: 0 | 1 | 2` Modo de captura predeterminado para valores de entrada. Respectivamente: plano, oculto o ignorado. Valor por defecto: `1` (oculto).
+- `defaultInputMode?: 0 | 1 | 2` Modo de captura predeterminado para valores de entrada. Respectivamente: plano, oculto o ignorado. Valor por defecto: `2` (ignorado).
+- `urls`: Te permite personalizar cómo se graban los eventos de ubicación de página mediante las siguientes opciones:
+	- `urlSanitizer?: (url: string) => string` Te permite sanitizar la url de la página (para eliminar tokens de uso, por ejemplo).
+	- `titleSanitizer?: (title: string) => string` Te permite sanitizar el título de la página.
+- `resourceNameSanitizer?: (url: string) => string` Te permite sanitizar las URLs de los recursos de red grabados.
 
-Ten en cuenta que los datos excluidos se ocultan o suprimen antes de enviar los datos a los servidores de OpenReplay. Los cambios aplicados a las opciones anteriores no pueden ser retroactivos y solo se aplicarán a los datos recién recopilados. Consulta [Sanitizar Datos](/installation/sanitize-data) para más detalles.
-
-### Hojas de Estilo
-
-- `inlineCss: number`: Obliga al tracker a registrar y enviar las hojas de estilo remotas como mensajes normales en vez de cachearlas en el backend.
-    - `0`: Comportamiento por defecto (se cachea).
-    - `1`: Intenta registrar el archivo como objeto `AdoptedStyleSheet`.
-    - `2`: Obtiene el archivo y simula el comportamiento de `AdoptedStyleSheets`.
-    - `3`: Obtiene el archivo y lo guarda como CSS plano dentro de `<style>` — útil con muchas propiedades abreviadas.
-- `css: CssRulesOptions`: Soporte extra para apps con emotion-js (p. ej. MUI).
-    - `scanInMemoryCSS: boolean`: Actívalo si tienes problemas con estilos de emotion-js. Por defecto `false`.
-    - `checkCssInterval: number`: Intervalo (ms) para escanear hojas de estilo con reglas vacías. Por defecto `200`.
-    - `checkLimit: number`: Límite de escaneos por hoja. Por defecto `0` (deshabilitado).
+Ten en cuenta que los datos excluidos se ocultan o suprimen antes de enviar los datos a los servidores de OpenReplay. Los cambios aplicados a las opciones anteriores no pueden ser retroactivos y solo se aplicarán a los datos recién recopilados. Consulta [Sanitize Data](/installation/sanitize-data) para más detalles.
 
 ### Consola
 
@@ -158,12 +155,12 @@ Ten en cuenta que los datos excluidos se ocultan o suprimen antes de enviar los 
 
 - `captureResourceTimings?: boolean` Registra los tiempos de recursos. Valor por defecto: `true`.
 - `capturePageLoadTimings?: boolean` Registra los tiempos de carga de la página. Valor por defecto: `true`.
-- `capturePageRenderTimings?: boolean` Calcula métricas de renderizado de página como Índice de Velocidad, Visualmente Completo o Tiempo para Interactivo. Requiere `captureResourceTimings = true`. Valor por defecto: `true`.
+- `capturePageRenderTimings?: boolean` Calcula métricas de renderizado de página como Speed Index, Visually Complete o Time To Interactive. Requiere `captureResourceTimings = true`. Valor por defecto: `true`.
 
 ### Rendimiento
 
 - `capturePerformance?: boolean` Para capturar métricas de rendimiento como tasa de fotogramas, consumo de CPU y memoria. Valor por defecto: `true`.
-- `longTasks?: boolean` Para capturar eventos de long-task. Valor por defecto: `false`.
+- `longTasks?: boolean` Para capturar eventos long-animation-frame. Valor por defecto: `false`.
 
 ### Red
 
@@ -174,16 +171,16 @@ network?: {
     failuresOnly: boolean;
     sessionTokenHeader: string;
     ignoreHeaders: Array<string> | boolean;
-    capturePayload: boolean; // asegúrate de sanitizar tus datos antes de habilitar esto
+    capturePayload: boolean; // make sure you sanitize your data before enabling it
     sanitizer: (RequestResponseData) => RequestResponseData | null;
-    captureInIframes: boolean;
-    axiosInstances: AxiosInstance[];
+		captureInIframes: boolean;
+  	axiosInstances: AxiosInstance[];
     useProxy?: boolean;
-    tokenUrlMatcher?: (url: string) => boolean;
+		tokenUrlMatcher?: (url: string) => boolean;
   }
 ```
 
-Consulta [Opciones de Red](/sdk/network-options) para ejemplos y más detalles sobre cómo redactar datos sensibles. 
+Consulta [Network Options](/sdk/network-options) para ejemplos y más detalles sobre cómo redactar datos sensibles. 
 
 ### Canvas
 
@@ -198,30 +195,30 @@ canvas?: {
 }
 ```
 
-Consulta [Canvas y WebGL](/installation/canvas) para saber cómo habilitar esta capacidad y más detalles sobre las opciones disponibles.
+Consulta [Canvas and WebGL](/session-replay/canvas) para saber cómo habilitar esta capacidad y más detalles sobre las opciones disponibles.
 
 ### iFrames de Dominio Cruzado
 
 La opción `crossdomain` se relaciona con capturar iFrames de diferentes dominios. Se utiliza junto con la opción `captureIFrames` que debe establecerse en `true`.
 
 ```ts 
- crossdomain?: {
-    /**
-     * Habilitar seguimiento de dominio cruzado
-     * @default false
-     * */
-    enabled?: boolean
-    /**
-     * Se utiliza para especificar el dominio padre, será '*' por defecto
-     * (Verifica tus configuraciones CSP)
-     * @default '*'
-     * */
-    parentDomain?: string
-}
+	crossdomain?: {
+		/**
+		 * Enable cross-domain tracking
+		 * @default false
+		 * */
+		enabled?: boolean
+		/**
+		 * Used to specify the parent domain, will be '*' by default
+		 * (Check your CSP settings)
+		 * @default '*'
+		 * */
+		parentDomain?: string
+	}
 ```
 A partir de la versión del Tracker [14.0.10](https://github.com/openreplay/openreplay/blob/dev/tracker/tracker/CHANGELOG.md), el atributo **`data-domain` ya no es requerido** en elementos HTML al trabajar con iFrames de dominio cruzado.
 
-Consulta [Seguimiento de iFrames de Dominio Cruzado](/session-replay/crossdomain-iframe) para más detalles sobre cómo capturar un iFrame de un dominio diferente. 
+Consulta [Cross-domain iFrame Tracking](/session-replay/crossdomain-iframe) para más detalles sobre cómo capturar un iFrame de un dominio diferente. 
 
 ### Puntero del Ratón
 
@@ -246,24 +243,6 @@ mouse?:
 
 - `connAttemptCount?: number` Número máximo de reintentos cuando las solicitudes HTTP del tracker no logran llegar al backend. Valor por defecto: `10`.
 - `connAttemptGap?: number` Duración entre cada intento de reintento (expresado en ms). Valor por defecto: `8000`.
-
-### Flags de Características
-
-- `onFlagsLoad` callback utilizado para realizar una acción una vez que los flags de características se cargan (cada vez).
-
-```ts
- flags?: {
-    onFlagsLoad?: (flags: IFeatureFlag[]) => void
- } 
-
-// ...
-interface IFeatureFlag {
-  key: string
-  is_persist: boolean
-  value: string | boolean
-  payload: string
-}
-```
 
 ### Seguridad
 

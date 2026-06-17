@@ -1,0 +1,143 @@
+---
+title: "Gestion des données"
+metaTitle: "Gestion des données - OpenReplay"
+metaDescription: "Suivez des événements personnalisés et des propriétés utilisateur pour alimenter votre analyse produit dans OpenReplay."
+---
+
+La gestion des données dans OpenReplay vous permet de suivre des événements personnalisés et des propriétés utilisateur pour alimenter votre analyse produit. Cette page couvre à la fois l'intégration du SDK pour l'envoi de données et l'interface utilisateur pour les gérer.
+
+Pour la documentation complète du SDK, consultez la [référence du SDK Analytics](/sdk/analytics).
+
+## Vue d'ensemble des événements
+
+OpenReplay capture deux types d'événements :
+
+- **Événements capturés automatiquement** : interactions suivies automatiquement, comme les vues de page, les clics et les envois de formulaires
+- **Événements personnalisés** : événements spécifiques à votre domaine que vous définissez, tels que « achat finalisé » ou « fonctionnalité activée »
+
+Les événements personnalisés vous permettent de suivre les actions utilisateur spécifiques qui comptent pour votre entreprise et de les utiliser dans des fonctionnalités d'analyse telles que les [Tendances](/product-analytics/trends), les [Entonnoirs](/product-analytics/funnels) et les [Parcours](/product-analytics/journeys).
+
+## Capture des événements
+
+Pour suivre des événements personnalisés, utilisez le module d'événements analytics du SDK. Pour la documentation complète de l'API, consultez la [référence du SDK Events](/sdk/analytics/events).
+
+### Exemple de base
+
+```ts
+// Track a simple event
+tracker.analytics.events.sendEvent("Button Clicked", {
+  button_text: "Start",
+  page: "home",
+})
+```
+
+### Super propriétés
+
+Les super propriétés sont des paires clé/valeur persistantes automatiquement attachées à chaque événement suivi :
+
+```ts
+// Set super properties that apply to all events
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  env: "prod",
+})
+
+// This event will include app_version and env automatically
+tracker.analytics.events.sendEvent("Signup Started", {
+  plan: "pro",
+})
+```
+
+## Enrichissement des utilisateurs
+
+Les propriétés utilisateur vous permettent de stocker des attributs concernant vos utilisateurs à des fins de segmentation et d'analyse. Pour la documentation complète de l'API, consultez la [référence du SDK People](/sdk/analytics/people).
+
+### Identification des utilisateurs
+
+```ts
+// Identify the current user
+tracker.analytics.people.identify("user_123")
+
+// Set user properties
+tracker.analytics.people.setProperties({
+  email: "user@example.com",
+  plan: "pro",
+})
+```
+
+### Types de propriétés
+
+OpenReplay prend en charge plusieurs types de propriétés :
+
+| Type | Description | Exemples |
+|------|-------------|----------|
+| **Suivies automatiquement** | Capturées automatiquement par le SDK | Appareil, navigateur, OS, paramètres UTM, référent |
+| **Spéciales** | Propriétés spéciales avec un comportement défini | `$user_id`, `$email`, `$name` |
+| **Personnalisées** | Propriétés définies par l'utilisateur | `plan type`, `company`, `signup date` |
+
+## Gestion des données dans l'interface utilisateur
+
+OpenReplay fournit une interface de gestion des données pour parcourir, filtrer et organiser vos utilisateurs, vos événements et leurs propriétés respectives.
+
+### People
+
+<img src="/data-management/people-page.png" alt="Page des événements" style={{ width: '700px', height: 'auto' }} />
+
+L'onglet People offre une vue de vos utilisateurs identifiés :
+
+- Parcourez les utilisateurs et leurs propriétés
+- Recherchez par ID utilisateur ou par valeurs de propriété
+- Consultez l'activité de l'utilisateur et l'historique des sessions
+- Accédez aux profils individuels des utilisateurs
+
+### Events
+
+<img src="/data-management/events-page.png" alt="Page des événements" style={{ width: '700px', height: 'auto' }} />
+
+L'onglet Events affiche tous les types d'événements suivis dans votre projet :
+
+- Parcourez et recherchez des événements par nom
+- Filtrez par type d'événement (capturé automatiquement ou personnalisé)
+- Modifiez les métadonnées de l'événement (nom d'affichage, description)
+- Contrôlez la visibilité des événements dans les tableaux de bord et les filtres
+
+### Properties
+
+<img src="/data-management/props-page.png" alt="Page des événements" style={{ width: '700px', height: 'auto' }} />
+
+L'onglet Properties vous permet de gérer à la fois les propriétés utilisateur et les propriétés d'événement :
+
+- Basculez entre les propriétés utilisateur et les propriétés d'événement
+- Consultez les types de propriété et les distributions de valeurs
+- Modifiez les noms d'affichage des propriétés
+- Contrôlez la visibilité des propriétés dans les tableaux de bord et les filtres 
+
+### Activity
+
+<img src="/data-management/activity-page.png" alt="Page des événements" style={{ width: '700px', height: 'auto' }} />
+
+L'onglet Activity affiche un flux d'événements en temps réel :
+
+- Surveillez les événements au fur et à mesure de leur ingestion
+- Filtrez par type d'événement ou par utilisateur
+- Vérifiez que les événements sont correctement capturés
+
+### Alias compatibles avec Mixpanel
+
+Toutes les méthodes prennent en charge une couche de compatibilité fournie par souci de familiarité :
+
+```ts
+tracker.analytics.people.set            // setProperties
+tracker.analytics.people.set_once       // setPropertiesOnce
+tracker.analytics.people.append         // appendValues
+tracker.analytics.people.union          // appendUniqueValues
+tracker.analytics.people.incrementBy    // increment
+tracker.analytics.events.register       // setProperty
+tracker.analytics.events.register_once  // setPropertiesOnce
+tracker.analytics.events.unregister     // unsetProperties
+tracker.analytics.events.track          // sendEvent
+```
+
+## Des questions ?
+
+Si vous rencontrez des problèmes, rejoignez notre [Slack](https://slack.openreplay.com) ou consultez notre [Forum](https://forum.openreplay.com) et obtenez de l'aide de notre communauté.

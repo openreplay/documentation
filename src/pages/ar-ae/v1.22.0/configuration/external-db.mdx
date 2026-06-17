@@ -1,0 +1,47 @@
+---
+title: "قاعدة بيانات خارجية (Postgres)"
+metaTitle: "قاعدة بيانات خارجية (Postgres)"
+metaDescription: "كيفية تغيير وجهة قاعدة البيانات الافتراضية في OpenReplay واستخدام قاعدة بيانات خارجية."
+---
+
+تأتي خدمة قاعدة البيانات الخاصة بنا، Postgres، مثبَّتة افتراضيًا مع OpenReplay وتعمل في حاوية مخصصة على نسختك بهدف خفض تكلفة النشر. إذا كنت تبحث عن قابلية توسّع أكبر أو عمليات تشغيل أسهل، فلا يزال بإمكانك استخدام Postgres خارجي (أي AWS RDS أو GCP Cloud SQL).
+
+## تصدير المخطط والبيانات الحالية
+
+> **ملاحظة:** إذا كنت تبدأ من الصفر ولم تثبّت OpenReplay بعد، فما عليك سوى متابعة عملية الإعداد وتجاهل الخطوات التالية.
+
+يجب الآن تصدير المخطط المحلي والبيانات المسجَّلة إلى Postgres الخارجي:
+
+1. أولًا، قم بعمل نسخة احتياطية لقاعدة البيانات المحلية:
+
+```bash
+kubectl exec -n db postgresql-0 -- bash -c 'PGPASSWORD=<postgresPassword from vars.yaml> pg_dumpall -U postgres '  > ~/path/to/dump.sql
+```
+
+2. ثبّت عميل Postgres على نسخة OpenReplay الخاصة بك وتأكّد من أن لديه إمكانية الوصول إلى قاعدة البيانات الخارجية:
+
+```bash
+sudo apt install postgresql-client
+```
+   
+3. استرجِع النسخة الاحتياطية إلى externalPostgres الجديد:
+
+```bash
+PGPASSWORD=PG_PASSWORD psql -U PG_USERNAME -h {RDS_URL} -d postgres < /path/to/dump.sql
+```
+
+4. أخيرًا، حدّث جميع متغيرات `postgres` في `openreplay -e` ووجِّهها نحو قاعدة البيانات الخارجية:
+
+```yaml
+  postgresqlPassword: "changeMePassword"
+  postgresqlHost: "postgresql.db.svc.cluster.local"
+  postgresqlPort: "5432"
+  postgresqlUser: "postgres"
+  postgresqlDatabase: "postgres"
+```
+
+5. احفظ واخرج باستخدام `:wq` لكي تدخل التغييرات حيز التنفيذ
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات، يرجى الانضمام إلى [Slack](https://slack.openreplay.com) الخاص بنا أو الاطّلاع على [المنتدى](https://forum.openreplay.com) والحصول على المساعدة من مجتمعنا.

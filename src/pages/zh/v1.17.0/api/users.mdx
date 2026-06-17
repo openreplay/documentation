@@ -1,0 +1,135 @@
+---
+title: "用户"
+metaTitle: "用户"
+metaDescription: "如何管理和控制用户数据。"
+---
+import Aside from '~/components/Aside.astro'
+
+## 获取用户统计信息
+
+获取关于某个特定用户的高层级统计信息和详情，该用户是通过 JavaScript 函数 `tracker.setUserID` 进行识别的。此端点会返回诸如 `firstSeen`、`lastSeen` 和 `numberSessions` 之类的数据。
+
+### 方法
+`GET`
+
+### URL
+`/api/v1/:projectKey/users/:userId`
+
+### 参数
+
+| 名称 | 类型 | 说明 |
+|----------|-------------|-------------|
+| projectKey | string | 你正在追踪的项目的 ID（必填） |
+| userId | string | 你的用户的 ID，通过 `tracker.setUserID` 设置（必填） |
+
+### 请求头
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`：该密钥可在 'Preferences' > 'Account' > 'Organization API Key' 中找到。
+
+### 状态码
+
+`200`：响应以 JSON 形式发送在正文中
+
+### 请求示例
+
+```shell
+curl -X GET \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### 响应示例
+
+```json
+{
+  "data": {
+    "userId": "mickael@openreplay.com",
+    "sessionCount": 3,
+    "lastSeen": 1623689478617,
+    "firstSeen": 1623440822825
+  }
+}
+```
+
+## 删除用户
+
+删除某个用户（通过 JavaScript 函数 `tracker.setUserID` 识别）以及 OpenReplay 捕获的该用户的所有数据。此操作会启动一个后台的一次性任务，用于移除所有与该用户相关的数据，包括会话、事件、元数据、自定义事件和录制内容。该调用会返回一个 `jobID`，你之后可以用它来[查询](/api/jobs#getjobdetails)删除操作的状态。
+
+这对于处理你可能从最终用户处收到的 GDPR 请求非常有用。
+
+<Aside type="note">
+	删除任务最多会移除与指定用户关联的 1000 个随机会话。
+</Aside>
+
+
+### 方法
+`DELETE`
+
+### URL
+`/api/v1/:projectKey/users/:userId`
+
+### 参数
+
+| 名称 | 类型 | 说明 |
+|----------|-------------|-------------|
+| projectKey | string | 你正在追踪的项目的 ID（必填） |
+| userId | string | 你的用户的 ID，通过 `tracker.setUserID` 设置（必填） |
+
+### 请求头
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`：该密钥可在 'Preferences' > 'Account' > 'Organization API Key' 中找到。
+
+### 状态码
+
+`200`：响应以 JSON 形式发送在正文中
+
+### 请求示例
+
+```shell
+curl -X DELETE \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/users/mickael@example.com \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### 响应示例
+
+```json
+{
+  "data": {
+    "jobId": 22345,
+    "description": "Delete user sessions of userId = mickael@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@openreplay.com",
+    "createdAt": 1623912962910,
+    "updatedAt": 1623912962910,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+### 更改回放文件的删除时间？
+
+删除任务是一个分为 2 步的过程：首先，会话及其级联事件会在夜间从数据库中删除。其次，回放文件会被安排在对象存储中（30 天后）过期。
+
+如果你正在使用 minio（标准安装），并希望更改默认的过期/生命周期策略，请按照以下说明操作：
+1. 在你的服务器上，运行 `openreplay -e`
+2. 在 `chalice` 部分下，定义一个名为 **SCH_DELETE_DAYS** 的新环境变量，其值等于你希望在删除前保留回放文件的天数（大于或等于 0）
+3. 使用 `:wq` 保存并退出
+4. 运行 `k9s -n db`
+5. 使用键盘方向键浏览列表并定位到 `minio-*` 容器
+6. 按 `s` 以获得对 Minio（对象存储）容器的 shell 访问权限
+7. 运行 `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
+8. 若要在删除任务执行 14 天后删除回放文件
+
+```bash
+export EXPIRATION_DAYS=14
+mc ilm add --expiry-days $EXPIRATION_DAYS --tags "to_delete_in_days=${EXPIRATION_DAYS}" minio/mobs
+```
+
+9. 使用 `exit` 退出 Minio 容器
+10. 运行 `:quit` 退出 Kubernetes CLI

@@ -1,0 +1,35 @@
+---
+title: "التقاط WebSockets"
+metaTitle: "التقاط WebSockets"
+metaDescription: "كيفية تسجيل WebSockets في إعادة تشغيل الجلسة."
+---
+
+يمكن لـ OpenReplay تسجيل قنوات WebSocket التي تختارها وعرضها في إعادة تشغيل الجلسة. ويُعد ذلك مفيدًا عند استكشاف بعض المواقف وإصلاحها من خلال توفير سياق إضافي.
+
+## تفعيل تسجيل WebSockets
+
+لتفعيل تسجيل WebSockets، ستحتاج إلى إنشاء hook يستمع إلى الرسائل:
+
+```ts
+const wsHook = tracker.trackWs('my_ws_channel')
+
+myWsChannel.on('important_message', (data) => {
+  wsHook('important_message', data, 'down')
+  /** your code */
+})
+myWsChannel.onAnyOutgoing((event, data) => {
+  wsHook(event, data, 'up')
+})
+```
+
+مثال تم إنشاؤه باستخدام [توثيق socket-io](https://socket.io/docs/v4/listening-to-events/)
+
+> ملاحظة: هذا مجرد مثال أساسي، تأكد من قراءة كيفية الاستماع إلى أحداث الرسائل وخطّط وفقًا لذلك لما تحتاج فعليًا إلى التقاطه. فالحركة الكبيرة/الثقيلة ستؤدي إلى زيادة أحجام إعادة التشغيل.
+
+### تنقية البيانات
+
+يمكنك تنقية البيانات قبل إرسالها عبر الـ hook.
+
+## هل لديك أسئلة؟
+
+إذا كانت لديك أي أسئلة حول هذه العملية، فلا تتردد في التواصل معنا عبر [Slack](https://slack.openreplay.com) الخاص بنا أو الاطلاع على [المنتدى](https://forum.openreplay.com) الخاص بنا.

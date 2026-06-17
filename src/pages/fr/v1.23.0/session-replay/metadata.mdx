@@ -1,0 +1,115 @@
+---
+title: "Envoyer des métadonnées"
+metaTitle: "Métadonnées"
+metaDescription: "Comment transmettre les métadonnées des utilisateurs à OpenReplay. Aussi appelées traits ou variables utilisateur dans d'autres plateformes."
+---
+import Aside from '~/components/Aside.astro'
+
+Les métadonnées vous permettent d'ajouter des informations supplémentaires sur les utilisateurs aux rejeux de session sous forme de paires clé-valeur. Cette fonctionnalité améliore votre capacité à filtrer et rechercher des enregistrements de session, ce qui facilite l'identification des sessions pertinentes.  Consultez ce [tutoriel](/tutorials/metadata) pour plus de détails sur la façon d'envoyer des métadonnées.
+
+<Aside type="caution">
+
+Les clés de métadonnées sont spécifiques à chaque projet, et la clé de métadonnées doit être configurée avant de pouvoir être envoyée.
+
+</Aside>
+
+## Ajouter des clés de métadonnées à un projet
+
+Pour configurer les clés de métadonnées :
+
+1. Accédez à **Preferences > Projects** dans OpenReplay.
+2. Choisissez le projet auquel vous souhaitez ajouter des métadonnées.
+3. Accédez à l'onglet Metadata.
+4. Cliquez sur **Add Metadata**.
+5. Saisissez le nom de clé souhaité dans le champ **Field Name**.
+6. Cliquez sur **Add** pour enregistrer la clé de métadonnées.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/send-metadata/send_metadata.gif" alt="Envoyer des métadonnées" style={{ width: '700px', height: 'auto' }} />
+</div>
+
+
+> **Limite :** Vous pouvez ajouter jusqu'à 10 clés de métadonnées par projet.
+
+## Injecter des métadonnées dans les rejeux de session
+
+Une fois vos clés de métadonnées définies, vous pouvez envoyer des métadonnées lors de l'enregistrement des sessions. Voici les méthodes d'implémentation disponibles :
+
+### 1. En utilisant NPM
+
+Injectez les métadonnées au démarrage du tracker :
+
+```js
+tracker.start({
+  userID: "john@doe.com",
+  metadata: {
+    balance: "10M",
+    plan: "free"
+  }
+});
+```
+
+Si les métadonnées ne sont disponibles qu'après le démarrage du tracker, utilisez la méthode `setMetadata` :
+
+```javascript
+tracker.setMetadata('plan', 'free'); // after tracker.start()
+```
+
+### 2. En utilisant le snippet JavaScript
+
+Pour inclure des métadonnées avec le snippet, modifiez la variable `startOpts` :
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+  var initOpts = {
+    projectKey: "project_key",
+    defaultInputMode: 2,
+    obscureTextNumbers: false,
+    obscureTextEmails: true,
+  };
+  const yourMetadata = { yourKey: 'yourValue' };
+  var startOpts = { userID: "", metadata: yourMetadata };
+  (function(A,s,a,y,e,r){
+    r=window.OpenReplay=[e,r,y,[s-1, e]];
+    s=document.createElement('script');s.src=A;s.async=!a;
+    ...
+  })("//static.openreplay.com/latest/openreplay.js",1,0,initOpts,startOpts);
+
+</script>
+```
+
+Si les métadonnées deviennent disponibles plus tard :
+
+```html
+<script>
+  OpenReplay.setMetadata("plan", "free");
+</script>
+```
+
+### 3. En utilisant le SDK iOS
+
+Injectez des métadonnées dans votre application iOS :
+
+```swift
+import ORTracker
+
+ORTracker.shared.setMetadata(key: String, value: String)
+```
+
+## Filtrer et rechercher des sessions avec les métadonnées
+
+Les clés de métadonnées vous permettent de filtrer et de rechercher des sessions dans OpenReplay :
+
+1. Ouvrez l'**Omni-Search** dans la vue Sessions.
+2. Sélectionnez votre clé de métadonnées (par exemple, `plan`).
+3. Saisissez la valeur de la métadonnée (par exemple, `free`) pour filtrer les enregistrements de session.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/send-metadata/filter_metadata.gif" alt="Filtrer les métadonnées" style={{ width: '700px', height: 'auto' }} />
+</div>
+
+Cette fonctionnalité permet d'identifier rapidement et précisément les sessions en fonction de détails spécifiques à l'utilisateur.
+
+## Des questions ?
+Si vous avez des questions sur ce processus, n'hésitez pas à nous contacter sur notre [Slack](https://slack.openreplay.com) ou à consulter notre [Forum](https://forum.openreplay.com).

@@ -1,0 +1,64 @@
+---
+title: "Rollbar"
+metaTitle: "Rollbar 集成"
+metaDescription: "如何将 Rollbar 与 OpenReplay 集成，并在会话回放旁查看后端错误。"
+---
+
+如何将 Rollbar 与 OpenReplay 集成，并在会话回放旁查看后端错误。
+
+## 1. 创建项目访问令牌
+
+1. 登录你的 [Rollbar](https://rollbar.com) 账户。
+2. 在下拉菜单（左上角）中选择你的项目。
+3. 前往 *Settings > Project* Access Tokens。
+4. 点击 *Create new access tokens*。
+
+![Rollbar 项目访问令牌](/static/rollbar-1.png#center)
+
+5. 在 Scope 中选择 `read`；在名称中填写 `openreplay`；并将 *Rate Limit* 保留为默认值。
+6. 复制你的新令牌。
+
+![Rollbar 活动令牌](/static/rollbar-2.png#center)
+
+## 2. 在 OpenReplay 中启用 Rollbar
+
+在 OpenReplay 仪表板的 'Preferences > Integration' 下粘贴你的 `Access Token`。
+
+![OpenReplay 中的 Rollbar 集成](/static/rollbar-3.png#center)
+
+
+## 3. 传播 openReplaySessionToken
+
+为了将 Rollbar 事件与录制的用户会话关联起来，必须在你希望跟踪的每个请求中，将一个唯一令牌从前端传播到后端。这可以通过自定义 HTTP 标头来实现。在下面的示例中，我们使用 `fetch` 函数来发送该标头。
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+为了让 OpenReplay 能够将 Rollbar 日志条目与录制的用户会话关联起来，必须将一个唯一令牌作为 `extra_data` 传播到你希望跟踪的每个后端错误中。
+
+下面是一个使用 Rollbar 的 Python API 的示例。
+
+```python
+rollbar.report_message("A LOG ENTRY", level='error', extra_data={"openReplaySessionToken": OPENREPLAY_SESSION_TOKEN})
+
+# or if you are catching the exceptions
+
+rollbar.report_exc_info(sys.exc_info(), level='error', extra_data={"openReplaySessionToken": str(OPENREPLAY_SESSION_TOKEN)})
+```
+
+标签名称 `openReplaySessionToken` 区分大小写；
+
+## 有疑问？
+
+如果你遇到任何问题，请加入我们的 [Slack](https://slack.openreplay.com) 或访问我们的[论坛](https://forum.openreplay.com)，从我们的社区获取帮助。

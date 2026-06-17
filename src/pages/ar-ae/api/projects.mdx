@@ -1,0 +1,166 @@
+---
+title: "المشاريع"
+metaTitle: "المشاريع"
+metaDescription: "كيفية إنشاء المشاريع واسترجاعها."
+---
+
+جميع الاستجابات بصيغة JSON ومُغلَّفة داخل `{ "data": ... }`. تُرجِع الأخطاء `{ "error": "..." }` مع رمز حالة HTTP مناسب.
+
+## إنشاء مشروع
+
+أنشئ مشروعًا جديدًا بتحديد `name` الخاص به، واختياريًا `platform` الخاص به.
+
+### الطريقة
+`POST`
+
+### URL
+`/public/projects`
+
+### الحمولة (Payload)
+
+| الاسم    | النوع  | الوصف                                                        |
+|----------|--------|--------------------------------------------------------------|
+| name     | string | اسم المشروع (مطلوب، 200 حرف كحد أقصى)                         |
+| platform | string | منصة المشروع: `web` (الافتراضية) أو `ios`                    |
+
+### ترويسات الطلب
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### رموز الحالة
+
+`200`: تم إنشاء المشروع، ويُرجَع في نص الاستجابة  
+`400`: نص غير صالح، أو الاسم مفقود/طويل جدًا، أو منصة غير معروفة، أو الاسم موجود بالفعل
+
+### مثال على الطلب
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/projects \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "name": "MyFirstProject",
+    "platform": "web"
+  }'
+```
+
+### مثال على الاستجابة
+
+```json
+{
+  "data": {
+    "projectId": 42,
+    "name": "MyFirstProject",
+    "projectKey": "QsLA07Oa5sqTfwnNaFwS",
+    "tenantId": 1,
+    "maxSessionDuration": 7200000,
+    "sampleRate": 100,
+    "saveRequestPayloads": false,
+    "beaconSize": 0,
+    "platform": "web",
+    "metadata1": null,
+    "metadata2": null,
+    "metadata3": null,
+    "metadata4": null,
+    "metadata5": null,
+    "metadata6": null,
+    "metadata7": null,
+    "metadata8": null,
+    "metadata9": null,
+    "metadata10": null
+  }
+}
+```
+
+## سرد المشاريع
+
+تُرجِع جميع المشاريع للمستأجر الحالي.
+
+### الطريقة
+`GET`
+
+### URL
+`/public/projects`
+
+### ترويسات الطلب
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### مثال على الطلب
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/projects \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### مثال على الاستجابة
+
+```json
+{
+  "data": [
+    {
+      "projectId": 42,
+      "name": "MyFirstProject",
+      "projectKey": "QsLA07Oa5sqTfwnNaFwS",
+      "tenantId": 1,
+      "platform": "web"
+    },
+    {
+      "projectId": 43,
+      "name": "MobileApp",
+      "projectKey": "9cACFRuQVidq0sqS7Bny",
+      "tenantId": 1,
+      "platform": "ios"
+    }
+  ]
+}
+```
+
+## الحصول على مشروع
+
+تُرجِع تفاصيل المشروع المحدَّد.
+
+### الطريقة
+`GET`
+
+### URL
+`/public/projects/:projectKey`
+
+### المعاملات
+
+| الاسم      | النوع  | الوصف                        |
+|------------|--------|------------------------------|
+| projectKey | string | مفتاح المشروع (مطلوب)         |
+
+### ترويسات الطلب
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### رموز الحالة
+
+`200`: يُرجَع في نص الاستجابة  
+`404`: المشروع غير موجود
+
+### مثال على الطلب
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/projects/7ePSXFuQVidq9pqS6Xyn \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### مثال على الاستجابة
+
+```json
+{
+  "data": {
+    "projectId": 42,
+    "name": "MyFirstProject",
+    "projectKey": "7ePSXFuQVidq9pqS6Xyn",
+    "tenantId": 1,
+    "platform": "web"
+  }
+}
+```

@@ -1,0 +1,126 @@
+---
+title: "保护 OpenReplay"
+metaTitle: "保护 OpenReplay"
+metaDescription: "通过配置 SSL 和 reCaptcha 来保护 OpenReplay。"
+---
+
+## 限制对节点的访问
+
+强烈建议**仅允许通过开放的 80/443 端口访问该机器**，并使用安全组实现。有些组件会监听 0.0.0.0 地址以简化网络配置，例如 k3s 服务器 API、flannel API 等。
+
+## 配置 SSL
+
+如果您要使用自己的证书，请使用以下命令创建一个 SSL 密钥：`kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`。
+
+> **注意：** 如果您没有证书，请使用 Let's Encrypt 为您的子域名（在安装期间提供的那个）生成一个可自动续期的证书。只需连接到 OpenReplay 实例，运行 `cd openreplay/scripts/helmcharts && bash certmanager.sh` 并按照步骤操作即可。
+
+如果您希望启用从 http 到 https 的重定向（推荐），请取消注释 `ingress-nginx` 部分下方的以下代码块：
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+> **注意：** 我们的 `ingress-nginx` 默认运行在 `80|443` 端口上，但如有需要，可以在 `openreplay -e` 中轻松更改：
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+使用 `:wq` 保存并退出，以便服务重新加载。
+
+## 加固 X-Frame-Options
+
+为了指示浏览器是否应允许在 `<frame>, <iframe>, <embed>` 或 `<object>` 中呈现页面，并避免点击劫持（click-jacking）攻击，请使用 `openreplay -e` 编辑配置来设置 `X-Frame-Options` 响应头：
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    addHeaders:
+      X-Frame-Options: "SAMEORIGIN"
+```
+
+然后，使用 `:wq` 保存并退出，以便服务重新加载。
+
+## 设置 reCaptcha
+
+OpenReplay 支持 reCaptcha (v2) 以提供额外的安全保护。要启用此保护：
+
+1. 从 Google 获取一个 v2 reCaptcha 密钥，并启用 `invisible` 模式，即不提示 `tick I am not a human`。
+2. 运行 `openreplay -e`，然后在 `chalice` 部分取消注释并更新以下环境变量：
+- `captcha_server`：您的 reCaptcha 服务的 URL（例如 https://www.google.com/recaptcha/api/siteverify）
+- `captcha_key`：您的 reCaptcha 密钥
+
+3. 编辑 `openreplay/frontend/` 中的 `.env`（如果不存在，请复制 `.env.sample`），并将 `CAPTCHA_SITE_KEY` 变量替换为您的 reCaptcha 站点密钥。
+4. 重新构建前端：
+
+```bash
+cd openreplay/frontend
+IMAGE_TAG=my-custom-image PUSH_IMAGE=1 DOCKER_REPO=my-docker-user-name bash -x build.sh
+```
+
+5. 运行 `openreplay -e`，并在 `frontend` 代码块中指定您新构建的前端镜像：
+
+```yaml
+frontend:
+  image:
+    repository: "my-docker-username/frontend"
+    tag: "my-custom-image"
+```
+
+6. 重启前端和 Web 服务器服务，使更改生效：
+
+```bash
+ openreplay -R
+```
+
+## 内容安全策略 (CSP)
+
+以下是一个允许 OpenReplay 录制会话的策略 (CSP) 示例。需要根据您的域名和安全要求进行调整：
+
+```html
+worker-src ‘self’ blob: https://openreplay.mycompany.com https://*.openreplay.com; script-src ‘self’ https://openreplay.mycompany.com https://*.openreplay.com;
+```
+
+要将您的 CSP 应用到 NGINX，请连接到您的 OpenReplay 实例并按照以下步骤操作：
+
+1. 运行 `openreplay -e` 并在 `frontend` 代码块中添加您的 CSP。请务必更新 
+
+```yaml
+frontend:
+  ingress:
+    cspSnippet: |
+      add_header Content-Security-Policy "worker-src 'self' blob: https://openreplay.mycompany.com https://*.openreplay.com; script-src 'self' https://openreplay.mycompany.com https://*.openreplay.com;";
+```
+
+> **注意：** 请务必将上述 CSP 中出现的 `https://openreplay.mycompany.com` 替换为您的 OpenReplay 域名。该值应与您运行 `openreplay -e` 时的 `DOMAIN_NAME` 相同。 
+
+2. 使用 `:wq` 保存并退出，以应用您新添加的 CSP
+
+## 启用 CORS
+
+默认情况下，允许来自所有来源的跨域请求（`Access-Control-Allow-Origin: *`）。如果您希望仅将录制限制为少数几个域名，请运行 `openreplay -e` 并通过添加以下注解来更新 `http` 代码块：
+
+```yaml
+http:
+  ingress:
+    annotations:
+      nginx.ingress.kubernetes.io/cors-allow-methods: POST
+      nginx.ingress.kubernetes.io/cors-allow-headers: Content-Type,Authorization,Content-Encoding
+      nginx.ingress.kubernetes.io/cors-allow-origin: https://app1.mycompany.com,https://app2.mycompany.com,https://*.mycompany.com
+      nginx.ingress.kubernetes.io/enable-cors: "true"
+			nginx.ingress.kubernetes.io/cors-expose-headers: "Content-Length"
+```
+
+然后使用 `:wq` 保存并退出，以应用您新添加的 CSP。
+
+## 有疑问吗？
+如果您对此过程有任何疑问，请随时通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

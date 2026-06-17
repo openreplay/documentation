@@ -1,0 +1,185 @@
+---
+title: "تتبّع تغييرات الحالة باستخدام إضافة Zustand"
+metaTitle: "Zustand"
+metaDescription: "تتبّع تغييرات الحالة باستخدام إضافة Zustand"
+---
+يُعد Zustand بديلاً سريعاً جداً وبسيطاً لحلول إدارة الحالة مثل Redux. باستخدام [إضافة Zustand](https://www.npmjs.com/package/@openreplay/tracker-zustand) الخاصة بنا، يمكنك تتبّع تغييرات الحالة طوال دورة حياة تطبيقك.
+
+## تثبيت الإضافة
+
+يمكن تثبيت الإضافة بسهولة باستخدام الأمر التالي:
+
+```jsx
+npm i @openreplay/tracker-zustand
+```
+
+## استخدام الإضافة في تطبيق Next.js
+
+في هذا المثال، سنستخدم نفس التطبيق الموضّح في [درس Next.js الخاص بالـ tracker](https://docs.openreplay.com/tutorials/next)، لذا إذا كنت تريد مزيداً من التفاصيل حول مزوّد Context المستخدَم، فاطّلع على ذلك الدرس أولاً.
+
+**ملاحظة**: يوجد الكود المصدري الكامل لهذا المثال في [مستودع Github](https://github.com/deleteman/nextjs-commerce-example/tree/zustand-store) هذا، فاطّلع عليه إذا كنت بحاجة إلى مزيد من التفاصيل.
+
+يتيح مزوّد Context الذي أستخدمه إمكانية إعداد إضافات الـ Tracker، لذا بعد تثبيت الإضافة، سنعدّل الملف _app.tsx عن طريق إضافة عبارة الاستيراد (import) أدناه:
+
+```jsx
+import trackerZustand from '@openreplay/tracker-zustand'
+```
+
+وبعد ذلك، يجب أن تبدو الدالة الرئيسية App على النحو التالي:
+
+```jsx
+export default function MyApp({ Component, pageProps }: AppProps) {
+  const Layout = (Component as any).Layout || Noop
+
+  useEffect(() => {
+    document.body.classList?.remove('loading')
+  }, [])
+
+  let plugins = [
+    {
+      fn: trackerZustand,
+      name: 'zustand',
+    },
+  ]
+
+  return (
+    <TrackerProvider
+      config={{
+        plugins
+      }}
+    >
+      <Head />
+      <ManagedUIContext>
+        <Layout pageProps={pageProps}>
+          <Component {...pageProps} />
+        </Layout>
+      </ManagedUIContext>
+    </TrackerProvider>
+  )
+}
+```
+
+سيؤدي هذا إلى تهيئة الإضافة تلقائياً مع الـ tracker، كما أنه سيجعل البيانات المُعادة من تنفيذ الدالة الرئيسية للإضافة متاحةً للاستخدام.
+
+الخطوة التالية هي إنشاء store، وسنضيف إلى هذا الـ store منتجات من موقع التجارة الإلكترونية بعد قليل.
+
+### إنشاء store باستخدام إضافة Zustand
+
+يتطلب استخدام الإضافة منك تغيير الطريقة التي تنشئ بها عادةً نسخة من store الخاص بـ Zustand، لذا لا تتردد في نسخ ولصق الكود التالي كقالب:
+
+```jsx
+import create from 'zustand'
+
+const productStore = null
+export const useProductsStore = (logger) => {
+  if (!productStore) {
+    //use a singleton pattern to make sure we only create the store the first time around
+    productStore = createProductStore(logger)
+  }
+  return productStore
+}
+
+function createProductStore(logger) {
+  return create(
+    logger((set) => ({
+      products: [],
+      addProduct: (p) =>
+        set((state) => {
+          const prodFound = state.products.find((prod) => {
+            return p.id == prod.id
+          })
+          if (prodFound) {
+            p.amount = prodFound.amount + 1
+          } else {
+            p.amount = 1
+          }
+
+          return {
+            products: [...state.products.filter((prod) => p.id != prod.id), p],
+          }
+        }),
+    }))
+  )
+}
+```
+
+ستُنشئ الدالة المُصدَّرة الـ store في المرة الأولى التي تُستخدم فيها، ولكن بعد ذلك ستكتفي بإعادة الـ store الموجود مسبقاً.
+
+من ناحية أخرى، ستُنشئ الدالة createProductStore الـ store، وتُحدّد منطق الطريقة addProduct، وتستخدم الدالة logger التي نمرّرها إليها. هذا الـ logger، كما ربما خمّنت، هو ذاك الذي حصلنا عليه من استخدام إضافة Zustand.
+
+وبمجرد جاهزية الـ store، يمكننا البدء في إضافة المنتجات إليه.
+
+## إضافة المنتجات إلى الـ store الخاص بنا
+
+يُصدّر الـ store الطريقة addProduct، التي تتولى تتبّع المنتجات في سلّة التسوق الخاصة بنا.
+
+لاستيراد الدالة إلى الكود الخاص بك، عليك القيام بما يلي:
+
+1. استيراد واستخدام مزوّد Context الخاص بالـ Tracker.
+2. الحصول على الخاصية pluginsReturnedValue من الـ context.
+3. استخدامها لاستدعاء الطريقة zustand (لاحظ أن الطريقة سُمّيت تبعاً للخاصية name عندما أعددنا الإضافة أعلاه)، وتمرير خاصية من نوع نصّي (string) لإعطاء الـ store اسماً (سيُستخدم هذا الاسم أثناء إعادة التشغيل replay).
+4. ستُعيد الطريقة zustand الـ logger الذي سنستخدمه عند استدعاء الـ hook المسمّى useProductStore الخاص بـ zustand (الذي أنشأناه من أجل الـ store).
+
+قد يبدو كل هذا كثيراً، لكنه يتلخّص في جوهره فيما يلي:
+
+```jsx
+const { pluginsReturnedValues } = useContext(TrackerContext)
+
+const useProductStoreTracked = useProductsStore(
+  pluginsReturnedValues.zustand('products_store')
+)
+const { addProduct } = useProductStoreTracked()
+```
+
+الآن، يمكنك ببساطة استدعاء الطريقة addProduct، وستقوم بإضافة منتجات السلّة إلى الـ store.
+
+## قراءة البيانات من الـ store
+
+كما يمكنك أن تخمّن على الأرجح، إذا أردت قراءة البيانات من store الخاص بـ Zustand، فعليك اتباع نفس مجموعة الخطوات. لكن بدلاً من أخذ الطريقة addProduct، سنفكّك بنية المصفوفة products.
+
+هكذا:
+
+```jsx
+const { pluginsReturnedValues } = useContext(TrackerContext)
+
+const useProductStoreTracked = useProductsStore(
+  pluginsReturnedValues.zustand('products_store')
+)
+const { products } = useProductStoreTracked()
+```
+
+بعد ذلك يمكنك المرور على عناصر products بشكل طبيعي:
+
+```jsx
+<div>
+  {products.map((p: Product, idx: Number) => {
+    return (
+      <div key={+idx}>
+        {p.name}({p.amount})
+      </div>
+    )
+  })}
+</div>
+```
+
+يمر الكود أعلاه على قائمة المنتجات ويعرضها على الشاشة. وكلما أضفت منتجاً آخر إلى الـ store، سيجري تحديثه هنا أيضاً.
+
+## مزامنة الحالة مع إعادة تشغيل الجلسة
+
+لمراجعة تغييرات الحالة أثناء إعادة التشغيل، ما عليك سوى النقر على علامة التبويب الجديدة Zustand في الزاوية السفلية اليمنى:
+
+![علامة تبويب جديدة للبيانات المتتبَّعة بواسطة Zustand](/tutorials/zustand/zustand-tab.png)
+
+عند النقر عليها، سترى محتوى الـ store، وستتمكّن من فهم كيفية تغيّره والبيانات المحفوظة بداخله:
+
+![بيانات الحالة المعروضة أثناء إعادة التشغيل](/tutorials/zustand/state-replay.png)
+
+لاحظ اسم الـ store، فهو في الواقع الاسم الذي استخدمناه عند استدعاء الطريقة zustand في المرة الأولى.
+
+## هل لديك أسئلة؟
+
+إذا كنت لا تستخدم Next.js بل إطار عمل آخر، فمن المفترض أن تكون طريقة الاستخدام مشابهة، والمفتاح هو الطريقة التي تنشئ بها الـ store. وما دمت تجد طريقة لاستخدام الدالة logger عند إنشائه، فستتمكّن من تتبّع الحالة أثناء إعادة التشغيل.
+
+يمكنك [الاطّلاع على هذا المستودع](https://github.com/deleteman/nextjs-commerce-example/tree/zustand-store) للحصول على **الكود المصدري الكامل** لتطبيق Next.js يعمل بإضافة Zustand.
+
+إذا واجهت أي مشكلات في إعداد إضافة Zustand في مشروعك، فيُرجى التواصل معنا عبر [مجتمع Slack](https://slack.openreplay.com/) الخاص بنا وطرح أسئلتك مباشرةً على مطوّرينا!

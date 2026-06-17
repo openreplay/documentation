@@ -4,23 +4,23 @@ metaTitle: "Desplegar en Kubernetes"
 metaDescription: "Guía paso a paso para desplegar OpenReplay en Kubernetes."
 ---
 
-El despliegue de OpenReplay se basa en [Helm Charts](https://helm.sh), lo que lo hace completamente compatible con Kubernetes. Incluimos PostgreSQL y Redis, que son necesarios para OpenReplay. Aquí está cómo hacerlo.
+El despliegue de OpenReplay se basa en [Helm Charts](https://helm.sh), lo que lo hace totalmente compatible con Kubernetes. Empaquetamos PostgreSQL y Redis, que son necesarios para OpenReplay. Aquí te explicamos cómo hacerlo.
 
 ## Requisitos previos
 
-El despliegue de OpenReplay en Kubernetes requiere:
+El despliegue de OpenReplay en Kubernetes necesita:
  - Kubernetes **v1.18+**
  - helm **3.10+**
- - **PVC RWX con ID de usuario 1001 y permiso RW** (para componentes compartidos, si el clúster tiene más de un nodo). Asegúrate de descomentar el bloque a continuación en `/var/lib/openreplay/vars.yaml` y actualizar el nombre del PVC para los componentes **sink, storage** y **chalice**:
+ - **PVC RWX con permiso RW para el id de usuario 1001** (para los componentes compartidos, si el clúster tiene más de un nodo). Asegúrate de reemplazar `hostPath` por el nombre del pvc creado en `/var/lib/openreplay/vars.yaml`.
 
 ```yaml
-# En caso de múltiples nodos en el clúster de Kubernetes,
-# Tendrás que crear un PVC RWX para componentes compartidos.
-# Si es un solo nodo, usaremos hostVolume, que es el predeterminado para la edición comunitaria/oss.
+# In case of multiple nodes in the kubernetes cluster,
+# You'll have to create an RWX PVC for shared components.
+# If it's a single node, we'll use hostVolume, which is the default for the community/oss edition.
 pvcRWXName: "hostPath"
 ```
 
-OpenReplay también **requiere** `2 vCPUs, 8 GB de RAM, 50 GB de almacenamiento` para funcionar correctamente, de lo contrario los servicios de backend de OpenReplay simplemente no se iniciarán. Estas especificaciones son suficientes para un volumen moderado, pero si esperas un tráfico alto, deberías escalar a partir de aquí.
+OpenReplay también **requiere** `2 vCPUs, 8 GB of RAM, 50 GB of storage` (arquitectura x86) para funcionar correctamente; de lo contrario, los servicios de backend de OpenReplay simplemente no se iniciarán. Estas especificaciones son suficientes para un volumen moderado, pero si esperas un tráfico alto, deberías escalar a partir de aquí.
 
 El despliegue se ha probado en las siguientes plataformas:
 - Clúster Kube local de un solo nodo
@@ -43,11 +43,11 @@ tendrás que crear un PVC RWX (por ejemplo, efs, en caso de AWS) para que los co
 Si es un solo nodo, usaremos hostVolume, que es el predeterminado para la instalación comunitaria.
 
 Luego, abre el archivo `vars.yaml` con el comando `vim vars.yaml` y sustituye:
-- `domainName`: aquí será accesible OpenReplay (es decir, openreplay.mycompany.com)
-- `postgresqlPassword`: contraseña de Postgres (establece una o genera una aleatoria)
-- `accessKey`: requerido para el servicio de almacenamiento de objetos (utiliza una cadena generada aleatoriamente)
-- `secretKey`: requerido para el servicio de almacenamiento de objetos (utiliza una cadena generada aleatoriamente)
-- `jwt_secret`: requerido para la API (utiliza una cadena generada aleatoriamente)
+- `domainName`: aquí es donde OpenReplay será accesible (es decir, openreplay.mycompany.com)
+- `postgresqlPassword`: contraseña de Postgres (establécela o genera una aleatoria)
+- `accessKey`: requerido para el servicio de almacenamiento de objetos (usa una cadena generada aleatoriamente)
+- `secretKey`: requerido para el servicio de almacenamiento de objetos (usa una cadena generada aleatoriamente)
+- `jwt_secret`: requerido para la API (usa una cadena generada aleatoriamente)
 
 Asegúrate de tener [helm](https://helm.sh/docs/intro/install/) instalado y luego configura OpenReplay:
 
@@ -59,7 +59,7 @@ helm upgrade --install openreplay ./openreplay -n app --create-namespace --wait 
 
 ## Configurar TLS/SSL
 
-OpenReplay maneja datos de usuario sensibles y por lo tanto requiere HTTPS para funcionar. Esto es obligatorio, de lo contrario el rastreador simplemente no comenzará a grabar. Lo mismo ocurre con el tablero, sin HTTPS no podrás reproducir las sesiones de los usuarios.
+OpenReplay maneja datos sensibles de los usuarios y, por lo tanto, requiere HTTPS para funcionar. Esto es obligatorio; de lo contrario, el rastreador simplemente no comenzaría a grabar. Lo mismo ocurre con el tablero: sin HTTPS no podrás reproducir las sesiones de los usuarios.
 
 Si tu clúster de Kubernetes está en la nube (como EKS, AKS o GKE), entonces la forma más fácil de manejar SSL es configurar un balanceador de carga en la nube y ejecutar tu clúster detrás de él. Otra opción es generar o usar tu propio certificado SSL y apuntar tu subdominio (es decir, openreplay.mycompany.com) a tu clúster. Más sobre ambas opciones a continuación.
 
@@ -68,27 +68,18 @@ Si tu clúster de Kubernetes está en la nube (como EKS, AKS o GKE), entonces la
 Uno de los principales beneficios de ejecutar OpenReplay detrás de un balanceador de carga en la nube es tener el certificado gestionado por el proveedor de la nube. A continuación se presentan guías paso a paso sobre cómo crear:
 - [AWS - Elastic Load Balancing](/deployment/deploy-aws#setupawsloadbalancer(option1))
 - [Google - Cloud Load Balancing](/deployment/deploy-gcp#setupgoogleloadbalancer(option1))
-- [Azure - Load Balancer]([/deployment/deploy-azure#setupazurefrontdoor(option1)](https://docs.microsoft.com/es-es/azure/load-balancer/load-balancer-overview))
+- [Azure - Load Balancer](/deployment/deploy-azure#setupazurefrontdoor(option1))
 - [Digital Ocean - Configurar TLS/SSL](/deployment/deploy-digitalocean#configuretls/ssl)
 
-Luego asegúrate de que tu clúster provisiona un [tipo de servicio](https://kubernetes.io/es/docs/concepts/services-networking/service/#loadbalancer) `LoadBalancer` para que el tráfico del balanceador de carga en la nube se dirija al backend de OpenReplay. Ahora, ve a tu proveedor de servicios DNS y crea un `Registro A` que apunte al clúster usando su IP pública.
-
-Finalmente, habilita `use-forwarded-headers`, descomentando la línea a continuación en la sección `ingress-nginx`, en `/var/lib/openreplay/vars.yaml`:
-
-```yaml
-ingress-nginx: &ingress-nginx
-controller:
-config:
-use-forwarded-headers: true
-```
+Luego asegúrate de que tu clúster provisiona un [tipo de servicio](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer) `LoadBalancer` para que el tráfico del balanceador de carga en la nube se pueda dirigir al backend de OpenReplay. Ahora, ve a tu proveedor de servicios DNS y crea un `A Record` que apunte al clúster usando su IP pública.
 
 Ya está todo listo, OpenReplay debería ser accesible en tu subdominio. Puedes crear una cuenta visitando la página `/signup` (es decir, openreplay.mycompany.com/signup).
 
-### Traer/generar tu certificado SSL (opción 2)
+### Trae/genera tu certificado SSL (opción 2)
 
 Como alternativa a crear un balanceador de carga, puedes traer (o generar) tu propio certificado SSL.
 
-1. Primero, ve a tu proveedor de servicios DNS y agrega un `Registro A`. Utiliza el dominio que proporcionaste anteriormente durante el paso de instalación y apúntalo al clúster usando su IP pública.
+1. Primero, ve a tu proveedor de servicios DNS y agrega un `A Record`. Utiliza el dominio que proporcionaste anteriormente durante el paso de instalación y apúntalo al clúster usando su IP pública.
 
 2. Si traes tu propio certificado, crea un secreto SSL usando el siguiente comando: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
 
@@ -98,24 +89,24 @@ Como alternativa a crear un balanceador de carga, puedes traer (o generar) tu pr
 
 ```yaml
 ingress-nginx: &ingress-nginx
-controller:
-config:
-ssl-redirect: true
-force-ssl-redirect: true
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
 ```
 
 Cabe mencionar que nuestro `ingress-nginx` funciona por defecto en los puertos `80|443`, pero esto se puede cambiar fácilmente, si es necesario, en `vars.yaml`:
 
 ```yaml
 ingress-nginx: &ingress-nginx
-controller:
-service:
-ports:
-http: 80
-https: 443
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
 ```
 
-4. Finalmente reinstala OpenReplay NGINX:
+4. Finalmente, reinstala OpenReplay NGINX:
 
 ```bash
 openreplay -R
@@ -125,4 +116,4 @@ Ya está todo listo, OpenReplay debería ser accesible en tu subdominio. Puedes 
 
 ## ¿Tienes preguntas?
 
-Por favor, háznoslo saber en Slack o con un problema en Github si tienes problemas en tu plataforma. Estaremos encantados de ayudarte a ponerlo en marcha.
+Por favor, háznoslo saber en Slack o con un Github Issue si tienes problemas en tu plataforma. Estaremos encantados de ayudarte a ponerlo en marcha.

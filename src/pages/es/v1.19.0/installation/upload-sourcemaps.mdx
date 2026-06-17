@@ -1,0 +1,49 @@
+---
+title: "Subir Source Maps"
+metaTitle: "Subir Source Maps"
+metaDescription: "Sube source maps a OpenReplay."
+---
+
+OpenReplay permite desminificar JavaScript mediante source maps. Al subirlos a OpenReplay, podrás ver el contexto del código fuente obtenido de los stack traces en su forma original, lo cual resulta muy útil para depurar código minificado (UglifyJS) o código transpilado (TypeScript, ES6).
+
+## Configuración
+
+Instala el módulo NPM sourcemap-uploader:
+
+```bash
+npm i -g @openreplay/sourcemap-uploader
+```
+
+## Requisitos previos
+
+Asegúrate de que tu build genere archivos de source map (.map) separados. Por ejemplo, si usas webpack, tu configuración debería incluir la siguiente opción `devtool`:
+
+```js
+{ devtool: ‘source-map’ }
+```
+
+## Subir Source Maps a OpenReplay
+
+A continuación, debes configurar tu proceso de build para crear los distintos archivos de código fuente. Los source maps se pueden subir para un **único archivo**:
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY file -m ./dist/index.js.map -u https://myapp.com/index.js
+```
+
+O para un **directorio** que incluya muchos archivos. En ese caso, la URL debe corresponder (ruta exacta) a la raíz desde la que subes los archivos JS del directorio. Es decir, si tienes tu `app-42.js` junto con el `app-42.js.map` en la carpeta `./build` y luego quieres subirlo a tu instancia de OpenReplay para que sea accesible a través del enlace `https://myapp.com/static/app-42.js`, entonces el comando debería ser así:
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY dir -m ./build -u https://myapp.com/static
+```
+
+## Parámetros
+
+- `-s`: La URL de tu instancia de OpenReplay. Asegúrate de añadirle /api. No especifiques este parámetro si estás en OpenReplay Cloud.
+- `-k`: API Key (se encuentra en 'Preferences' > 'Account' > 'Organization API Key').
+- `-p`: Project Key (se encuentra en 'Preferences' > 'Projects').
+- `-m`: Ruta a los archivos de source map (también puede ser un directorio).
+- `-u`: URL del recurso JavaScript (si es un único archivo) o URL base (en caso de un directorio).
+- `-l`: Para mostrar los registros de subida.
+
+## ¿Tienes preguntas?
+Si tienes alguna pregunta sobre este proceso, no dudes en contactarnos en nuestro [Slack](https://slack.openreplay.com) o consulta nuestro [Foro](https://forum.openreplay.com).

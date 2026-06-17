@@ -1,0 +1,214 @@
+---
+title: "Assist"
+metaTitle: "Assist"
+metaDescription: "如何设置 OpenReplay Assist 并通过实时屏幕和 WebRTC 为您的最终用户提供支持。"
+---
+
+import Aside from '~/components/Aside.astro'
+
+OpenReplay Assist 让您能够通过查看用户的实时屏幕并立即与他们进行通话（WebRTC）来为用户提供支持，而无需任何第三方屏幕共享软件。
+
+<Aside type="tip">
+  我们还提供了一份详细的教程，介绍如何使用 Assist 与您的用户进行实时互动，您可以在[这里](/tutorials/assist)查看。
+</Aside>
+
+## 安装
+
+```bash
+npm i @openreplay/tracker-assist
+```
+
+## 用法
+
+### 使用 JavaScript 代码片段
+
+如果您的 OpenReplay 追踪器是使用 JS 代码片段设置的，那么只需将 `.../openreplay.js` 替换为 `.../openreplay-assist.js` 即可。下面是更改后脚本应有的样子示例：
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" };
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay-assist.js", 1, 0, initOpts, startOpts);
+</script>
+```
+
+### 使用 NPM
+
+初始化追踪器，然后加载 `@openreplay/tracker-assist` 插件。
+
+#### 如果您的网站是单页应用程序（SPA）
+
+```js
+import Tracker from '@openreplay/tracker';
+import trackerAssist from '@openreplay/tracker-assist';
+
+const tracker = new Tracker({
+  projectKey: PROJECT_KEY,
+});
+tracker.use(trackerAssist(options)); // check the list of available options below
+
+tracker.start();
+
+```
+
+#### 如果您的 Web 应用程序是服务端渲染（SSR）
+
+如果您的应用程序是 SSR，请遵循以下示例。确保在应用程序启动后（在 `useEffect` 或 `componentDidMount` 中）调用 `tracker.start()`。
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+import trackerFetch from '@openreplay/tracker-assist/cjs';
+
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+tracker.use(trackerAssist(options)); // check the list of available options below
+
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, [])
+//...
+}
+```
+
+## 选项
+
+assist 插件支持以下选项：
+
+```js
+trackerAssist({
+  callConfirm?: string|ConfirmOptions;
+  controlConfirm?: string|ConfirmOptions;
+  config?: object;
+  onAgentConnect?: () => (()=>void | void);
+  onCallStart?: () => (()=>void | void);
+  onRemoteControlStart?: () => (()=>void | void);
+	onCallDeny?: () => any;
+	onRemoteControlDeny?: (agentInfo: Record<string, any>) => any;
+  onRecordingDeny?: (agentInfo: Record<string, any>) => any;
+	callUITemplate?: string
+	/** 
+	 * enables gzip compression for big batches on client side
+	 * */
+	compressionEnabled: boolean;
+	/**
+	 * Minimum amount of MESSAGES in a batch to trigger compression run
+	 * @default 5000
+	 * */
+	compressionMinBatchSize: number
+})
+```
+
+### 小组件自定义
+
+远程控制小组件以及通话小组件（即最终用户看到的那些）都可以完全自定义。
+
+#### 远程控制小组件
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
+
+#### 通话小组件
+
+可以通过下面这组 `ids` 和 `classes` 自定义此小组件的各个方面。`Ids` 用作各个按钮/元素的锚点，而 `classes` 可用于分组容器。
+
+| HTML 类型 | 名称 | 描述 |
+|----------|-------------|-------------|
+|id | `or-assist` | 小组件容器 |
+|class | `card`、`border-dark`、`shadow` 和 `drag-area` | 卡片边框和阴影的样式 |
+|id | `controls`  | 小组件内通话部分的容器 |
+|class | `card-header` | 通话小组件卡片头部的样式（在计时器旁边显示客服名称的那个） |
+|id | `agent-name` | 客服名称的容器 |
+|id | `duration` | 计时器的容器 |
+|id | `video-container` | 用户自己视频流的容器 |
+|id | `remote-stream` | 客服的视频流 |
+|class | `card-footer` | 静音、视频、结束通话按钮的容器 |
+|id | `audio-btn` | 静音按钮 |
+|id | `video-btn` | 视频按钮 |
+|id | `end-call-btn` | 结束通话按钮 |
+|id | `remote-control-row` | 远程控制按钮行 |
+|id | `end-control-btn` | 结束控制按钮的 Id |
+
+### 回调
+
+以下是所有回调的列表：
+
+- `callConfirm`：自定义通话请求弹窗的文本和/或布局。 
+- `controlConfirm`：自定义远程控制请求弹窗的文本和/或布局。
+- `config`：包含自定义的 ICE/TURN 服务器配置。默认为 `{ 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }], 'sdpSemantics': 'unified-plan' }`。
+- `onAgentConnect: () => (()=>void | void)`：此回调函数在实时会话开始时立即触发，并返回客服的详细信息（email、name 和 query）。它还可以返回 `onAgentDisconnect`，该函数将在会话断开时被调用。如果连接不稳定，此回调可能会被多次调用。下面是一个示例：
+
+```js
+onAgentConnect = ({ email, name, query }) => {
+  console.log("Live session started")
+  const onAgentDisconnect =  () => console.log("Live session stopped")
+  return onAgentDisconnect
+}
+```
+
+- `onCallStart: ({ email, name, query }) => (()=>void | void)`：此回调函数在通话（webRTC）开始时立即触发，并返回客服的详细信息（email、name 和 query）。它还可以返回 `onCallEnd`，该函数将在通话结束时被调用。如果连接不稳定，此回调可能会被多次调用。下面是一个示例：
+
+```js
+onCallStart: () => {
+  console.log("Call started")
+  const onCallEnd = () => console.log("Call ended")
+  return onCallEnd
+}
+```
+
+- `onRemoteControlStart: ({ email, name, query }) => (()=>void | void)`：此回调函数在远程控制会话开始时立即触发，并返回客服的详细信息（email、name 和 query）。它还可以返回 `onRemoteControlEnd`，该函数将在远程控制权限被撤销时被调用。下面是一个示例：
+
+```js
+onRemoteControlStart: () => {
+  console.log("Remote control started")
+  const onControlEnd = () => console.log("Remote control ended")
+  return onControlEnd
+}
+```
+
+- `onCallDeny?: () => any;`：此回调函数在用户于请求阶段拒绝通话时触发。
+
+```js
+onCallDeny: () => {
+  console.log("Call denied")
+}
+```
+
+- `onRemoteControlDeny?: (agentInfo: Record<string, any>) => any;`：此回调函数在用户于请求阶段拒绝远程控制会话时触发，并返回客服的详细信息（email、name 和 query）。
+
+```js
+onRemoteControlDeny: ({ email, name, query }) => {
+  console.log("Remote control request denied for", email)
+}
+```
+
+- `onRecordingDeny?: (agentInfo: Record<string, any>) => any;`：此回调函数在用户于请求阶段拒绝录制会话时触发，并返回客服的详细信息（email、name 和 query）。
+
+```js
+onRecordingDeny: ({ email, name, query }) => {
+  console.log("Recording session denied")
+ 
+}
+```
+
+## 有疑问？
+
+在设置此插件时遇到困难？请加入我们的 [Slack](https://slack.openreplay.com) 或查看我们的[论坛](https://forum.openreplay.com)，从我们的社区获取帮助。

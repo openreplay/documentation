@@ -1,0 +1,56 @@
+---
+title: "استخدام OpenReplay مع Vue"
+metaTitle: "إضافة Tracker الخاص بـ OpenReplay إلى تطبيق Vue الخاص بك"
+metaDescription: "تعلّم كيفية تشغيل الـ tracker في تطبيق Vue الخاص بك"
+---
+import Aside from '~/components/Aside.astro'
+
+تشغيل الـ tracker في تطبيق Vue أمرٌ بسيطٌ للغاية.
+
+## إضافة كود التتبّع
+
+على الرغم من أنه يمكنك [الحصول على نسخة جاهزة للنسخ واللصق من الكود مباشرةً من المنصّة عند إنشاء مشروع جديد](/using-or/snippet#getting-the-snippet)، إلا أن ذلك الكود بسيطٌ جدًا وسيجعل تخصيصه وإضافة إضافات (plugins) إضافية أصعب بكثير.
+
+بافتراض أنك تبني تطبيق صفحة واحدة SPA (Single Page Application)، كل ما عليك فعله هو إضافة الكود التالي إلى سكربت الإعداد (setup script) في الملف الرئيسي.
+
+```html
+<script setup>
+//... your code here
+const tracker = new Tracker({
+  projectKey: "<your project key>"
+});
+
+tracker.start();
+//... more code here
+</script>
+```
+
+
+<Aside type="tip">
+**ملاحظة لمستخدمي الاستضافة الذاتية (self-hosted)**: إذا كنت تستخدم النسخة ذاتية الاستضافة من OpenReplay، فسيتعيّن عليك أيضًا تحديد خاصية الإعداد `ingestPoint`.
+تحدّد هذه الخاصية نقطة استقبال البيانات (endpoint) الخاصة بالـ tracker. لا يحتاج مستخدمو Cloud إلى ذلك،
+لأن الـ tracker سيعرف افتراضيًا أين توجد نسخة SaaS من نقطة الاستقبال هذه، أما إذا كنت تستضيفه ذاتيًا فستحتاج إلى تحديدها
+(ويجب أن تكون بصيغة شبيهة بـ `https://openreplay.mydomain.com/ingest`)
+</Aside>
+
+### التعامل مع "projectKey" في الكود الخاص بك
+
+كملاحظة، فإن الـ `projectKey` الذي تقوم بإعداده هو القيمة التي توفّرها منصّة OpenReplay.
+لا ينبغي تخزين هذه القيمة بشكل ثابت (hardcoded) داخل الكود لأسباب أمنية، بل في نوعٍ ما من ملفات/أنظمة الإعداد.
+
+أحد الخيارات هو إضافة متغيّر بيئة (environment variable) في ملف `.env` في جذر مشروعك، وإضافة البادئة `VITE_` إلى المتغيّر، مما يجعله متاحًا لك في كود Vue الخاص بك.
+يمكنك استخدامه لاحقًا عبر `import.meta.env.<your variable name>`.
+بهذا الشكل:
+
+```javascript
+const tracker = new Tracker({
+  projectKey: import.meta.env.VITE_VUE_APP_PROJECT_KEY,
+});
+ ```
+
+## هل تبني شيئًا أكثر تعقيدًا؟
+إذا كنت تبني تطبيقًا معقّدًا باستخدام Vue، فمن المرجّح أنك تستخدم [Nuxt](/using-or/nuxt) أو ما شابهه. احرص على الاطلاع على [قسم الإعداد](/using-or) لدينا للعثور على إطار العمل الذي تعمل به.
+
+## هل لديك أسئلة؟
+
+إذا واجهتك أي مشكلات في إعداد الـ tracker على مشروع Vue الخاص بك، فتواصل معنا عبر [مجتمعنا على Slack](https://slack.openreplay.com/) واطرح أسئلتك مباشرةً على مطوّرينا!

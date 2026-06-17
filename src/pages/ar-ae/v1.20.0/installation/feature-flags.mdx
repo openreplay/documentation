@@ -1,0 +1,43 @@
+---
+title: "Feature Flags"
+metaTitle: "Feature Flags"
+metaDescription: "كيفية استخدام علامات الميزات (feature flags) والاستفادة من قوتها في تطبيق الويب الخاص بك"
+---
+
+علامات الميزات (Feature flags)، والمعروفة أيضًا باسم مفاتيح تبديل الميزات (feature toggles)، هي تقنية في تطوير البرمجيات تتيح للمطورين تفعيل أو تعطيل وظائف في تطبيقهم دون الحاجة إلى إعادة نشر الكود. يمكن استخدام علامات الميزات لاختبارات A/B والإطلاق التدريجي، أو كميزة للتخصيص، أو ببساطة كمفتاح إيقاف للتعطيل السريع لميزات معينة تتسبب في أخطاء في بيئة الإنتاج.
+
+### واجهة العلامة المشتركة
+
+```js
+interface IFeatureFlag {
+  key: string
+  is_persist: boolean
+  value: string | boolean
+  payload: string
+}
+```
+
+### Tracker SDK
+
+#### الخيارات
+
+```js
+const tracker = new Tracker({
+	projectKey: 'your. project key',
+	// the rest of your tracker options
+	flags: {
+		onFlagsLoad: (flags: IFeatureFlag[]) => {
+			// handle active flags
+		},
+	}
+})
+```
+
+#### الطرق
+
+- `tracker.clearPersistFlags()` - يزيل علامات الميزات (Feature Flags) الدائمة من sessionStorage الخاص بالمتصفح.
+- `tracker.reloadFlags(): Promise<void>` - يعيد تحميل جميع العلامات (قد يكون ذلك مفيدًا إذا طرأ على جلسة المستخدم أي تغيير في البيانات الوصفية أو userId أو أي معلومات أخرى قد تكون مطلوبة لشروط معينة للعلامة).
+- `tracker.getFeatureFlag(flagKey: string)`: يُرجع `IFeatureFlag` بحسب المفتاح إن وُجد.
+- `tracker.getAllFeatureFlags()`: يُرجع جميع العلامات (`IFeatureFlag[]`) النشطة في الوقت الحالي.
+- `tracker.isFlagEnabled(flagKey: string)`: يُرجع `true` إذا كانت العلامة بهذا المفتاح موجودة ونشطة.
+- `tracker.onFlagsLoad(callback)`: يضبط دالة رد النداء (callback) التي تُستخدم عند تحميل علامات الميزات (Feature Flags).

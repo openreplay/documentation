@@ -1,0 +1,170 @@
+---
+title: "Dynatrace"
+metaTitle: "دمج Dynatrace مع OpenReplay"
+metaDescription: "تعرّف على كيفية دمج سجلات الواجهة الخلفية في Dynatrace مع عمليات إعادة تشغيل الجلسات في OpenReplay."
+---
+
+تعرّف على كيفية دمج سجلات الواجهة الخلفية في [Dynatrace](https://www.dynatrace.com/) مع عمليات إعادة تشغيل الجلسات في [OpenReplay](https://www.openreplay.com/) لتوسيع قدراتك في المراقبة وتصحيح الأخطاء.
+
+> هذا التكامل متاح لمستخدمي **Cloud** (Serverless وDedicated) و**Self-Host (Community وEnterprise)**.
+
+## 1. إنشاء بيانات اعتماد Dynatrace الخاصة بك
+
+اتّبع هذه الخطوات للحصول على بيانات الاعتماد اللازمة من Dynatrace:
+
+1. سجّل الدخول إلى حسابك في Dynatrace.
+2. انتقل إلى **Account Management**
+3. أنشئ OAuth Client:
+  - انقر على **Identity & Access Management**
+  - حدّد **OAuth clients**
+  - انقر على **Create client** لإنشاء بيانات الاعتماد المطلوبة.
+4. احفظ بيانات اعتمادك:
+- بعد إنشاء العميل، احفظ ما يلي:
+  - Client ID
+  - Client Secret
+  - Account URN
+5. احصل على `environment ID` الخاص بك:
+        ```javascript
+        // Example
+        Dynatrace URL: https://rzr85764.app.dynatrace.com/
+        Environment ID: rzr85764
+        ``` 
+
+
+
+## 2. تمرير openReplaySession.id إلى الواجهة الخلفية
+
+لربط سجلات Dynatrace بجلسات OpenReplay، يجب تمرير معرّف جلسة فريد `openReplaySession.id` من الواجهة الأمامية إلى الواجهة الخلفية في كل طلب تريد تتبّعه.
+
+### تضمين openReplaySession.id في طلبات API الخاصة بالواجهة الأمامية
+
+عدّل شيفرة الواجهة الأمامية لإضافة `openReplaySession.id` إلى ترويسات طلبات API الخاصة بك:
+
+```javascript
+
+// JavaScript Example for for Single Page Applications (SPA):
+
+// Import OpenReplay
+import OpenReplay from '@openreplay/tracker';
+
+// Initialize the tracker
+const tracker = new OpenReplay({
+  projectKey: 'YOUR_PROJECT_KEY',
+});
+
+// Start the tracker and wait for it to resolve
+tracker.start().then(() => {
+  // Get the session ID after the tracker has started
+  const sessionId = tracker.getSessionID();
+
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+// Get the session ID
+const sessionId = tracker.getSessionID();
+
+const headers = {
+  'Content-Type': 'application/json',
+};
+
+if (sessionId) {
+  headers['openReplaySession.id'] = sessionId;
+}
+
+// Make the API request
+fetch('/api/endpoint', {
+  method: 'GET', // or 'POST', etc.
+  headers,
+  // ...other options
+})
+  .then(response => {
+    // Handle response
+  })
+  .catch(error => {
+    // Handle error
+  });
+
+```
+
+### تضمين openReplaySession.id في سجلات الواجهة الخلفية
+
+في تطبيق الواجهة الخلفية الخاص بك، استخرج `openReplaySession.id` من الطلبات الواردة وضمّنه في سجلاتك باستخدام تنسيق المفتاح-القيمة المحدّد `openReplaySession.id=<sessionId>`:
+
+```javascript
+
+//  Example.....
+// Middleware to extract the session ID
+app.use((req, res, next) => {
+  const sessionId = req.headers['openreplaysession.id'];
+  req.sessionId = sessionId; // Attach to request object
+  next();
+});
+
+// When logging events or errors
+app.get('/api/endpoint', (req, res) => {
+  // Your logic here
+
+  // Log with the session ID in the required format
+  console.log(`openReplaySession.id=${req.sessionId} - Endpoint accessed`);
+
+  res.send('Success');
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(`openReplaySession.id=${req.sessionId} - Error: ${err.message}`);
+  res.status(500).send('Internal Server Error');
+});
+
+```
+
+من خلال تضمين `openReplaySession.id` في سجلات الواجهة الخلفية، يمكن لـ Dynatrace جمع السجلات المرتبطة بجلسات OpenReplay محدّدة. وهذا يتيح لك عرض هذه السجلات أثناء عمليات إعادة تشغيل الجلسات في OpenReplay، مما يوفّر صورة كاملة عن تفاعلات المستخدم وسجلات الواجهة الخلفية.
+
+
+## 3. إنشاء سمة سجل مخصّصة في Dynatrace
+
+أنشئ سمة سجل مخصّصة في Dynatrace لاستخراج `openReplaySession.id` من سجلاتك.
+
+1. ادخل إلى حساب Dynatrace SaaS الخاص بك.
+2. انتقل إلى Settings.
+3. حدّد **Log Monitoring > Custom attributes** ثم حدّد **Add custom attribute**.
+4. أدخل المفتاح `openReplaySession.id`.
+
+> **مرجع**: راجع الخطوات التفصيلية في وثائق Dynatrace: [Log custom attributes](https://docs.dynatrace.com/docs/observe-and-explore/logs/lma-analysis/logs-and-events/lma-log-custom-attributes).
+
+## 4. تكوين تكامل Dynatrace في OpenReplay
+في حساب OpenReplay الخاص بك، اتّبع هذه الخطوات الثلاث لإكمال ربط عمليات إعادة تشغيل الجلسات بسجلات الواجهة الخلفية في Dynatrace.
+
+### تفعيل تكامل Dynatrace
+1. انتقل إلى **Preferences > Integrations** في OpenReplay.
+2. حدّد علامة التبويب **Backend Logging**.
+3. حدّد المشروع الذي تريد تفعيل تكامل Dynatrace له: حدّد بطاقة تكامل Dynatrace > انقر عليها.
+
+### إدخال بيانات اعتماد Dynatrace
+في الشريط الجانبي لتكامل Dynatrace، أدخل:
+
+1. **Environment ID**: معرّف بيئة Dynatrace الخاص بك للوصول الخارجي.
+2. **Client ID** و**Client Secret**: المحفوظان من الخطوة الأولى.
+3. **Dynatrace Account URN**: المعرّف الفريد الخاص بك المستخدَم داخل منصة Dynatrace، والمحفوظ أيضًا من الخطوة الأولى.
+
+
+### التحقق من الاتصال
+1. انقر على **Add** لاختبار الاتصال: ستؤكّد رسالة نجاح أن التكامل قد تم إعداده بشكل صحيح.
+
+![تكامل Dynatrace في OpenReplay](/static/dynatrace-openreplay.png#center)
+
+## 5. عرض سجلات Dynatrace في OpenReplay
+1. انتقل إلى Sessions في OpenReplay.
+2. افتح أي عملية إعادة تشغيل لجلسة.
+3. انقر على زر **Traces**.
+4. ستُعرض سجلات Dynatrace المرتبطة بالجلسة.
+5. انقر على أي إدخال سجل لعرض المعلومات التفصيلية.
+
+![تتبّعات Dynatrace في OpenReplay](/static/traces-dynatrace.png#center)
+
+> تُسترجَع السجلات من النوع `LOG` ذات الحالات `WARN` و`ERROR` و`INFO` و`NONE` باستخدام Dynatrace Log Monitoring API v2.
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات، تواصل معنا عبر [Slack](https://slack.openreplay.com) أو تفقّد [المنتدى](https://forum.openreplay.com) الخاص بنا واحصل على المساعدة من مجتمعنا.

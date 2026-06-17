@@ -1,0 +1,51 @@
+---
+title: "Android SDK - Очистка конфиденциальных данных"
+metaTitle: "Android SDK - Очистка конфиденциальных данных"
+metaDescription: "Подробности об очистке записей и сетевых данных в трекере для Android"
+---
+
+## Компоненты интерфейса
+
+Очищенные представления будут размыты в итоговом воспроизведении. Вы можете добавить любой компонент интерфейса, и он будет автоматически удалён (для экономии памяти), как только перестанет отображаться на экране.
+
+### View
+
+```kotlin
+import com.openreplay.tracker.OpenReplay
+
+OpenReplay.addIgnoredView(view)
+```
+
+## Сетевые запросы
+
+Экспортируются два ключа для автоматической обрезки данных запроса/ответа: `ignoredKeys` для тела и `ignoredHeaders` для заголовков. Будут очищены как запрос, так и ответ, но тело будет затронуто только в том случае, если это корректный JSON.
+
+Просто назначьте список строк, которые вы хотите очистить:
+
+```kotlin
+val networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+Также можно изменить данные ответа перед передачей их слушателю:
+
+```kotlin
+// ... request
+
+var sanitizedData: Any? = null
+data?.let {
+    try {
+        val json = JSONTokener(it).nextValue()
+        sanitizedData = customSanitizeFunction(it)
+        println(json)
+    } catch (error: JSONException) {
+        println("Error deserializing JSON: $error")
+    }
+}
+
+networkListener.finish(response, sanitizedData)
+```
+
+## Остались вопросы?
+Если у вас есть вопросы об этом процессе, свяжитесь с нами в нашем [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com).

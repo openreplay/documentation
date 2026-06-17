@@ -1,0 +1,52 @@
+---
+title: "Sanear datos (Android)"
+metaTitle: "Sanear datos (Android)"
+metaDescription: "Cómo sanear los datos y garantizar la privacidad de tus usuarios en tu aplicación Android."
+---
+
+
+## Componentes de la interfaz
+
+Las vistas saneadas aparecerán difuminadas en la repetición resultante. Puedes añadir cualquier componente de la interfaz y se eliminará automáticamente (para preservar la memoria) en cuanto deje de estar en pantalla.
+
+### View
+
+```kotlin
+import com.openreplay.tracker.OpenReplay
+
+OpenReplay.addIgnoredView(view)
+```
+
+## Solicitudes de red
+
+Se exportan dos claves para recortar automáticamente los datos de la solicitud/respuesta: `ignoredKeys` para el cuerpo e `ignoredHeaders` para las cabeceras. Tanto la solicitud como la respuesta se sanearán, pero el cuerpo solo se verá afectado si es un JSON válido.
+
+Simplemente asigna una lista de cadenas que te gustaría sanear:
+
+```kotlin
+val networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+También es posible modificar los datos de la respuesta antes de pasarlos al listener:
+
+```kotlin
+// ... request
+
+var sanitizedData: Any? = null
+data?.let {
+    try {
+        val json = JSONTokener(it).nextValue()
+        sanitizedData = customSanitizeFunction(it)
+        println(json)
+    } catch (error: JSONException) {
+        println("Error deserializing JSON: $error")
+    }
+}
+
+networkListener.finish(response, sanitizedData)
+```
+
+## ¿Tienes preguntas?
+Si tienes alguna pregunta sobre este proceso, no dudes en contactarnos en nuestro [Slack](https://slack.openreplay.com) o visita nuestro [Foro](https://forum.openreplay.com).

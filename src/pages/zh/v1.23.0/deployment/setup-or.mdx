@@ -1,0 +1,110 @@
+---
+title: "设置 OpenReplay"
+metaTitle: "设置 OpenReplay"
+metaDescription: "如何快速设置 OpenReplay 并开始录制会话和指标。"
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+import IconText from '~/components/Card/IconText.astro'
+
+<YoutubeVideo title="观看如何开始使用 OpenReplay"
+  description="如果你不喜欢阅读，可以观看这个视频教程，它将在 3 分钟或更短的时间内教你如何开始使用 OpenReplay"
+  videoURL="https://www.youtube.com/watch?v=EWbtMK3qK30"
+  />
+
+
+开始使用 OpenReplay 非常简单。 
+
+如果你想观看关于如何开始的快速教程，请使用[这个 YouTube 视频](https://www.youtube.com/watch?v=EWbtMK3qK30)，否则请继续阅读以获取更多详细信息。
+
+有两种方法可以让 OpenReplay 运行起来：使用脚本或 npm 包。
+
+## 使用脚本
+
+将代码片段直接复制/粘贴到你的 Web 应用的 `</head>` 中。该脚本可在 OpenReplay 仪表板的 'Preferences > Projects' 下找到，并且对每个项目都是唯一的。
+
+如果你的网站支持 Google Tag Manager，则可以按照 [GTM 分步指南](/integrations/google-tag-manager)操作。
+
+## 使用 NPM
+
+首先安装 npm 包。
+
+```bash
+npm i @openreplay/tracker
+```
+
+然后，从代码库的入口点初始化该包并启动 tracker。你必须在构造函数中设置 `projectKey` 选项。其值可在你的 OpenReplay 仪表板的 'Preferences > Projects' 下找到。
+
+### 如果你的网站是单页应用 (SPA)
+
+你可以将 tracker 用作单例实例，这是推荐的使用方式。 
+这样，你就可以在应用的任何位置访问 tracker：
+
+```js
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+	projectKey: PROJECT_KEY,
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+})
+
+tracker.start() // returns a promise with session info (sessionID, sessionHash, userUUID)
+```
+
+或者你可以直接使用 `Tracker` 类来手动管理其实例：
+
+```js
+import OpenReplay from '@openreplay/tracker';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY,
+  ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
+});
+
+tracker.start();
+```
+
+### 如果你的 Web 应用是服务端渲染 (SSR)
+
+如果你的 Web 应用是服务端渲染 (SSR)（即 NextJS、NuxtJS），请按照以下代码片段操作。 
+请确保 tracker 在浏览器环境中运行，并且在应用提供给客户端后再调用 `tracker.start()`（即在 `useEffect` 或 `componentDidMount` 中）。
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+//...
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY
+});
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, []);
+}
+```
+
+如果你想进一步配置 tracker，请查看 [JavaScript SDK](/installation/javascript-sdk#options) 以获取可用选项的列表。
+
+## 与其他框架集成
+如果你不是在一个原始应用中使用 OpenReplay，那么你很可能在使用某个 Web 开发框架，比如 Next.js、Nuxt 或其他框架。
+请查看我们为每个受支持框架提供的个性化教程：
+
+<div class="grid grid-cols-1 md:grid-cols-1 gap-3 md:gap-4">
+  <IconText url="/sdk/using-or/next" title="React" />
+  <IconText url="/sdk/using-or/nuxt" title="Vue" />
+  <IconText url="/sdk/using-or/angular" title="Angular" />
+  <IconText url="/sdk/using-or/next" title="NextJS" />
+  <IconText url="/sdk/using-or/nuxt" title="Nuxt" />
+</div>
+
+## 后续步骤
+
+现在你已经安装了 tracker 并部署了你的 Web 应用，会话录制应该会在几分钟内出现。做得好！
+
+与此同时，你可以进一步完成设置过程，以充分发挥 OpenReplay 的作用。你捕获的越多，就越有利于快速重现和修复问题：
+- [识别用户](/installation/identify-user)：将你的内部用户 ID 与正在录制的会话关联起来。
+- [元数据](/installation/metadata)：也称为 traits 或用户变量，元数据在录制会话时提供有关用户的额外信息。
+- [自定义事件](/installation/custom-events)：通过在会话回放的同时录制特定领域的事件来增加更多智能信息。
+- [错误报告](/installation/error-reporting)：报告错误和异常，并在 ERRORS 选项卡下查看它们。
+- [上传 Source-Maps](/installation/upload-sourcemaps)：以原始形式查看从堆栈跟踪中获取的源代码上下文。
+- [插件](/plugins)：通过捕获应用的 store 并监控你的 HTTP 和 GraphQL 查询，了解底层正在发生的事情。
+- [集成](/integrations)：将 OpenReplay 与你的日志工具对接，并将后端错误与会话回放同步。

@@ -1,0 +1,80 @@
+---
+title: "NgRx"
+metaTitle: "NgRx"
+metaDescription: "Plugin de NgRx para OpenReplay."
+---
+
+Este plugin te permite capturar las acciones/el estado de `NgRx` e inspeccionarlos más tarde mientras reproduces las grabaciones de sesión. Esto resulta muy útil para entender y solucionar problemas.
+
+## Instalación
+
+```bash
+npm i @openreplay/tracker-ngrx --save
+```
+
+## Uso
+
+Añade el meta-reducer generado a tus `imports`. Consulta la [documentación de NgRx](https://ngrx.io/guide/store/metareducers) para obtener más detalles.
+
+## Si tu sitio web es una aplicación de página única (SPA)
+
+```js
+import { StoreModule } from '@ngrx/store';
+import OpenReplay from '@openreplay/tracker';
+import trackerNgRx from '@openreplay/tracker-ngrx';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+const metaReducers = [tracker.use(trackerNgRx(<options>))]; // check list of available options below
+
+tracker.start();
+
+//...
+@NgModule({
+  imports: [StoreModule.forRoot({}, { metaReducers })]
+})
+export class AppModule {}
+```
+
+### Si tu aplicación web se renderiza en el servidor (SSR)
+
+Sigue el ejemplo de abajo si tu aplicación es SSR. Asegúrate de que `tracker.start()` se llame una vez que la aplicación se haya iniciado (en `useEffect` o `componentDidMount`).
+
+```js
+import { StoreModule } from '@ngrx/store';
+import OpenReplay from '@openreplay/tracker/cjs';
+import trackerNgRx from '@openreplay/tracker-ngrx/cjs';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+const metaReducers = [tracker.use(trackerNgRx(<options>))]; // check list of available options below
+//...
+  @NgModule({
+    imports: [StoreModule.forRoot({}, { metaReducers })]
+  })
+  export class AppModule {}
+}
+
+```
+
+## Opciones
+
+Puedes personalizar el comportamiento del middleware para sanear tus datos.
+
+```js
+trackerNgRx({
+  actionFilter: action => action.type !== 'DRAW', // only actions which pass this test will be recorded
+  actionTransformer: action => action.type === 'LOGIN' ? null : action,
+  actionType: action => action.type // action type for search, that's the default one
+  stateTransformer: state => {
+    const { jwt, ..._state } = state;
+    return _state;
+  },
+})
+```
+
+## ¿Tienes preguntas?
+
+¿Tienes problemas para configurar este plugin? Conéctate a nuestro [Slack](https://slack.openreplay.com) o visita nuestro [Foro](https://forum.openreplay.com) y obtén ayuda de nuestra comunidad.

@@ -1,0 +1,77 @@
+---
+title: "تنقية البيانات (iOS)"
+metaTitle: "تنقية البيانات (iOS)"
+metaDescription: "كيفية تنقية البيانات وضمان خصوصية مستخدميك في تطبيق iOS الخاص بك."
+---
+
+
+## تنقية مكوّنات واجهة المستخدم
+
+ستظهر طرق العرض المُنقّاة مموّهة في إعادة التشغيل الناتجة. يمكنك إضافة أي مكوّن من مكوّنات واجهة المستخدم وسيتم إزالته تلقائيًا (للحفاظ على الذاكرة) بمجرد أن يخرج من الشاشة.
+
+### SwiftUI
+
+ما عليك سوى إضافة المُعدِّل `.sensitive()` إلى المكوّن المطلوب.
+
+```swift
+import ORTracker
+
+Text("Very important sensitive text")
+.sensitive()
+
+```
+
+### UIKit
+
+```swift
+import ORTracker
+
+ORTracker.shared.addIgnoredView(view)
+```
+
+### React Native
+
+يُصدِّر الـ SDK المكوّن `ORSanitizedView` الذي يمكنك استخدامه لتغليف مكوّناتك الحساسة من أجل تمويهها.
+
+```js
+import OR from '@openreplay/react-native'
+
+// ... your app UI
+
+  <OR.ORSanitizedView>
+    <SensitiveComponent />
+  </OR.ORSanitizedView>
+
+// ...
+```
+
+## تنقية طلبات الشبكة
+
+يتم تصدير مفتاحين لاقتصاص بيانات الطلب/الاستجابة تلقائيًا: `ignoredKeys` للجسم و`ignoredHeaders` للترويسات. سيتم تنقية كلٍّ من الطلب والاستجابة، لكن الجسم لن يتأثر إلا إذا كان بصيغة JSON صالحة.
+
+ما عليك سوى تعيين قائمة بالسلاسل النصية التي ترغب في تنقيتها:
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+من الممكن أيضًا تغيير بيانات الاستجابة قبل تمريرها إلى المستمع (listener):
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```

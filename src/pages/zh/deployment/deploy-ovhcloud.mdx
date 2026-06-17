@@ -1,0 +1,81 @@
+---
+title: "部署到 OVHcloud"
+metaTitle: "部署到 OVHcloud"
+metaDescription: "在 OVHcloud（独立服务器、VPS、Private Cloud 虚拟机或 Public Cloud 实例）上部署 OpenReplay 的分步指南。"
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+OpenReplay 技术栈可以安装在单台机器上，而 OVHcloud 的独立服务器、VPS、Private Cloud 虚拟机或 Public Cloud 实例都是理想的选择。下面介绍具体操作方法。
+
+## 订购服务器或启动实例
+
+你可以使用以下任意一种 OVHcloud 产品来部署 OpenReplay：
+
+- 独立服务器
+- VPS
+- Private Cloud（在虚拟机内）
+- Public Cloud 实例
+
+前提条件：
+
+- 选择 *Ubuntu Server 24.04 LTS* 作为操作系统。
+- 运行 OpenReplay 的机器最低配置为 `2 vCPUs, 8 GB of RAM, 50 GB of storage`，且需采用 x86 架构，否则 OpenReplay 后端服务将无法启动。这对于低/中等流量来说应该足够了。如果你预计会有较高的流量，则应在此基础上进行扩展。
+- 一个指向你的服务器/实例的公网 IP 地址。
+
+## 部署 OpenReplay
+
+1. 确保你的服务器/实例已启动，然后以 root 身份通过 SSH 连接到它
+
+2. 通过提供 OpenReplay 将要运行的域名来安装它（例如 DOMAIN_NAME=openreplay.mycompany.com）：
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## 配置 TLS/SSL
+
+OpenReplay 会处理敏感的用户数据，因此需要 HTTPS 才能运行。这是强制性的，否则 tracker 根本不会开始录制。dashboard 也是如此，没有 HTTPS 你将无法回放用户会话。
+
+因此，你必须自带（或生成）你自己的 SSL 证书。
+
+1. 首先，前往你的 OVHcloud 控制面板，依次进入 'Web cloud' > 'Domain names' > 你的域名（即 mycompany.com）> 'DNS zone'（或你使用的其他 DNS 服务提供商），并创建一条 `A Record`。使用你之前在安装步骤中提供的域名，并通过其公网 IP 将其指向服务器/实例。
+
+2. 如果你要自带证书，请使用以下命令创建一个 SSL secret：`kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`。
+
+> **注意：** 如果你没有证书，请使用 Let's Encrypt 为你的子域名（即安装期间提供的那个）生成一个可自动续期的证书。只需连接到 OpenReplay 服务器/实例，运行 `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` 并按照步骤操作即可。
+
+3. 如果你希望启用 http 到 https 的重定向（推荐），请取消注释 `/var/lib/openreplay/vars.yaml` 中 `ingress-nginx` 部分下方的以下代码块：
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+值得一提的是，我们的 `ingress-nginx` 默认运行在 `80|443` 端口上，但如有需要，可以在 `vars.yaml` 中轻松更改：
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. 最后，重新安装 OpenReplay NGINX：
+
+```bash
+openreplay -R
+```
+
+现在一切就绪，OpenReplay 应该可以在你的子域名上访问了。你可以访问 `/signup` 页面（即 openreplay.mycompany.com/signup）来创建账户。
+
+## 有疑问？
+
+如果你遇到任何问题，请加入我们的 [Slack 社区](https://slack.openreplay.com/)，从我们的开发人员那里获得帮助。

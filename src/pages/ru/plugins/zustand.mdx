@@ -1,0 +1,97 @@
+---
+title: "Zustand"
+metaTitle: "Zustand"
+metaDescription: "Плагин Zustand для OpenReplay."
+---
+import Aside from '~/components/Aside.astro'
+
+Этот плагин позволяет захватывать мутации и состояние `Zustand` и просматривать их позже при воспроизведении записей сессий. Это очень полезно для понимания и устранения проблем.
+
+<Aside type="tip">
+  У нас также есть подробное руководство о том, как использовать плагин Zustand для захвата состояния вашего приложения при работе с этой библиотекой; вы можете ознакомиться с ним [здесь](/tutorials/zustand).
+</Aside>
+
+
+
+## Установка
+
+```bash
+npm i @openreplay/tracker-zustand
+```
+
+## Использование
+
+Инициализируйте пакет `@openreplay/tracker` как обычно и загрузите в него плагин. Вызовите плагин, чтобы задать имя хранилища; это вернёт именованный экземпляр трекера хранилища, который вы можете вызвать, передав ваш образец хранилища в качестве аргумента, чтобы включить отслеживание этого хранилища.
+
+### Если ваш сайт является одностраничным приложением (SPA)
+
+```js
+import Tracker from '@openreplay/tracker';
+import trackerZustand from '@openreplay/tracker-zustand';
+```
+
+### Если ваше веб-приложение рендерится на стороне сервера (SSR)
+
+```js
+import Tracker from '@openreplay/tracker/cjs';
+import trackerZustand from '@openreplay/tracker-zustand/cjs';
+```
+
+### Отслеживание хранилища Zustand
+
+```js
+import create from "zustand";
+import Tracker from '@openreplay/tracker';
+import trackerZustand, { StateLogger } from '@openreplay/tracker-zustand';
+
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+// as per https://docs.pmnd.rs/zustand/guides/typescript#middleware-that-doesn't-change-the-store-type
+// cast type to new one
+// but this seems to not be required and everything is working as is
+const zustandPlugin = tracker.use(trackerZustand()) as unknown as StateLogger
+
+
+const useBearStore = create(
+  zustandPlugin((set: any) => ({
+    bears: 0,
+    increasePopulation: () => set((state: any) => ({ bears: state.bears + 1 })),
+    removeAllBears: () => set({ bears: 0 }),
+  }),
+    // store name is optional
+    // and is randomly generated if undefined
+  'bear_store'
+  )
+)
+```
+
+## Опции
+
+Вы можете настроить поведение плагина с помощью опций для очистки ваших данных. Они аналогичны опциям стандартного плагина `createLogger`.
+
+```js
+trackerZustand({
+  filter (mutation, state) {
+    // returns `true` if a mutation should be logged
+    // `mutation` is a `{ type, payload }`
+    return mutation.type !== "aBlacklistedMutation";
+  },
+  transformer (state) {
+    // transform the state before logging it.
+    // for example return only a specific sub-tree
+    return state.subTree;
+  },
+  mutationTransformer (mutation) {
+    // mutations are logged in the format of `{ type, payload }`
+    // we can format it any way we want.
+    return mutation.type;
+  },
+})
+```
+
+## Остались вопросы?
+
+Возникли трудности с настройкой этого плагина? Присоединяйтесь к нашему [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com) и получите помощь от нашего сообщества.

@@ -1,0 +1,99 @@
+---
+title: "Eventos"
+metaTitle: "Eventos"
+metaDescription: "Cómo obtener todos los eventos de una grabación específica."
+---
+
+## Recuperar eventos
+
+Devuelve la lista de eventos (clics, visitas a páginas, entradas, eventos personalizados, etc.) capturados en una sesión específica. El alcance de la sesión lo impone el servidor: el parámetro de ruta `sessionID` se agrega automáticamente como filtro de eventos.
+
+### Método
+`POST`
+
+### URL
+`/public/:projectKey/sessions/:sessionId/events`
+
+### Parámetros
+
+| Nombre     | Tipo   | Descripción                                                |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | La clave del proyecto (obligatorio)                        |
+| sessionId  | string | El ID de la sesión (obligatorio, máx. 256)                 |
+
+### Carga útil
+
+| Nombre         | Tipo       | Descripción                                                          |
+|----------------|------------|----------------------------------------------------------------------|
+| startTimestamp | epoch (ms) | Inicio de la ventana de tiempo (obligatorio, mín. 946684800000)      |
+| endTimestamp   | epoch (ms) | Fin de la ventana de tiempo (obligatorio, > startTimestamp)         |
+| limit          | integer    | Tamaño de página, 1-200 (obligatorio)                               |
+| page           | integer    | Número de página, comienza en 1 (obligatorio)                       |
+| sortBy         | string     | Columna de evento por la que ordenar (opcional)                     |
+| sortOrder      | string     | `asc` o `desc` (opcional)                                           |
+| filters        | array      | Filtros de eventos adicionales (opcional) — véase la estructura del filtro a continuación |
+| columns        | array      | Columnas de eventos a incluir en la respuesta (opcional)            |
+
+Objeto de filtro:
+
+| Nombre   | Tipo     | Descripción                                                   |
+|----------|----------|---------------------------------------------------------------|
+| name     | string   | Nombre del atributo del filtro (obligatorio, máx. 256)        |
+| operator | string   | Operador de comparación (p. ej. `is`, `contains`)            |
+| value    | string[] | Hasta 10 valores, cada uno de máx. 256 caracteres             |
+| isEvent  | boolean  | Si el filtro apunta a una propiedad de evento                 |
+| dataType | string   | Uno de `string`, `number`, `boolean`, `integer`, `timestamp`  |
+
+### Encabezados de la solicitud
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Códigos de estado
+
+`200`: Respuesta enviada como JSON en el cuerpo  
+`400`: Cuerpo no válido o `sessionID` no válido (vacío o > 256 caracteres)
+
+### Ejemplo de solicitud
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/sessions/4813023023591169/events \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "startTimestamp": 1623440000000,
+    "endTimestamp":   1623441000000,
+    "limit": 100,
+    "page":  1,
+    "sortOrder": "asc"
+  }'
+```
+
+### Ejemplo de respuesta
+
+```json
+{
+  "data": {
+    "total": 3,
+    "events": [
+      {
+        "event_id": "01H7Z...",
+        "$event_name": "$pageview",
+        "created_at": 1623440905732,
+        "distinct_id": "mickael@openreplay.com",
+        "session_id": "4813023023591169",
+        "properties": { "path": "/my-account/" }
+      },
+      {
+        "event_id": "01H7Z...",
+        "$event_name": "$click",
+        "created_at": 1623440915126,
+        "distinct_id": "mickael@openreplay.com",
+        "session_id": "4813023023591169",
+        "$properties": { "label": "Shop" },
+        "$auto_captured": true
+      }
+    ]
+  }
+}
+```

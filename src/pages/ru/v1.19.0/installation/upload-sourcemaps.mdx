@@ -1,0 +1,49 @@
+---
+title: "Загрузка Source Maps"
+metaTitle: "Загрузка Source Maps"
+metaDescription: "Загрузка source maps в OpenReplay."
+---
+
+OpenReplay поддерживает деминификацию JavaScript с помощью source maps. Загрузив их в OpenReplay, вы сможете видеть контекст исходного кода, полученный из стек-трейсов, в его исходном виде, что очень полезно для отладки минифицированного кода (UglifyJS) или транспилированного кода (TypeScript, ES6).
+
+## Настройка
+
+Установите NPM-модуль sourcemap-uploader:
+
+```bash
+npm i -g @openreplay/sourcemap-uploader
+```
+
+## Предварительные требования
+
+Убедитесь, что ваша сборка создаёт отдельные файлы source map (.map). Например, если вы используете webpack, ваша конфигурация должна включать приведённую ниже опцию `devtool`:
+
+```js
+{ devtool: ‘source-map’ }
+```
+
+## Загрузка Source Maps в OpenReplay
+
+Затем вам нужно настроить процесс сборки для создания различных исходных файлов. Source maps можно загружать для **одного файла**:
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY file -m ./dist/index.js.map -u https://myapp.com/index.js
+```
+
+Или для **каталога**, содержащего множество файлов. В этом случае URL должен соответствовать (точный путь) корню, из которого вы загружаете JS-файлы каталога. Иными словами, если ваш `app-42.js` вместе с `app-42.js.map` находится в папке `./build`, и вы хотите загрузить его в свой экземпляр OpenReplay, чтобы он был доступен по ссылке `https://myapp.com/static/app-42.js`, то команда должна выглядеть так:
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY dir -m ./build -u https://myapp.com/static
+```
+
+## Параметры
+
+- `-s`: URL вашего экземпляра OpenReplay. Не забудьте добавить к нему /api. Не указывайте этот параметр, если вы используете OpenReplay Cloud.
+- `-k`: API Key (находится в 'Preferences' > 'Account' > 'Organization API Key').
+- `-p`: Project Key (находится в 'Preferences' > 'Projects').
+- `-m`: Путь к файлу(ам) source map (также может быть каталогом).
+- `-u`: URL к ресурсу JavaScript (если это один файл) или базовый URL (в случае каталога).
+- `-l`: Для отображения логов загрузки.
+
+## Есть вопросы?
+Если у вас есть вопросы по этому процессу, не стесняйтесь обращаться к нам в нашем [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com).

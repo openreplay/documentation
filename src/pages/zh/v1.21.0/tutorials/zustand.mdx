@@ -1,0 +1,185 @@
+---
+title: "使用 Zustand 插件跟踪状态变化"
+metaTitle: "Zustand"
+metaDescription: "使用 Zustand 插件跟踪状态变化"
+---
+Zustand 是 Redux 等状态管理方案的一个非常快速且极简的替代品。借助我们的 [Zustand 插件](https://www.npmjs.com/package/@openreplay/tracker-zustand)，您可以在应用程序的整个生命周期中跟踪状态变化。
+
+## 安装插件
+
+使用以下命令即可轻松安装该插件：
+
+```jsx
+npm i @openreplay/tracker-zustand
+```
+
+## 在 Next.js 应用中使用该插件
+
+在本示例中，我们将使用与[我们 tracker 的 Next.js 教程](https://docs.openreplay.com/tutorials/next)中展示的相同的应用程序，因此如果您想了解所用 Context provider 的更多细节，请先查看那篇教程。
+
+**注意**：本示例的完整源代码位于这个 [Github 仓库](https://github.com/deleteman/nextjs-commerce-example/tree/zustand-store)中，如果您需要更多细节，请查看它。
+
+我使用的 Context provider 允许配置 Tracker Plugins，因此在安装插件之后，我们将修改 _app.tsx 文件，添加下面的导入语句：
+
+```jsx
+import trackerZustand from '@openreplay/tracker-zustand'
+```
+
+然后，主 App 函数应该如下所示：
+
+```jsx
+export default function MyApp({ Component, pageProps }: AppProps) {
+  const Layout = (Component as any).Layout || Noop
+
+  useEffect(() => {
+    document.body.classList?.remove('loading')
+  }, [])
+
+  let plugins = [
+    {
+      fn: trackerZustand,
+      name: 'zustand',
+    },
+  ]
+
+  return (
+    <TrackerProvider
+      config={{
+        plugins
+      }}
+    >
+      <Head />
+      <ManagedUIContext>
+        <Layout pageProps={pageProps}>
+          <Component {...pageProps} />
+        </Layout>
+      </ManagedUIContext>
+    </TrackerProvider>
+  )
+}
+```
+
+这将自动随 tracker 一起初始化插件，并且还会提供执行插件主函数后所返回的数据。
+
+接下来要做的是创建一个 store，稍后我们将把电子商务网站中的商品添加到这个 store 中。
+
+### 使用 Zustand 插件创建 store
+
+使用该插件需要您改变通常实例化 Zustand store 的方式，因此您可以随意将以下代码作为模板复制粘贴：
+
+```jsx
+import create from 'zustand'
+
+const productStore = null
+export const useProductsStore = (logger) => {
+  if (!productStore) {
+    //use a singleton pattern to make sure we only create the store the first time around
+    productStore = createProductStore(logger)
+  }
+  return productStore
+}
+
+function createProductStore(logger) {
+  return create(
+    logger((set) => ({
+      products: [],
+      addProduct: (p) =>
+        set((state) => {
+          const prodFound = state.products.find((prod) => {
+            return p.id == prod.id
+          })
+          if (prodFound) {
+            p.amount = prodFound.amount + 1
+          } else {
+            p.amount = 1
+          }
+
+          return {
+            products: [...state.products.filter((prod) => p.id != prod.id), p],
+          }
+        }),
+    }))
+  )
+}
+```
+
+导出的函数将在首次使用时创建 store，但之后它只会返回已有的那个 store。
+
+另一方面，createProductStore 函数将创建 store，设置 addProduct 方法的逻辑，并使用我们提供给它的 logger 函数。这个 logger，您可能已经猜到了，正是我们使用 Zustand 插件时获得的那个。
+
+store 准备就绪后，我们就可以开始向其中添加商品。
+
+## 向我们的 store 添加商品
+
+store 导出了 addProduct 方法，该方法负责跟踪我们购物车中的商品。
+
+要将该函数导入到您的代码中，您需要：
+
+1. 导入并使用 Tracker 的 context provider。
+2. 从 context 中获取 pluginsReturnedValue 属性。
+3. 使用它来调用 zustand 方法（请注意，该方法是以我们上面配置插件时的 name 属性来命名的），并传入一个字符串属性来为 store 命名（这个名称将在回放期间使用）。
+4. zustand 方法将返回 logger，我们将在调用 zustand 的 useProductStore hook（即我们为 store 创建的那个）时使用它。
+
+这一切看起来太复杂了，但本质上都可以归结为：
+
+```jsx
+const { pluginsReturnedValues } = useContext(TrackerContext)
+
+const useProductStoreTracked = useProductsStore(
+  pluginsReturnedValues.zustand('products_store')
+)
+const { addProduct } = useProductStoreTracked()
+```
+
+现在，您只需调用 addProduct 方法，它就会将购物车中的商品添加到 store。
+
+## 从 store 读取数据
+
+正如您可能猜到的，如果您想从 Zustand store 读取数据，您必须执行同样的一组步骤。但我们不再取用 addProduct 方法，而是解构出 products 数组。
+
+像这样：
+
+```jsx
+const { pluginsReturnedValues } = useContext(TrackerContext)
+
+const useProductStoreTracked = useProductsStore(
+  pluginsReturnedValues.zustand('products_store')
+)
+const { products } = useProductStoreTracked()
+```
+
+然后您可以正常地遍历 products：
+
+```jsx
+<div>
+  {products.map((p: Product, idx: Number) => {
+    return (
+      <div key={+idx}>
+        {p.name}({p.amount})
+      </div>
+    )
+  })}
+</div>
+```
+
+上述代码遍历 products 列表并将它们渲染到屏幕上。每当您向 store 添加另一件商品时，这里也会随之更新。
+
+## 将状态与会话回放同步
+
+要在回放期间查看状态变化，只需点击右下角新的 Zustand 选项卡：
+
+![用于 Zustand 跟踪数据的新选项卡](/tutorials//zustand/zustand-tab.png)
+
+点击它后，您将看到 store 的内容，并能够了解它是如何变化的以及其中保存的数据：
+
+![回放期间显示的状态数据](/tutorials//zustand/state-replay.png)
+
+请注意 store 的名称，它实际上就是我们第一次调用 zustand 方法时所使用的名称。
+
+## 有疑问吗？
+
+如果您使用的不是 Next.js 而是其他框架，使用方式应该是类似的，关键在于您创建 store 的方式。只要您能找到在创建时使用 logger 函数的方法，您就能够在回放期间跟踪状态。
+
+您可以[查看此仓库](https://github.com/deleteman/nextjs-commerce-example/tree/zustand-store)，以获取一个使用 Zustand 插件的可运行 Next.js 应用程序的**完整源代码**。
+
+如果您在项目中设置 Zustand 插件时遇到任何问题，请通过我们的 [Slack 社区](https://slack.openreplay.com/)联系我们，直接向我们的开发人员提问！

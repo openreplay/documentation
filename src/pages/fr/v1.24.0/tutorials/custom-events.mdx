@@ -1,0 +1,229 @@
+---
+title: "Utiliser les événements personnalisés pour améliorer votre suivi"
+metaTitle: "Améliorez vos capacités de suivi grâce aux événements personnalisés et aux incidents personnalisés"
+metaDescription: "Capturez toutes sortes d'événements personnalisés via l'API des événements personnalisés"
+---
+Les événements personnalisés sont un concept simple mais puissant que notre Tracker fournit sans avoir à ajouter quoi que ce soit de plus.
+Ils peuvent enrichir les données suivies avec tout ce dont vous avez besoin, qu'il s'agisse d'erreurs personnalisées liées à votre logique métier ou même de simples événements, afin de savoir ce que font vos utilisateurs.
+
+Notre tracker, par défaut, garde un œil sur de nombreuses choses différentes, y compris certaines [erreurs utiles](https://docs.openreplay.com/tutorials/issues), mais elles ne sont peut-être pas suffisantes pour vous, et c'est pourquoi nous proposons les événements personnalisés.
+
+## Ajouter des événements personnalisés
+
+Pour cet exemple, prenons un site de commerce électronique générique et ajoutons quelques événements pour comprendre quand notre utilisateur ajoute un produit au panier d'achat.
+
+Par défaut, OpenReplay ne suivra pas cette information. Cependant, grâce aux événements personnalisés, vous pouvez facilement en assurer le suivi.
+
+Pour ce tutoriel, nous utiliserons un projet Next.js configuré selon la même architecture que dans le [tutoriel Next.js](https://docs.openreplay.com/tutorials/next), n'hésitez donc pas à le consulter si ce n'est pas déjà fait.
+
+### Créer le Tracker Provider
+
+La logique de ce fichier est entièrement expliquée dans [ce tutoriel](https://docs.openreplay.com/tutorials/next).
+
+Tout ce que vous devez savoir pour l'instant, c'est qu'il s'agit d'un fournisseur de contexte que nous créons et qui vous permettra d'interagir avec le tracker à travers plusieurs fonctions.
+
+En particulier, nous allons nous intéresser à `logIssue` et `logEvent`, qui vous permettent d'envoyer un incident ou un événement personnalisé vers la plateforme.
+
+- Les **événements** sont destinés à journaliser les actions spécifiques de l'utilisateur. Dans notre cas, par exemple, nous journaliserons l'ajout d'un produit au panier.
+- Les **incidents**, en revanche, sont destinés à journaliser les erreurs que notre tracker ne détecte pas automatiquement. Dans notre cas, nous simulerons une erreur réseau nous empêchant d'accéder à une API tierce. Lorsque cela se produira, nous journaliserons un incident sur la plateforme.
+
+```jsx
+import { createContext, useCallback } from 'react'
+import Tracker from '@openreplay/tracker'
+import { v4 as uuidV4 } from 'uuid'
+import { useReducer } from 'react'
+
+export const TrackerContext = createContext()
+function defaultGetUserId() {
+  return uuidV4()
+}
+function newTracker(config) {
+  const getUserId =
+    config?.userIdEnabled && config?.getUserId
+      ? config.getUserId
+      : defaultGetUserId
+  let userId = null
+  const trackerConfig = {
+    projectKey:
+      config?.projectKey || process.env.NEXT_PUBLIC_OPENREPLAY_PROJECT_KEY,
+ 
+  }
+  if (config?.ingestPoint || process.env.NEXT_PUBLIC_OPENREPLAY_INGEST_POINT) {
+    trackerConfig.ingestPoint =
+      config?.ingestPoint || process.env.NEXT_PUBLIC_OPENREPLAY_INGEST_POINT
+  }
+
+  console.log('Tracker configuration: ')
+  console.log(trackerConfig)
+  const tracker = new Tracker(trackerConfig)
+  if (config?.userIdEnabled) {
+    userId = getUserId()
+    tracker.setUserID(userId)
+  }
+  return tracker
+}
+function reducer(state, action) {
+  switch (action.type) {
+    case 'init': {
+      if (!state.tracker) {
+        console.log('Instantiaing the tracker for the first time...')
+        let t = newTracker(state.config)
+        let pluginsReturnedValue = {}
+        if (state.config.plugins) {
+          state.config.plugins.forEach((p) => {
+            console.log('Using plugin...')
+            pluginsReturnedValue[p.name] = t.use(p.fn(p.config))
+          })
+        }
+        return {
+          ...state,
+          pluginsReturnedValue: pluginsReturnedValue,
+          tracker: t,
+        }
+      }
+      return state
+    }
+    case 'start': {
+      console.log('Starting tracker...')
+      state.tracker.start()
+      return state
+    }
+    case 'logEvent': {
+      console.log('Logging event')
+      state.tracker?.event(action.payload?.name, action.payload?.data)
+      return state
+    }
+    case 'logIssue': {
+      console.log('Logging issue')
+      state.tracker?.issue(action.payload?.name, action.payload?.data)
+      return state
+    }
+  }
+}
+export default function TrackerProvider({ children, config = {} }) {
+  let [state, dispatch] = useReducer(reducer, {
+    tracker: null,
+    pluginsReturnedValue: {},
+    config,
+  })
+  let value = {
+    startTracking: () => dispatch({ type: 'start' }),
+    initTracker: () => dispatch({ type: 'init' }),
+    logEvent: (evnt) => dispatch({ type: 'logEvent', payload: evnt }),
+    logIssue: (evnt) => dispatch({ type: 'logIssue', payload: evnt }),
+    pluginsReturnedValues: { ...state.pluginsReturnedValue },
+  }
+  return (
+    <TrackerContext.Provider value={value}>{children}</TrackerContext.Provider>
+  )
+}
+```
+
+Les fonctions `logEvent` et `logIssue` ont la même signature : nous passerons un objet avec les propriétés `name` et `data`. Le `name` servira à identifier notre enregistrement dans l'interface d'OpenReplay et le `data` contiendra les informations journalisées.
+
+**N'oubliez pas** : la propriété `data` doit contenir un objet sérialisable. 
+
+Nous pouvons ensuite configurer ce fournisseur dans notre fichier `_app.tsx` de la manière suivante :
+
+```jsx
+
+//imports here...
+
+export default function MyApp({ Component, pageProps }: AppProps) {
+  const Layout = (Component as any).Layout || Noop
+
+  useEffect(() => {
+    document.body.classList?.remove('loading')
+  }, [])
+
+  return (
+    <TrackerProvider config={{}}>
+      <Head />
+      <ManagedUIContext>
+        <Layout pageProps={pageProps}>
+          <Component {...pageProps} />
+        </Layout>
+      </ManagedUIContext>
+    </TrackerProvider>
+  )
+}
+```
+
+Cela étant réglé, nous pouvons maintenant passer au déclenchement des événements. 
+
+### Journaliser des incidents et des événements personnalisés
+
+Pour cela, nous allons tirer parti de notre interface :
+
+![La page du produit](/tutorials/product-ui.png)
+
+Nous enregistrerons un nouvel événement chaque fois que l'utilisateur ajoutera un produit à notre panier (essentiellement lorsqu'il cliquera sur le bouton « ADD TO CART »).
+
+Et nous journaliserons un incident s'il le fait sans avoir d'abord sélectionné une taille.
+
+Vous pouvez consulter le code source complet de ce composant [juste ici](https://github.com/deleteman/nextjs-commerce-example/blob/redux-store/site/components/product/ProductSidebar/ProductSidebar.tsx), mais concentrons-nous sur la logique que nous allons ajouter.
+
+Au début de notre composant, nous utiliserons le hook useContext :
+
+```jsx
+//outside the component
+import { TrackerContext } from '../../../context/trackerProvider'
+
+//inside the component
+const { logEvent, logIssue } = useContext(TrackerContext)
+```
+
+ À l'intérieur de la fonction `addToCart`, nous ajouterons la logique suivante pour vérifier qu'aucune taille valide n'est sélectionnée :
+
+```jsx
+const validSizes = product.options
+      .filter((o) => o.id == 'option-size')
+      .map((o) => o.values)[0]
+
+    let pickedSized = validSizes.find((s) => {
+      return selectedOptions.size == s.label.toLowerCase()
+    })
+
+    if (!pickedSized) {
+      logIssue({
+        name: 'Product added without a size',
+        data: {
+          product_id: product.id,
+          added_date: new Date(),
+          available_options: validSizes,
+        },
+      })
+    }
+```
+
+La partie essentielle du code est le dernier `IF` : lorsque nous constatons qu'aucune taille valide n'est sélectionnée, nous appelons la fonction `logIssue`, que nous avons obtenue grâce à l'appel à `useContext` précédent.
+
+Et pour l'événement, nous allons approfondir la même fonction et ajouter :
+
+```jsx
+logEvent({
+        name: 'product_added',
+        data: {
+          id: product.id,
+          date_added: new Date(),
+        },
+      })
+```
+
+C'est tout ce dont nous avons besoin. Nous pouvons ensuite aller sur OpenReplay, retrouver l'enregistrement de notre session et inspecter la section Événements :
+
+![Panneau des événements personnalisés](/tutorials/product-events-section.png)
+
+Et si nous voulons les détails, nous pouvons cliquer sur le lien « DETAILS » qui apparaît lorsque vous survolez l'une des lignes :
+
+![Détails d'un événement personnalisé](/tutorials/event-details.png)
+
+Ce sont les détails que nous avons enregistrés lors de l'ajout d'un produit.
+
+N'oubliez pas de [consulter le tutoriel Next.js complet](https://docs.openreplay.com/tutorials/next) si c'est la première fois que vous utilisez OpenReplay avec ce framework.
+
+Et si vous souhaitez consulter le code source complet de cet exemple, [vous pouvez le trouver ici](https://github.com/deleteman/nextjs-commerce-example/tree/redux-store).
+
+## Vous avez des questions ?
+
+Si vous rencontrez des problèmes avec les événements personnalisés dans votre projet, contactez-nous sur notre [communauté Slack](https://slack.openreplay.com/) et posez directement vos questions à nos développeurs !

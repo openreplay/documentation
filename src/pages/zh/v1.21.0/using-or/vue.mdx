@@ -1,0 +1,56 @@
+---
+title: "在 Vue 中使用 OpenReplay"
+metaTitle: "将 OpenReplay Tracker 添加到你的 Vue 应用"
+metaDescription: "了解如何让 tracker 在你的 Vue 应用中运行"
+---
+import Aside from '~/components/Aside.astro'
+
+让 tracker 在 Vue 应用中运行非常简单。
+
+## 添加跟踪代码
+
+虽然你可以[在创建新项目时直接从平台获取可复制粘贴的代码版本](/using-or/snippet#getting-the-snippet)，但那段代码过于精简，会让自定义和添加额外插件变得困难得多。
+
+假设你正在构建一个 SPA（Single Page Application，单页应用），你需要做的就是将以下代码添加到主文件的 setup 脚本中。
+
+```html
+<script setup>
+//... your code here
+const tracker = new Tracker({
+  projectKey: "<your project key>"
+});
+
+tracker.start();
+//... more code here
+</script>
+```
+
+
+<Aside type="tip">
+**给自托管（self-hosted）用户的提示**：如果你使用的是 OpenReplay 的自托管版本，你还需要指定 `ingestPoint` 配置属性。
+该属性指定了 tracker 数据的接收端点（endpoint）。Cloud 用户不需要它，
+因为默认情况下 tracker 已经知道该端点的 SaaS 版本位于何处，但如果你是自托管，则需要指定它
+（它应该类似于 `https://openreplay.mydomain.com/ingest`）
+</Aside>
+
+### 在代码中处理 "projectKey"
+
+需要注意的是，你配置的 `projectKey` 是由 OpenReplay 平台提供的。
+出于安全原因，此值不应硬编码（hardcoded）存储在代码中，而应存放在某种配置文件/系统中。
+
+一种方式是在项目根目录的 `.env` 文件中添加一个环境变量，并为该变量加上 `VITE_` 前缀，这样它就可以在你的 Vue 代码中使用了。
+之后你可以通过 `import.meta.env.<your variable name>` 来使用它。
+像这样：
+
+```javascript
+const tracker = new Tracker({
+  projectKey: import.meta.env.VITE_VUE_APP_PROJECT_KEY,
+});
+ ```
+
+## 要构建更复杂的东西吗？
+如果你正在使用 Vue 构建一个复杂的应用，那么你很可能在使用 [Nuxt](/using-or/nuxt) 或类似的工具。请务必查看我们的[设置部分](/using-or)，找到你正在使用的框架。
+
+## 有疑问吗？
+
+如果你在 Vue 项目上设置 tracker 时遇到任何问题，请通过我们的 [Slack 社区](https://slack.openreplay.com/)联系我们，直接向我们的开发者提问！

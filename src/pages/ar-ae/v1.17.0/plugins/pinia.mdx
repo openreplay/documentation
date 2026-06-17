@@ -1,0 +1,95 @@
+---
+title: "Pinia"
+metaTitle: "Pinia"
+metaDescription: "إضافة Pinia لـ OpenReplay."
+---
+import Aside from '~/components/Aside.astro'
+
+تتيح لك هذه الإضافة التقاط تغييرات/حالة `Pinia` وفحصها لاحقًا أثناء إعادة تشغيل تسجيلات الجلسات. وهذا مفيد جدًا لفهم المشكلات وإصلاحها.
+
+
+<Aside type="tip">
+  لدينا أيضًا شرح تفصيلي حول كيفية استخدام إضافة Pinia لالتقاط حالة تطبيقك عند استخدام هذه المكتبة، ويمكنك الاطلاع عليه [هنا](/tutorials/pinia).
+</Aside>
+
+
+
+
+## التثبيت
+
+```bash
+npm i @openreplay/tracker-vuex
+```
+
+## الاستخدام
+
+قم بتهيئة حزمة `@openreplay/tracker` كالمعتاد وحمّل الإضافة فيها. استدعِ الإضافة لإعداد اسم المتجر (store)، وسيؤدي ذلك إلى إرجاع نسخة متعقِّب متجر مُسمّاة يمكنك استدعاؤها مع متجرك النموذجي كوسيط لتفعيل تعقّب هذا المتجر.
+
+### إذا كان موقعك الإلكتروني تطبيقًا أحادي الصفحة (SPA)
+
+```js
+import OpenReplay from '@openreplay/tracker';
+import trackerVuex from '@openreplay/tracker-vuex';
+```
+
+### إذا كان تطبيق الويب الخاص بك مُصيَّرًا من جانب الخادم (SSR)
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+import trackerVuex from '@openreplay/tracker-vuex/cjs';
+```
+
+### تعقّب متجر Pinia
+
+```js
+
+//...
+
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+  // ... options
+});
+
+// ...
+
+const examplePiniaStore = useExamplePiniaStore()
+const vuexPlugin = tracker.use(trackerVuex(<options>)) // check list of available options below
+
+const piniaStorePlugin = vuexPlugin('STORE NAME') // add a name to your store, 
+                                                  // optional (will be randomly generated otherwise)
+piniaStorePlugin(examplePiniaStore) // start tracking state updates
+
+// now you can use examplePiniaStore as usual pinia store (destructure values or return it as a whole etc)
+```
+
+## الخيارات
+
+يمكنك تخصيص سلوك الإضافة باستخدام خيارات لتنقية بياناتك. وهي مشابهة لتلك الموجودة في إضافة `createLogger` القياسية.
+
+```js
+trackerVuex({
+  filter (mutation, state) {
+    // returns `true` if a mutation should be logged
+    // `mutation` is a `{ type, payload }`
+    return mutation.type !== "aBlacklistedMutation";
+  },
+  transformer (state) {
+    // transforms the state before logging it.
+    // for example return only a specific sub-tree
+    return state.subTree;
+  },
+  mutationTransformer (mutation) {
+    // mutations are logged in the format of `{ type, payload }`
+    // we can format it any way we want.
+    return mutation.type;
+  },
+})
+```
+
+## الشرح التعليمي
+
+إذا كنت تبحث عن مثال عملي حول كيفية استخدام هذه الإضافة لالتقاط تغييرات الحالة في عمليات إعادة تشغيل جلساتك، فاطّلع على [شرحنا التفصيلي هنا](/tutorials/pinia).
+
+## هل لديك أسئلة؟
+
+هل تواجه صعوبة في إعداد هذه الإضافة؟ يُرجى الانضمام إلى [Slack](https://slack.openreplay.com) الخاص بنا أو الاطلاع على [المنتدى](https://forum.openreplay.com) الخاص بنا للحصول على المساعدة من مجتمعنا.

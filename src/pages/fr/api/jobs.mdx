@@ -1,0 +1,175 @@
+---
+title: "Tâches"
+metaTitle: "Tâches"
+metaDescription: "Comment gérer les tâches de suppression des données utilisateur."
+---
+
+Valeurs de statut d'une tâche : `scheduled`, `running`, `completed`, `failed`, `cancelled`.
+
+## Lister toutes les tâches
+
+Récupère toutes les tâches d'un projet, y compris celles qui sont terminées et annulées. Paginé.
+
+### Méthode
+`GET`
+
+### URL
+`/public/:projectKey/jobs`
+
+### Paramètres de requête
+
+| Name  | Type    | Description                                                                 |
+|-------|---------|-----------------------------------------------------------------------------|
+| limit | integer | Taille de page, 1-200 (par défaut : 50). Les valeurs hors de la plage reviennent à 50.   |
+| page  | integer | Numéro de page, commence à 1 (par défaut : 1). Les valeurs < 1 reviennent à 1.           |
+
+### En-têtes de la requête
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Exemple de requête
+
+```shell
+curl -X GET \
+  '{BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs?limit=50&page=1' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Exemple de réponse
+
+```json
+{
+  "data": [
+    {
+      "jobId": 3451,
+      "description": "Delete user sessions of userId = shekar@example.com",
+      "status": "scheduled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "shekar@example.com",
+      "createdAt": 1623912955277,
+      "updatedAt": null,
+      "startAt": 1623954600000,
+      "errors": null
+    },
+    {
+      "jobId": 3452,
+      "description": "Delete user sessions of userId = mehdi@example.com",
+      "status": "cancelled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "mehdi@example.com",
+      "createdAt": 1623912962910,
+      "updatedAt": 1623913015276,
+      "startAt": 1623954600000,
+      "errors": null
+    }
+  ]
+}
+```
+
+## Obtenir les détails d'une tâche
+
+Renvoie le statut et les métadonnées de la tâche.
+
+### Méthode
+`GET`
+
+### URL
+`/public/:projectKey/jobs/:jobId`
+
+### Paramètres
+
+| Name  | Type    | Description                    |
+|-------|---------|--------------------------------|
+| jobId | integer | L'ID de la tâche (obligatoire)          |
+
+### En-têtes de la requête
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Codes de statut
+
+`200` : Réponse envoyée au format JSON dans le corps  
+`400` : `jobId` invalide (pas un entier)  
+`404` : Tâche introuvable
+
+### Exemple de requête
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs/3451 \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Exemple de réponse
+
+```json
+{
+  "data": {
+    "jobId": 3451,
+    "description": "Delete user sessions of userId = shekar@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "shekar@example.com",
+    "createdAt": 1623912955277,
+    "updatedAt": null,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+## Annuler une tâche
+
+Annule une tâche qui n'a pas encore commencé ou qui est toujours en cours.
+
+### Méthode
+`DELETE`
+
+### URL
+`/public/:projectKey/jobs/:jobId`
+
+### Paramètres
+
+| Name  | Type    | Description                    |
+|-------|---------|--------------------------------|
+| jobId | integer | L'ID de la tâche (obligatoire)          |
+
+### En-têtes de la requête
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Codes de statut
+
+`200` : Tâche annulée  
+`400` : La tâche ne peut pas être annulée dans son état actuel, ou `jobId` invalide  
+`404` : Tâche introuvable
+
+### Exemple de requête
+
+```shell
+curl -X DELETE \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs/3452 \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Exemple de réponse
+
+```json
+{
+  "data": {
+    "jobId": 3452,
+    "description": "Delete user sessions of userId = mehdi@example.com",
+    "status": "cancelled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@example.com",
+    "createdAt": 1623912962910,
+    "updatedAt": 1623913015276,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```

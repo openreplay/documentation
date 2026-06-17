@@ -1,0 +1,66 @@
+---
+title: "Profiler"
+metaTitle: "Profiler"
+metaDescription: "Plugin Profiler pour OpenReplay."
+---
+
+Le plugin profiler vous permet de mesurer les performances de vos fonctions JS et de capturer à la fois les arguments et le résultat de chaque appel.
+
+## Installation
+
+```bash
+npm i @openreplay/tracker-profiler
+```
+
+## Utilisation
+
+Initialisez le tracker et chargez-y le plugin. Décorez ensuite n'importe quelle fonction de votre code avec la fonction générée.
+
+### Si votre site web est une application monopage (SPA)
+
+```js
+import OpenReplay from '@openreplay/tracker';
+import trackerProfiler from '@openreplay/tracker-profiler';
+
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+const profiler = tracker.use(trackerProfiler());
+
+tracker.start();
+
+// ...
+const fn = profiler('MyFunction')(() => {
+  // Inspecting function body
+}, thisArg); // thisArg is optional
+```
+
+### Si votre application web est rendue côté serveur (SSR)
+
+Suivez l'exemple ci-dessous si votre application est en SSR. Assurez-vous que `tracker.start()` est appelé une fois l'application démarrée (dans `useEffect` ou `componentDidMount`).
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+import trackerProfiler from '@openreplay/tracker-profiler/cjs';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+const profiler = tracker.use(trackerProfiler());
+
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, [])
+}
+//...
+const fn = profiler('MyFunction')(() => {
+  // Inspecting function body
+}, thisArg); // thisArg is optional
+
+```
+
+## Vous avez des questions ?
+
+Vous rencontrez des difficultés pour configurer ce plugin ? Connectez-vous à notre [Slack](https://slack.openreplay.com) ou consultez notre [Forum](https://forum.openreplay.com) et obtenez de l'aide auprès de notre communauté.

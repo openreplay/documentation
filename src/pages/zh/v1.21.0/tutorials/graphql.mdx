@@ -1,0 +1,194 @@
+---
+title: "使用 GraphQL 插件"
+metaTitle: "使用 GraphQL 插件捕获并脱敏操作信息"
+metaDescription: "了解如何在你的 React 应用中设置 GraphQL 插件"
+---
+如果你在应用内部将 GraphQL 用作 API 的查询语言，那么 [GraphQL 插件](https://docs.openreplay.com/plugins/graphql)可以帮助你同时跟踪针对 GraphQL 服务器执行的变更（mutation）和查询（query）。
+
+在本教程中，我们将使用 Apollo Boost 客户端，但只要你所使用的客户端允许你设置某种中间件，你就能够在代码中使用该插件。
+
+如果你想跟着一起操作，可以[查看这个仓库](https://github.com/deleteman/openreplay-graphql-example)，其中同时包含 GraphQL 服务器和客户端应用。 
+
+## 首先设置 Tracker
+
+在安装 GraphQL 插件之前，你需要先安装 Tracker。如果你已经知道如何操作，请跳到下一节，否则请继续阅读。
+
+我们会把这段代码保存在一个单独的模块中，该模块将导出两个函数：`init` 和 `start`。
+
+第一个函数会实例化 tracker 并设置所有插件；第二个函数只会调用 `start` 方法。 
+
+```jsx
+import OpenReplay from '@openreplay/tracker';
+
+let _tracker = null;
+
+export function init({plugins}) {
+
+    _tracker = new OpenReplay({
+        projectKey: process.env.OPENREPLAY_PROJECT_KEY
+    });
+
+    
+    let pluginResults = {}
+    if(plugins) {
+        Object.keys(plugins).forEach( pk => {
+            pluginResults[pk] = _tracker.use(plugins[pk]())
+        })
+    }
+    return pluginResults
+}
+
+export function start() {
+    return _tracker.start()
+}
+```
+
+init 函数有趣的地方在于，它返回一个由所有插件返回值组成的对象。我们的某些插件会返回一个你稍后需要使用的函数（就像 GraphQL 插件的情况）。这种方式让你可以一次性使用所有插件来初始化 tracker，然后在你需要的任何时候使用这些返回值。
+
+## 使用插件
+
+使用 npm i @openreplay/tracker-graphql 安装插件后，使用以下代码来调用我们刚刚定义的 init 函数：
+
+```jsx
+import trackerGraphQL from '@openreplay/tracker-graphql';
+import {init} from './tracker/index'
+
+const {graphqlTracker} = init({
+  plugins: { 
+    graphqlTracker: trackerGraphQL
+  }
+})
+```
+
+这里使用的 `graphqlTracker` 键可以是你想要的任何名称。只要 `plugins` 部分中使用的键与你从 `init` 函数结果中解构出来的键相同，就没有问题。
+
+## 使用 Apollo 客户端设置插件
+
+在本教程中，我们将使用 Apollo Boost 库，它允许你通过他们所称的“links”来修改每个请求的数据流。
+
+这些 link 就像中间件函数，你可以用它们来拦截请求的数据流，在我们的场景中则是记录它。
+
+以下代码将使用 `ApolloLink` 函数创建一个新的 link。该 link 会捕获操作的数据和结果，并调用我们的 `graphqlTracker` 函数（即上面 `init` 调用所返回的那个函数）。
+
+```jsx
+const trackerApolloLink = new ApolloLink((operation, forward) => {
+
+  const operationDefinition = operation.query.definitions[0];
+  let {operationName, variables} = operation
+  const {kind, operation: op} = operationDefinition
+  const opKind = kind === 'OperationDefinition' ? op : 'unknown?'
+
+  let results = forward(operation).map((result) => {
+    return graphqlTracker(opKind, operationName, variables, result);
+  });
+  if(results.length === 0) { //if there are no results, then we've not tracked anything so far...
+    graphqlTracker(opKind, operationName, variables, {});
+  }
+  return results
+});
+```
+
+解决了这一点之后，我们就可以按如下方式使用这个新创建的 link：
+
+```jsx
+import {ApolloClient,  HttpLink } from 'apollo-boost';
+import { ApolloProvider } from '@apollo/react-hooks';
+import { InMemoryCache } from 'apollo-cache-inmemory';
+import { ApolloLink, from } from '@apollo/client';
+
+const link = from([
+  trackerApolloLink,
+  new HttpLink({uri: () => 'http://localhost:4000/graphql'}),
+]);
+
+const client = new ApolloClient({
+  link,
+  cache: new InMemoryCache()
+});
+
+ReactDOM.render(<ApolloProvider client={client}>
+  <App />
+</ApolloProvider>, document.getElementById('root'));
+```
+
+上面的代码取自 Apollo 文档，此时 tracker 和插件都已经设置完毕，所以你确实不需要再担心其他任何事情。
+
+完成后，你的回放将显示一个列出所有 GraphQL 操作的新区域。
+
+![会话回放中的 GraphQL 界面](images/graphql-ui.png)
+
+话虽如此，被 tracker 自动脱敏的敏感信息（例如电子邮件地址）不会被插件脱敏。因此你会遇到如下情况：DOM 中是脱敏后的数据，但操作详情中显示的却是实际数据。
+
+![脱敏数据与未脱敏数据](images/sanitized-vs-not-sanitized.png)
+
+虽然插件本身不提供任何脱敏函数，但我们仍然可以添加代码，将个人和私密信息从回放中隐藏起来，以帮助保护用户的隐私。
+
+## 对记录的数据进行脱敏
+
+如果你查看我创建 trackerApolloLink 对象的那段示例代码，你会发现我所做的只是调用将信息保存到 tracker 上的 tracker 函数。
+
+如果我不更改数据，那么所有内容都会原样保存。因此，为了在回放中对数据进行脱敏**并保持操作不变**，我们需要在调用 tracker 之前克隆关键变量。这意味着克隆操作的变量和结果，这就是我们想要做的全部。 
+
+所以这里有一段代码片段，它会创建 ApolloLink 并在回放数据中对数据保密：
+
+```jsx
+/**
+ * Sanitize the result from a GraphQL operation
+ * @returns Returns the result object but with the sanitized fields changed.
+ */
+function sanitizeResult(res) {
+  //deep clonning needs to happen to make sure this only affects the new object and not
+  //the original object.
+  let sanitized = JSON.parse(JSON.stringify(res))
+
+  let ops = Object.keys(sanitized.data)
+  ops.forEach( o => {
+    if(Array.isArray(sanitized.data[o])) { //mutations don't really return arrays
+      sanitized.data[o] = sanitized.data[o].map( sanitizeData )
+    }
+  })
+  return sanitized
+}
+
+// We only want to hide the content of othe "email" field for now.
+function sanitizeData(vars) {
+  let newVars = {...vars}
+  if(newVars.email) {
+    newVars.email = "****@***.***"
+  }
+  return newVars
+}
+
+const trackerApolloLink = new ApolloLink((operation, forward) => {
+
+  const operationDefinition = operation.query.definitions[0];
+  let {operationName, variables} = operation
+  const {kind, operation: op} = operationDefinition
+  const opKind = kind === 'OperationDefinition' ? op : 'unknown?'
+
+  let trackedVariables = sanitizeData({...variables})
+  let results = forward(operation).map((result) => {
+    let trackeresults = sanitizeResult(result)
+    graphqlTracker(opKind, operationName, trackedVariables, trackeresults);
+    return result //we have to return the original "result" object here, not the sanitized one
+  });
+  if(results.length === 0) { //if there are no results, then we've not tracked anything so far...
+    graphqlTracker(opKind, operationName, trackedVariables, {});
+  }
+  return results
+});
+```
+
+这段代码的关键之处在于：
+
+1. 我们添加了两个函数，一个用于从对象中脱敏 `email`，另一个用于脱敏 GraphQL 操作的结果。
+2. 在 `map` 回调内部（来自 link 函数），我们现在不再返回 graphqlTracker 的输出，因为该函数会原封不动地返回它收到的结果值。 1. 但该结果会被返回给客户端应用，如果我们对结果进行脱敏，用户就会看到数据集的脱敏版本。因此，我们需要克隆结果，以便修改被跟踪的那一份并返回原始结果。
+3. `sanitizeResult` 函数会对对象进行深度克隆，因为以其他方式修改会改变结果本身。
+
+![到处都是脱敏数据](images/sanitized.png)
+
+## 有疑问吗？
+
+你可以[查看这个仓库](https://github.com/deleteman/openreplay-graphql-example)，获取带有 Tracker 的可运行 GraphQL 应用的**完整源代码**。
+
+如果你在 GraphQL 项目中设置 Tracker 时遇到任何问题，请在我们的 [Slack 社区](https://slack.openreplay.com/)中联系我们，直接向我们的开发者提问！

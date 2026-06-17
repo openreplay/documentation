@@ -1,0 +1,49 @@
+---
+title: "上传 Source Maps"
+metaTitle: "上传 Source Maps"
+metaDescription: "将 source maps 上传到 OpenReplay。"
+---
+
+OpenReplay 支持通过 source maps 对 JavaScript 进行反压缩。将它们上传到 OpenReplay 后，你将能够以原始形式查看从堆栈跟踪中获取的源代码上下文，这对于调试压缩后的代码（UglifyJS）或转译后的代码（TypeScript、ES6）非常有用。
+
+## 设置
+
+安装 sourcemap-uploader NPM 模块：
+
+```bash
+npm i -g @openreplay/sourcemap-uploader
+```
+
+## 前提条件
+
+确保你的构建会生成独立的 source map 文件（.map）。例如，如果你使用 webpack，你的配置应包含以下 `devtool` 选项：
+
+```js
+{ devtool: ‘source-map’ }
+```
+
+## 将 Source Maps 上传到 OpenReplay
+
+接下来，你需要设置构建流程以创建各类源文件。Source maps 可以针对**单个文件**上传：
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY file -m ./dist/index.js.map -u https://myapp.com/index.js
+```
+
+或者针对包含多个文件的**目录**上传。在这种情况下，URL 必须对应（精确路径）于你从该目录上传 JS 文件的根目录。换句话说，如果你的 `app-42.js` 和 `app-42.js.map` 都位于 `./build` 文件夹中，并且你希望将其上传到你的 OpenReplay 实例，以便可以通过链接 `https://myapp.com/static/app-42.js` 访问，那么命令应该如下所示：
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY dir -m ./build -u https://myapp.com/static
+```
+
+## 参数
+
+- `-s`：你的 OpenReplay 实例的 URL。请务必在其后附加 /api。如果你使用的是 OpenReplay Cloud，请勿指定此参数。
+- `-k`：API Key（位于 'Preferences' > 'Account' > 'Organization API Key'）。
+- `-p`：Project Key（位于 'Preferences' > 'Projects'）。
+- `-m`：source map 文件的路径（也可以是一个目录）。
+- `-u`：JavaScript 资源的 URL（如果是单个文件）或基础 URL（如果是目录）。
+- `-l`：用于显示上传日志。
+
+## 有疑问？
+如果你对这一流程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

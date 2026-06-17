@@ -1,0 +1,91 @@
+---
+title: "إعداد OpenReplay"
+metaTitle: "إعداد OpenReplay"
+metaDescription: "كيفية إعداد OpenReplay بسرعة والبدء في تسجيل الجلسات والمقاييس."
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+import IconText from '~/components/Card/IconText.astro'
+
+<YoutubeVideo title="شاهد كيفية البدء مع OpenReplay"
+  description="إذا كنت لا تفضّل القراءة، يمكنك متابعة هذا الفيديو التعليمي الذي يوضّح لك كيفية البدء مع OpenReplay في 3 دقائق أو أقل"
+  videoURL="https://www.youtube.com/watch?v=EWbtMK3qK30"
+  />
+
+
+إن البدء مع OpenReplay أمرٌ سهل. 
+
+إذا كنت ترغب في مشاهدة شرح سريع حول كيفية البدء، استخدم [هذا الفيديو على YouTube](https://www.youtube.com/watch?v=EWbtMK3qK30)، وإلا فتابع القراءة لمزيد من التفاصيل.
+
+هناك طريقتان لتشغيل OpenReplay: باستخدام السكربت أو باستخدام حزمة npm.
+
+## استخدام السكربت
+
+انسخ والصق مقطع الكود مباشرةً داخل `</head>` الخاص بتطبيق الويب لديك. يمكن العثور على السكربت في لوحة تحكم OpenReplay ضمن 'Preferences > Projects' وهو فريد لكل مشروع.
+
+إذا كان موقعك الإلكتروني يدعم Google Tag Manager، فيمكنك اتباع [دليل GTM خطوة بخطوة](/integrations/google-tag-manager).
+
+## استخدام NPM
+
+أولاً قم بتثبيت حزمة npm.
+
+```bash
+npm i @openreplay/tracker
+```
+
+بعد ذلك، قم بتهيئة الحزمة من نقطة الدخول إلى قاعدة الكود الخاصة بك وابدأ tracker. يجب عليك تعيين خيار `projectKey` في الـ constructor. يمكن العثور على قيمته في لوحة تحكم OpenReplay ضمن 'Preferences > Projects'.
+
+### إذا كان موقعك الإلكتروني تطبيق صفحة واحدة (SPA)
+
+```js
+import OpenReplay from '@openreplay/tracker';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+tracker.start();
+```
+
+### إذا كان تطبيق الويب لديك يُعرض من جهة الخادم (SSR)
+
+اتبع المقطع أدناه إذا كان تطبيق الويب لديك يُعرض من جهة الخادم (SSR) (أي NextJS أو NuxtJS). تأكّد من استدعاء `tracker.start()` بمجرد بدء تشغيل التطبيق (في `useEffect` أو `componentDidMount`).
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+//...
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY
+});
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, []);
+}
+```
+
+إذا كنت ترغب في التعمّق أكثر في تهيئة tracker، فراجع [JavaScript SDK](/installation/javascript-sdk#options) للاطلاع على قائمة الخيارات المتاحة.
+
+## التكامل مع أُطر العمل الأخرى
+إذا لم تكن تستخدم OpenReplay داخل تطبيق بسيط، فمن المرجّح أنك تستخدم إطار عمل لتطوير الويب، مثل Next.js أو Nuxt أو غيرهما.
+اطّلع على شروحاتنا المخصّصة لكل من أُطر العمل المدعومة:
+
+<div class="grid grid-cols-1 md:grid-cols-1 gap-3 md:gap-4">
+  <IconText url="/using-or/next" title="React" />
+  <IconText url="/using-or/nuxt" title="Vue" />
+  <IconText url="/using-or/angular" title="Angular" />
+  <IconText url="/using-or/next" title="NextJS" />
+  <IconText url="/using-or/nuxt" title="Nuxt" />
+</div>
+
+## الخطوات التالية
+
+الآن وقد قمت بتثبيت tracker ونشر تطبيق الويب الخاص بك، يجب أن تظهر تسجيلات الجلسات خلال بضع دقائق. أحسنت!
+
+في غضون ذلك، يمكنك المضي قدماً في عملية الإعداد للاستفادة القصوى من OpenReplay. كلما التقطت المزيد، كان ذلك أفضل لإعادة إنتاج المشكلات وإصلاحها بسرعة:
+- [تحديد هوية المستخدم](/installation/identify-user): اربط معرّف المستخدم الداخلي الخاص بك بالجلسة التي يتم تسجيلها.
+- [البيانات الوصفية](/installation/metadata): تُعرف أيضاً باسم traits أو متغيرات المستخدم، وتوفّر البيانات الوصفية معلومات إضافية عن المستخدمين أثناء تسجيل الجلسات.
+- [الأحداث المخصّصة](/installation/custom-events): احصل على رؤى أعمق عبر تسجيل أحداث خاصة بمجالك إلى جانب عمليات إعادة تشغيل الجلسات.
+- [الإبلاغ عن الأخطاء](/installation/error-reporting): أبلِغ عن الأخطاء والاستثناءات وشاهدها ضمن علامة التبويب ERRORS.
+- [رفع Source-Maps](/installation/upload-sourcemaps): اطّلع على سياق الكود المصدري المستمدّ من تتبّعات المكدّس (stack traces) في صورته الأصلية.
+- [الإضافات](/plugins): افهم ما يجري وراء الكواليس عبر التقاط store الخاص بتطبيقك ومراقبة استعلامات HTTP وGraphQL.
+- [عمليات التكامل](/integrations): اربط OpenReplay بأدوات التسجيل (logging) الخاصة بك وزامِن أخطاء الواجهة الخلفية مع عمليات إعادة تشغيل الجلسات.

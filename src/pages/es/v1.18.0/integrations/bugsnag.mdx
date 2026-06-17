@@ -1,0 +1,56 @@
+---
+title: "Bugsnag"
+metaTitle: "Integración con Bugsnag"
+metaDescription: "Cómo integrar Bugsnag con OpenReplay y ver los errores del backend junto a las repeticiones de sesión."
+---
+
+Cómo integrar Bugsnag con OpenReplay y ver los errores del backend junto a las grabaciones de sesión.
+
+## 1. Crear un token de autorización
+
+1. Inicia sesión en tu cuenta de [Bugsnag](https://app.bugsnag.com).
+2. Ve a *Settings > My account > Personal auth tokens*.
+3. Haz clic en el botón *Generate new token +*.
+4. En la descripción escribe `openreplay`.
+5. Haz clic en el botón *Generate*.
+6. Copia el token y luego pulsa el botón *Done*.
+
+![Tokens de autenticación personal de Bugsnag](/static/bugsnag-1.jpg#center)
+
+## 2. Habilitar Bugsnag en OpenReplay
+
+Coloca tu `Authorization token` en el panel de OpenReplay en 'Preferences > Integration' y selecciona el proyecto que quieres rastrear de la lista desplegable.
+
+![Integración de Bugsnag en OpenReplay](/static/bugsnag-2.jpg#center)
+
+## 3. Propagar openReplaySessionToken
+
+Para vincular un evento de Bugsnag con la sesión de usuario grabada, se debe propagar un token único desde tu frontend hacia tu backend en cada petición que quieras rastrear. Esto se puede hacer usando una cabecera HTTP personalizada. En el ejemplo siguiente, usamos la función `fetch` para enviar esa cabecera.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // use window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+Para que OpenReplay pueda asociar una entrada de registro de Bugsnag con la sesión de usuario grabada, se debe propagar un token único como `meta_data > special_info` a cada error del backend que desees rastrear.
+
+A continuación se muestra un ejemplo en la API de Python de Bugsnag.
+
+```python
+bugsnag.notify(EXCEPTION_OBJECT,  meta_data={"special_info":{"openReplaySessionToken": OPENREPLAY_SESSION_TOKEN}})
+```
+
+El nombre de la etiqueta `openReplaySessionToken` distingue entre mayúsculas y minúsculas.
+
+## ¿Tienes preguntas?
+
+Si encuentras algún problema, conéctate a nuestro [Slack](https://slack.openreplay.com) o visita nuestro [Foro](https://forum.openreplay.com) y obtén ayuda de nuestra comunidad.

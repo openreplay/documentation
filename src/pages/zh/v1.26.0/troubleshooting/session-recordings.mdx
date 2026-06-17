@@ -1,0 +1,128 @@
+---
+title: "会话录制问题"
+metaTitle: "会话录制问题"
+metaDescription: "各种导致回放无法被捕获或无法正确显示的问题。"
+---
+
+录制会在会话完成几分钟后（约 4 分钟）显示在仪表板中。当用户关闭标签页或浏览器、断开连接（超过 2 分钟）或超过 2 小时（此时会开始一个新会话）时，会话即被视为已结束。每个标签页都会生成一条新录制，而重新加载现有标签页则不会触发新的录制。
+
+本节旨在帮助你排查会话回放中的常见问题。
+
+## 回放未显示在列表中
+
+在开始调试会话录制之前，请确保你正在捕获所有流量。点击 Sessions 部分中的 *Manage* 按钮，并启用 *Capture All*。
+
+另一个常见错误是启动了两次 tracker，这会导致会话无法被录制。这通常发生在开发者从基于脚本的设置迁移到使用 npm 包时，因此请确保你只使用其中一种。
+
+### 验证安装
+
+如果你不确定设置是否正确，请打开浏览器的检查器并查看 Network 标签页，看看是否有向你的 IP/域名（如果你使用的是 OpenReplay Cloud，则为 *.openreplay.com）发出的 XHR 请求（查找 "ingest"）。
+
+另一种方法是使用 tracker 的启动回调，并在启动时记录一条消息。
+
+```js
+const tracker = new OpenReplay({
+	projectKey: PROJECT_KEY,
+});
+
+tracker.start().then(({sessionID}) => console.log("OpenReplay tracker started with session: ", sessionID))
+// OR you can use startCallback method
+tracker.start({
+	startCallback: ({ sessionID }) => console.log("OpenReplay tracker started with session: ", sessionID)
+});
+// for snippet, just add startCallback to initOpts
+```
+
+### 在 localhost 中测试
+
+OpenReplay 需要公共访问权限来复制你应用的某些资源（CSS、字体和图标），以便正确渲染录制。你的站点还必须使用 SSL/HTTPS，否则 tracker 将无法启动。出于这些原因，会话不会在 localhost 中被捕获，除非你在 [tracker 构造函数](/sdk/constructor/#stylesheets)中添加 `inlineCss: 3` 选项，这样样式表就会作为每条回放的一部分被捕获（而不是由服务器集中缓存）。
+
+### 站点未使用 HTTPS
+
+出于安全原因，tracker 仅在使用 SSL（HTTPS）的 Web 应用上运行。如果你的站点使用的是 HTTP，tracker 将不会启动。
+
+### 缺少 CSP
+
+如果你看到类似下面的错误，则说明 OpenReplay 由于缺少内容安全策略而无法启动。请参阅[此处](/troubleshooting/csp)了解需要添加的策略。
+
+![CSP Issue](/static/csp-issue.jpg#center)
+
+### OpenReplay 被屏蔽
+
+录制脚本可能会被浏览器扩展（如广告拦截器）屏蔽。请使用浏览器的检查器检查请求是否失败。如果是这样，请为安装了 OpenReplay 后端的域名（如果你使用的是云服务，则为 openreplay.com）添加例外。
+
+### 由于浏览器不受支持
+
+当 OpenReplay 在不受支持的浏览器中运行时，会抛出异常。请参阅[此处](/troubleshooting/supported-browsers)了解受支持的浏览器列表。
+
+## 回放无法正确渲染
+
+### 缺少样式
+
+OpenReplay 需要访问资源（例如你的 css）才能使回放正常工作。事实上，这些文件会被我们的后端复制并缓存，因此即使你的 Web 应用发生了变化，你仍然可以查看旧的录制。这就是为什么你必须确保你的样式（以及图标和字体）可以公开访问。即使它们可以公开访问，某些 CDN（如 CloudFlare）也会将我们的缓存请求视为来自机器人的请求，因此会将其屏蔽。如果出现这种情况，请务必将你的 VM（如果使用我们的开源版本）、专用实例（如果你使用的是我们的专用云方案）的源 IP 加入白名单，或者将以下 IP 加入白名单（如果你使用的是我们的 serverless 云方案）：`18.197.95.153` 和 `18.197.221.118`。
+
+如果你的资源托管在受限域名（私有或受保护）上，那么 OpenReplay 将无法复制它们并在回放中使用。你有 2 个选项：
+-（推荐）在 [tracker 构造函数](/sdk/constructor/#stylesheets)中添加 `inlineCss: 3` 选项，这样样式表就会作为每条回放的一部分被捕获（而不是由服务器集中缓存）。
+- 或者，你可以将资源复制到一个可公开访问的域名，然后使用 `resourceBaseHref` 选项在 [tracker 构造函数](/sdk/constructor)中指定该域名。
+
+如果你的同源 iFrame 包含嵌套的 frame，请确保在每个嵌入的 frame 中使用绝对路径（在指向你的 CSS 文件的 `<link>` 元素中），或者使用 `resourceBaseHref` 选项在 [tracker 构造函数](/sdk/constructor)中指定该域名。
+
+如果你在 localhost 中进行测试，样式将不会被渲染，因为这些样式位于你的机器上，OpenReplay 无法访问它们。请按照[本指南](/troubleshooting/localhost)解决这一问题。
+
+### 白屏
+
+在极少数情况下，回放可能显示为空白（或白色）。虽然页面不会被渲染，但你仍然可以看到用户的鼠标移动。尝试将 `disableStringDict` 选项设置为 `true`，看看这是否对新录制有所帮助。这通常可以解决问题。
+
+### 黑屏
+
+如果你在前端层之上使用了 canvas（具有更高的 zIndex），你可能会在回放录制的会话时注意到黑屏。这是因为 Web API 目前还不允许我们捕获 alpha 通道。如果你的 Web 应用出现这种情况，请为有问题的 canvas 元素添加 `data-openreplay-hidden` HTML 属性，以将其从会话录制中完全隐藏。
+
+### 图片未显示
+
+与样式不同，图片不会被 OpenReplay 缓存，而是在会话回放期间检索。因此它们应当可以公开访问。如果它们位于 CDN 上，请确保保留图片的旧版本，以便能够正确回放旧的会话录制。
+
+### Iframe
+
+如果你的 Web 应用包含 iframe，那么你将无法将其内容作为录制的一部分进行回放。你仍然可以通过包含 `tracker.start()` 在 iframe 内启动 OpenReplay，但它会被视为一个单独的标签页，这意味着它会被捕获到一条单独的录制中。
+
+## 回放在跨子域时损坏
+
+分布在多个子域中的站点会为同一次访问生成多个会话。你可以通过将 `sessionHash` 传递给 tracker 的 `start()` 方法，将它们拼接成一条录制。`sessionHash` 可以保存下来，然后从你的跨域存储（例如 cookie）中检索。
+
+```js
+// Initialize the tracker as you would normally do
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+  projectKey: PROJECT_KEY
+})
+
+// or with class instance:
+import OpenReplay from '@openreplay/tracker'
+
+const tracker = new OpenReplay({
+	projectKey: PROJECT_KEY
+})
+...
+// Make sure the tracker is stopped when passing subdomains and collect the sessionHash
+const sessionHash = tracker.stop(); // This can be saved in cookies or passed through URL (if needed)
+...
+// Initialize another tracker on the new subdomain with the same projectKey
+// then Pass the sessionHash to the newly started session
+trackerNewDomain.start({ 
+  sessionHash, // This can be retrieved from cookies or URL (if needed)
+})
+```
+如果无法继续该会话（会话不存在或已结束），tracker 将自动启动一个新会话。
+
+## 回放不完整
+
+这可以在那些只有一个已访问页面、并且用户一导航到另一个页面就结束的回放中发现。这通常发生在并非单页应用（SPA）的网站上。要解决此问题，必须在每个页面上调用 `tracker.start()`。
+
+## 回放丢失
+
+如果你没有自托管 OpenReplay，而是使用我们的托管解决方案，那么某些会话可能没有被录制，因为对我们服务器的请求可能被屏蔽了。这通常是由广告拦截器、VPN 或浏览器扩展引起的。
+
+## 有疑问？
+
+如果你对此流程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

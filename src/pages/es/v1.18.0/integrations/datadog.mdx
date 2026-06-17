@@ -1,0 +1,80 @@
+---
+title: "Datadog"
+metaTitle: "Integración con Datadog"
+metaDescription: "Cómo integrar Datadog con OpenReplay y ver los errores del backend junto a las repeticiones de sesión."
+---
+
+Cómo integrar Datadog con OpenReplay y ver los errores del backend junto a las grabaciones de sesión.
+
+## 1. Generar la API Key y la Application Key de Datadog
+
+Ve a [Datadog > Integrations > APIs](https://app.datadoghq.com/account/settings#api) y genera la API Key, o utiliza la que ya tengas.
+
+![Datadog API Key](/static/datadog-1.png#center)
+
+En la misma página, haz clic en Application Keys y genera una nueva application key.
+
+![Datadog Application Key](/static/datadog-2.png#center)
+
+## 2. Activar la integración en OpenReplay
+
+Pega tu `API Key` y tu `Application Key` de Datadog en el panel de OpenReplay, en 'Preferences > Integration'.
+
+![Datadog Integration in OpenReplay](/static/datadog-3.png#center)
+
+## 3. Propagar openReplaySessionToken
+
+Para vincular un evento de Datadog con la sesión de usuario grabada, hay que propagar un token único desde tu frontend hacia tu backend en cada solicitud que quieras rastrear. Esto se puede hacer mediante una cabecera HTTP personalizada. En el siguiente ejemplo, usamos la función `fetch` para enviar esa cabecera.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+Para que OpenReplay pueda asociar una entrada de log de Datadog con la sesión de usuario grabada, hay que propagar un token único a cada error del backend que desees rastrear.
+
+A continuación se muestra un ejemplo en Python usando Monkey Patching.
+
+```python
+import sys
+import traceback
+#...
+old_tb = traceback.print_exception
+old_f = sys.stdout
+old_e = sys.stderr
+OPENREPLAY_SESSION_TOKEN = None
+
+class F:
+    def write(self, x):
+        if OPENREPLAY_SESSION_TOKEN is not None and x != '\n':
+            old_f.write(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] {x}")
+        else:
+            old_f.write(x)
+
+    def flush(self):
+        pass
+
+def tb_print_exception(etype, value, tb, limit=None, file=None, chain=True):
+    if OPENREPLAY_SESSION_TOKEN is not None:
+        value = type(value)(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] " + str(value))
+    old_tb(etype, value, tb, limit, file, chain)
+
+traceback.print_exception = tb_print_exception
+
+sys.stderr = F()
+```
+
+El nombre de la etiqueta `openReplaySessionToken` distingue entre mayúsculas y minúsculas.
+
+## ¿Tienes preguntas?
+
+Si encuentras algún problema, conéctate a nuestro [Slack](https://slack.openreplay.com) o visita nuestro [Foro](https://forum.openreplay.com) y obtén ayuda de nuestra comunidad.

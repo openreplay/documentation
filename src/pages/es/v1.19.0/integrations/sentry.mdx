@@ -1,0 +1,102 @@
+---
+title: "Sentry"
+metaTitle: "Integración con Sentry"
+metaDescription: "Cómo integrar Sentry con OpenReplay y ver los errores del backend junto a las repeticiones de sesiones."
+---
+
+Cómo integrar Sentry con OpenReplay y ver los errores del backend junto a las grabaciones de sesiones.
+
+## 1. Generar el token de autenticación de Sentry
+
+Ve a [Sentry > Account > API > Auth Tokens](https://sentry.io/settings/account/api/auth-tokens/) y genera el token con los permisos `event:read`, `org:read` y `project:read`. Este último se usará en el siguiente paso al habilitar tu integración de Sentry en el panel de OpenReplay.
+
+![Crear token en Sentry](/static/sentry-1.png#center)
+
+## 2. Habilitar la integración en OpenReplay
+
+Copia tu `organization_slug` y tu `project_slug` desde la página **Projects** de tu panel de Sentry.
+
+![Página de proyectos en Sentry](/static/sentry-2.png#center)
+
+![Formulario de integración de Sentry en OpenReplay](/static/sentry-3.png#center)
+
+Luego pégalos en el panel de OpenReplay, en 'Preferences > Integration', junto al token que generaste previamente en el paso 1.
+
+## 3. Propagar openReplaySessionToken
+
+Para que OpenReplay pueda asociar un evento de Sentry con la sesión de usuario grabada, el evento de Sentry debe etiquetarse con un token único.  
+
+### Frontend
+Si dependes de Sentry en tu frontend, puedes seguir el ejemplo de abajo.
+
+```javascript
+import OpenReplay from "@openreplay/tracker";
+import * as Sentry from "@sentry/browser";
+
+const tracker = new OpenReplay({
+	projectKey: MY_PROJECT_KEY,
+	onStart: ({ sessionToken }) => {
+	  Sentry.setTag("openReplaySessionToken", sessionToken);
+	},
+})
+```
+O en caso de usar el snippet: 
+```javascript
+if (window.OpenReplay.getSessionToken()) {
+	Sentry.setTag("openReplaySessionToken", window.OpenReplay.getSessionToken());
+}
+```
+
+### Backend
+
+De lo contrario, si usas el SDK de Sentry en el backend, el token de sesión debe propagarse desde tu frontend en cada petición que quieras rastrear. Esto puede hacerse mediante un encabezado HTTP personalizado. En el siguiente ejemplo, usamos la API `fetch` para enviar ese encabezado.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+También puedes usar el [Fetch Plugin](/plugins/fetch) de OpenReplay para establecer el encabezado automáticamente en cada petición de rastreo.
+
+Luego puedes extraer el `openReplaySessionToken` del encabezado y agregarlo a tu scope de Sentry (idealmente usando un middleware o un decorador).
+
+```python
+with configure_scope() as scope:
+  scope.set_tag('openReplaySessionToken', app.current_request.headers.get('X-OpenReplay-SessionToken'))
+```
+
+El nombre de la etiqueta debe ser exactamente `openReplaySessionToken`.
+
+## 4. Adjuntar openReplaySessionURL (opcional pero muy útil)
+
+Si deseas vincular la URL de la grabación de OpenReplay con Sentry y mostrarla como una etiqueta, aquí tienes un ejemplo de cómo hacerlo:
+
+```javascript
+ const tracker = new OpenReplay({
+ projectKey: window.OPENREPLAY_PROJECT_KEY,
+ 
+ onStart: ({ sessionToken, sessionID }) => {
+  // This is to link from OpenReplay -> Sentry
+  Sentry.setTag("openReplaySessionToken", sessionToken);
+ 
+  // This is to link from Sentry -> OpenReplay (requires tracker v3.6.0+)
+  Sentry.setTag(
+    "openReplaySessionURL",
+    tracker.getSessionURL();
+    );
+  },
+});
+```
+
+## ¿Tienes preguntas?
+
+Si tienes algún problema, conéctate a nuestro [Slack](https://slack.openreplay.com) o visita nuestro [Foro](https://forum.openreplay.com) y obtén ayuda de nuestra comunidad.

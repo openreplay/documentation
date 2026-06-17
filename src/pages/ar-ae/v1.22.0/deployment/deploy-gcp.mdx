@@ -1,0 +1,120 @@
+---
+title: "النشر على Google Cloud"
+metaTitle: "النشر على Google Cloud"
+metaDescription: "دليل خطوة بخطوة لنشر OpenReplay على Google Cloud."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="شاهد كيفية نشر OpenReplay في بنيتك التحتية على GCP"
+  description="إذا كنت لا تفضل القراءة، يمكنك متابعة هذا الدرس المصور الذي يوضح لك كيفية نشر OpenReplay على GCP"
+  videoURL="https://youtu.be/t31fj-0t3Dw"
+  />
+
+
+يمكن تثبيت حزمة OpenReplay على جهاز واحد، وتُعد Google Cloud خياراً مثالياً لذلك. 
+
+
+## إطلاق جهاز افتراضي (VM)
+
+1. انتقل إلى لوحة تحكم 'Compute Engine' واختر 'VM Instances' من شريط القائمة الجانبي الأيسر
+2. انقر على 'Create Instance'
+3. اختر 'region' و'zone' المفضلين لديك
+4. اختر نوع الجهاز. الحد الأدنى من المواصفات هو `2 vCPUs, 8 GB of RAM, 50 GB of storage`، على بنية x86، وإلا فإن خدمات الخلفية (backend) في OpenReplay لن تبدأ ببساطة. لذلك نوصي **على الأقل** بـ `n2-standard-2` (أو ما يعادله — لاحظ أنه من المعروف أن `e2-standard-2` يسبب مشكلات أثناء النشر) وهو كافٍ لحجم منخفض/متوسط. وإذا كنت تتوقع حركة مرور عالية، فيجب عليك التوسع انطلاقاً من هنا.
+5. غيّر قرص الإقلاع (boot disk) إلى *Ubuntu 20.04 LTS* أو أحدث، ثم اختر *SSD persistent disk* كنوع لقرص الإقلاع واضبط الحجم على 50 GB.
+6. ضع علامة على كل من 'Allow HTTP traffic' و'Allow HTTPS traffic' في Firewall
+7. انقر على 'Create'
+
+## نشر OpenReplay
+
+بمجرد أن يصبح جهازك في حالة `Running`، اتصل به بالنقر على زر `SSH` ثم ثبّت OpenReplay عبر توفير النطاق الذي سيعمل عليه (مثلاً DOMAIN_NAME=openreplay.mycompany.com):
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## إعداد TLS/SSL
+
+يتعامل OpenReplay مع بيانات حساسة للمستخدمين، ولذلك يتطلب HTTPS للعمل. هذا أمر إلزامي، وإلا فإن أداة التتبع (tracker) لن تبدأ التسجيل ببساطة. والأمر نفسه ينطبق على لوحة التحكم: فبدون HTTPS لن تتمكن من إعادة مشاهدة جلسات المستخدمين.
+
+أسهل طريقة للتعامل مع SSL في Google Cloud هي إعداد موازِن تحميل (Google Load Balancing) وتشغيل OpenReplay خلفه. وهناك خيار آخر يتمثل في إنشاء أو استخدام شهادة SSL الخاصة بك وتوجيه نطاقك الفرعي (أي openreplay.mycompany.com) إلى جهاز OpenReplay. المزيد عن كلا الخيارين أدناه.
+
+### إعداد موازِن تحميل Google (الخيار 1)
+
+الخطوة الأولى هي إضافة مجموعة أجهزة (instance group) ستكون مطلوبة لاحقاً لموازِن التحميل:
+
+1. انتقل إلى 'Compute Engine' > 'Instance Groups'
+2. 'Create Instance Group' واختر *New unmanaged instance group*
+3. اختر 'Location' المفضل لديك ثم حدد 'Network' واختر جهاز OpenReplay الافتراضي (VM)
+4. انقر على 'Create'
+
+الآن حان وقت إنشاء موازِن التحميل:
+
+1. انتقل إلى 'Network Services' > 'Load Balancing'
+2. 'Create Load Balancer' واختر *HTTP(S) Load Balancing*
+3. اختر 'From Internet to my VMs' ثم انقر على 'Continue'
+4. ابدأ بـ 'Backend configuration' وانقر على 'Backend services' > 'Create a backend service'
+5. اختر *Instance group* لـ 'Backend type'. في 'Backends' > 'New backend'، اختر مجموعة الأجهزة التي أنشأتها سابقاً، واضبط المنفذ على `80` ثم انقر على 'Done'.
+6. مرّر للأسفل إلى 'Health Check' و'Create a health check'. اختر HTTP لـ 'Protocol'، واضبط 'Port' على `80` ثم غيّر 'Request path' إلى `/healthz`. احتفظ بالقيم الافتراضية الأخرى، ثم انقر على 'Save'.
+7. انقر على 'Create'
+8.  في 'Frontend configuration'، اختر HTTPS لـ 'Protocol' ثم في 'Certificate' أنشئ شهادة جديدة (تُدار بواسطة Google) أو استخدم شهادتك الخاصة. انقر على 'Done'.
+9. راجع ثم انقر على 'Create'
+
+بمجرد الإنشاء، انتقل إلى Cloud DNS (أو مزوّد خدمة DNS الخاص بك) وأنشئ `A Record` يشير إلى موازِن التحميل باستخدام عنوان IP الخاص به (يمكن العثور عليه في لوحة تحكم Load Balancing).
+
+وأخيراً، فعّل `use-forwarded-headers` عبر إزالة التعليق عن السطر أدناه ضمن قسم `ingress-nginx` في `/var/lib/openreplay/vars.yaml`:
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      use-forwarded-headers: true
+```
+
+أصبح كل شيء جاهزاً الآن، ومن المفترض أن يكون OpenReplay قابلاً للوصول بأمان على النطاق الفرعي الذي قمت بإعداده للتو. يمكنك إنشاء حساب بزيارة صفحة `/signup` (أي openreplay.mycompany.com/signup).
+
+### استخدام/إنشاء شهادة SSL الخاصة بك (الخيار 2)
+
+بدلاً من إنشاء موازِن تحميل، يمكنك استخدام (أو إنشاء) شهادة SSL الخاصة بك.
+
+1. أولاً، انتقل إلى Cloud DNS (أو مزوّد خدمة DNS الآخر الخاص بك) وأنشئ `A Record`. استخدم النطاق الذي قدمته سابقاً أثناء خطوة التثبيت ووجّهه إلى الجهاز الافتراضي (VM) باستخدام عنوان IP العام الخاص به (يمكن العثور عليه في لوحة تحكم Compute Engine).
+
+2. إذا كنت تستخدم شهادتك الخاصة، فأنشئ سرّ SSL باستخدام الأمر التالي: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
+
+> **ملاحظة:** إذا لم تكن لديك شهادة، فأنشئ واحدة تتجدد تلقائياً لنطاقك الفرعي (الذي قدمته أثناء التثبيت) باستخدام Let's Encrypt. ما عليك سوى الاتصال بجهاز OpenReplay، وتشغيل `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` واتباع الخطوات.
+
+3. إذا كنت ترغب في تفعيل إعادة التوجيه من http إلى https (موصى به)، فأزل التعليق عن الكتلة أدناه، ضمن قسم `ingress-nginx`، في `/var/lib/openreplay/vars.yaml`:
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+تجدر الإشارة إلى أن `ingress-nginx` الخاص بنا يعمل افتراضياً على المنفذين `80|443`، لكن يمكن تغيير ذلك بسهولة، إذا لزم الأمر، في `vars.yaml`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. وأخيراً، أعد تثبيت NGINX الخاص بـ OpenReplay:
+
+```bash
+openreplay -R
+```
+
+أصبح كل شيء جاهزاً الآن، ومن المفترض أن يكون OpenReplay قابلاً للوصول على نطاقك الفرعي. يمكنك إنشاء حساب بزيارة صفحة `/signup` (أي openreplay.mycompany.com/signup).
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات، فتواصل معنا عبر [Slack](https://slack.openreplay.com) أو اطّلع على [المنتدى](https://forum.openreplay.com) الخاص بنا واحصل على المساعدة من مجتمعنا.

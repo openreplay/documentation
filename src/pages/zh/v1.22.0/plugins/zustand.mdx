@@ -1,0 +1,97 @@
+---
+title: "Zustand"
+metaTitle: "Zustand"
+metaDescription: "OpenReplay 的 Zustand 插件。"
+---
+import Aside from '~/components/Aside.astro'
+
+该插件允许你捕获 `Zustand` 的变更（mutations）和状态，并在回放会话录像时对其进行检查。这对于理解和修复问题非常有用。
+
+<Aside type="tip">
+  我们还提供了一份详细教程，介绍在使用该库时如何借助 Zustand 插件捕获应用程序的状态，你可以在[这里](/tutorials/zustand)查看。
+</Aside>
+
+
+
+## 安装
+
+```bash
+npm i @openreplay/tracker-zustand
+```
+
+## 使用方法
+
+像往常一样初始化 `@openreplay/tracker` 包，并将插件加载到其中。调用该插件并设置 store 名称，这将返回一个命名的 store 跟踪器实例，你可以将你的 store 实例作为参数传入并调用它，以启用对该 store 的跟踪。
+
+### 如果你的网站是单页应用（SPA）
+
+```js
+import Tracker from '@openreplay/tracker';
+import trackerZustand from '@openreplay/tracker-zustand';
+```
+
+### 如果你的 Web 应用是服务端渲染（SSR）
+
+```js
+import Tracker from '@openreplay/tracker/cjs';
+import trackerZustand from '@openreplay/tracker-zustand/cjs';
+```
+
+### 跟踪 Zustand Store
+
+```js
+import create from "zustand";
+import Tracker from '@openreplay/tracker';
+import trackerZustand, { StateLogger } from '@openreplay/tracker-zustand';
+
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+// as per https://docs.pmnd.rs/zustand/guides/typescript#middleware-that-doesn't-change-the-store-type
+// cast type to new one
+// but this seems to not be required and everything is working as is
+const zustandPlugin = tracker.use(trackerZustand()) as unknown as StateLogger
+
+
+const useBearStore = create(
+  zustandPlugin((set: any) => ({
+    bears: 0,
+    increasePopulation: () => set((state: any) => ({ bears: state.bears + 1 })),
+    removeAllBears: () => set({ bears: 0 }),
+  }),
+    // store name is optional
+    // and is randomly generated if undefined
+  'bear_store'
+  )
+)
+```
+
+## 选项
+
+你可以通过选项自定义插件的行为，以清理你的数据。这些选项与标准的 `createLogger` 插件中的选项类似。
+
+```js
+trackerZustand({
+  filter (mutation, state) {
+    // returns `true` if a mutation should be logged
+    // `mutation` is a `{ type, payload }`
+    return mutation.type !== "aBlacklistedMutation";
+  },
+  transformer (state) {
+    // transform the state before logging it.
+    // for example return only a specific sub-tree
+    return state.subTree;
+  },
+  mutationTransformer (mutation) {
+    // mutations are logged in the format of `{ type, payload }`
+    // we can format it any way we want.
+    return mutation.type;
+  },
+})
+```
+
+## 有疑问？
+
+在设置该插件时遇到困难？请加入我们的 [Slack](https://slack.openreplay.com)，或访问我们的[论坛](https://forum.openreplay.com)，从我们的社区获得帮助。

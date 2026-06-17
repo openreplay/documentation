@@ -1,0 +1,53 @@
+---
+title: "SDK de JavaScript - método resanitize"
+metaTitle: "SDK de JavaScript - método resanitize"
+metaDescription: "Detalles sobre el método resanitize del SDK de OpenReplay"
+---
+import Aside from '~/components/Aside.astro'
+
+Este método vuelve a evaluar la [sanitización](/sdk/sanitize-data) sobre el DOM actual y vuelve a emitir todo lo que haya cambiado, actualizando los nodos ya registrados a mitad de la sesión.
+
+La sanitización se aplica normalmente cuando un nodo se registra por primera vez. Si cambias lo que debe ocultarse o enmascararse *después* de que un nodo ya haya sido capturado, ese cambio no se reflejará por sí solo en el replay. Llama a `resanitize()` para forzar al tracker a volver a escanear y aplicar las reglas de sanitización actualizadas a los nodos que ya forman parte de la grabación.
+
+Llámalo después de:
+
+- alternar los atributos `data-openreplay-obscured` / `data-openreplay-hidden` en elementos que ya están en la página, o
+- cambiar aquello en lo que se basa tu [`domSanitizer`](/sdk/sanitize-data#using-the-domsanitizer-function) (clase, id, etc.).
+
+<Aside type="note">
+Los elementos sanitizados se enmascaran/redactan a nivel del origen (tracker), por lo que cualquier cosa que esté oculta o enmascarada nunca llega a la instancia de OpenReplay. Como toda sanitización, `resanitize()` solo afecta a los datos capturados a partir de ese momento — no puede limpiar de forma retroactiva los datos que ya se enviaron al backend en texto plano.
+</Aside>
+
+## Firma
+
+```js
+resanitize(el?: Element): void
+```
+
+## Parámetros
+
+- `el?: Element`: El nodo más alto que cambiaste. El tracker vuelve a escanear este elemento y su subárbol. Omítelo para volver a escanear todo el documento.
+
+<Aside type="tip">
+Pasa el elemento más específico que puedas. Escanear todo el documento es O(tamaño del DOM), por lo que pasar el subárbol modificado mantiene el reescaneo económico en páginas grandes.
+</Aside>
+
+## Valor de retorno
+
+Este método no devuelve ningún valor. La sanitización reevaluada se aplica directamente a la grabación en curso y los resultados son visibles en la plataforma de OpenReplay.
+
+## Ejemplo
+
+```js
+// Obscure a section after the user opens sensitive content
+const panel = document.getElementById('account-details')
+panel.setAttribute('data-openreplay-obscured', '')
+
+// Tell the tracker to re-apply sanitization to that subtree
+tracker.resanitize(panel)
+```
+
+```js
+// Re-scan the whole document after changing domSanitizer rules
+tracker.resanitize()
+```

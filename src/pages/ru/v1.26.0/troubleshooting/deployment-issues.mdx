@@ -1,0 +1,118 @@
+---
+title: "Проблемы развёртывания"
+metaTitle: "Проблемы развёртывания"
+metaDescription: "Проблемы, связанные с развёртыванием, или часто задаваемые вопросы"
+---
+
+## Установка
+
+### Error: release openreplay failed, and has been uninstalled due to atomic being set
+
+Это может быть вызвано неудачной установкой helm. Для отладки выполните следующие шаги:
+
+```bash
+openreplay -s
+
+# If you see any failed pods, check the log. it should shed some light.
+openreplay -l <pod name>
+
+# If there is no pods in running/error/crashloop status, then check the status of pod using following command
+kubectl describe po -n app -n db <pod name>
+```
+
+## Регистрация не работает
+
+### Проверка работоспособности показывает, что проверка SSL не пройдена
+  
+Если у вас самоподписанный сертификат, для устранения проблемы можно использовать следующую команду:
+
+```bash
+openreplay -e
+
+# Add following line to skip the SSL health check
+chalice:
+  env:
+    ...
+    # append the following line under env section
+    SKIP_H_SSL: true
+```
+
+Сохраните и выйдите из файла конфигурации с помощью `:wq`
+
+## Моя установка внезапно перестала работать
+   
+Этому может быть несколько причин. Вот как можно отладить ситуацию:
+
+### Проверьте состояние установки с помощью `openreplay -s`
+
+Проверьте раздел использования диска. Если он превышает 80 %, службы не запустятся.
+
+## Обновление завершилось неудачей без какой-либо конкретной ошибки
+   
+### Я вижу «helm or another operation (install/upgrade/rollback) is in progress»
+
+Обычно это означает, что вы несколько раз повторяли операцию установки/обновления. Выполните приведённую ниже команду, чтобы разрешить ситуацию:
+
+```bash
+helm rollback -n app openreplay
+```
+
+### Я не вижу ошибок, только «installation failed»
+
+```bash
+# Check for failed pods
+kubectl get pods -n app --field-selector="status.phase!=Succeeded,status.phase!=Running" -o custom-columns="POD:metadata.name"
+        
+# Check for the err logs
+openreplay -l `pod name from above`
+ ```
+
+## Ошибки при self-hosted установке
+
+### Error: You must be logged in to the server (Unauthorized)
+
+`openreplay -s` или `kubectl get po` выдаёт ошибку `error: You must be logged in to the server (Unauthorized)`. Возможно, k3s перегенерировал клиентский сертификат для входа в кластер, но kubectl этого не учёл. Скопируйте новую конфигурацию с помощью `cp /etc/rancher/k3s/k3s.yaml ~/.kube/config`, и всё заработает.
+
+## Базы данных
+
+### Postgres не очищает данные даже после pg-cleanup
+
+Очистка Postgres выполняется самим PG. Это означает, что мы удаляем данные до указанной даты, а PG помечает эти данные для удаления. PG удаляет данные в процессе под названием AutoVacuum, и логика его запуска является внутренней. Поэтому у нас нет оценки времени очистки данных с диска. Если вы хотите узнать, в каких таблицах содержатся данные, и усечь таблицу, если можете позволить себе потерю данных, например таблицу `requests`, которая содержит данные, связанные с сетевыми запросами; и если в ней нет данных, вы не сможете искать сессии по URL-адресам запросов.
+
+Чтобы проверить размер таблицы
+
+```sql
+SELECT nspname AS "name_space",
+       relname AS "relation",
+       pg_size_pretty(
+               pg_total_relation_size(C.oid)
+           )   AS "total_size"
+FROM pg_class C
+         LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+WHERE nspname NOT IN ('pg_catalog','information_schema')
+  AND C.relkind <> 'i'
+  AND nspname !~ '^pg_toast'
+ORDER BY pg_total_relation_size(C.oid) DESC
+LIMIT 20;
+```
+
+## SSL
+
+### Перенос SSL на внешний прокси/балансировщик нагрузки
+
+```bash
+openreplay -e
+
+# Under ingress-nginx block disable ssl redirection
+ingress-nginx: &ingress-nginx
+  ...
+  controller:
+    ...
+    config:
+      ...
+      ssl-redirect: false
+      force-ssl-redirect: false
+```
+## Остались вопросы?
+
+Если у вас есть какие-либо вопросы об этом процессе, не стесняйтесь обращаться к нам в нашем [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com).

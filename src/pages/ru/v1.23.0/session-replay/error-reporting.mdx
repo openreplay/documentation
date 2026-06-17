@@ -1,0 +1,104 @@
+---
+title: "Отслеживание ошибок"
+metaTitle: "Отслеживание ошибок"
+metaDescription: "Узнайте, как отслеживать и устранять ошибки с помощью OpenReplay. Получите детальную видимость ошибок в ваших веб-приложениях и устраняйте неполадки с полным контекстом."
+---
+
+Получите высокоуровневую и детальную видимость ошибок в ваших веб-приложениях. С помощью OpenReplay вы можете устранять неполадки с полным контекстом, что обеспечивает более быстрое решение проблем.
+
+## Аналитика отслеживания ошибок в различных представлениях
+
+### Из представления «Сессии»
+
+1. Перейдите в представление сессии > вкладка **Errors**
+2. **Используйте Omnisearch**: выберите событие **«Error Message»** и введите конкретное сообщение об ошибке.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/error-tracking/errors_sessions_view.gif" alt="Ошибки в сессиях" style={{ width: '600px', height: 'auto' }} />
+</div>
+
+### Внутри отдельной сессии
+
+1. Перейдите в **Console > вкладка Errors**
+2. Откройте ошибку, чтобы просмотреть полные sourcemap.
+3. Нажмите **"Find all sessions with this error"**, чтобы увидеть список сессий, в которых произошла эта ошибка.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/error-tracking/errors_session_view.gif" alt="Ошибка сессии" style={{ width: '600px', height: 'auto' }} />
+</div>
+
+### Из представления «Cards»
+
+1. Перейдите в Cards > Add Card > Monitors
+2. Выберите карточку **Table of Errors**
+
+{/* <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/error-tracking/errors_cards_view.gif" alt="Таблица ошибок" style={{ width: '600px', height: 'auto' }} />
+</div> */}
+
+## Ручное логирование исключений
+
+Трекер OpenReplay поддерживает логирование трёх типов ошибок:
+
+1. **Перехваченные исключения** - [Error](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error)
+2. **Отклонённые промисы** - [PromiseRejectionEvent](https://developer.mozilla.org/en-US/docs/Web/API/PromiseRejectionEvent)
+3. **События ошибок (onError)** - [ErrorEvent](https://developer.mozilla.org/en-US/docs/Web/API/ErrorEvent)
+
+Обо всех этих ошибках можно сообщить с помощью одного метода:
+
+```javascript
+tracker.handleError(error, metaObject); // metaObject is optional and is a flat object
+```
+
+Рассмотрим примеры для каждого типа ошибки:
+
+### Перехваченные исключения (Error)
+
+По умолчанию перехваченные исключения не логируются на вкладке «Console». Чтобы сообщить об ошибке, используйте следующий шаблон:
+
+```javascript
+try {
+    // application code
+} catch (err) {
+    // application code that handles the error
+    tracker.handleError(err, metaObject); // metaObject is optional and is a flat object
+}
+```
+
+### Отклонённые промисы (PromiseRejectionEvent)
+
+Если промис отклонён и о нём необходимо сообщить в OpenReplay, используйте этот подход:
+
+```javascript
+function myFunc() {
+    doSomeAsyncStuff()
+        .then((result) => {
+            // application code
+        })
+        .catch(promiseRejectionErr => {
+            // application code to handle the error
+            tracker.handleError(promiseRejectionErr, metaObject); // metaObject is optional and is a flat object
+        });
+}
+```
+
+### onError (ErrorEvent)
+
+Сообщайте об ошибках, вызванных событиями, например о том, что элемент `<img>` не загрузился:
+
+```javascript
+<img id="myImg" src="image.gif">
+<p id="demo"></p>
+
+<script>
+document.getElementById("myImg").addEventListener("error", myFunction);
+
+function myFunction(errorEvent) {
+    document.getElementById("demo").innerHTML = "The image could not be loaded.";
+    tracker.handleError(errorEvent, { context: "demo" });
+}
+</script>
+```
+
+## Остались вопросы?
+Если у вас есть какие-либо вопросы об этом процессе, не стесняйтесь связаться с нами в нашем [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com).

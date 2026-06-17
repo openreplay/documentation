@@ -1,0 +1,184 @@
+---
+title: "事件"
+metaTitle: "OpenReplay Analytics SDK — 事件"
+metaDescription: "为 OpenReplay tracker 的 analytics 事件定义和管理超级属性。"
+---
+
+## 事件
+
+此模块让你能够管理**事件**和**属性**——持久化的键/值对，会自动附加到每个被追踪的事件上。
+
+超级属性存储在本地，当你追踪事件时，会被合并到每个事件的 payload 中。
+
+可通过以下方式访问：
+
+`tracker.analytics.events`
+
+## 概念
+
+### 超级属性
+
+超级属性存储在 SDK 中，并在 `properties` 下被合并到每个事件中。
+
+### 事件属性
+
+事件属性仅在单次调用 `track/sendEvent` 时传入，并且**不会**作为超级属性被保存。
+
+## 保留键
+
+以下键为保留键，无法通过超级属性的辅助方法创建/移除：
+
+- `properties`
+- `token`
+- `timestamp`
+
+## 顶层签名
+
+```ts
+// Track an event.
+// The `properties` argument is per-event only (not persisted).
+tracker.analytics.events.sendEvent(eventName: string, properties?: Record<string, any>, options?: { send_immediately: boolean })
+
+// Create/update super properties (persisted)
+tracker.analytics.events.setProperty(name: string, value: any): void
+tracker.analytics.events.setProperty(properties: Record<string, any>): void
+
+// Create super properties only if they don't exist yet (persisted)
+tracker.analytics.events.setPropertiesOnce(name: string, value: any): void
+tracker.analytics.events.setPropertiesOnce(properties: Record<string, any>): void
+
+// Remove super properties (persisted)
+tracker.analytics.events.unsetProperties(name: string): void
+tracker.analytics.events.unsetProperties(names: string[]): void
+
+// Clear all super properties
+tracker.analytics.events.reset(): void
+```
+
+## 追踪带属性的事件
+
+### 单次事件属性（不持久化）
+
+```ts
+tracker.analytics.events.sendEvent("Button Clicked", {
+  button_text: "Start",
+  page: "home",
+})
+```
+
+这些属性仅适用于此事件。
+
+### 超级属性 + 单次事件属性（合并）
+
+当你设置了超级属性后，它们会自动包含在每个事件中，然后与单次事件属性合并：
+
+```ts
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  env: "prod",
+})
+
+tracker.analytics.events.sendEvent("Signup Started", {
+	// per-event, can override a super property with the same key
+  plan: "pro", 
+})
+```
+
+合并顺序：
+
+- 先添加超级属性
+- 单次事件属性叠加在其上进行合并
+
+因此，当键发生冲突时，单次事件属性优先。
+
+## setProperty
+
+创建或覆盖超级属性。
+
+```ts
+// object form
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  region: "eu",
+})
+
+// key/value form
+tracker.analytics.events.setProperty("build_sha", "3f2c9a1")
+```
+
+### 注意事项：
+
+- 默认/内部键（由 SDK 追踪）会被忽略，不会作为超级属性添加。
+- 仅当确实发生变化时，更改才会保存到本地。
+
+## setPropertiesOnce
+
+仅在超级属性尚不存在时才创建它们。
+
+```ts
+tracker.analytics.events.setPropertiesOnce({
+  first_seen_at: Date.now(),
+  signup_source: "docs",
+})
+
+// key/value form
+tracker.analytics.events.setPropertiesOnce("initial_referrer", document.referrer)
+```
+
+### 注意事项：
+
+- 仅当键缺失时才会设置属性。
+- 保留键（`properties`、`token`、`timestamp`）会被忽略。
+
+## unsetProperties
+
+移除一个或多个超级属性。
+
+```ts
+// single
+tracker.analytics.events.unsetProperties("region")
+
+// multiple
+tracker.analytics.events.unsetProperties(["app_version", "build_sha"])
+```
+
+### 注意事项：
+
+- 保留键无法被移除。
+- 移除操作会被持久化。
+
+## reset
+
+清除所有超级属性。
+
+```ts
+tracker.analytics.events.reset()
+```
+
+## 立即发送
+
+默认情况下，事件会被排队/批量处理。你可以请求立即发送某个事件：
+
+```ts
+tracker.analytics.events.sendEvent(
+  "Checkout Completed",
+  { value: 199, currency: "EUR" },
+  { send_immediately: true },
+)
+```
+
+## 兼容 Mixpanel 的别名
+
+为了方便使用，所有方法都支持提供的兼容层：
+
+```ts
+tracker.analytics.events.register       // setProperty
+tracker.analytics.events.register_once  // setPropertiesOnce
+tracker.analytics.events.unregister     // unsetProperties
+tracker.analytics.events.track          // sendEvent
+```
+
+
+## 有疑问？
+
+如果你遇到任何问题，请加入我们的 [Slack](https://slack.openreplay.com)，或访问我们的[论坛](https://forum.openreplay.com)，从我们的社区获得帮助。

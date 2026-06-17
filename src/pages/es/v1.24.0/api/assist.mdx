@@ -1,0 +1,202 @@
+---
+title: "Assist"
+metaTitle: "Assist"
+metaDescription: "Cómo buscar en todas las sesiones en vivo de un proyecto concreto."
+---
+
+## Recuperar sesiones en vivo
+
+Solo disponible para Enterprise Edition (EE).
+
+Devuelve la lista de sesiones en vivo de un proyecto concreto.
+
+### Método
+
+`GET`
+
+### URL
+
+`/api/v1/:projectKey/assist/sessions`
+
+### Parámetros
+
+| Name | Type | Description |
+|----------|-------------|-------------|
+| projectKey | string | El ID del proyecto que estás monitorizando (obligatorio) |
+
+### Cabeceras de la solicitud
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`: La clave se encuentra en 'Preferences' > 'Account' > 'Organization API
+Key'.
+
+### Códigos de estado
+
+`200`: Respuesta enviada como JSON en el cuerpo
+
+### Ejemplo de solicitud
+
+```shell
+curl -X GET \
+  https://openreplay.example.com/api/v1/aYYaFHiagqdXKEmVlmvJ/assist/sessions \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Ejemplo de respuesta
+
+```json
+{
+  "data": {
+    "total": 1,
+    "sessions": [
+      {
+        "pageTitle": "OpenReplay Blog",
+        "sessionID": "6975518573799938",
+        "metadata": {},
+        "userID": "",
+        "userUUID": "8998545b-553c-4f41-a39d-d7cba7fac2d1",
+        "projectKey": "aYYaFHiagqdXKEmVlmvJ",
+        "revID": "",
+        "timestamp": 1656437966459,
+        "trackerVersion": "3.5.11",
+        "isSnippet": true,
+        "userOs": "Mac OS",
+        "userBrowser": "Chrome",
+        "userBrowserVersion": "103.0.0.0",
+        "userDevice": null,
+        "userDeviceType": "desktop",
+        "userCountry": "FR",
+        "active": false,
+        "live": true,
+        "projectId": 3
+      }
+    ]
+  }
+}
+```
+
+## Buscar sesiones en vivo
+
+Busca en la lista de sesiones en vivo de un proyecto concreto.
+
+### Método
+
+`POST`
+
+### URL
+
+`/api/v1/:projectKey/assist/sessions`
+
+### Parámetros
+
+| Name | Type | Description |
+|----------|-------------|-------------|
+| projectKey | string | El ID del proyecto que estás monitorizando (obligatorio) |
+
+### Payload
+
+| Name    | Type            | Description                                          |
+|---------|-----------------|------------------------------------------------------|
+| sort    | string          | El atributo de ordenación (por defecto:timestamp)               |
+| order   | string          | El orden de clasificación, puede ser "DESC" o "ASC" (por defecto:DESC) |
+| page    | integer         | El número de página para la paginación (por defecto:1)           |
+| limit   | integer         | El número de sesiones por página (por defecto:200)        |
+| filters | array of filter | La lista de filtros, consulta la tabla siguiente (por defecto:[])   |
+
+objeto filter:
+
+| Name     | Type                              | Description                                                                        |
+|----------|-----------------------------------|------------------------------------------------------------------------------------|
+| value    | array of case insensitive strings | La lista de valores (por defecto:[])                                                    |
+| type     | case insensitive string           | El atributo del filtro (obligatorio)                                                    |
+| source   | case insensitive string           | El nombre del atributo de metadatos para type=metadata (por defecto:"")                          |
+| operator | case sensitive string           | El operador que se aplica a cada valor, puede ser "contains" o "is" (por defecto:"contains") |
+
+La búsqueda buscará las sesiones en vivo que tengan un nombre de atributo que contenga el `type` indicado y que tengan un valor que contenga 1 de los `value` indicados.
+
+
+PD: si `values=[]`; la búsqueda buscará las sesiones en vivo que tengan un atributo determinado.
+
+Por ejemplo, si buscas sesiones que tengan unos metadatos específicos (cualquier valor):
+```json
+{"value": [], "type": "METADATA", "source": "myMeta"}
+```
+
+### Cabeceras de la solicitud
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`: La clave se encuentra en 'Preferences' > 'Account' > 'Organization API
+Key'.
+
+### Códigos de estado
+
+`200`: Respuesta enviada como JSON en el cuerpo
+
+### Ejemplo de solicitud
+
+El siguiente ejemplo buscará las primeras 10 sesiones en vivo (ordenadas de forma descendente por timestamp) que tengan
+un `userId` que contenga 'openreplay' y `metadata.plan` que contenga 'trial' o 'free'.
+
+```shell
+curl -X POST \
+  https://openreplay.example.com/api/v1/aYYaFHiagqdXKEmVlmvJ/assist/sessions \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+  --data-raw '{
+    "filters": [
+        {
+            "value": [
+                "trial", "free"
+            ],
+            "type": "METADATA",
+            "source": "plan",
+            "operator": "is"
+        },
+        {
+            "value": [
+                "openreplay"
+            ],
+            "type": "USERID",
+            "operator": "contains"
+        }
+    ],
+    "sort": "timestamp",
+    "order": "DESC",
+    "limit": 10,
+    "page": 1
+   }'
+```
+
+### Ejemplo de respuesta
+
+```json
+{
+  "data": {
+    "total": 1,
+    "sessions": [
+      {
+        "pageTitle": "OpenReplay Blog",
+        "sessionID": "6975518573799185",
+        "metadata": {
+          "plan": "trial"
+        },
+        "userID": "dev@openreplay.com",
+        "userUUID": "8998545b-553c-4f41-a39d-d7cba7fac2d1",
+        "projectKey": "aYYaFHiagqdXKEmVlmvJ",
+        "revID": "",
+        "timestamp": 1656437966459,
+        "trackerVersion": "3.5.11",
+        "isSnippet": true,
+        "userOs": "Mac OS",
+        "userBrowser": "Chrome",
+        "userBrowserVersion": "103.0.0.0",
+        "userDevice": null,
+        "userDeviceType": "desktop",
+        "userCountry": "FR",
+        "active": false,
+        "live": true,
+        "projectId": 3
+      }
+    ]
+  }
+}
+```

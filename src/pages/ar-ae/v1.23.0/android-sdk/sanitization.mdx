@@ -1,0 +1,71 @@
+---
+title: "Android SDK - تنقية البيانات الحساسة"
+metaTitle: "Android SDK - تنقية البيانات الحساسة"
+metaDescription: "تفاصيل حول تنقية التسجيلات وبيانات الشبكة في متعقّب Android"
+---
+
+## مكوّنات واجهة المستخدم
+
+سيتم تعتيم طرق العرض التي تمت تنقيتها في إعادة التشغيل الناتجة. يمكنك إضافة أي مكوّن من مكوّنات واجهة المستخدم، وسيتم إزالته تلقائيًا (للحفاظ على الذاكرة) بمجرد أن يختفي من الشاشة.
+
+### View
+
+```kotlin
+import com.openreplay.tracker.OpenReplay
+
+OpenReplay.addIgnoredView(view)
+```
+
+#### Jetpack Compose
+```kotlin
+import com.openreplay.tracker.Sanitize
+
+Sanitize {
+		Button(
+				modifier = Modifier
+						.fillMaxWidth()
+						.padding(top = 28.dp, bottom = 3.dp)
+						.trackTouchEvents("Continue Button"),
+				onClick = onSubmit,
+		) {
+				Text(
+						text = "Submit",
+						style = MaterialTheme.typography.titleSmall
+				)
+		}
+}
+```
+
+## طلبات الشبكة
+
+يتم تصدير مفتاحين لاقتطاع بيانات الطلب/الاستجابة تلقائيًا: `ignoredKeys` للنص و`ignoredHeaders` للترويسات. سيتم تنقية كل من الطلب والاستجابة، لكن النص لن يتأثر إلا إذا كان JSON صالحًا.
+
+ما عليك سوى إسناد قائمة من السلاسل النصية التي ترغب في تنقيتها:
+
+```kotlin
+val networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+من الممكن أيضًا تعديل بيانات الاستجابة قبل تمريرها إلى المستمع (listener):
+
+```kotlin
+// ... request
+
+var sanitizedData: Any? = null
+data?.let {
+    try {
+        val json = JSONTokener(it).nextValue()
+        sanitizedData = customSanitizeFunction(it)
+        println(json)
+    } catch (error: JSONException) {
+        println("Error deserializing JSON: $error")
+    }
+}
+
+networkListener.finish(response, sanitizedData)
+```
+
+## هل لديك أسئلة؟
+إذا كانت لديك أي أسئلة حول هذه العملية، فلا تتردد في التواصل معنا عبر [Slack](https://slack.openreplay.com) الخاص بنا أو الاطّلاع على [المنتدى](https://forum.openreplay.com) الخاص بنا.

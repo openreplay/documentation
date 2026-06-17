@@ -1,0 +1,34 @@
+---
+title: "SDK JavaScript - méthode 'startOfflineRecording'"
+metaTitle: "SDK JavaScript - méthode 'startOfflineRecording'"
+metaDescription: "Détails sur la méthode 'startOfflineRecording' du SDK d'OpenReplay"
+---
+
+Démarre l'enregistrement de la session en mode hors ligne (rien n'est envoyé tant que le téléversement n'est pas déclenché) et renvoie des méthodes pour contrôler l'état de l'enregistrement.
+
+> Remarque : les horodatages de la session et des événements seront extraits de l'appareil de l'utilisateur et ne seront pas synchronisés avec notre backend.
+
+## Signature
+
+```ts
+startOfflineRecording(
+	startOpts?: Partial<StartOptions>, 
+	onSessionSent: () => void
+): { saveBuffer, getBuffer, setBuffer }
+```
+
+### Paramètres
+
+Avec `startOpts`, vous pouvez personnaliser différents aspects de l'enregistrement :
+- `userID: string` : utilisé pour définir manuellement le `userID` afin de le suivre d'une session à l'autre. Il s'agit d'une valeur de type chaîne et peut être ce que vous voulez.
+- `metadata: Record<string, string>` : définit manuellement les valeurs des métadonnées. Consultez la [section Métadonnées](/installation/metadata/) pour en savoir plus sur cette fonctionnalité.
+- `forceNew: boolean` : utilisé pour forcer une nouvelle session après l'actualisation de la page. Par défaut, il est défini sur `false`, donc après une actualisation la session est conservée.
+- `sessionHash: string` : utilisé pour les sessions persistantes. Utile si vous avez une application multi-sites ou si vous devez rediriger l'utilisateur en dehors de votre site puis le ramener (comme vers une passerelle de paiement).
+- `onSessionSent` : callback qui sera appelé une fois la session entièrement téléversée.
+
+
+### Valeur de retour
+
+- `saveBuffer(): void` - Enregistre le tampon actuel dans l'objet `localStorage` (personnalisable dans le constructeur) ; le tampon sera chargé automatiquement dès que `startOfflineRecording` est appelée.
+- `getBuffer(): Messages[]` - Renvoie le tampon de messages actuel.
+- `setBuffer(buffer: Messages[])` - Remplace le tampon actuel par celui fourni (si vous utilisez des méthodes alternatives de sauvegarde temporaire).

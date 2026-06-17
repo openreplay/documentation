@@ -1,0 +1,118 @@
+---
+title: "部署问题"
+metaTitle: "部署问题"
+metaDescription: "与部署相关的问题或常见问答"
+---
+
+## 安装
+
+### Error: release openreplay failed, and has been uninstalled due to atomic being set
+
+这可能是由于 helm 安装失败导致的。要进行调试，请按照以下步骤操作：
+
+```bash
+openreplay -s
+
+# If you see any failed pods, check the log. it should shed some light.
+openreplay -l <pod name>
+
+# If there is no pods in running/error/crashloop status, then check the status of pod using following command
+kubectl describe po -n app -n db <pod name>
+```
+
+## 注册无法使用
+
+### 健康检查显示 SSL 检查失败
+  
+如果你使用的是自签名证书，可以使用以下命令来修复：
+
+```bash
+openreplay -e
+
+# Add following line to skip the SSL health check
+chalice:
+  env:
+    ...
+    # append the following line under env section
+    SKIP_H_SSL: true
+```
+
+使用 `:wq` 保存并退出配置文件
+
+## 我的安装突然无法使用了
+   
+造成这种情况可能有多种原因。以下是调试该情况的方法：
+
+### 使用 `openreplay -s` 检查安装状态
+
+查看磁盘使用情况部分。如果超过 80%，服务将无法运行。
+
+## 升级失败但没有任何具体错误
+   
+### 我看到 "helm or another operation (install/upgrade/rollback) is in progress"
+
+这通常意味着你多次重试了安装/升级操作。运行以下命令来解决该情况：
+
+```bash
+helm rollback -n app openreplay
+```
+
+### 我没有看到任何错误，只有 "installation failed"
+
+```bash
+# Check for failed pods
+kubectl get pods -n app --field-selector="status.phase!=Succeeded,status.phase!=Running" -o custom-columns="POD:metadata.name"
+        
+# Check for the err logs
+openreplay -l `pod name from above`
+ ```
+
+## 自托管错误
+
+### Error: You must be logged in to the server (Unauthorized)
+
+`openreplay -s` 或 `kubectl get po` 抛出错误 `error: You must be logged in to the server (Unauthorized)`。k3s 可能重新生成了用于登录集群的客户端证书，但 kubectl 尚未获取到该证书。使用 `cp /etc/rancher/k3s/k3s.yaml ~/.kube/config` 复制新的配置，即可正常使用。
+
+## 数据库
+
+### 即使执行了 pg-cleanup，Postgres 也不清理数据
+
+Postgres 的清理由 PG 处理。也就是说，我们会删除指定日期之前的数据，PG 会将这些数据标记为待删除。PG 通过一个名为 AutoVacuum 的过程删除数据，其触发逻辑是内部的。因此，我们无法预估数据从磁盘清理的时间。如果你想查看哪些表中有数据，并在可以承受数据丢失的情况下截断该表，例如包含网络请求相关数据的 `requests` 表；如果该表中没有数据，你将无法通过请求 URL 搜索会话。
+
+要检查表的大小
+
+```sql
+SELECT nspname AS "name_space",
+       relname AS "relation",
+       pg_size_pretty(
+               pg_total_relation_size(C.oid)
+           )   AS "total_size"
+FROM pg_class C
+         LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+WHERE nspname NOT IN ('pg_catalog','information_schema')
+  AND C.relkind <> 'i'
+  AND nspname !~ '^pg_toast'
+ORDER BY pg_total_relation_size(C.oid) DESC
+LIMIT 20;
+```
+
+## SSL
+
+### 将 SSL 卸载到外部代理/负载均衡器
+
+```bash
+openreplay -e
+
+# Under ingress-nginx block disable ssl redirection
+ingress-nginx: &ingress-nginx
+  ...
+  controller:
+    ...
+    config:
+      ...
+      ssl-redirect: false
+      force-ssl-redirect: false
+```
+## 有疑问？
+
+如果你对此流程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的 [论坛](https://forum.openreplay.com)。

@@ -1,0 +1,47 @@
+---
+title: "外部数据库 (Postgres)"
+metaTitle: "外部数据库 (Postgres)"
+metaDescription: "如何更改 OpenReplay 的默认数据库目标并使用外部数据库。"
+---
+
+我们的数据库服务 Postgres 默认随 OpenReplay 一起安装，并在你的实例上运行于专用容器中，以降低部署成本。如果你需要更高的可扩展性或更便捷的运维，仍然可以使用外部 Postgres（即 AWS RDS 或 GCP Cloud SQL）。
+
+## 导出现有的模式和数据
+
+> **注意：** 如果你是全新开始且尚未安装 OpenReplay，只需继续进行设置并忽略以下步骤。
+
+现在必须将本地模式和已记录的数据导出到外部 Postgres：
+
+1. 首先，备份本地数据库：
+
+```bash
+kubectl exec -n db postgresql-postgresql-0 -- bash -c 'PGPASSWORD=<postgresPassword from vars.yaml> pg_dumpall -U postgres '"  > ~/path/to/dump.sql
+```
+
+2. 在你的 OpenReplay 实例上安装 Postgres 客户端，并确保它能够访问外部数据库：
+
+```bash
+sudo apt install postgresql-client
+```
+   
+3. 将备份恢复到新的 externalPostgres：
+
+```bash
+PGPASSWORD=PG_PASSWORD psql -U PG_USERNAME -h [RDS_URL} -d postgres < /path/to/dump.sql
+```
+
+4. 最后，更新 `openreplay -e` 中的所有 `postgres` 变量，并将它们指向外部数据库：
+
+```yaml
+  postgresqlPassword: "changeMePassword"
+  postgresqlHost: "postgresql.db.svc.cluster.local"
+  postgresqlPort: "5432"
+  postgresqlUser: "postgres"
+  postgresqlDatabase: "postgres"
+```
+
+5. 使用 `:wq` 保存并退出，以使更改生效
+
+## 有疑问？
+
+如果你遇到任何问题，请加入我们的 [Slack](https://slack.openreplay.com)，或访问我们的[论坛](https://forum.openreplay.com)，从我们的社区获取帮助。

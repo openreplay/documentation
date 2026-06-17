@@ -1,0 +1,76 @@
+---
+title: "أخطاء JS"
+metaTitle: "أخطاء JS"
+metaDescription: "مختلف أنواع أخطاء Javascript."
+---
+
+يسرد هذا القسم أكثر أخطاء Javascript شيوعًا التي يبلّغ عنها مجتمعنا.
+
+## Require() of ES module
+
+يحدث هذا الخطأ (وكذلك الخطأ أدناه) عادةً عندما تحاول استيراد الـ tracker داخل سياق من جانب الخادم (تطبيقات SSR وNuxt وNext وRemix وما إلى ذلك).
+
+يتطلب إصلاحه التأكد من استيراد الـ tracker وتشغيله داخل سياق المتصفح، عبر الاستيرادات الديناميكية ومكوّنات العميل وما إلى ذلك.
+
+## ReferenceError: Navigator is not defined
+
+يحدث هذا الخطأ أحيانًا عندما تحاول استيراد إضافتي `tracker-assist` أو `tracker-fetch`، ويحدث ذلك لأن node يحاول بناء الصفحة دون توفر واجهة `window` في البيئة.
+
+الإصلاح بسيط إلى حد ما. كل ما عليك فعله هو تغيير الاستيراد العادي للإضافة المسبّبة للمشكلة:
+
+```js
+import trackerAssist from '@openreplay/tracker-assist/cjs';
+```
+
+إلى استيراد ديناميكي داخل `componendDidMount` أو بديله `useEffect`:
+
+```js
+import Tracker, { Options } from "@openreplay/tracker";
+const tracker = new Tracker({ /* your options */ });
+
+class TrackerComponent extends React.Component {
+
+  componentDidMount = () => {
+    import(‘@openreplay/tracker-assist/cjs’).then(({ default: trackerAssist }) => {
+      tracker.start(/* your options */)
+      tracker.use(trackerAssist(/* your assist options */))
+    })
+   }
+
+ /* Other code */
+```
+
+بهذه الطريقة، سيتم استيراد جميع الإضافات المعتمدة على واجهة window عند تصيير المكوّن.
+
+## Critical dependency: the request of a dependency is an expression
+
+قد يحدث هذا مع الإصدارات القديمة من إضافة `tracker-assist`. ينبغي عليك تطبيق هذا [الحل البديل](https://github.com/peers/peerjs/issues/630#issuecomment-910028230) إذا واجهت الخطأ التالي عند الترجمة (compiling):
+
+```log
+Failed to compile.
+
+./node_modules/peerjs/dist/peerjs.min.js
+Critical dependency: the request of a dependency is an expression
+```
+
+## Uncaught DOMException: Blocked a frame with origin "X" from accessing a cross-origin frame
+
+يلتقط tracker الخاص بـ OpenReplay بشكل افتراضي إطارات iFrame **من النطاق نفسه**. ومع ذلك، فإنه يطلق خطأً عندما يحاول التقاط إطار iFrame لا ينتمي إلى النطاق نفسه الخاص بموقعك الإلكتروني. يمكنك إما:
+
+- تعطيل الوظيفة بالكامل باستخدام الخاصية `captureIFrames` كما في المثال أدناه: 
+
+```js
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY,
+      captureIFrames: false
+});
+```
+
+- الاستمرار في التقاط إطارات iFrame (السلوك الافتراضي) عن طريق إضافة سمة HTML `data-openreplay-capture` إلى وسوم `<iframe>` التابعة للنطاق نفسه **فقط**. بهذه الطريقة، لن يتتبع OpenReplay إطارات iFrame عبر النطاقات.
+
+## مشكلتي غير مدرجة
+
+إذا واجهت أي أخطاء غير مدرجة في هذه الصفحة، فلا تتردد في [فتح مشكلة (issue)](https://github.com/openreplay/openreplay/issues/new/choose) أو ببساطة التواصل معنا عبر [Slack](https://slack.openreplay.com) أو الاطلاع على [المنتدى](https://forum.openreplay.com) الخاص بنا للحصول على المساعدة من مجتمعنا.
+
+## هل لديك أسئلة؟
+إذا كانت لديك أي أسئلة حول هذه العملية، فلا تتردد في التواصل معنا عبر [Slack](https://slack.openreplay.com) أو الاطلاع على [المنتدى](https://forum.openreplay.com) الخاص بنا.

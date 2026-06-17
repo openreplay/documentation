@@ -1,0 +1,215 @@
+---
+title: "Пользователи"
+metaTitle: "Пользователи"
+metaDescription: "Как управлять данными пользователей и контролировать их."
+---
+import Aside from '~/components/Aside.astro'
+
+## Поиск пользователей
+
+Поиск пользователей в проекте. Фильтруйте по атрибутам (id пользователя, email, страна и т. д.), при желании сужайте выборку с помощью свободного текстового `query` и разбивайте результаты на страницы.
+
+### Метод
+`POST`
+
+### URL
+`/public/:projectKey/users`
+
+### Параметры
+
+| Name       | Type   | Description                                            |
+|------------|--------|--------------------------------------------------------|
+| projectKey | string | Ключ проекта (обязательно)                             |
+| q          | string | Необязательный свободный текстовый запрос (параметр запроса URL). Когда указаны и `q`, и `query` (в теле), приоритет имеет `q`. |
+
+### Payload
+
+| Name           | Type       | Description                                                 |
+|----------------|------------|-------------------------------------------------------------|
+| filters        | array      | Список фильтров (необязательно)                             |
+| query          | string     | Свободный текстовый запрос по id пользователя / email / имени (макс. 100) |
+| startTimestamp | epoch (ms) | Начало временного окна (необязательно, мин. 946684800000)   |
+| endTimestamp   | epoch (ms) | Конец временного окна (необязательно, > startTimestamp)     |
+| limit          | integer    | Размер страницы, 1-200 (необязательно, по умолчанию: 50)    |
+| page           | integer    | Номер страницы, начинается с 1 (необязательно, по умолчанию: 1) |
+| sortBy         | string     | Столбец пользователя для сортировки (необязательно)         |
+| sortOrder      | string     | `asc` или `desc` (необязательно)                            |
+| columns        | array      | Дополнительные столбцы пользователя для включения в ответ   |
+
+### Заголовки запроса
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Пример запроса
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "query": "mickael",
+    "limit": 50,
+    "page":  1,
+    "sortOrder": "desc"
+  }'
+```
+
+### Пример ответа
+
+```json
+{
+  "data": {
+    "total": 1,
+    "users": [
+      {
+        "$user_id": "mickael@openreplay.com",
+        "$email": "mickael@openreplay.com",
+        "$name": "Mickael",
+        "$first_name": "Mickael",
+        "$last_name": "",
+        "$created_at": 1623440822825,
+        "$last_seen": 1623689478617
+      }
+    ]
+  }
+}
+```
+
+## Получение пользователя
+
+Получите атрибуты идентификации и общую статистику по конкретному пользователю.
+
+### Метод
+`GET`
+
+### URL
+`/public/:projectKey/users/:userId`
+
+### Параметры
+
+| Name       | Type   | Description                                                |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | Ключ проекта (обязательно)                                 |
+| userId     | string | ID, установленный через `tracker.setUserID` (обязательно, макс. 256) |
+
+### Заголовки запроса
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Коды состояния
+
+`200`: Ответ отправлен в виде JSON в теле  
+`400`: Недопустимый `userId` (пустой или > 256 символов)  
+`404`: Пользователь не найден
+
+### Пример запроса
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Пример ответа
+
+```json
+{
+  "data": {
+    "$user_id": "mickael@openreplay.com",
+    "$email": "mickael@openreplay.com",
+    "$name": "Mickael",
+    "$first_name": "Mickael",
+    "$last_name": "",
+    "$phone": "",
+    "$avatar": "",
+    "$created_at": 1623440822825,
+    "distinct_ids": ["15bd70f6-aedf-4544-8ae6-57eb66398e94"],
+    "$country": "FR",
+    "$state": "",
+    "$city": "",
+    "$first_event_at": 1623440822825,
+    "$last_seen": 1623689478617
+  }
+}
+```
+
+## Удаление пользователя
+
+Удалите пользователя и все связанные с ним данные. Это планирует фоновую задачу; ответ содержит `jobId`, который вы можете опрашивать через API [Jobs](/api/jobs).
+
+<Aside type="note">
+Задача удаления удаляет до 1000 сессий, связанных с указанным пользователем.
+</Aside>
+
+### Метод
+`DELETE`
+
+### URL
+`/public/:projectKey/users/:userId`
+
+### Параметры
+
+| Name       | Type   | Description                                                |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | Ключ проекта (обязательно)                                 |
+| userId     | string | ID, установленный через `tracker.setUserID` (обязательно, макс. 256) |
+
+### Заголовки запроса
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Коды состояния
+
+`200`: Задача запланирована, возвращена в теле  
+`400`: Недопустимый `userId` (пустой или > 256 символов)  
+`409`: Задача удаления для этого пользователя уже запланирована или выполняется
+
+### Пример запроса
+
+```shell
+curl -X DELETE \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users/mickael@example.com \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Пример ответа
+
+```json
+{
+  "data": {
+    "jobId": 22345,
+    "description": "Delete user sessions of userId = mickael@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mickael@example.com",
+    "createdAt": 1623912962910,
+    "updatedAt": null,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+### Изменить время удаления файла повтора?
+
+Задача удаления состоит из 2 этапов: сначала ночью из базы данных удаляются сессии и каскадно связанные с ними события. Затем для файлов повтора в объектном хранилище планируется истечение срока действия (через 30 дней).
+
+Если вы используете minio (стандартная установка) и хотите изменить политику истечения срока действия/жизненного цикла по умолчанию, следуйте приведённым ниже инструкциям:
+1. На своём сервере выполните `openreplay -e`
+2. В разделе `chalice` определите новую переменную окружения с именем **SCH_DELETE_DAYS** со значением, равным количеству дней, в течение которых вы хотите хранить файл повтора до удаления (больше или равно 0)
+3. Сохраните и выйдите с помощью `:wq`
+4. Выполните `k9s -n db`
+5. С помощью клавиш со стрелками перемещайтесь по списку и перейдите к контейнеру `minio-*`
+6. Нажмите `s`, чтобы получить доступ к shell контейнера Minio (объектного хранилища)
+7. Выполните `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
+8. Чтобы удалять файлы повтора через 14 дней после выполнения задачи удаления
+
+```bash
+export EXPIRATION_DAYS=14
+mc ilm add --expiry-days $EXPIRATION_DAYS --tags "to_delete_in_days=${EXPIRATION_DAYS}" minio/mobs
+```
+
+9. Используйте `exit`, чтобы выйти из контейнера Minio
+10. Выполните `:quit`, чтобы выйти из CLI Kubernetes

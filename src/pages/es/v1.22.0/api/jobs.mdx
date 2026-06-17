@@ -1,0 +1,170 @@
+---
+title: "Trabajos"
+metaTitle: "Trabajos"
+metaDescription: "Cómo gestionar los trabajos de eliminación de datos de usuarios."
+---
+
+## Listar todos los trabajos
+
+Recupera todos los trabajos, incluidos los que están completados o cancelados.
+
+### Método
+`GET`
+
+### URL
+`/api/v1/:projectKey/jobs`
+
+### Encabezados de la solicitud
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`: la clave se encuentra en 'Preferences' > 'Account' > 'Organization API Key'.
+
+### Códigos de estado
+
+`200`: respuesta enviada como JSON en el cuerpo
+
+### Ejemplo de solicitud
+
+```shell
+curl -X GET \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/jobs \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Ejemplo de respuesta
+
+```json
+{
+  "data": [
+    {
+      "jobId": 3451,
+      "description": "Delete user sessions of userId = shekar@example.com",
+      "status": "scheduled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "mehdi@openreplay.com",
+      "createdAt": 1623912955277,
+      "updatedAt": 1623912955277,
+      "startAt": 1623954600000,
+      "errors": null
+    },
+    {
+      "jobId": 3452,
+      "description": "Delete user sessions of userId = shekar@example.com",
+      "status": "cancelled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "mehdi@openreplay.com",
+      "createdAt": 1623912962910,
+      "updatedAt": 1623913015276,
+      "startAt": 1623954600000,
+      "errors": null
+    }
+  ]
+}
+```
+
+## Obtener detalles del trabajo
+
+Devuelve el `status` del trabajo y otros detalles como `createdAt`, `referenceId` y `errors`.
+
+### Método
+`GET`
+
+### URL
+`/api/v1/:projectKey/jobs/:jobId`
+
+### Parámetros
+
+| Nombre | Tipo | Descripción |
+|----------|-------------|-------------|
+| jobId | string | El ID devuelto por la llamada de eliminación de usuario (obligatorio) |
+
+### Encabezados de la solicitud
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`: la clave se encuentra en 'Preferences' > 'Account' > 'Organization API Key'.
+
+### Códigos de estado
+
+`200`: respuesta enviada como JSON en el cuerpo
+
+### Ejemplo de solicitud
+
+```shell
+curl -X GET \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/jobs/3451\
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Ejemplo de respuesta
+
+```json
+{
+  "data": {
+    "jobId": 3451,
+    "description": "Delete user sessions of userId = shekar@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@openreplay.com",
+    "createdAt": 1623912955277,
+    "updatedAt": 1623912955277,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+## Cancelar trabajo
+
+Cancela un trabajo si aún no ha comenzado o si todavía está en curso.
+
+### Método
+`DELETE`
+
+### URL
+`/api/v1/:projectKey/jobs/:jobId`
+
+### Parámetros
+
+| Nombre | Tipo | Descripción |
+|----------|-------------|-------------|
+| jobId | string | El ID devuelto por la llamada de eliminación de usuario (obligatorio) |
+
+### Encabezados de la solicitud
+
+`Authorization: {YOUR_ORGANIZATION_API_KEY}`: la clave se encuentra en 'Preferences' > 'Account' > 'Organization API Key'.
+
+### Códigos de estado
+
+`200`: respuesta enviada como JSON en el cuerpo
+`501`: se devuelve si el trabajo no se puede cancelar
+
+### Ejemplo de solicitud
+
+```shell
+curl -X DELETE \
+  https://openreplay.example.com/api/v1/3sWXSsqHgSKnE87YkNJK/jobs/3452 \
+  -H 'content-type: application/json' \
+  -H 'Authorization: {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Ejemplo de respuesta
+
+```json
+{
+  "data": {
+    "jobId": 3452,
+    "description": "Delete user sessions of userId = shekar@example.com",
+    "status": "cancelled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@openreplay.com",
+    "createdAt": 1623912962910,
+    "updatedAt": 1623913015276,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```

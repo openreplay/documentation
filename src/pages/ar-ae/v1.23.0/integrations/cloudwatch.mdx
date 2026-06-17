@@ -1,0 +1,86 @@
+---
+title: "CloudWatch"
+metaTitle: "تكامل CloudWatch"
+metaDescription: "كيفية دمج CloudWatch مع OpenReplay وعرض أخطاء الواجهة الخلفية جنبًا إلى جنب مع إعادة تشغيل الجلسات."
+---
+
+كيفية دمج CloudWatch مع OpenReplay وعرض أخطاء الواجهة الخلفية جنبًا إلى جنب مع إعادة تشغيل الجلسات.
+
+## 1. إنشاء حساب خدمة
+
+1. سجّل الدخول إلى حساب [AWS](https//console.aws.amazon.com) الخاص بك.
+2. انتقل إلى لوحة تحكم [IAM](https://console.aws.amazon.com/iam/home).
+3. انقر على *Users*.
+4. انقر على زر *Add user*.
+5. عيّن الاسم إلى "openreplay_cw".
+6. في نوع الوصول، اختر *Programmatic access*.
+7. انقر على زر *Next: Permissions*.
+8. اختر *Attach existing policies directly*
+9. في قائمة الأذونات، اختر *CloudWatchReadOnlyAccess*.
+10. انقر على زر *Next: Tags*.
+11. انقر على زر *Next: Review*.
+12. انقر على زر *Create user*.
+13. انسخ `Access key ID` و `Secret access key`.
+
+## 2. تفعيل CloudWatch في OpenReplay
+
+ضع `Access key ID` و `Secret access key` الخاصين بك في لوحة تحكم OpenReplay ضمن 'Preferences > Integration'، واختر المنطقة، ثم اختر مجموعة السجلات التي تريد تتبعها من القائمة المنسدلة.
+
+![تكامل CloudWatch في OpenReplay](/static/cloudwatch-1.jpg#center)
+
+## 3. تمرير openReplaySessionToken
+
+لربط حدث CloudWatch بجلسة المستخدم المسجلة، يجب تمرير رمز فريد من الواجهة الأمامية إلى الواجهة الخلفية في كل طلب ترغب في تتبعه. يمكن القيام بذلك باستخدام رأس HTTP مخصص. في المثال أدناه، نستخدم الدالة `fetch` لإرسال هذا الرأس.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // use window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+لكي يتمكن OpenReplay من ربط إدخال سجل Cloudwatch بجلسة المستخدم المسجلة، يجب تمرير رمز فريد كجزء من كل خطأ في الواجهة الخلفية ترغب في تتبعه.
+
+فيما يلي مثال بلغة Python باستخدام Monkey Patching.
+
+```python
+import sys
+import traceback
+#...
+old_tb = traceback.print_exception
+old_f = sys.stdout
+old_e = sys.stderr
+OPENREPLAY_SESSION_TOKEN = None
+
+class F:
+    def write(self, x):
+        if OPENREPLAY_SESSION_TOKEN is not None and x != '\n':
+            old_f.write(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] {x}")
+        else:
+            old_f.write(x)
+
+    def flush(self):
+        pass
+
+def tb_print_exception(etype, value, tb, limit=None, file=None, chain=True):
+    if OPENREPLAY_SESSION_TOKEN is not None:
+        value = type(value)(f"[openReplaySessionToken={OPENREPLAY_SESSION_TOKEN}] " + str(value))
+    old_tb(etype, value, tb, limit, file, chain)
+
+traceback.print_exception = tb_print_exception
+
+sys.stderr = F()
+```
+
+اسم الوسم `openReplaySessionToken` حساس لحالة الأحرف.
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات، تواصل معنا عبر [Slack](https://slack.openreplay.com) أو اطّلع على [المنتدى](https://forum.openreplay.com) الخاص بنا واحصل على المساعدة من مجتمعنا.

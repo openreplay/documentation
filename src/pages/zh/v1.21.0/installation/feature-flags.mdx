@@ -1,0 +1,43 @@
+---
+title: "Feature Flags"
+metaTitle: "Feature Flags"
+metaDescription: "如何在你的 Web 应用中使用并发挥功能标志的强大能力"
+---
+
+功能标志（Feature Flags），也称为功能开关（feature toggles），是一种软件开发技术，它允许开发者在不重新部署代码的情况下启用或禁用应用中的功能。功能标志可用于 A/B 测试和逐步发布，可作为个性化功能，或仅仅作为一个紧急开关，用于快速关闭在生产环境中导致缺陷的某些功能。
+
+### 通用标志接口
+
+```js
+interface IFeatureFlag {
+  key: string
+  is_persist: boolean
+  value: string | boolean
+  payload: string
+}
+```
+
+### Tracker SDK
+
+#### 选项
+
+```js
+const tracker = new Tracker({
+	projectKey: 'your. project key',
+	// the rest of your tracker options
+	flags: {
+		onFlagsLoad: (flags: IFeatureFlag[]) => {
+			// handle active flags
+		},
+	}
+})
+```
+
+#### 方法
+
+- `tracker.clearPersistFlags()` - 从浏览器的 sessionStorage 中移除持久化的 Feature Flags。
+- `tracker.reloadFlags(): Promise<void>` - 重新加载所有标志（如果用户会话的元数据、userId 或某些标志条件可能需要的任何其他信息发生了变化，这会很有用）。
+- `tracker.getFeatureFlag(flagKey: string)`：根据键返回对应的 `IFeatureFlag`（如果存在）。
+- `tracker.getAllFeatureFlags()`：返回当前处于活动状态的所有标志（`IFeatureFlag[]`）。
+- `tracker.isFlagEnabled(flagKey: string)`：如果具有该键的标志存在且处于活动状态，则返回 `true`。
+- `tracker.onFlagsLoad(callback)`：设置在加载 Feature Flags 时使用的回调。

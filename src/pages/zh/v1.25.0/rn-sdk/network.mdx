@@ -1,0 +1,77 @@
+---
+title: "React Native SDK - 拦截网络"
+metaTitle: "React Native SDK - 拦截网络"
+metaDescription: "关于 React Native 追踪器网络拦截的详细信息"
+---
+
+## 拦截网络
+
+ORTracker 导出了 `NetworkListener`，它同时接受任务和请求，操作方法如下：
+
+```swift
+import ORTracker
+
+func fetchPokemonData(for name: String) {
+    let networkListener = NetworkListener()
+    let url = URL(string: "https://pokeapi.co/api/v2/pokemon/ditto")!
+    var request = URLRequest(url: url)
+    request.httpMethod = "GET" // This is the default, so it's optional in this case.
+
+    // Start the network listener with the request
+    networkListener.start(request: request)
+
+    // Create a data task
+    let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        if let error = error {
+            print("Error: \(error.localizedDescription)")
+            return
+        }
+
+        if let data = data {
+            do {
+                let json = try JSONSerialization.jsonObject(with: data, options: [])
+								print(json)
+            } catch {
+                print("Error deserializing JSON: \(error)")
+            }
+        }
+        networkListener.finish(response: response, data: data)
+    }
+
+    task.resume()
+	}
+```
+
+## 清理请求
+
+导出了两个键以自动裁剪请求/响应数据：`ignoredKeys` 用于请求体，`ignoredHeaders` 用于请求头。请求和响应都会被清理，但只有当请求体是有效的 JSON 时才会受到影响。
+
+只需指定一个你想要清理的字符串列表：
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+也可以在将响应数据传递给 listener 之前对其进行修改：
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```
+
+## 有疑问？
+如果你对此流程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

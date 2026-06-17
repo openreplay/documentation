@@ -1,0 +1,105 @@
+---
+title: "Metadatos"
+metaTitle: "Metadatos"
+metaDescription: "Cómo enviar metadatos de usuario a OpenReplay. También conocidos como traits o variables de usuario en otras plataformas."
+---
+import Aside from '~/components/Aside.astro'
+
+Se puede proporcionar información adicional sobre los usuarios mediante metadatos (también conocidos como traits o variables de usuario). Adoptan la forma de pares clave/valor y son útiles para filtrar y buscar repeticiones de sesión específicas.
+
+<Aside type="tip">
+  También tenemos un tutorial detallado sobre cómo enviar metadatos como parte de tu sesión, puedes consultarlo [aquí](/tutorials/metadata).
+</Aside>
+
+
+## 1. Especifica explícitamente los Metadatos
+
+Los metadatos deben especificarse explícitamente desde el panel en 'Preferences > Metadata'. Puedes añadir hasta 10 claves. En el siguiente ejemplo, usamos `plan`.
+
+![Añadir Metadatos](/static/metadata-1.png#center)
+
+## 2. Inyecta Metadatos al grabar sesiones
+
+Una vez añadida(s) la(s) clave(s) (en este ejemplo `plan`), puedes inyectar los metadatos al iniciar el tracker en forma de par clave/valor (`string`).
+
+### Con NPM
+
+Inyecta los metadatos al iniciar el tracker (en este ejemplo `plan`).
+
+```js
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+
+tracker.start({
+  userID: "john@doe.com",
+  metadata: {
+    balance: "10M",
+    plan: "free"
+  }
+});
+```
+
+Si eso no es posible (algunos o todos los metadatos pueden establecerse/conocerse solo más adelante en el flujo de navegación, es decir, mucho después de que el tracker se inicie), entonces llama al método `setMetadata` para hacerlo: 
+
+```js
+tracker.setMetadata('plan', 'free'); // after tracker.start()
+```
+
+### Con el snippet de JavaScript
+
+A continuación se muestra un ejemplo de cómo inyectar los metadatos (en este ejemplo `plan`) usando el snippet. Observa la variable/línea `startOpts` añadida, así como el cambio de parámetros en la segunda línea.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: getUserID(), metadata: { plan: getPlan()} } // use startOpts variable to inject metadata
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})(0, "GxPpaDARdn2345fgt321", "//static.openreplay.com/3.5.0/openreplay.js",1,29);
+</script>
+```
+
+Si eso no es posible (los metadatos se conocen más adelante en el flujo de navegación, es decir, mucho después de que el tracker se inicie), entonces llama al método `setMetadata` para identificar a tus usuarios. La identidad del usuario puede cambiarse en cualquier momento durante la sesión llamando a `setMetadata`. Sin embargo, OpenReplay solo conservará el último ID de usuario inyectado.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" };
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+  ...
+  OpenReplay.setMetadata("plan", "free"); // set metadata later in your code
+  ...
+```
+
+### Con la app de iOS
+
+```swift
+import ORTracker
+
+ORTracker.shared.setMetadata(key: String, value: String)
+```
+
+## 3. Busca grabaciones de sesiones usando Metadatos
+
+Al hacer clic en la barra de omni-búsqueda se mostrará la lista de filtros disponibles, incluidas la(s) clave(s) de metadatos que añadiste. Ahora puedes filtrar las grabaciones de sesiones por cualquier clave/valor.
+
+![Buscar usando Metadatos](/static/metadata-2.png#center)
+
+## 4. Visualiza los Metadatos en la Repetición de Sesión
+
+Los pares clave/valor de metadatos se muestran en la página de repetición de sesión, en la tarjeta de identificación del usuario. Las sesiones con valores de metadatos similares pueden encontrarse haciendo clic en el icono de *bucle*.
+
+![Metadatos en la Repetición de Sesión](/static/metadata-3.png#center)
+
+## ¿Tienes preguntas?
+Si tienes alguna pregunta sobre este proceso, no dudes en contactarnos en nuestro [Slack](https://slack.openreplay.com) o consulta nuestro [Foro](https://forum.openreplay.com).

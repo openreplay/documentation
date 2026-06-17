@@ -1,0 +1,76 @@
+---
+title: "JS 错误"
+metaTitle: "JS 错误"
+metaDescription: "各种 Javascript 错误。"
+---
+
+本节列出了我们社区中最常遇到并报告的 Javascript 错误。
+
+## Require() of ES module
+
+此错误（以及下面的错误）通常发生在你尝试在服务端上下文中导入 tracker 时（SSR、Nuxt、Next、Remix 应用等）。
+
+要修复它，需要确保 tracker 在浏览器上下文中导入并运行，例如通过动态导入、客户端组件等方式。
+
+## ReferenceError: Navigator is not defined
+
+有时当你尝试导入 `tracker-assist` 或 `tracker-fetch` 插件时会出现此错误，这是因为 node 试图在环境中没有 `window` API 的情况下构建页面。
+
+修复方法相当简单。你只需将导致问题的插件的常规导入：
+
+```js
+import trackerAssist from '@openreplay/tracker-assist/cjs';
+```
+
+改为在 `componendDidMount` 或其替代方案 `useEffect` 内进行动态导入：
+
+```js
+import Tracker, { Options } from "@openreplay/tracker";
+const tracker = new Tracker({ /* your options */ });
+
+class TrackerComponent extends React.Component {
+
+  componentDidMount = () => {
+    import(‘@openreplay/tracker-assist/cjs’).then(({ default: trackerAssist }) => {
+      tracker.start(/* your options */)
+      tracker.use(trackerAssist(/* your assist options */))
+    })
+   }
+
+ /* Other code */
+```
+
+这样，所有依赖 window API 的插件都会在组件渲染时被导入。
+
+## Critical dependency: the request of a dependency is an expression
+
+这可能发生在旧版本的 `tracker-assist` 插件中。如果在编译时遇到以下错误，你应该应用此[变通方法](https://github.com/peers/peerjs/issues/630#issuecomment-910028230)：
+
+```log
+Failed to compile.
+
+./node_modules/peerjs/dist/peerjs.min.js
+Critical dependency: the request of a dependency is an expression
+```
+
+## Uncaught DOMException: Blocked a frame with origin "X" from accessing a cross-origin frame
+
+OpenReplay tracker 默认捕获**同域**的 iFrame。但是，当它尝试捕获与你的网站不同域的 iFrame 时，会抛出错误。你可以：
+
+- 使用 `captureIFrames` 属性禁用整个功能，如下例所示： 
+
+```js
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY,
+      captureIFrames: false
+});
+```
+
+- 继续捕获 iFrame（默认行为），**仅**对同域的 `<iframe>` 标签添加 `data-openreplay-capture` HTML 属性。这样，跨域 iFrame 就不会被 OpenReplay 跟踪。
+
+## 我的问题未列出
+
+如果你遇到本页未列出的任何错误，欢迎[提交 issue](https://github.com/openreplay/openreplay/issues/new/choose)，或者直接通过我们的 [Slack](https://slack.openreplay.com) 联系我们，也可以查看我们的[论坛](https://forum.openreplay.com)，从我们的社区获得帮助。
+
+## 还有疑问？
+如果你对此流程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或者查看我们的[论坛](https://forum.openreplay.com)。

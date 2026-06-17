@@ -10,8 +10,8 @@ i18nReady: true
 
 ## المتطلبات الأساسية
 
-- يجب أن يكون نظام التشغيل *Ubuntu Server 20.04 Focal Fossa*.
-- الحد الأدنى لمواصفات الجهاز الذي يعمل بـ OpenReplay هو `2 vCPUs, 8 GB of RAM, 50 GB of storage`، وإلا فإن خدمات الخلفية لـ OpenReplay لن تبدأ ببساطة. يجب أن يكون هذا كافيًا لحجم منخفض/معتدل. إذا كنت تتوقع حركة مرور عالية، يجب أن تبدأ بالتوسع من هنا.
+- يجب أن يكون نظام التشغيل *Ubuntu Server 24.04 LTS*.
+- الحد الأدنى لمواصفات الجهاز الذي يعمل بـ OpenReplay هو `2 vCPUs, 8 GB of RAM, 50 GB of storage`، على معمارية x86، وإلا فإن خدمات الخلفية لـ OpenReplay لن تبدأ ببساطة. يجب أن يكون هذا كافيًا لحجم منخفض/معتدل. إذا كنت تتوقع حركة مرور عالية، يجب أن تبدأ بالتوسع من هنا.
 - عنوان IP عام يشير إلى جهازك.
 
 ## نشر OpenReplay
@@ -21,7 +21,7 @@ i18nReady: true
 2. قم بتثبيت OpenReplay من خلال توفير النطاق الذي سيعمل عليه (مثلاً DOMAIN_NAME=openreplay.mycompany.com):
 
 ```bash
-sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
 sudo chmod +x /bin/openreplay
 openreplay -i DOMAIN_NAME
 ```
@@ -39,24 +39,24 @@ openreplay -i DOMAIN_NAME
 > **ملاحظة:** إذا لم يكن لديك شهادة، قم بتوليد واحدة تتجدد تلقائيًا لنطاقك الفرعي (الذي قدمته أثناء التثبيت) باستخدام Let's Encrypt. ما عليك سوى الاتصال بجهاز OpenReplay، وتشغيل `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` واتبع الخطوات.
 
 3. إذا كنت ترغب في تمكين إعادة التوجيه من http إلى https (موصى به)، قم بإلغاء التعليق على الكتلة أدناه، تحت قسم `ingress-nginx`، في `/var/lib/openreplay/vars.yaml`:
-
+   
 ```yaml
 ingress-nginx: &ingress-nginx
-controller:
-config:
-ssl-redirect: true
-force-ssl-redirect: true
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
 ```
 
 من المهم ذكر أن `ingress-nginx` الخاص بنا يعمل بشكل افتراضي على المنافذ `80|443`، ولكن يمكن تغيير ذلك بسهولة، إذا لزم الأمر، في `vars.yaml`:
 
 ```yaml
 ingress-nginx: &ingress-nginx
-controller:
-service:
-ports:
-http: 80
-https: 443
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
 ```
 
 4. أخيرًا، أعد تثبيت OpenReplay NGINX:
@@ -69,5 +69,4 @@ openreplay -R
 
 ## هل لديك أسئلة؟
 
-إذا واجهت أي مشاكل، تواصل مع مجتمعنا على [Slack](https://slack.openreplay.com/) واحصل على المساعدة من مطورينا.
-
+إذا واجهت أي مشاكل، تواصل مع مجتمعنا على  [Slack](https://slack.openreplay.com/) واحصل على المساعدة من مطورينا.

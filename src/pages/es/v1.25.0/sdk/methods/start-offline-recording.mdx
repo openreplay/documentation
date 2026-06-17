@@ -1,0 +1,34 @@
+---
+title: "SDK de JavaScript - método 'startOfflineRecording'"
+metaTitle: "SDK de JavaScript - método 'startOfflineRecording'"
+metaDescription: "Detalles sobre el método 'startOfflineRecording' del SDK de OpenReplay"
+---
+
+Inicia la grabación de la sesión en modo sin conexión (no se envía nada a menos que se active la carga) y devuelve métodos para controlar el estado de la grabación.
+
+> Nota: las marcas de tiempo de la sesión y de los eventos se extraerán del dispositivo del usuario y no se sincronizarán con nuestro backend.
+
+## Firma
+
+```ts
+startOfflineRecording(
+	startOpts?: Partial<StartOptions>, 
+	onSessionSent: () => void
+): { saveBuffer, getBuffer, setBuffer }
+```
+
+### Parámetros
+
+Con `startOpts` puedes personalizar diferentes aspectos de la grabación:
+- `userID: string`: se utiliza para establecer manualmente el `userID` y rastrearlo entre sesiones. Es un valor de tipo cadena y puede ser cualquier cosa que desees.
+- `metadata: Record<string, string>`: establece manualmente los valores de los metadatos. Consulta la [sección de Metadatos](/installation/metadata/) para obtener más información sobre esta función.
+- `forceNew: boolean`: se utiliza para forzar una nueva sesión después de actualizar la página. De forma predeterminada está establecido en `false`, por lo que después de una actualización la sesión se mantiene.
+- `sessionHash: string`: se utiliza para sesiones persistentes. Resulta útil si tienes una aplicación de varios sitios o si tienes que redirigir al usuario fuera y luego de vuelta a tu sitio (como a una pasarela de pago).
+- `onSessionSent`: callback que se llamará una vez que la sesión se haya cargado por completo.
+
+
+### Valor de retorno
+
+- `saveBuffer(): void` - Guarda el búfer actual en el objeto `localStorage` (personalizable en el constructor); el búfer se cargará automáticamente una vez que se llame a `startOfflineRecording`.
+- `getBuffer(): Messages[]` - Devuelve el búfer de mensajes actual.
+- `setBuffer(buffer: Messages[])` - Reemplaza el búfer actual por el proporcionado (si utilizas métodos alternativos de guardado temporal).

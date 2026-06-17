@@ -1,0 +1,60 @@
+---
+title: "New Relic"
+metaTitle: "Интеграция с New Relic"
+metaDescription: "Как интегрировать New Relic с OpenReplay и видеть ошибки бэкенда рядом с повторами сессий."
+---
+
+Как интегрировать New Relic с OpenReplay и видеть ошибки бэкенда рядом с записями сессий.
+
+## 1. Создание Query Key
+
+1. Войдите в свою учётную запись [New Relic](https://newrelic.com).
+2. В левом верхнем углу выберите панель *INSIGHTS*.
+3. На панели *INSIGHTS* перейдите в «Manage Data», затем выберите *API Keys*.
+4. Нажмите кнопку *+* в разделе *Query Keys*.
+
+![New Relic API Keys](/static/newrelic-1.png#center)
+
+5. В поле Notes укажите `openreplay`.
+6. Скопируйте `Account ID` и `Key`.
+7. Нажмите *Save your notes*.
+
+![New Relic Query Key](/static/newrelic-2.png#center)
+
+## 2. Включение NewRelic в OpenReplay
+
+Вставьте свой `Application ID` и `Key` в панель управления OpenReplay в разделе «Preferences > Integration».
+
+![Интеграция New Relic в OpenReplay](/static/newrelic-3.jpg#center)
+
+## 3. Передача openReplaySessionToken
+
+Чтобы связать событие New Relic с записанной пользовательской сессией, уникальный токен необходимо передавать из вашего фронтенда на бэкенд при каждом запросе, который вы хотите отслеживать. Это можно сделать с помощью пользовательского HTTP-заголовка. В приведённом ниже примере мы используем функцию `fetch` для отправки этого заголовка.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+Чтобы OpenReplay мог связать запись журнала New Relic с записанной пользовательской сессией, уникальный токен необходимо передавать как `custom_parameter` к каждой ошибке бэкенда, которую вы хотите отслеживать.
+
+Ниже приведён пример с использованием Python API от NewRelic.
+
+```python
+newrelic.agent.add_custom_parameter("openReplaySessionToken", OPENREPLAY_SESSION_TOKEN)
+```
+
+Имя тега `openReplaySessionToken` чувствительно к регистру.
+
+## Остались вопросы?
+
+Если у вас возникнут какие-либо проблемы, подключайтесь к нашему [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com) и получите помощь от нашего сообщества.

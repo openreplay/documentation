@@ -1,0 +1,52 @@
+---
+title: "数据脱敏（Android）"
+metaTitle: "数据脱敏（Android）"
+metaDescription: "如何在你的 Android 应用中对数据进行脱敏并确保用户隐私。"
+---
+
+
+## UI 组件
+
+经过脱敏的视图将在生成的回放中被模糊处理。你可以添加任意 UI 组件，一旦它不再显示在屏幕上，就会被自动移除（以节省内存）。
+
+### View
+
+```kotlin
+import com.openreplay.tracker.OpenReplay
+
+OpenReplay.addIgnoredView(view)
+```
+
+## 网络请求
+
+系统导出了两个键用于自动裁剪请求/响应数据：`ignoredKeys` 用于请求体，`ignoredHeaders` 用于请求头。请求和响应都会被脱敏，但请求体仅在其为有效的 JSON 时才会受到影响。
+
+只需指定一个你希望脱敏的字符串列表即可：
+
+```kotlin
+val networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+你也可以在将响应数据传递给 listener 之前对其进行修改：
+
+```kotlin
+// ... request
+
+var sanitizedData: Any? = null
+data?.let {
+    try {
+        val json = JSONTokener(it).nextValue()
+        sanitizedData = customSanitizeFunction(it)
+        println(json)
+    } catch (error: JSONException) {
+        println("Error deserializing JSON: $error")
+    }
+}
+
+networkListener.finish(response, sanitizedData)
+```
+
+## 有疑问吗？
+如果你对这个流程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

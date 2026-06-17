@@ -1,0 +1,113 @@
+---
+title: "将会话事件转换为 E2E 测试"
+metaTitle: "将会话录制转换为自动化 E2E 测试代码"
+metaDescription: "了解如何将 OpenReplay 会话录制转换为适用于 Cypress、Playwright 和 Puppeteer 的自动化 E2E 测试代码"
+---
+
+“将会话事件转换为 E2E 测试”功能让你能够将录制的用户会话转换为自动化的端到端测试代码。这一强大的能力弥合了真实用户行为与测试自动化之间的鸿沟，使你能够在所选的测试框架中快速复现用户旅程。
+
+## 工作原理：将会话转换为 E2E 测试代码
+
+1. 在仪表板中导航到 **Sessions** 视图
+2. 选择任意一个录制的会话以打开 **Session Replay** 视图
+3. 点击 **Activity** 选项卡以查看事件时间线
+4. 在搜索栏旁边找到 **Copy Events** 图标
+5. 点击该图标以打开导出选项下拉菜单
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/images/products/session-replay/generate-e2e-test.gif" alt="将会话事件转换为 E2E 测试" style={{ width: '700px', height: 'auto' }} />
+</div>
+
+## 使用“将会话事件转换为 E2E 测试”
+
+### 基本用法
+
+1. 在 Activity 视图中点击 **Copy Events** 图标
+2. 在下拉菜单中，选择你想要的测试框架（Cypress、Playwright 或 Puppeteer）
+3. 在 **Events Only** 与 **Complete Test** 之间进行选择
+4. 应用 “Select events on the timeline” 以选择要包含的事件
+5. 点击 **Copy** 将生成的代码复制到剪贴板
+6. 直接粘贴到你的测试文件中
+
+### 导出选项
+
+#### 测试框架
+
+该功能支持导出到三种常用的测试框架：
+
+- **Cypress** - 专注于开发者体验和可靠性的 Web 测试框架
+- **Playwright** - 支持跨浏览器的现代测试库
+- **Puppeteer** - 无头浏览器自动化库
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/images/products/session-replay/test-framework.png" alt="测试框架" style={{ width: '700px', height: 'auto' }} />
+</div>
+
+#### 导出类型
+
+你可以在两种导出类型之间进行选择：
+
+- **Events Only** - 仅生成操作命令，不包含任何测试结构
+- **Complete Test** - 创建一个带有适当样板代码的完整结构化测试
+
+#### 事件选择
+
+时间线选择工具允许你：
+
+- 选择要包含在导出中的特定事件范围
+- 拖动手柄以调整起点和终点
+
+## 输出示例
+
+### Cypress 示例
+
+**Events Only：**
+```javascript
+cy.visit('/en/deployment/')
+cy.get('a:nth-of-type(9)').click()
+cy.visit('/en/deployment/deploy-docker/')
+cy.get('.active li:nth-of-type(13) > a').click()
+cy.visit('/en/deployment/upgrade/')
+cy.get('.active > .justify-between').click()
+cy.get('.left-nav-parent > li:nth-of-type(4) > .flex').click()
+cy.get('.active li:nth-of-type(5) > a').click()
+cy.visit('/en/using-or/next/')
+cy.get('.left-nav-parent > li:nth-of-type(5) > .flex').click()
+cy.get('.left-nav-parent > li:nth-of-type(6) > .flex').click()
+cy.visit('/en/installation/')
+cy.get('.active li:nth-of-type(2) > a').click()
+cy.visit('/en/installation/identify-user/')
+cy.get('li:nth-of-type(7) > .flex').click()
+cy.get('.logo-clickarea').click()
+```
+
+**Complete Test：**
+```javascript
+// cypress/e2e/session_replay_test.cy.js
+
+describe('Deployment - OpenReplay Documentation', () => {
+  it('Navigates through /en/deployment/', () => {
+    cy.visit('/en/deployment/')
+    cy.get('a:nth-of-type(9)').click()
+    cy.visit('/en/deployment/deploy-docker/')
+    cy.get('.active li:nth-of-type(13) > a').click()
+    cy.visit('/en/deployment/upgrade/')
+    cy.get('.active > .justify-between').click()
+    cy.get('.left-nav-parent > li:nth-of-type(4) > .flex').click()
+    cy.get('.active li:nth-of-type(5) > a').click()
+    cy.visit('/en/using-or/next/')
+    cy.get('.left-nav-parent > li:nth-of-type(5) > .flex').click()
+    cy.get('.left-nav-parent > li:nth-of-type(6) > .flex').click()
+    cy.visit('/en/installation/')
+    cy.get('.active li:nth-of-type(2) > a').click()
+    cy.visit('/en/installation/identify-user/')
+    cy.get('li:nth-of-type(7) > .flex').click()
+    cy.get('.logo-clickarea').click()
+  })
+})
+```
+
+
+## 有疑问吗？
+
+如果你在从会话创建 E2E 测试时遇到任何问题，请在我们的 [Slack 社区](https://slack.openreplay.com/) 联系我们，直接向我们的开发人员提问！

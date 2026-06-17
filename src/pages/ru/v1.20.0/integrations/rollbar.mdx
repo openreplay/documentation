@@ -1,0 +1,64 @@
+---
+title: "Rollbar"
+metaTitle: "Интеграция с Rollbar"
+metaDescription: "Как интегрировать Rollbar с OpenReplay и видеть ошибки бэкенда рядом с воспроизведениями сессий."
+---
+
+Как интегрировать Rollbar с OpenReplay и видеть ошибки бэкенда рядом с воспроизведениями сессий.
+
+## 1. Создание токенов доступа к проекту
+
+1. Войдите в свой аккаунт [Rollbar](https://rollbar.com).
+2. Выберите свой проект в выпадающем меню (вверху слева).
+3. Перейдите в *Settings > Project* Access Tokens.
+4. Нажмите *Create new access tokens*.
+
+![Токены доступа к проекту Rollbar](/static/rollbar-1.png#center)
+
+5. В поле Scope выберите `read`; в имени укажите `openreplay`; а *Rate Limit* оставьте по умолчанию.
+6. Скопируйте ваш новый токен.
+
+![Активный токен Rollbar](/static/rollbar-2.png#center)
+
+## 2. Включение Rollbar в OpenReplay
+
+Вставьте ваш `Access Token` в панели управления OpenReplay в разделе 'Preferences > Integration'.
+
+![Интеграция Rollbar в OpenReplay](/static/rollbar-3.png#center)
+
+
+## 3. Передача openReplaySessionToken
+
+Чтобы связать событие Rollbar с записанной пользовательской сессией, необходимо передавать уникальный токен из вашего фронтенда в бэкенд при каждом запросе, который вы хотите отслеживать. Это можно сделать с помощью пользовательского HTTP-заголовка. В приведённом ниже примере для отправки этого заголовка мы используем функцию `fetch`.
+
+```javascript
+const headers = {
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+if (tracker.getSessionToken()) { // or window.OpenReplay instead of tracker if you're using the snippet
+  headers['X-OpenReplay-SessionToken'] = tracker.getSessionToken(); // Inject openReplaySessionToken
+}
+fetch('www.your-backend.com', {
+  'GET',
+  headers,
+});
+```
+
+Чтобы OpenReplay мог связать запись журнала Rollbar с записанной пользовательской сессией, необходимо передавать уникальный токен в виде `extra_data` к каждой ошибке бэкенда, которую вы хотите отслеживать.
+
+Ниже приведён пример с использованием Python API Rollbar.
+
+```python
+rollbar.report_message("A LOG ENTRY", level='error', extra_data={"openReplaySessionToken": OPENREPLAY_SESSION_TOKEN})
+
+# or if you are catching the exceptions
+
+rollbar.report_exc_info(sys.exc_info(), level='error', extra_data={"openReplaySessionToken": str(OPENREPLAY_SESSION_TOKEN)})
+```
+
+Имя тега `openReplaySessionToken` чувствительно к регистру;
+
+## Есть вопросы?
+
+Если у вас возникнут какие-либо проблемы, присоединяйтесь к нашему [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com) и получите помощь от нашего сообщества.
