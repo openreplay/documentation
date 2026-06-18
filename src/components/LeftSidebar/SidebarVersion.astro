@@ -3,16 +3,16 @@ import { VERSIONS } from '~/config';
 const latest = VERSIONS[0];
 ---
 
-<div class="dh-ver" id="dh-ver">
-	<button class="dh-ver-btn" id="dh-ver-btn" aria-haspopup="listbox" aria-expanded="false">
+<div class="dh-ver">
+	<button class="dh-ver-btn" aria-haspopup="listbox" aria-expanded="false">
 		<span class="dh-ver-dot"></span>
-		<span class="dh-ver-lbl" id="dh-ver-lbl">v{latest.title}</span>
-		<span class="dh-ver-sub" id="dh-ver-sub">latest</span>
+		<span class="dh-ver-lbl">v{latest.title}</span>
+		<span class="dh-ver-sub">latest</span>
 		<span class="dh-ver-car">
 			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"></path></svg>
 		</span>
 	</button>
-	<div class="dh-ver-menu or-noscroll" id="dh-ver-menu" role="listbox" hidden>
+	<div class="dh-ver-menu or-noscroll" role="listbox" hidden>
 		{
 			VERSIONS.map((v, i) => (
 				<div class="dh-ver-item" role="option" data-url={v.url} data-title={v.title}>
@@ -26,61 +26,76 @@ const latest = VERSIONS[0];
 
 <script is:inline>
 	(function () {
-		const root = document.getElementById('dh-ver');
-		const btn = document.getElementById('dh-ver-btn');
-		const menu = document.getElementById('dh-ver-menu');
-		const lbl = document.getElementById('dh-ver-lbl');
-		const sub = document.getElementById('dh-ver-sub');
-		if (!root || !btn || !menu) return;
-
 		const versionRegExp = /v[0-9]+\.[0-9]+\.[0-9]+/;
 
-		// Reflect current version from URL
-		const parts = window.location.pathname.split('/');
-		let current = parts[2] && parts[2].indexOf('v') === 0 ? parts[2] : '';
-		if (current) {
-			lbl.textContent = current;
-			sub.textContent = '';
-			root.querySelectorAll('.dh-ver-item').forEach((it) => {
-				const url = it.getAttribute('data-url');
-				if (url && url.indexOf(current) !== -1) it.classList.add('sel');
+		function initVersionPicker() {
+			const parts = window.location.pathname.split('/');
+			const current = parts[2] && parts[2].indexOf('v') === 0 ? parts[2] : '';
+
+			// The picker is rendered in BOTH the mobile and desktop sidebars, so this
+			// inline script runs (and this query matches) more than once. Scope every
+			// lookup to each .dh-ver root and guard with data-bound so each instance
+			// binds exactly once — never rely on getElementById (it grabs the first,
+			// hidden, mobile instance and leaves the visible desktop one dead).
+			document.querySelectorAll('.dh-ver').forEach((root) => {
+				if (root.dataset.bound) return;
+				root.dataset.bound = '1';
+
+				const btn = root.querySelector('.dh-ver-btn');
+				const menu = root.querySelector('.dh-ver-menu');
+				const lbl = root.querySelector('.dh-ver-lbl');
+				const sub = root.querySelector('.dh-ver-sub');
+				if (!btn || !menu) return;
+
+				if (current) {
+					if (lbl) lbl.textContent = current;
+					if (sub) sub.textContent = '';
+					root.querySelectorAll('.dh-ver-item').forEach((it) => {
+						const url = it.getAttribute('data-url');
+						if (url && url.indexOf(current) !== -1) it.classList.add('sel');
+					});
+				} else {
+					root.querySelector('.dh-ver-item')?.classList.add('sel');
+				}
+
+				const close = () => {
+					menu.hidden = true;
+					btn.classList.remove('open');
+					btn.setAttribute('aria-expanded', 'false');
+				};
+				btn.addEventListener('click', (e) => {
+					e.stopPropagation();
+					const willOpen = menu.hidden;
+					menu.hidden = !willOpen;
+					btn.classList.toggle('open', willOpen);
+					btn.setAttribute('aria-expanded', String(willOpen));
+				});
+				document.addEventListener('click', (e) => {
+					if (!root.contains(e.target)) close();
+				});
+
+				root.querySelectorAll('.dh-ver-item').forEach((it) => {
+					it.addEventListener('click', () => {
+						const selectedVersion = it.getAttribute('data-url') || '';
+						let pathname = window.location.pathname.replace(/\/$/, '');
+						let pathParts = pathname.split('/');
+						if (pathname.match(versionRegExp)) {
+							pathParts[2] = selectedVersion.replace('/', '');
+						} else {
+							pathParts = [pathParts[0], pathParts[1], selectedVersion.replace('/', ''), ...pathParts.slice(2)];
+						}
+						const newPath = `${window.location.protocol}//${window.location.host}${pathParts.join('/').replace('//', '/')}`;
+						window.location.href = newPath;
+					});
+				});
 			});
-		} else {
-			root.querySelector('.dh-ver-item')?.classList.add('sel');
 		}
 
-		const close = () => {
-			menu.hidden = true;
-			btn.classList.remove('open');
-			btn.setAttribute('aria-expanded', 'false');
-		};
-		const toggle = (e) => {
-			e.stopPropagation();
-			const willOpen = menu.hidden;
-			menu.hidden = !willOpen;
-			btn.classList.toggle('open', willOpen);
-			btn.setAttribute('aria-expanded', String(willOpen));
-		};
-
-		btn.addEventListener('click', toggle);
-		document.addEventListener('click', (e) => {
-			if (!root.contains(e.target)) close();
-		});
-
-		root.querySelectorAll('.dh-ver-item').forEach((it) => {
-			it.addEventListener('click', () => {
-				const selectedVersion = it.getAttribute('data-url') || '';
-				let pathname = window.location.pathname.replace(/\/$/, '');
-				let pathParts = pathname.split('/');
-				if (pathname.match(versionRegExp)) {
-					pathParts[2] = selectedVersion.replace('/', '');
-				} else {
-					pathParts = [pathParts[0], pathParts[1], selectedVersion.replace('/', ''), ...pathParts.slice(2)];
-				}
-				const newPath = `${window.location.protocol}//${window.location.host}${pathParts.join('/').replace('//', '/')}`;
-				window.location.href = newPath;
-			});
-		});
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', initVersionPicker);
+		} else {
+			initVersionPicker();
+		}
 	})();
 </script>
 
