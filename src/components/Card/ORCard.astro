@@ -1,42 +1,71 @@
 ---
-import MenuIcon from "../LeftSidebar/MenuIcon";
+let { url, title, description, btnText, width, icon, hideIcon = false, style = {} } = Astro.props;
 
-let {url, title, description, btnText, width, icon, hideIcon = false, style = {}} = Astro.props;
-
+// Preserve the original width→column-span behaviour so cards still lay out 2-up /
+// 3-up inside the `grid grid-cols-12` wrappers used across versioned + translated
+// pages. Only the visual markup changes (→ the redesign's .or-card2 card), which
+// is why this single component edit propagates the redesign to every locale and
+// version without touching their (translated) MDX.
 function calculateCSSWidth(width: number) {
-    if(!width) {
-        return 1;
-    } else {
-        return width / 100;
-    }
+	if (!width) {
+		return 1;
+	} else {
+		return width / 100;
+	}
 }
 
-
-
-let classes = ["card", "justify-start", "no-underline", "hover:no-underline"]
-//this is required so that purgeCSS won't remove the classes from the build
-let midClasses = {12: "md:col-span-12", 6: "md:col-span-6", 4: "md:col-span-4", 3: "md: col-span-3"}
-//let midClasses = {}
+// keep these literal so PurgeCSS doesn't drop the column-span utilities
+const midClasses: Record<number, string> = {
+	12: "md:col-span-12",
+	6: "md:col-span-6",
+	4: "md:col-span-4",
+	3: "md:col-span-3",
+};
 
 const BIGGEST_CSS_WIDTH = 12;
-width = calculateCSSWidth(Number(width))
-classes.push(midClasses[Math.round(BIGGEST_CSS_WIDTH * width)])
+width = calculateCSSWidth(Number(width));
+const span = midClasses[Math.round(BIGGEST_CSS_WIDTH * width)];
 
+const classes = ["or-card2", "no-underline"];
+if (span) classes.push(span);
 
-const icon_code = (icon ? icon : title).toLowerCase().split(" ").join("_")
+// Icon is keyed off the URL (language-agnostic) so a card shows the SAME icon in
+// every locale — getSVGIcon/MenuIcon key off the title, which 404s for translated
+// titles. These match the icons used on the hand-built EN overview cards.
+const ICONS: Record<string, string> = {
+	init: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>`,
+	methods: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 4C6 4 6 7 6 8s0 4-3 4c3 0 3 3 3 4s0 4 2 4M16 4c2 0 2 3 2 4s0 4 3 4c-3 0-3 3-3 4s0 4-2 4"/></svg>`,
+	assist: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13.5" width="4" height="6.5" rx="1.6"/><rect x="17.5" y="13.5" width="4" height="6.5" rx="1.6"/><path d="M20 19.5a4 4 0 0 1-4 3.5h-2"/></svg>`,
+	fetch: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 10 3 6l4-4M3 6h11a4 4 0 0 1 4 4M17 14l4 4-4 4M21 18H10a4 4 0 0 1-4-4"/></svg>`,
+	axios: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 4v16m0 0-3-3m3 3 3-3M17 20V4m0 0-3 3m3-3 3 3"/></svg>`,
+	graphql: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="4" r="2"/><circle cx="5" cy="17" r="2"/><circle cx="19" cy="17" r="2"/><path d="M12 6v3m-1.6 1.4L6.4 15m11.2 0-5-4.6M7 17.5h10"/></svg>`,
+	profiler: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 18a8 8 0 1 1 14 0"/><path d="M12 18l4-5"/></svg>`,
+	admin: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h7M15 18h5"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="13" cy="18" r="2"/></svg>`,
+	upgrade: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M12 16V8M8.5 11.5 12 8l3.5 3.5"/></svg>`,
+};
+const DEFAULT_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>`;
+
+function pickIcon(href: string): string {
+	const u = (href || "").toLowerCase();
+	if (/\/(init|constructor|installation|setup)/.test(u)) return ICONS.init;
+	if (/\/(methods|modules)/.test(u)) return ICONS.methods;
+	if (/\/assist/.test(u)) return ICONS.assist;
+	if (/\/fetch/.test(u)) return ICONS.fetch;
+	if (/\/axios/.test(u)) return ICONS.axios;
+	if (/\/graphql/.test(u)) return ICONS.graphql;
+	if (/\/profiler/.test(u)) return ICONS.profiler;
+	if (/admin/.test(u)) return ICONS.admin;
+	if (/upgrade/.test(u)) return ICONS.upgrade;
+	return DEFAULT_ICON;
+}
+
+const iconSvg = pickIcon(url);
 ---
-<a class={classes.join(" ")} href={url} style={style && style}>   
-    <div class="relative flex flex-col gap-6 hover:no-underline">
-        <div class="flex items-center gap-3 hover:no-underline">
-            {!hideIcon && <div class="shrink-0 theme-icon w-7 h-7 flex items-center justify-center rounded">
-                <MenuIcon icon={icon_code} />
-            </div>
-            }
-            <h4 class="hover:no-underline">{title}</h4>
-        </div>
-        {description && (
-            <span class="text-base flex-grow hover:no-underline">{description}</span>
-            <span class="learn-more">{btnText ? btnText : 'Learn more'}</span>
-        )}    
-    </div>
+
+<a class={classes.join(" ")} href={url} style={style && style}>
+	{!hideIcon && <span class="or-card-ico" set:html={iconSvg} />}
+	<div>
+		<h4>{title}</h4>
+		{description && <p>{description}</p>}
+	</div>
 </a>
