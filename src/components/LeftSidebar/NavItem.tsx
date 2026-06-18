@@ -113,7 +113,7 @@ function NavItem({ item, currentPageNoLangNoVer, categoryLinkPrefix, level = 0 }
         <a href={hrefValue} onClick={handleClick} className={`w-full px-2 py-1 rounded ${ shouldBeHighlighted ? 'text-accent font-medium' : 'text-readable-grey' }`} >
           <div className="flex items-center">
             {item.icon && <MenuIcon icon={item.icon} />}
-            <span className="ml-2">{item.text}</span>
+            <span className="ms-2">{item.text}</span>
           </div>
         </a>
         {hasChildren && !item.hideChevron && (
