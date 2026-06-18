@@ -340,15 +340,15 @@ body.mobile-sidebar-toggle #mobile-overlay { opacity: 1 !important; pointer-even
 .content a:hover { border-bottom-color: var(--accent); text-decoration: none; }
 .content strong { color: var(--text); font-weight: 700; }
 
-.content ul, .content ol { margin: 0 0 16px; padding-inline-start: 28px; }
+.content ul, .content ol { margin: 0 0 16px; padding-inline-start: 38px; }
 .content li { margin-bottom: 7px; color: var(--text-2); }
 /* index.css `.content > section > :is(ul,ol) { padding-inline-start: 1.5em }` (0,1,2)
    out-specifies the rule above, so plain lists were stuck at a shallow ~23px indent.
-   Bump them to a clearer tab; :not([class]) leaves the component lists
-   (or-cols / or-chips / or-rowlist) on their own padding. */
+   Give them a clear tab (markers sit well to the right of the body text);
+   :not([class]) leaves the component lists (or-cols / or-chips / or-rowlist) alone. */
 .content > section > ul:not([class]),
 .content > section > ol:not([class]),
-.content > section > :is(ul, ol):not([class]) :is(ul, ol) { padding-inline-start: 28px; }
+.content > section > :is(ul, ol):not([class]) :is(ul, ol) { padding-inline-start: 38px; }
 .content > section > :is(ul, ol):not([class]) li { padding-inline-start: 4px; }
 .content li::marker { color: var(--text-3); }
 
@@ -436,10 +436,12 @@ body.mobile-sidebar-toggle #mobile-overlay { opacity: 1 !important; pointer-even
 .content tbody tr:nth-of-type(odd) { background: transparent; }
 .content td code, .content th code { white-space: nowrap; }
 
-/* blockquotes — markdown `> Note:` callouts render as the redesigned note card
-   (matches the Aside/.or-aside note: full soft border + rounded, not a left bar) */
+/* blockquotes — markdown `> Note:` callouts render as the redesigned note card,
+   harmonized with the <Aside> note/tip/caution cards: soft tint + border, an
+   info icon (themeable via CSS mask), and a colored leading "Note:" label. */
 .content blockquote {
-	padding: 14px 16px;
+	position: relative;
+	padding: 14px 16px 14px 46px;
 	border-radius: 12px;
 	margin: 1.25rem 0 1rem;
 	border: 1px solid var(--note-bd);
@@ -447,10 +449,22 @@ body.mobile-sidebar-toggle #mobile-overlay { opacity: 1 !important; pointer-even
 	color: var(--text-2);
 	display: block;
 }
-.content blockquote::before { content: none; }
+.content blockquote::before {
+	content: "";
+	position: absolute;
+	left: 16px;
+	top: 15px;
+	width: 18px;
+	height: 18px;
+	background: var(--note-ic);
+	-webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M12%202C6.48%202%202%206.48%202%2012s4.48%2010%2010%2010%2010-4.48%2010-10S17.52%202%2012%202zm1%2015h-2v-6h2v6zm0-8h-2V7h2v2z'/%3E%3C/svg%3E") center / contain no-repeat;
+	mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M12%202C6.48%202%202%206.48%202%2012s4.48%2010%2010%2010%2010-4.48%2010-10S17.52%202%2012%202zm1%2015h-2v-6h2v6zm0-8h-2V7h2v2z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
 .content blockquote > p { margin: 0 0 8px; display: block; }
 .content blockquote > p:last-child { margin-bottom: 0; }
 .content blockquote :is(p, ul, ol, li) { color: var(--text-2); }
+/* leading "Note:"/"Tip:" label picks up the callout colour, like the Aside title */
+.content blockquote > p:first-child > strong:first-child { color: var(--note-ic); }
 
 .content kbd {
 	font-family: var(--fm);
