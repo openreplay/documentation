@@ -3,6 +3,13 @@ import languages from '../../i18n/languages';
 import { groupPagesByLang } from '../../util/groupPagesByLang';
 
 export async function getStaticPaths() {
+	// Computing fallback redirects requires globbing every page in every language.
+	// `astro build` does this once; but in `astro dev` it fires on the first navigation
+	// under /[lang]/… and forces Vite to load thousands of page modules at once, which
+	// times out (60s `fetchModule`) and makes the dev server appear to hang. Fallbacks
+	// only matter for the static build — skip them in dev; real (translated) pages still
+	// resolve via their own routes.
+	if (import.meta.env.DEV) return [];
 	const allPages = await Astro.glob('../**/*.mdx');
 	const pagesByLang = groupPagesByLang(allPages);
 
