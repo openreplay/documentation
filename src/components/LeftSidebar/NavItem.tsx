@@ -100,35 +100,50 @@ function NavItem({ item, currentPageNoLangNoVer, categoryLinkPrefix, level = 0 }
     ? categoryLinkPrefix + item.slug
     : '#';
 
+  // Detect a "(beta)" suffix in the label and surface it as a small badge.
+  const rawLabel = typeof item.text === 'string' ? item.text : String(item.text);
+  const betaMatch = /\s*\(beta\)\s*$/i.test(rawLabel);
+  const label = betaMatch ? rawLabel.replace(/\s*\(beta\)\s*$/i, '') : rawLabel;
+
+  const levelClass = level === 1 ? 'or-navlink-l1' : level >= 2 ? 'or-navlink-l2' : '';
+
   return (
-    <li 
-      className={`group ${isOpen ? 'menu-open' : ''}`} 
-      data-level={level}
-    >
-      <div className={`flex items-center justify-between font-normal rounded ${
-        shouldBeHighlighted
-          ? 'bg-opacity-10 bg-accent text-accent' 
-          : 'text-readable-grey hover:content-bg' 
-      }`}>
-        <a href={hrefValue} onClick={handleClick} className={`w-full px-2 py-1 rounded ${ shouldBeHighlighted ? 'text-accent font-medium' : 'text-readable-grey' }`} >
-          <div className="flex items-center">
-            {item.icon && <MenuIcon icon={item.icon} />}
-            <span className="ms-2">{item.text}</span>
-          </div>
-        </a>
-        {hasChildren && !item.hideChevron && (
-          <div 
-            className={`px-2 cursor-pointer transition-transform duration-200 ${isOpen ? 'rotate-90' : 'rtl:rotate-180'}`}
-            onClick={handleChevronClick}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" > <polyline points="9 18 15 12 9 6"></polyline> </svg>
-          </div>
+    <li className={`or-nav-li ${isOpen ? 'menu-open' : ''}`} data-level={level}>
+      <a
+        href={hrefValue}
+        onClick={handleClick}
+        data-current-parent={shouldBeHighlighted ? 'true' : undefined}
+        className={`or-navlink ${levelClass} ${shouldBeHighlighted ? 'or-navlink-active' : ''}`.trim()}
+      >
+        {item.icon && level === 0 && (
+          <span className="or-navico">
+            <MenuIcon icon={item.icon} />
+          </span>
         )}
-      </div>
+        <span className="or-navlabel">{label}</span>
+        {betaMatch && <span className="or-navbeta">beta</span>}
+        {hasChildren && !item.hideChevron && (
+          <span
+            className={`or-navchev ${isOpen ? 'open' : ''}`}
+            onClick={handleChevronClick}
+            aria-hidden="true"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </span>
+        )}
+      </a>
       {isOpen && hasChildren && (
-        <ul className="ms-4 ps-0" style={{ borderLeft:'thin dotted #555', borderLeftColor: 'var(--color-neutral-400)' }}>
+        <ul className="or-navchildren">
           {item.children!.map((child, idx) => (
-            <NavItem key={`${child.text}-${child.slug || idx}`} item={child} currentPageNoLangNoVer={currentPageNoLangNoVer} categoryLinkPrefix={categoryLinkPrefix} level={level + 1} />
+            <NavItem
+              key={`${child.text}-${child.slug || idx}`}
+              item={child}
+              currentPageNoLangNoVer={currentPageNoLangNoVer}
+              categoryLinkPrefix={categoryLinkPrefix}
+              level={level + 1}
+            />
           ))}
         </ul>
       )}

@@ -1,84 +1,87 @@
 ---
-import { VERSIONS } from "~/config"
-
+import { VERSIONS } from '~/config';
+const latest = VERSIONS[0];
 ---
-<div class="flex items-baseline">
-  <span class="lgl:inline-block docs mr-1 items-baseline">DOCS</span> 
-  <select id="version-selector" class="h-8 px-2 pe-3">
-        {VERSIONS.map( v => {
-            return <option value={ v.url } >v{v.title}</option>
-        })}
-    </select>
+
+<div class="dh-ver" id="or-version">
+	<button type="button" class="dh-ver-btn" id="or-version-btn" aria-haspopup="listbox" aria-expanded="false">
+		<span class="dh-ver-dot" aria-hidden="true"></span>
+		<span class="dh-ver-lbl" id="or-version-lbl">v{latest.title}</span>
+		<span class="dh-ver-sub" id="or-version-sub">latest</span>
+		<span class="dh-ver-car" aria-hidden="true">
+			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"></path></svg>
+		</span>
+	</button>
+	<div class="dh-ver-menu" id="or-version-menu" role="listbox" hidden>
+		{
+			VERSIONS.map((v, i) => (
+				<button type="button" class="dh-ver-item" data-url={v.url} data-version={v.title} role="option">
+					<span>v{v.title}</span>
+					{i === 0 && <span class="dh-ver-tag">latest</span>}
+				</button>
+			))
+		}
+	</div>
 </div>
 
 <script is:inline>
+	(() => {
+		const root = document.getElementById('or-version');
+		if (!root) return;
+		const btn = document.getElementById('or-version-btn');
+		const menu = document.getElementById('or-version-menu');
+		const lbl = document.getElementById('or-version-lbl');
+		const sub = document.getElementById('or-version-sub');
 
-   let currentVersion = ""
+		// Detect current version from the URL (segment after /lang/).
+		const seg = window.location.pathname.split('/')[2] || '';
+		const current = seg.indexOf('v') === 0 ? seg : '';
+		if (current) {
+			lbl.textContent = 'v' + current.replace('v', '');
+			sub.textContent = '';
+		}
 
-if(typeof window != "undefined") {
-    currentVersion = window.location.pathname.split("/")[2]
-}
+		// Mark the selected version.
+		menu.querySelectorAll('.dh-ver-item').forEach((it) => {
+			const url = (it.getAttribute('data-url') || '').replace('/', '');
+			const isSel = url === current || (!current && url === '');
+			it.classList.toggle('sel', isSel);
+		});
 
-if(currentVersion && currentVersion.indexOf("v") != 0) currentVersion = "";
+		const close = () => {
+			menu.hidden = true;
+			btn.classList.remove('open');
+			btn.setAttribute('aria-expanded', 'false');
+		};
+		btn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			const willOpen = menu.hidden;
+			menu.hidden = !willOpen;
+			btn.classList.toggle('open', willOpen);
+			btn.setAttribute('aria-expanded', String(willOpen));
+		});
+		document.addEventListener('click', (e) => {
+			if (!root.contains(e.target)) close();
+		});
 
-function updateLocation(evt) {
-    let selectedVersion = evt.target.value
-    let versionRegExp = /v[0-9]+.[0-9]+.[0-9]+/
-
-    let pathname = window.location.pathname.replace(/\/$/, "") //remove the trailing "/" if there is any
-
-    let pathParts = pathname.split("/")
-
-    if(pathname.match(versionRegExp)) {
-        pathParts[2] = selectedVersion.replace("/", "")
-    } else {
-        console.log(pathParts)
-        pathParts = [pathParts[0], pathParts[1], selectedVersion.replace("/", ""), ...pathParts.slice(2)]
-    }
-
-    //when we're visiting the root of the default version, we ignore the "index" part
-    //but if we're inside a specific version coming from the default version, we need to add it
-    if(pathParts[pathParts.length - 1] == 'index' && selectedVersion == "") {
-        pathParts[pathParts.length - 1] = ""
-    } else {
-        if(pathParts[pathParts.length - 1] == '' && pathname === "") {
-            pathParts[pathParts.length - 1] = "/index"
-        }   
-    }
-
-    let newPath = `${window.location.protocol}//${window.location.host}${pathParts.join("/").replace("//","/")}`
-    window.location.href = newPath
-}
-
-function selectCurrentVersion(dropDown) {
-    if(typeof currentVersion != "undefined" && currentVersion != "") {
-        dropDown.querySelector("option[value*='" + currentVersion + "']").setAttribute("selected", true)
-    } else {
-        dropDown.querySelector("option[value='']").setAttribute("selected", true)
-    }
-}
-    const dropDown = document.getElementById("version-selector")
-
-    selectCurrentVersion(dropDown)
-    dropDown.addEventListener("change", updateLocation)
+		menu.querySelectorAll('.dh-ver-item').forEach((it) => {
+			it.addEventListener('click', () => {
+				const selectedVersion = it.getAttribute('data-url') || '';
+				const versionRegExp = /v[0-9]+\.[0-9]+\.[0-9]+/;
+				let pathname = window.location.pathname.replace(/\/$/, '');
+				let pathParts = pathname.split('/');
+				if (pathname.match(versionRegExp)) {
+					pathParts[2] = selectedVersion.replace('/', '');
+				} else {
+					pathParts = [pathParts[0], pathParts[1], selectedVersion.replace('/', ''), ...pathParts.slice(2)];
+				}
+				const newPath =
+					window.location.protocol +
+					'//' +
+					window.location.host +
+					pathParts.join('/').replace('//', '/');
+				window.location.href = newPath;
+			});
+		});
+	})();
 </script>
-
-<style>
-   #version-selector {
-        border-radius: var(--theme-border-radius);
-        outline: none;
-        border: none;
-        width: 100%;
-        background: transparent;
-        padding-right: 0.2rem;
-        font-weight: 400;
-        font-size: inherit;
-        color: var(--theme-readable-grey);
-        cursor: pointer;
-    }
-
-    #version-selector:hover{
-        background-color: var(--theme-accent-opacity);
-    }
-
-</style>

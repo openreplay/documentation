@@ -1,0 +1,38 @@
+---
+import type { Crumb } from '~/util/getBreadcrumbs';
+
+export interface Props {
+	title: string;
+	description?: string;
+	breadcrumbs?: Crumb[];
+}
+
+const { title, description, breadcrumbs = [] } = Astro.props as Props;
+---
+
+<div class="or-hero">
+	<div class="or-hero-dots" aria-hidden="true"></div>
+	<div class="or-hero-inner">
+		{
+			breadcrumbs.length > 0 && (
+				<nav class="or-hero-crumb" aria-label="Breadcrumb">
+					{breadcrumbs.map((c, i) => (
+						<>
+							{i > 0 && <span class="sep" aria-hidden="true">/</span>}
+							{i === breadcrumbs.length - 1 ? (
+								<span class="cur" aria-current="page">{c.text}</span>
+							) : c.href ? (
+								<a href={c.href}>{c.text}</a>
+							) : (
+								<span>{c.text}</span>
+							)}
+						</>
+					))}
+				</nav>
+			)
+		}
+		{/* Presentational title — the semantic <h1> lives (visually hidden) in the article. */}
+		<div class="or-hero-title" aria-hidden="true" set:html={title}></div>
+		{description && <p class="or-hero-desc">{description}</p>}
+	</div>
+</div>

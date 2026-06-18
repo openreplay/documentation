@@ -6,15 +6,13 @@ interface Props {
     useLight: string;
     useDark: string;
   };
-  isInsideHeader: boolean;
+  isInsideHeader?: boolean;
 }
 
 // Define valid theme keys
 type ThemeType = "light" | "dark";
 
-const themes: ThemeType[] = ["light", "dark"];
-
-const ThemeToggle = ({ labels, isInsideHeader }: Props) => {
+const ThemeToggle = ({ labels }: Props) => {
   const getSystemTheme = (): ThemeType =>
     window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 
@@ -55,50 +53,28 @@ const ThemeToggle = ({ labels, isInsideHeader }: Props) => {
     return () => mediaQuery.removeEventListener("change", handleSystemChange);
   }, []);
 
-  return (
-    <div className={`theme-toggle h-8 ${isInsideHeader ? "hide-toggle-on-smaller-screens" : ""}`}>
-      {themes.map((t) => {
-        const checked = theme === t;
-        const themeLabel = t === "light" ? labels.useLight : labels.useDark;
+  const isDark = theme === "dark";
 
-        return (
-          <label className={`cursor-pointer ${checked ? "checked" : ""}`} key={t}>
-            {/* Sun icon for light theme */}
-            {t === "light" && (
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="4"></circle>
-                <path d="M12 2v2"></path>
-                <path d="M12 20v2"></path>
-                <path d="m4.93 4.93 1.41 1.41"></path>
-                <path d="m17.66 17.66 1.41 1.41"></path>
-                <path d="M2 12h2"></path>
-                <path d="M20 12h2"></path>
-                <path d="m6.34 17.66-1.41 1.41"></path>
-                <path d="m19.07 4.93-1.41 1.41"></path>
-              </svg>
-            )}
-            
-            {/* Moon icon for dark theme */}
-            {t === "dark" && (
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-                <path d="M19 3v4"></path>
-                <path d="M21 5h-4"></path>
-              </svg>
-            )}
-            
-            <input
-              type="radio"
-              name="theme-toggle"
-              checked={checked}
-              value={t}
-              onChange={() => setTheme(t)}
-            />
-            <span className="sr-only">{themeLabel}</span>
-          </label>
-        );
-      })}
-    </div>
+  // Render BOTH icons and let CSS pick the right one based on the `.theme-dark`
+  // class (set before hydration). This keeps SSR and client markup identical and
+  // avoids a hydration mismatch.
+  return (
+    <button
+      type="button"
+      className="or-theme-toggle"
+      aria-label="Toggle color theme"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+    >
+      {/* Sun — shown in dark mode (click to switch to light) */}
+      <svg className="icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+      </svg>
+      {/* Moon — shown in light mode (click to switch to dark) */}
+      <svg className="icon-moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"></path>
+      </svg>
+    </button>
   );
 };
 

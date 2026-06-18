@@ -5,7 +5,9 @@ import TableOfContents from '../components/RightSidebar/TableOfContents';
 import { useTranslations } from '../i18n/util';
 import { getGithubEditUrl } from '../util/getGithubEditUrl';
 import { getNavLinks } from '../util/getNavLinks';
+import { getBreadcrumbs } from '../util/getBreadcrumbs';
 import BaseLayout from './BaseLayout.astro';
+import Hero from '../components/PageContent/Hero.astro';
 import '@fontsource-variable/bricolage-grotesque';
 import '@fontsource-variable/bricolage-grotesque/wdth.css';
 import '@fontsource-variable/bricolage-grotesque/standard.css';
@@ -17,11 +19,14 @@ const headings = Astro.props.headings;
 const t = useTranslations(Astro);
 const { previous, next } = await getNavLinks(Astro);
 const githubEditUrl = getGithubEditUrl(Astro);
+const breadcrumbs = await getBreadcrumbs(Astro);
+const heroDescription = content.description || content.metaDescription;
 
 import Modal from '../components/Modal.astro';
 ---
 
 <BaseLayout {...Astro.props}>
+	<Hero slot="hero" title={content.title} description={heroDescription} breadcrumbs={breadcrumbs} />
 	<RightSidebar slot="secondary-sidebar" headings={headings} content={content} githubEditUrl={githubEditUrl} />
 	<PageContent {...{content, previous, next}}>
 		{

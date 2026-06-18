@@ -97,7 +97,26 @@ const TableOfContents: FunctionalComponent<Props> = ({ headings = [], labels, is
     const onLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
         if (!isMobile) return;
         setOpen(false);
-        setCurrentID((e.target as HTMLAnchorElement).getAttribute('href')?.replace('#', '') || '');
+        setCurrentID((e.currentTarget as HTMLAnchorElement).getAttribute('href')?.replace('#', '') || '');
+    };
+
+    const onBackToTop = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault();
+        const target =
+            document.getElementById('overview') ||
+            (document.querySelector('.or-hero') as HTMLElement | null);
+        let el: HTMLElement | null = target;
+        // Walk up to the nearest scrollable ancestor (the app shell scrolls a
+        // container, not the window) and scroll it to the top.
+        while (el) {
+            const oy = getComputedStyle(el).overflowY;
+            if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight) {
+                el.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+            el = el.parentElement;
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     return (
@@ -107,7 +126,7 @@ const TableOfContents: FunctionalComponent<Props> = ({ headings = [], labels, is
                     {labels.onThisPage}
                 </h2>
             </HeadingContainer>
-            <ul ref={toc} className='py-3 space-y-1'>
+            <ul ref={toc} className='or-toc-list'>
                 {headings.map(({ depth, slug, text }) => (
                     <li
                         key={slug}
@@ -116,11 +135,20 @@ const TableOfContents: FunctionalComponent<Props> = ({ headings = [], labels, is
                         }`.trim()}
                     >
                         <a href={`#${slug}`} onClick={onLinkClick}>
-                            {unescape(text)}
+                            <span className="or-tick" aria-hidden="true"></span>
+                            <span className="or-toc-text">{unescape(text)}</span>
                         </a>
                     </li>
                 ))}
             </ul>
+            {!isMobile && (
+                <a className="or-toc-top" href="#overview" onClick={onBackToTop}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                        <path d="M12 19V5M5 12l7-7 7 7"></path>
+                    </svg>
+                    Back to top
+                </a>
+            )}
         </Container>
     );
 };
