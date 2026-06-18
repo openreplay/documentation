@@ -2,7 +2,7 @@ import type { AstroGlobal } from 'astro';
 import { readdir } from 'node:fs/promises';
 import { DocSearchTranslation, UIDict, UIDictionaryKeys } from './translation-checkers';
 import { getLanguageFromURL } from '../util';
-import { NavItem } from './en/nav';
+import { NavItem, localizeNav } from './en/nav';
 /**
  * Convert the map of modules returned by `import.meta.globEager` to an object
  * mapping the language code from each module’s filepath to the module’s default export.
@@ -64,8 +64,6 @@ const translations = mapDefaultExports<UIDict>(import.meta.glob('./*/ui.ts', { e
 const docsearchTranslations = mapDefaultExports<DocSearchTranslation>(
 	import.meta.glob('./*/docsearch.ts', { eager: true })
 );
-const navTranslations = mapDefaultExports<NavItem>(import.meta.glob('./*/nav.ts', { eager: true }));
-
 const fallbackLang = 'en';
 
 /** Returns a dictionary of strings for use with DocSearch. */
@@ -78,7 +76,9 @@ export function getDocSearchStrings(Astro: AstroGlobal): DocSearchTranslation {
 /** Get the navigation sidebar content for the current language. */
 export async function getNav(Astro: AstroGlobal): Promise<NavItem> {
 	const lang = getLanguageFromURL(Astro.url.pathname) || fallbackLang;
-	return await markFallbackNavEntries(lang, navTranslations[lang]);
+	// The menu is defined once (structure + routes + inline translations) in en/nav.ts.
+	// localizeNav resolves every label to the current language (English fallback).
+	return await markFallbackNavEntries(lang, localizeNav(lang));
 }
 
 /**
