@@ -17,4 +17,11 @@ export default UIDictionary({
 	'articleNav.prevPage': 'Назад',
 	'leftSidebar.learnTab': 'Изучить',
 	'leftSidebar.referenceTab': 'Ссылки',
+	'leftSidebar.a11yTitle': 'Основная навигация',
+	'leftSidebar.viewInEnglish': 'Посмотреть на английском',
+	'leftSidebar.sponsoredBy': 'При поддержке',
+	'rightSidebar.a11yTitle': 'Дополнительная навигация',
+	'rightSidebar.overview': 'Обзор',
+	'rightSidebar.joinSlack': 'Присоединиться к Slack',
+	'rightSidebar.github': 'Открыть на GitHub',
 });
