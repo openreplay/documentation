@@ -830,6 +830,95 @@ aside.or-aside {
 	padding: 5px 10px; margin-bottom: 8px; break-inside: avoid;
 }
 
+/* ============================================================
+   ARTICLE BODY — align the existing MDX components (Card / ORCard /
+   IconText / .learn-more / .theme-icon) with the refresh design.
+   Scoped to `.content` so only article-body components are affected.
+   ============================================================ */
+
+/* Cards: resting shadow + hover-lift (border -> accent-ring + shadow),
+   replacing the legacy accent-soft background fill on hover. */
+.content .card {
+	border: 1px solid var(--border);
+	border-radius: 14px;
+	box-shadow: var(--shadow);
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.content a.card { color: var(--text); }
+.content a.card:hover,
+.content .card a.hover-bg:hover,
+.content a.card.hover-bg:hover,
+.content .page-index a.card:hover {
+	background-color: var(--surface);
+	border-color: var(--accent-ring);
+	box-shadow: var(--shadow-md);
+}
+/* nested cards (panels containing mini-cards) keep their own resting shadow */
+.content .card .card { box-shadow: var(--shadow); }
+/* direct icon glyphs on minicards (e.g. "Looking for help?") use the accent */
+.content a.card > svg { color: var(--accent); }
+.content .card h4 { font-family: var(--fd); font-weight: 700; color: var(--text); }
+.content .card h3 { font-family: var(--fd); font-weight: 700; color: var(--text); }
+.content .card span,
+.content .card > .card-body span { color: var(--text-2); }
+
+/* Icon tiles: borderless accent-soft squares */
+.content .theme-icon {
+	background: var(--accent-soft);
+	color: var(--accent);
+	border: 0;
+	border-radius: 9px;
+}
+.content .theme-icon svg,
+.content .theme-icon img { fill: var(--accent); color: var(--accent); }
+
+/* Provider / framework tiles (IconText -> .hover-bg): bordered chips.
+   The brand logo sits on the chip surface (no accent tile behind it). */
+.content a.hover-bg {
+	border: 1px solid var(--border);
+	border-radius: 11px;
+	background: var(--surface);
+	box-shadow: var(--shadow);
+	padding: 8px 12px;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.content a.hover-bg:hover {
+	background-color: var(--surface);
+	border-color: var(--accent-ring);
+	box-shadow: var(--shadow-md);
+}
+.content a.hover-bg .theme-icon {
+	background: transparent;
+	border: 0;
+}
+.content a.hover-bg p { margin: 0; color: var(--text); font-weight: 500; }
+
+/* "Learn more" -> sliding line-arrow (replaces the legacy chevron char) */
+.content .learn-more {
+	display: inline-flex;
+	align-items: center;
+	color: var(--accent);
+	font-weight: 600;
+	font-size: 14px;
+	text-decoration: none;
+}
+.content .learn-more::after {
+	content: '';
+	display: inline-block;
+	width: 15px;
+	height: 15px;
+	margin-inline-start: 5px;
+	background: currentColor;
+	-webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M5%2012h14M13%206l6%206-6%206'/%3E%3C/svg%3E") center/contain no-repeat;
+	mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M5%2012h14M13%206l6%206-6%206'/%3E%3C/svg%3E") center/contain no-repeat;
+	transition: transform 0.2s ease;
+}
+.content a.card:hover .learn-more::after,
+.content .learn-more:hover::after { transform: translateX(4px); }
+[dir='rtl'] .content .learn-more::after { transform: scaleX(-1); }
+[dir='rtl'] .content a.card:hover .learn-more::after,
+[dir='rtl'] .content .learn-more:hover::after { transform: scaleX(-1) translateX(4px); }
+
 /* ---------------------------------------------------------- RESPONSIVE */
 @media (max-width: 1024px) {
 	.or-hero { padding: 32px 40px 28px; }
