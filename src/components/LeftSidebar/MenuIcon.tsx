@@ -218,6 +218,15 @@ const MenuIcon = (props) => {
 				<circle cx="12" cy="12" r="10" fill="none"></circle>
 			<circle cx="12" cy="12" r="1" fill="none"></circle>
 			</svg>;
+		case 'mcp':
+			// app-window glyph: MCP connects the assistant to your apps
+			return (
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+					<rect x="3" y="4" width="18" height="16" rx="2.5" />
+					<path d="M3 9h18" />
+					<path d="M6.2 6.5h.01M8.7 6.5h.01" />
+				</svg>
+			);
 		case 'ai':
 		    return  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sparkles  hover:bg-gradient-to-r  cursor-pointer font-bold drop-shadow-sm rounded-md">
 				<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>

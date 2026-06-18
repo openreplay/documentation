@@ -303,7 +303,7 @@ const nav: NavItem = {
     {
       text: 'MCP',
       slug: 'mcp',
-      icon: 'ai',
+      icon: 'mcp',
       children: [
         { text: { en: 'Overview', fr: 'Aperçu', es: 'Descripción general', ru: 'Обзор', zh: '概览', 'ar-ae': 'نظرة عامة' }, slug: 'mcp', children: [] },
         { text: { en: 'Setup', fr: 'Installation', es: 'Configuración', ru: 'Настройка', zh: '设置', 'ar-ae': 'الإعداد' }, slug: 'mcp/setup', children: [] },
