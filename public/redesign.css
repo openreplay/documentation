@@ -623,12 +623,19 @@ body.mobile-sidebar-toggle #mobile-overlay { opacity: 1 !important; pointer-even
 }
 .content .or-video-thumb {
 	width: 150px; height: 86px; flex: none; border-radius: 10px; position: relative; overflow: hidden;
-	background: radial-gradient(120% 150% at 80% -20%, rgba(255,0,195,0.45), rgba(123,47,151,0.22) 40%, #0d033b 78%);
+	display: block; text-decoration: none;
+	background-color: #0d033b;
+	/* real YouTube poster is layered on top via inline background-image (cover);
+	   this gradient is the fallback when there's no id / the poster 404s */
+	background-image: radial-gradient(120% 150% at 80% -20%, rgba(255,0,195,0.45), rgba(123,47,151,0.22) 40%, #0d033b 78%);
+	background-size: cover; background-position: center;
 }
 .content .or-video-play {
 	position: absolute; inset: 0; margin: auto; width: 42px; height: 42px; border-radius: 50%;
-	background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; color: #fff;
+	background: rgba(13,3,59,0.55); display: flex; align-items: center; justify-content: center; color: #fff;
+	transition: background 0.15s ease, transform 0.15s ease;
 }
+.content .or-video-thumb:hover .or-video-play { background: var(--accent); transform: scale(1.06); }
 .content .or-video-play svg { width: 16px; height: 16px; margin-left: 2px; }
 .content .or-video-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 .content .or-video-eye { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin: 0 0 5px; }
@@ -902,7 +909,10 @@ header a:hover, header a:focus,
 	border: 1px solid var(--or-border);
 	border-radius: 7px;
 	padding: 5px 10px;
-	margin-bottom: 8px;
+	/* margin-top:0 !important — index.css adds `li { margin-top:0.5rem }` which,
+	   in a multi-column layout, only applies at the top of the FIRST column,
+	   pushing column 1 lower than the others. */
+	margin: 0 0 8px !important;
 	break-inside: avoid;
 }
 @media (max-width: 768px) { .content ul.or-cols { columns: 1; } }
@@ -958,39 +968,11 @@ header a:hover, header a:focus,
 .content .or-aside.caution { background: var(--warn-bg); border-color: var(--warn-bd); }
 .content .or-aside.danger { background: var(--danger-bg); border-color: var(--danger-bd); }
 
-/* --- video callout (YoutubeVideo blockquote) → design card look --- */
-.content blockquote.video {
-	display: block;
-	background: var(--surface);
-	border: 1px solid var(--or-border);
-	border-left: 1px solid var(--or-border);
-	border-radius: 14px;
-	padding: 16px;
-	margin: 0 0 18px;
-	box-shadow: var(--shadow-md);
-	color: var(--text-2);
+/* --- video callout (YoutubeVideo → .or-video card) responsive stacking --- */
+@media (max-width: 640px) {
+	.content .or-video { flex-direction: column; }
+	.content .or-video-thumb { width: 100%; height: 160px; }
 }
-.content blockquote.video::before { content: none; }
-/* "Video Tutorial" badge → accent eyebrow chip */
-.content blockquote.video .card {
-	background: var(--accent-soft) !important;
-	color: var(--accent) !important;
-	border: 0 !important;
-	border-radius: 9999px !important;
-	box-shadow: none !important;
-	padding: 3px 10px !important;
-	font-size: 11px !important;
-	letter-spacing: 0.08em;
-}
-.content blockquote.video .video-title {
-	font-family: var(--fd);
-	font-weight: 700;
-	color: var(--text);
-	font-size: 16px;
-	line-height: 1.25;
-}
-.content blockquote.video :global(lite-youtube),
-.content blockquote.video iframe { border-radius: 10px; overflow: hidden; }
 
 /* native video frame */
 .content video { border-radius: 12px; border: 1px solid var(--or-border); box-shadow: var(--shadow-md); }
@@ -1097,8 +1079,7 @@ header a:hover, header a:focus,
    made them sit too close to the previous element) */
 .content aside.content,
 .content .or-aside { margin: 1.25rem 0 1rem !important; }
-.content blockquote.video { margin: 1.25rem 0 1.25rem; }
-.content .or-video { margin-top: 1.25rem; }
+.content .or-video { margin: 1.25rem 0 18px; }
 
 /* ============================================================
    FIX: the global `a :hover { text-decoration: underline }` in index.css

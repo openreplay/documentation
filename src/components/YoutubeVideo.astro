@@ -1,27 +1,37 @@
 ---
-let {videoURL, title, description,learnMoreURL} = Astro.props;
-import { YouTube } from 'astro-embed'
+let { videoURL, title, description } = Astro.props;
+
+// videoURL may be a full URL (youtu.be/ID, watch?v=ID, embed/ID) or a bare 11-char ID.
+function youtubeId(input) {
+	if (!input) return null;
+	const s = String(input).trim();
+	if (/^[\w-]{11}$/.test(s)) return s;
+	const m = s.match(/(?:youtu\.be\/|[?&]v=|\/embed\/|\/shorts\/)([\w-]{11})/);
+	return m ? m[1] : null;
+}
+
+const id = youtubeId(videoURL);
+const poster = id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null;
+const watch = id ? `https://www.youtube.com/watch?v=${id}` : videoURL;
+const label = title ? `Watch on YouTube: ${title}` : 'Watch on YouTube';
 ---
 
-<blockquote class="video">
-    
-    <div class="flex w-full justify-start md:justify-between items-center flex-col md:flex-row ">
-        <div class="flex flex-col w-full md:w-8/12 pr-2 overflow-hidden">
-            <p class="card rounded bg-slack py-0.5 px-2 text-xs font-semibold w-fit uppercase mb-4"> Video Tutorial</p>
-            {title && ( <h4 class="video-title"> {title}  </h4> )} 
-            {description && ( <p class="my-3 text-sm"> {description} </p> )}
-            { ( <a href={videoURL} class="learn-more no-underline hidden md:block" target="_blank">Watch on Youtube</a> )} 
-        </div>
-        
-        <div class="w-full md:w-3/6 grow rounded md:p-2 md:pr-0 my-2 md:my-0">
-            {videoURL && ( <YouTube id={videoURL} /> )} 
-        </div>
-        {learnMoreURL && ( <a href={videoURL} class="learn-more no-underline block md:hidden text-left" target="_blank">Watch on Youtube</a> )}   
-   </div>     
-</blockquote>
-
-<style>
-    lite-youtube{
-        border-radius: var(--theme-border-radius);
-    }
-</style>
+<div class="or-video">
+	<a
+		class="or-video-thumb"
+		href={watch}
+		target="_blank"
+		rel="noreferrer"
+		aria-label={label}
+		style={poster ? `background-image:url('${poster}')` : undefined}
+	>
+		<span class="or-video-play">
+			<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+		</span>
+	</a>
+	<div class="or-video-body">
+		<p class="or-video-eye">Video Tutorial</p>
+		{title && <p class="or-video-t">{title}</p>}
+		{description && <p class="or-video-d">{description}</p>}
+	</div>
+</div>
