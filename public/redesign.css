@@ -340,8 +340,16 @@ body.mobile-sidebar-toggle #mobile-overlay { opacity: 1 !important; pointer-even
 .content a:hover { border-bottom-color: var(--accent); text-decoration: none; }
 .content strong { color: var(--text); font-weight: 700; }
 
-.content ul, .content ol { margin: 0 0 16px; padding-inline-start: 22px; }
+.content ul, .content ol { margin: 0 0 16px; padding-inline-start: 28px; }
 .content li { margin-bottom: 7px; color: var(--text-2); }
+/* index.css `.content > section > :is(ul,ol) { padding-inline-start: 1.5em }` (0,1,2)
+   out-specifies the rule above, so plain lists were stuck at a shallow ~23px indent.
+   Bump them to a clearer tab; :not([class]) leaves the component lists
+   (or-cols / or-chips / or-rowlist) on their own padding. */
+.content > section > ul:not([class]),
+.content > section > ol:not([class]),
+.content > section > :is(ul, ol):not([class]) :is(ul, ol) { padding-inline-start: 28px; }
+.content > section > :is(ul, ol):not([class]) li { padding-inline-start: 4px; }
 .content li::marker { color: var(--text-3); }
 
 /* reset the legacy fancy ordered-list bubble marker */
@@ -1107,3 +1115,56 @@ a :hover, a :focus,
 .content .or-card-wide h4 { margin: 0 0 4px !important; }
 .content .lh-spot h4 { margin: 0 0 2px !important; }
 .content .or-card-wide h4 { margin: 0 !important; }
+
+/* ============================================================
+   FIX: TOC sub-item sizing. index.css `.header-link.depth-3 a` (0,2,1) forces
+   `--theme-text-xs` (14px) + a 32px `·` ::before — so h3 entries rendered LARGER
+   than their h2 parents. Normalize every level to the 13px redesign tick style.
+   ============================================================ */
+.or-toc-nav .or-toclink a,
+.or-toc-nav .or-toclink.depth-2 a,
+.or-toc-nav .or-toclink.depth-3 a,
+.or-toc-nav .or-toclink.depth-4 a { font-size: 13px; }
+.or-toc-nav .or-toclink a::before { content: none !important; }
+
+/* ============================================================
+   Tables → redesigned bordered card with a filled header (matches the
+   design "API Events" prototype: --surface-2 header, hairline row separators,
+   Figtree body font, no zebra). Overrides the legacy index.css table styling.
+   ============================================================ */
+.content table {
+	display: table;
+	width: 100%;
+	margin: 1.25rem 0 18px;
+	padding: 0;
+	border-collapse: separate;
+	border-spacing: 0;
+	border: 1px solid var(--or-border);
+	border-radius: 12px;
+	overflow: hidden;
+	background: var(--surface);
+	font-family: var(--fb);
+	font-size: 13.5px;
+	line-height: 1.5;
+}
+.content table thead { background: var(--surface-2); border: 0; }
+.content table th {
+	text-align: left;
+	font-weight: 700;
+	color: var(--text);
+	background: var(--surface-2);
+	padding: 10px 14px;
+	border-bottom: 1px solid var(--or-border);
+}
+.content table td {
+	color: var(--text-2);
+	padding: 10px 14px;
+	border-bottom: 1px solid var(--or-border);
+	vertical-align: top;
+}
+/* kill index.css zebra striping + negative side margins */
+.content table tbody tr { background: var(--surface); }
+.content table tbody tr:last-child td { border-bottom: 0; }
+.content table :is(td, th):first-child { padding-left: 16px; }
+.content table :is(td, th):last-child { padding-right: 16px; }
+@media (max-width: 768px) { .content table { display: block; overflow-x: auto; } }
