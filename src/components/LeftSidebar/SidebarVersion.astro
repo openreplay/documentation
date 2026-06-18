@@ -1,0 +1,169 @@
+---
+import { VERSIONS } from '~/config';
+const latest = VERSIONS[0];
+---
+
+<div class="dh-ver">
+	<button class="dh-ver-btn" aria-haspopup="listbox" aria-expanded="false">
+		<span class="dh-ver-dot"></span>
+		<span class="dh-ver-lbl">v{latest.title}</span>
+		<span class="dh-ver-sub">latest</span>
+		<span class="dh-ver-car">
+			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"></path></svg>
+		</span>
+	</button>
+	<div class="dh-ver-menu or-noscroll" role="listbox" hidden>
+		{
+			VERSIONS.map((v, i) => (
+				<div class="dh-ver-item" role="option" data-url={v.url} data-title={v.title}>
+					<span>v{v.title}</span>
+					{i === 0 && <span class="dh-ver-tag">latest</span>}
+				</div>
+			))
+		}
+	</div>
+</div>
+
+<script is:inline>
+	(function () {
+		const versionRegExp = /v[0-9]+\.[0-9]+\.[0-9]+/;
+
+		function initVersionPicker() {
+			const parts = window.location.pathname.split('/');
+			const current = parts[2] && parts[2].indexOf('v') === 0 ? parts[2] : '';
+
+			// The picker is rendered in BOTH the mobile and desktop sidebars, so this
+			// inline script runs (and this query matches) more than once. Scope every
+			// lookup to each .dh-ver root and guard with data-bound so each instance
+			// binds exactly once — never rely on getElementById (it grabs the first,
+			// hidden, mobile instance and leaves the visible desktop one dead).
+			document.querySelectorAll('.dh-ver').forEach((root) => {
+				if (root.dataset.bound) return;
+				root.dataset.bound = '1';
+
+				const btn = root.querySelector('.dh-ver-btn');
+				const menu = root.querySelector('.dh-ver-menu');
+				const lbl = root.querySelector('.dh-ver-lbl');
+				const sub = root.querySelector('.dh-ver-sub');
+				if (!btn || !menu) return;
+
+				if (current) {
+					if (lbl) lbl.textContent = current;
+					if (sub) sub.textContent = '';
+					root.querySelectorAll('.dh-ver-item').forEach((it) => {
+						const url = it.getAttribute('data-url');
+						if (url && url.indexOf(current) !== -1) it.classList.add('sel');
+					});
+				} else {
+					root.querySelector('.dh-ver-item')?.classList.add('sel');
+				}
+
+				const close = () => {
+					menu.hidden = true;
+					btn.classList.remove('open');
+					btn.setAttribute('aria-expanded', 'false');
+				};
+				btn.addEventListener('click', (e) => {
+					e.stopPropagation();
+					const willOpen = menu.hidden;
+					menu.hidden = !willOpen;
+					btn.classList.toggle('open', willOpen);
+					btn.setAttribute('aria-expanded', String(willOpen));
+				});
+				document.addEventListener('click', (e) => {
+					if (!root.contains(e.target)) close();
+				});
+
+				root.querySelectorAll('.dh-ver-item').forEach((it) => {
+					it.addEventListener('click', () => {
+						const selectedVersion = it.getAttribute('data-url') || '';
+						let pathname = window.location.pathname.replace(/\/$/, '');
+						let pathParts = pathname.split('/');
+						if (pathname.match(versionRegExp)) {
+							pathParts[2] = selectedVersion.replace('/', '');
+						} else {
+							pathParts = [pathParts[0], pathParts[1], selectedVersion.replace('/', ''), ...pathParts.slice(2)];
+						}
+						const newPath = `${window.location.protocol}//${window.location.host}${pathParts.join('/').replace(/\/{2,}/g, '/')}`;
+						window.location.href = newPath;
+					});
+				});
+			});
+		}
+
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', initVersionPicker);
+		} else {
+			initVersionPicker();
+		}
+	})();
+</script>
+
+<style>
+	.dh-ver { position: relative; margin: 0 4px 6px; }
+	.dh-ver-btn {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		height: 40px;
+		padding: 0 12px;
+		border-radius: 11px;
+		border: 1px solid var(--or-border);
+		background: var(--surface);
+		color: var(--text);
+		font-family: var(--fb);
+		font-size: 13.5px;
+		font-weight: 600;
+		cursor: pointer;
+		box-shadow: var(--shadow);
+		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+	}
+	.dh-ver-btn:hover { border-color: var(--accent-ring); box-shadow: var(--shadow-md); }
+	.dh-ver-dot { width: 7px; height: 7px; border-radius: 50%; background: #1f8a5b; flex: none; }
+	.dh-ver-lbl { flex: 1; text-align: left; }
+	.dh-ver-sub {
+		font-size: 10px;
+		font-weight: 600;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: var(--text-3);
+	}
+	.dh-ver-car { color: var(--text-3); display: inline-flex; transition: transform 0.15s; }
+	.dh-ver-btn.open .dh-ver-car { transform: rotate(180deg); }
+	.dh-ver-menu {
+		position: absolute;
+		top: 46px;
+		left: 0;
+		right: 0;
+		z-index: 20;
+		max-height: 300px;
+		overflow-y: auto;
+		background: var(--surface);
+		border: 1px solid var(--or-border);
+		border-radius: 12px;
+		box-shadow: var(--shadow-lg);
+		padding: 6px;
+	}
+	.dh-ver-item {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 8px 10px;
+		border-radius: 8px;
+		font-size: 13.5px;
+		color: var(--text-2);
+		cursor: pointer;
+	}
+	.dh-ver-item:hover { background: var(--accent-soft); color: var(--text); }
+	.dh-ver-item.sel { color: var(--accent); font-weight: 600; }
+	.dh-ver-tag {
+		margin-left: auto;
+		font-size: 10px;
+		font-weight: 600;
+		color: #1f8a5b;
+		background: rgba(31, 138, 91, 0.14);
+		border-radius: 9999px;
+		padding: 2px 8px;
+	}
+</style>

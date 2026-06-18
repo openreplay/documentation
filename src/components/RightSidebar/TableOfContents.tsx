@@ -11,11 +11,9 @@ interface Props {
 }
 
 const TableOfContents: FunctionalComponent<Props> = ({ headings = [], labels, isMobile }) => {
-    headings = [{ depth: 2, slug: 'overview', text: labels.overview }, ...headings].filter(
-        ({ depth }) => depth > 1 && depth < 4
-    );
+    headings = headings.filter(({ depth }) => depth > 1 && depth < 4);
     const toc = useRef<HTMLUListElement | null>(null);
-    const [currentID, setCurrentID] = useState('overview');
+    const [currentID, setCurrentID] = useState(headings[0]?.slug || 'overview');
     const [open, setOpen] = useState(!isMobile);
     const onThisPageID = 'on-this-page-heading';
 
@@ -47,34 +45,47 @@ const TableOfContents: FunctionalComponent<Props> = ({ headings = [], labels, is
     };
 
     useEffect(() => {
-        if (!toc.current) return;
+        // Position-based scroll-spy against the actual scroll container
+        // (#or-main-scroll). An IntersectionObserver top-zone can never
+        // activate the LAST heading (nothing below it pushes it into the zone),
+        // so we pick the last heading above an activation line and add an
+        // explicit "scrolled to bottom" guard.
+        const scroller =
+            (typeof document !== 'undefined' && document.getElementById('or-main-scroll')) || null;
+        const headingEls = () =>
+            headings
+                .map(({ slug }) => document.getElementById(slug))
+                .filter((el): el is HTMLElement => !!el);
 
-        const setCurrent: IntersectionObserverCallback = (entries) => {
-            for (const entry of entries) {
-                if (entry.isIntersecting) {
-                    const { id } = entry.target;
-                    if (id === onThisPageID) continue;
-                    setCurrentID(entry.target.id);
-                    break;
-                }
+        const update = () => {
+            const els = headingEls();
+            if (!els.length) return;
+            const top = scroller ? scroller.getBoundingClientRect().top : 0;
+            const line = top + 120; // activation line ~120px below the scroll area's top
+            let cur = els[0].id;
+            for (const el of els) {
+                if (el.getBoundingClientRect().top <= line) cur = el.id;
             }
+            // At (or near) the bottom, the last section is the active one.
+            if (
+                scroller &&
+                scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 8
+            ) {
+                cur = els[els.length - 1].id;
+            }
+            setCurrentID(cur);
         };
 
-        const observerOptions: IntersectionObserverInit = {
-            // Negative top margin accounts for `scroll-margin`.
-            // Negative bottom margin means heading needs to be towards top of viewport to trigger intersection.
-            rootMargin: '-100px 0% -66%',
-            threshold: 1,
+        const target: HTMLElement | Window = scroller || window;
+        target.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update);
+        update();
+
+        return () => {
+            target.removeEventListener('scroll', update);
+            window.removeEventListener('resize', update);
         };
-
-        const headingsObserver = new IntersectionObserver(setCurrent, observerOptions);
-
-        // Observe all the headings in the main page content.
-        document.querySelectorAll('article :is(h1,h2,h3)').forEach((h) => headingsObserver.observe(h));
-
-        // Stop observing when the component is unmounted.
-        return () => headingsObserver.disconnect();
-    }, [toc.current]);
+    }, [headings.map((h) => h.slug).join('|')]);
 
     // Add click outside behavior for mobile view.
     useEffect(() => {
@@ -107,16 +118,17 @@ const TableOfContents: FunctionalComponent<Props> = ({ headings = [], labels, is
                     {labels.onThisPage}
                 </h2>
             </HeadingContainer>
-            <ul ref={toc} className='py-3 space-y-1'>
+            <ul ref={toc} className='or-toc-list'>
                 {headings.map(({ depth, slug, text }) => (
                     <li
                         key={slug}
-                        className={`header-link depth-${depth} ${
-                            currentID === slug ? 'current-header-link' : ''
+                        className={`header-link or-toclink depth-${depth} ${
+                            currentID === slug ? 'current-header-link active' : ''
                         }`.trim()}
                     >
                         <a href={`#${slug}`} onClick={onLinkClick}>
-                            {unescape(text)}
+                            <span className="tick" aria-hidden="true"></span>
+                            <span className="or-toc-text">{unescape(text)}</span>
                         </a>
                     </li>
                 ))}
