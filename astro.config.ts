@@ -13,6 +13,7 @@ import { astroSpoilers } from './integrations/astro-spoilers';
 import { sitemap } from './integrations/sitemap';
 import { rehypeTasklistEnhancer } from './plugins/rehype-tasklist-enhancer';
 import { remarkFallbackLang } from './plugins/remark-fallback-lang';
+import { remarkLocalizeLinks } from './plugins/remark-localize-links';
 import { remarkCodeSnippets } from './integrations/astro-code-snippets';
 import remarkDirective from 'remark-directive';
 import remarkCopy from 'remark-copy-linked-files'
@@ -80,7 +81,7 @@ export default defineConfig({
   }), sitemap(), mdx({
     remarkPlugins: [addDefaultLayout, remarkGFM, [remarkSmarty, {
       dashes: false
-    }], remarkFallbackLang(), remarkDirective,
+    }], remarkFallbackLang(), remarkLocalizeLinks(), remarkDirective,
 [remarkCopy,{
       destinationDir: 'public/images',
       staticPath: 'images'
