@@ -118,7 +118,7 @@ function NavItem({ item, currentPageNoLangNoVer, categoryLinkPrefix, level = 0 }
         </a>
         {hasChildren && !item.hideChevron && (
           <div 
-            className={`px-2 cursor-pointer transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}
+            className={`px-2 cursor-pointer transition-transform duration-200 ${isOpen ? 'rotate-90' : 'rtl:rotate-180'}`}
             onClick={handleChevronClick}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" > <polyline points="9 18 15 12 9 6"></polyline> </svg>
