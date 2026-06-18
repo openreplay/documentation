@@ -28,26 +28,15 @@ function NavItem({ item, currentPageNoLangNoVer, categoryLinkPrefix, level = 0 }
   
   // Basic exact active check - URL must match exactly
   const isExactlyActive = itemUrl === currUrl;
-  
-  // For first level categories, we need special handling
-  // They should NOT be highlighted when their Overview child is active
-  let shouldBeHighlighted = isExactlyActive;
-  
-  // If this is a first level category with children, it should only be highlighted
-  // if it's not the case that one of its children is the Overview page being viewed
-  if (isFirstLevel && item.children && item.children.length > 0) {
-    // Check if the first child is "Overview" and is active
-    const firstChild = item.children[0];
-    const isFirstChildOverview = firstChild.text === "Overview" && firstChild.slug;
-    const firstChildUrl = firstChild.slug ? urlWithSlash(firstChild.slug) : null;
-    const isFirstChildActive = firstChildUrl === currUrl;
-    
-    // If we're viewing the Overview page, don't highlight the parent
-    if (isFirstChildOverview && isFirstChildActive) {
-      shouldBeHighlighted = false;
-    }
-  }
-  
+
+  // A parent and an "Overview"-style child often share the same slug. At ANY
+  // depth, when one of an item's children matches the current URL exactly, only
+  // the (deepest) child should be highlighted — never the ancestor too.
+  const hasExactlyActiveChild = item.children?.some(
+    (child) => child.slug != null && urlWithSlash(child.slug) === currUrl
+  );
+  const shouldBeHighlighted = isExactlyActive && !hasExactlyActiveChild;
+
   // Check if any child is active (for expanding parent menus)
   const hasActiveChild = item.children?.some(
     (child) => {
@@ -100,33 +89,45 @@ function NavItem({ item, currentPageNoLangNoVer, categoryLinkPrefix, level = 0 }
     ? categoryLinkPrefix + item.slug
     : '#';
 
+  const rawText = typeof item.text === 'string' ? item.text : String(item.text ?? '');
+  const isBeta = /\(beta\)/i.test(rawText);
+  const label = rawText.replace(/\s*\(beta\)/i, '');
+  const showIcon = level === 0 && item.icon && item.icon !== 'null';
+
   return (
-    <li 
-      className={`group ${isOpen ? 'menu-open' : ''}`} 
+    <li
+      className={`or-nav-li ${isOpen ? 'open' : ''}`}
       data-level={level}
+      data-current-parent={shouldBeHighlighted ? 'true' : undefined}
     >
-      <div className={`flex items-center justify-between font-normal rounded ${
-        shouldBeHighlighted
-          ? 'bg-opacity-10 bg-accent text-accent' 
-          : 'text-readable-grey hover:content-bg' 
-      }`}>
-        <a href={hrefValue} onClick={handleClick} className={`w-full px-2 py-1 rounded ${ shouldBeHighlighted ? 'text-accent font-medium' : 'text-readable-grey' }`} >
-          <div className="flex items-center">
-            {item.icon && <MenuIcon icon={item.icon} />}
-            <span className="ms-2">{item.text}</span>
-          </div>
+      <div className={`or-navrow ${shouldBeHighlighted ? 'active' : ''}`}>
+        <a
+          href={hrefValue}
+          onClick={handleClick}
+          className={`or-navlink lvl-${level}`}
+          aria-current={shouldBeHighlighted ? 'page' : undefined}
+        >
+          {showIcon && (
+            <span className="or-navico">
+              <MenuIcon icon={item.icon} />
+            </span>
+          )}
+          <span className="or-navlabel">{label}</span>
+          {isBeta && <span className="navbeta">beta</span>}
         </a>
         {hasChildren && !item.hideChevron && (
-          <div 
-            className={`px-2 cursor-pointer transition-transform duration-200 ${isOpen ? 'rotate-90' : 'rtl:rotate-180'}`}
+          <button
+            type="button"
+            aria-label="Toggle section"
+            className={`or-navchev ${isOpen ? 'open' : ''}`}
             onClick={handleChevronClick}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" > <polyline points="9 18 15 12 9 6"></polyline> </svg>
-          </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
         )}
       </div>
       {isOpen && hasChildren && (
-        <ul className="ms-4 ps-0" style={{ borderLeft:'thin dotted #555', borderLeftColor: 'var(--color-neutral-400)' }}>
+        <ul className="or-navchildren">
           {item.children!.map((child, idx) => (
             <NavItem key={`${child.text}-${child.slug || idx}`} item={child} currentPageNoLangNoVer={currentPageNoLangNoVer} categoryLinkPrefix={categoryLinkPrefix} level={level + 1} />
           ))}

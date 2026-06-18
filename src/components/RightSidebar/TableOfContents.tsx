@@ -11,11 +11,9 @@ interface Props {
 }
 
 const TableOfContents: FunctionalComponent<Props> = ({ headings = [], labels, isMobile }) => {
-    headings = [{ depth: 2, slug: 'overview', text: labels.overview }, ...headings].filter(
-        ({ depth }) => depth > 1 && depth < 4
-    );
+    headings = headings.filter(({ depth }) => depth > 1 && depth < 4);
     const toc = useRef<HTMLUListElement | null>(null);
-    const [currentID, setCurrentID] = useState('overview');
+    const [currentID, setCurrentID] = useState(headings[0]?.slug || 'overview');
     const [open, setOpen] = useState(!isMobile);
     const onThisPageID = 'on-this-page-heading';
 
@@ -107,16 +105,17 @@ const TableOfContents: FunctionalComponent<Props> = ({ headings = [], labels, is
                     {labels.onThisPage}
                 </h2>
             </HeadingContainer>
-            <ul ref={toc} className='py-3 space-y-1'>
+            <ul ref={toc} className='or-toc-list'>
                 {headings.map(({ depth, slug, text }) => (
                     <li
                         key={slug}
-                        className={`header-link depth-${depth} ${
-                            currentID === slug ? 'current-header-link' : ''
+                        className={`header-link or-toclink depth-${depth} ${
+                            currentID === slug ? 'current-header-link active' : ''
                         }`.trim()}
                     >
                         <a href={`#${slug}`} onClick={onLinkClick}>
-                            {unescape(text)}
+                            <span className="tick" aria-hidden="true"></span>
+                            <span className="or-toc-text">{unescape(text)}</span>
                         </a>
                     </li>
                 ))}

@@ -38,10 +38,10 @@ const MenuToggle: FunctionalComponent = () => {
     
 
     return (
-        <div className='flex gap-2 items-center'>
+        <div className='or-mobile-toggle flex gap-2 items-center md:hidden'>
         <button
             id="btn-search-mobile"
-            className="header-button ml-4 !border-0 inline-flex lg:hidden"
+            className="header-button inline-flex"
             type="button"
             onClick={() => window.dispatchEvent(new Event('open-docsearch'))}
         >
@@ -50,7 +50,7 @@ const MenuToggle: FunctionalComponent = () => {
         </button>
         <button
             id="menu-toggle"
-            className="header-button ml-4"
+            className="header-button"
             type="button"
             aria-pressed={sidebarShown ? 'true' : 'false'}
             onClick={() => setSidebarShown(!sidebarShown)}

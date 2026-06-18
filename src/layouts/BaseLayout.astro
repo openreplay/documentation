@@ -3,11 +3,12 @@ import Header from '../components/Header/Header.astro';
 import HeadCommon from '../components/HeadCommon.astro';
 import HeadSEO from '../components/HeadSEO.astro';
 import LeftSidebar from '../components/LeftSidebar/LeftSidebar.astro';
-import Footer from '../components/Footer/Footer.astro';
+import Hero from '../components/Hero.astro';
 import { normalizeLangTag } from '../i18n/bcp-normalize';
 import { rtlLanguages } from '../i18n/languages';
 import { useTranslations } from '../i18n/util';
 import { getLanguageFromURL } from '../util';
+import { getBreadcrumb } from '../util/getBreadcrumb';
 import HeadImports from './HeadImports.astro';
 
 const { content = {} } = Astro.props;
@@ -19,18 +20,22 @@ const bcpLang = normalizeLangTag(lang);
 const currentPage = url.pathname;
 const t = useTranslations(Astro);
 const formatTitle = (content: { title?: string }) => {
-	console.log(content.title, t('site.title'))
 	if(content.title) {
 		if(content.title == t('site.title')) {
 			return t('site.title')
 		}
-		return `${content.title} - ${t('site.title')}` 
-	} 
+		return `${content.title} - ${t('site.title')}`
+	}
 	return t('site.title');
 }
 // Ensures the canonicalURL always has a trailing slash.
 const canonicalURL = new URL(Astro.url.pathname.replace(/([^/])$/, '$1/'), Astro.site);
 if (isFallback) canonicalURL.pathname = canonicalURL.pathname.replace(`/${lang}/`, '/en/');
+
+// Hero (derived from frontmatter + nav). Description falls back to metaDescription.
+const heroTitle = content.title || t('site.title');
+const heroDesc = content.description || content.metaDescription || '';
+const breadcrumb = getBreadcrumb(currentPage);
 ---
 
 <html dir={direction} lang={bcpLang} class="initial">
@@ -39,56 +44,63 @@ if (isFallback) canonicalURL.pathname = canonicalURL.pathname.replace(`/${lang}/
 		<HeadSEO {content} {canonicalURL} site={Astro.site} />
 		<title set:html={formatTitle(content)}></title>
 		<!-- Following import contains openreplay Tracker, fonts used in Docs -->
-		<HeadImports /> 
+		<HeadImports />
 	</head>
 
 	<body class={content.baseClass || ""}>
 		<Header {currentPage} />
-		
+
 		{/* Mobile Overlay Sidebar */}
 		<aside
 			id="mobile-left-sidebar"
-			class="lg:hidden fixed inset-y-0 left-0 w-10/1 bg-theme-default overflow-y-auto transform -translate-x-full transition-transform duration-300 ease-in-out z-50"
+			class="md:hidden fixed top-14 bottom-0 left-0 w-[300px] max-w-[85vw] overflow-y-auto z-50 or-noscroll or-drawer"
 		>
 			<LeftSidebar {currentPage} />
+			<div class="or-mobile-footer">
+				<button
+					type="button"
+					class="or-mobile-theme"
+					aria-label="Toggle theme"
+					onclick="(function(){var r=document.documentElement;var d=r.classList.toggle('theme-dark');r.classList.toggle('theme-light',!d);try{localStorage.setItem('theme',d?'dark':'light')}catch(e){}})()"
+				>
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"></path></svg>
+				</button>
+			</div>
 		</aside>
 
 		{/* Mobile Background Overlay */}
 		<div
 			id="mobile-overlay"
-			class="lg:hidden fixed inset-0 bg-black bg-opacity-90 opacity-0 pointer-events-none transition-opacity duration-300 z-40"
+			class="md:hidden fixed inset-0 bg-black bg-opacity-90 opacity-0 pointer-events-none transition-opacity duration-300 z-40"
 			onclick="closeMobileMenu()"
 		></div>
-		
-		<main class="layout max-w-screen-2xl h-screen lg:flex mx-auto justify-between pt-20">
-			<aside id="left-sidebar" class="hidden lg:block w-3/12 p-4 pt-0 overflow-y-auto h-full">
+
+		<main class="or-shell">
+			<aside id="left-sidebar" class="or-left or-noscroll hidden md:block">
 				<LeftSidebar {currentPage} />
 			</aside>
-		
-			<div class="flex-1 flex flex-col overflow-y-auto">
-				<div class="flex-grow flex flex-col xl:flex-row w-full">
-					<div id="main-content" class="p-6 pt-0 xl:w-9/12 min-w-0">
-						<div class="max-w-3xl mx-auto xl:mx-0">
-							<slot />
-						</div>
+
+			<div class="or-main" id="or-main-scroll">
+				<Hero title={heroTitle} description={heroDesc} breadcrumb={breadcrumb} />
+				<div class="or-main-wrap">
+					<div class="or-article-col">
+						<slot />
 					</div>
-					<div id="right-sidebar" class="hidden xl:block xl:w-3/12 px-4 flex-shrink-0">
-						<div class="xl:sticky xl:top-0">
+					<aside id="right-sidebar" class="or-toc">
+						<div class="or-toc-sticky">
 							<slot name="secondary-sidebar" />
 						</div>
-					</div>
+					</aside>
 				</div>
-				<div class="xl:ps-6 xl:pe-20"><Footer /></div>
 			</div>
 		</main>
 		<script>
-			// Declare the type for TypeScript
 			declare global {
 				interface Window {
 					closeMobileMenu: () => void;
 				}
 			}
-			
+
 			window.closeMobileMenu = () => {
 				document.body.classList.remove('mobile-sidebar-toggle');
 				window.dispatchEvent(new CustomEvent('mobile-sidebar-closed'));
@@ -96,17 +108,6 @@ if (isFallback) canonicalURL.pathname = canonicalURL.pathname.replace(`/${lang}/
 		</script>
 	</body>
 </html>
-
-<style>
-	/* If the body has the class "mobile-sidebar-toggle", slide-in the mobile sidebar */
-    body.mobile-sidebar-toggle #mobile-left-sidebar {
-        @apply translate-x-0;
-    }
-
-    body.mobile-sidebar-toggle #mobile-overlay {
-        @apply opacity-100 pointer-events-auto;
-    }
-</style>
 
 <style is:global>
 	/* Code blocks are always English/LTR — keep them left-aligned even on RTL

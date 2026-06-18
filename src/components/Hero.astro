@@ -1,0 +1,100 @@
+---
+export interface Props {
+	title: string;
+	description?: string;
+	breadcrumb?: string[];
+}
+const { title, description, breadcrumb = [] } = Astro.props as Props;
+---
+
+<div class="or-hero">
+	<div class="or-hero-dots"></div>
+	{
+		breadcrumb.length > 0 && (
+			<nav class="or-hero-crumb" aria-label="Breadcrumb">
+				{breadcrumb.map((c, i) => (
+					<>
+						{i > 0 && <span class="sep">/</span>}
+						{i === breadcrumb.length - 1 ? <span class="cur">{c}</span> : <span>{c}</span>}
+					</>
+				))}
+			</nav>
+		)
+	}
+	<h1 class="or-hero-h1" set:html={title}></h1>
+	{description && <p class="or-hero-desc">{description}</p>}
+</div>
+
+<style>
+	.or-hero {
+		position: relative;
+		padding: 40px 56px 36px;
+		overflow: hidden;
+	}
+	:global(html:not(.theme-dark)) .or-hero {
+		background: radial-gradient(125% 150% at 88% -35%, #dfe3ff, #eceeff 38%, #f1f1fb 66%, var(--page) 88%);
+		border-bottom: 1px solid var(--or-border);
+	}
+	:global(html.theme-dark) .or-hero {
+		background: radial-gradient(120% 150% at 85% -30%, rgba(255, 0, 195, 0.4), rgba(123, 47, 151, 0.18) 38%, #0d033b 70%);
+	}
+
+	.or-hero-dots {
+		position: absolute;
+		top: 0;
+		inset-inline-end: 0;
+		width: 240px;
+		height: 100%;
+		background-image: radial-gradient(currentColor 1px, transparent 1.5px);
+		background-size: 16px 16px;
+		-webkit-mask-image: linear-gradient(to left, #000, transparent);
+		mask-image: linear-gradient(to left, #000, transparent);
+		pointer-events: none;
+	}
+	:global(html:not(.theme-dark)) .or-hero-dots { color: var(--accent); opacity: 0.55; }
+	:global(html.theme-dark) .or-hero-dots { color: rgba(255, 255, 255, 0.32); opacity: 0.5; }
+
+	.or-hero-crumb {
+		position: relative;
+		font-size: 13px;
+		margin-bottom: 16px;
+		color: var(--text-3);
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+	}
+	:global(html.theme-dark) .or-hero-crumb { color: rgba(255, 255, 255, 0.55); }
+	.or-hero-crumb .sep { opacity: 0.5; margin: 0 7px; }
+	.or-hero-crumb .cur { color: var(--text-2); }
+	:global(html.theme-dark) .or-hero-crumb .cur { color: rgba(255, 255, 255, 0.92); }
+
+	.or-hero-h1 {
+		position: relative;
+		font-family: var(--fd);
+		font-weight: 700;
+		font-size: 42px;
+		line-height: 1.05;
+		letter-spacing: -0.02em;
+		margin: 0;
+		max-width: 640px;
+		color: var(--text);
+	}
+	:global(html.theme-dark) .or-hero-h1 { color: #fff; }
+
+	.or-hero-desc {
+		position: relative;
+		font-size: 17.5px;
+		line-height: 1.5;
+		margin: 15px 0 0;
+		max-width: 600px;
+		color: var(--text-2);
+	}
+	:global(html.theme-dark) .or-hero-desc { color: rgba(255, 255, 255, 0.72); }
+
+	@media (max-width: 768px) {
+		.or-hero { padding: 26px 22px 24px; }
+		.or-hero-h1 { font-size: 30px; }
+		.or-hero-desc { font-size: 15px; }
+		.or-hero-dots { width: 120px; }
+	}
+</style>
