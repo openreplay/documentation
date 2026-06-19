@@ -824,6 +824,13 @@ body.or-home-page .content h2 { font-size: 27px; }
 }
 .content a.prov-tile:hover { border-color: var(--accent-ring); box-shadow: var(--shadow-md); }
 .content .prov-tile img { width: 20px; height: 18px; object-fit: contain; display: block; flex: none; border: 0; border-radius: 0; }
+/* The AWS mark is a wide 64×40 logo; inside a square-ish box `contain` makes it
+   width-limited and renders it noticeably shorter than the square provider marks
+   (Azure/GCP/DigitalOcean). Let it keep its own aspect at the shared 18px height
+   so it visually matches the others. Applies to both the home provider tiles and
+   the getting-started provider chips. */
+.content .prov-tile img[src$="aws.svg"],
+.content a.or-chip img[src$="aws.svg"] { width: auto; height: 18px; }
 
 /* Looking for help */
 .content .lh-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-3); margin: 0 0 12px; }
@@ -1187,3 +1194,20 @@ a :hover, a :focus,
 [dir='rtl'] .content .gs-learn:hover::after,
 [dir='rtl'] .content .learn-more:hover::after,
 [dir='rtl'] .content a.card:hover .learn-more::after { transform: scaleX(-1) translateX(4px); }
+
+/* Leading "→" markers are ::before pseudo-elements, i.e. the FIRST flex item, so
+   in RTL they sit at the start (the right) — stranded before the text. Move them
+   to the END (now the left) with order, so each row reads text-then-arrow in the
+   RTL reading order. (Trailing arrows — or-row-arr / jc-arr / lh-arr / *-learn::after
+   — are already pushed to the left end above, so they need no change.) */
+[dir='rtl'] .content .gs-grid a::before,
+[dir='rtl'] .content ul.or-linklist li::before { order: 1; }
+
+/* Legacy version-snapshot cards wrap their body in the Tailwind `text-left`
+   utility, which forces LTR alignment. In RTL that left-aligns the Arabic text
+   while the list marker stays on the (start) right edge, leaving a huge gap.
+   Re-align lists inside those cards to the reading direction so markers sit next
+   to their text. (Latest pages don't use text-left, so this only touches the
+   frozen snapshots — no page files are modified.) */
+[dir='rtl'] .content .text-left :is(ul, ol),
+[dir='rtl'] .content .text-left :is(ul, ol) li { text-align: right; }
