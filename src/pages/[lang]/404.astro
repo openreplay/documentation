@@ -77,6 +77,61 @@ const t = useTranslations(Astro);
 	/* ---- Animated 404 robot ("The Yank") + page chrome ----
 	   Everything is namespaced under .or-404 so nothing leaks. Keyframes are global
 	   (not Astro-scoped) so the SVG's inline `animation:` references resolve. */
+
+	/* "The Yank" loop (3.8s): the robot tugs its power cord, a spark pops at the
+	   outlet, its screen flickers out, and it recoils — then recovers and repeats.
+	   The arm group (r4_yank) has no transform-origin, so it only translates; the
+	   body/antenna/spark/shadow groups set transform-box:fill-box inline and rotate
+	   or scale about their own box. */
+	@keyframes r4_yank {
+		0%, 18%   { transform: translate(0, 0); }
+		30%       { transform: translate(-10px, -4px); } /* pull the cord taut */
+		40%       { transform: translate(4px, 2px); }    /* it pops loose */
+		55%, 100% { transform: translate(0, 0); }
+	}
+	@keyframes r4_rock {
+		0%, 22%   { transform: rotate(0deg); }
+		32%       { transform: rotate(2.5deg); }   /* lean into the pull */
+		42%       { transform: rotate(-4.5deg); }  /* recoil from the jolt */
+		54%       { transform: rotate(2deg); }
+		64%       { transform: rotate(-1deg); }
+		74%, 100% { transform: rotate(0deg); }
+	}
+	@keyframes r4_whip {
+		0%, 22%   { transform: rotate(0deg); }
+		34%       { transform: rotate(12deg); }
+		44%       { transform: rotate(-14deg); }   /* antenna snaps back */
+		56%       { transform: rotate(7deg); }
+		66%       { transform: rotate(-3deg); }
+		76%, 100% { transform: rotate(0deg); }
+	}
+	@keyframes r4_spark {
+		0%, 33%   { opacity: 0; transform: scale(0.4); }
+		37%       { opacity: 1; transform: scale(1.15); } /* flash at the outlet */
+		46%       { opacity: 0; transform: scale(0.6); }
+		100%      { opacity: 0; }
+	}
+	@keyframes r4_glow {
+		0%, 34%   { opacity: 0.85; }
+		37%       { opacity: 0.25; }  /* flicker as power is cut */
+		40%       { opacity: 0; }     /* lights out */
+		82%       { opacity: 0; }
+		90%       { opacity: 0.5; }   /* power restored */
+		100%      { opacity: 0.85; }
+	}
+	@keyframes r4_off {
+		0%, 38%   { opacity: 0; }
+		41%       { opacity: 1; }     /* dark screen overlay shows */
+		82%       { opacity: 1; }
+		92%, 100% { opacity: 0; }     /* screen comes back on */
+	}
+	@keyframes r4_shadow {
+		0%, 22%   { transform: scaleX(1); opacity: 1; }
+		42%       { transform: scaleX(0.9); opacity: 0.78; } /* recoil lifts it slightly */
+		64%       { transform: scaleX(1.03); opacity: 1; }
+		74%, 100% { transform: scaleX(1); opacity: 1; }
+	}
+
 	.or-404 {
 		text-align: center;
 		max-width: 560px;

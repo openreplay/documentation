@@ -81,56 +81,33 @@ body {
 	border-inline-end: 1px solid var(--or-border);
 	transform: translateX(-100%);
 	transition: transform 0.25s ease;
+	/* Keep scroll momentum inside the drawer instead of chaining to the page behind
+	   it (which made it hard to scroll the menu back up on iOS). */
+	overscroll-behavior: contain;
 }
 [dir='rtl'] .or-drawer { transform: translateX(100%); }
 body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { transform: translateX(0); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3); }
 #mobile-overlay { transition: opacity 0.25s ease; }
 body.mobile-sidebar-toggle #mobile-overlay { opacity: 1 !important; pointer-events: auto !important; }
 
-/* mobile drawer footer */
-.or-mobile-footer { display: none; }
-@media (max-width: 768px) {
-	.or-mobile-footer {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		margin: 18px 14px;
-		padding-top: 16px;
-		border-top: 1px solid var(--or-border);
-	}
-	.or-mobile-theme {
-		width: 38px;
-		height: 38px;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		border-radius: 9999px;
-		border: 1px solid var(--or-border);
-		background: var(--surface);
-		color: var(--text-2);
-		cursor: pointer;
-	}
+/* When the drawer is open, lock the background page scroll (.or-main) so touch
+   scrolling stays inside the drawer instead of chaining into the page behind it. */
+body.mobile-sidebar-toggle .or-main { overflow: hidden; }
+
+/* The header has a translucent background + backdrop blur. The dark #mobile-overlay
+   sits behind it, so the blur sampled the overlay and turned the header grey when the
+   drawer opened. Make the header solid (no blur) while the drawer is open. */
+body.mobile-sidebar-toggle header {
+	background: var(--page);
+	-webkit-backdrop-filter: none;
+	backdrop-filter: none;
 }
 
-/* The mobile drawer footer (.or-mobile-footer > .or-mobile-theme) already supplies
-   the theme toggle. LeftSidebar still ships a legacy in-sidebar ThemeToggleButton
-   (isInsideHeader=false → .theme-toggle-pill:not(.in-header)) that duplicates it and
-   crowds/overlaps the bottom nav rows in the drawer. Hide the legacy one in the
-   sidebar contexts; the LanguageSelect in that row stays. The header toggle
-   (.in-header) is unaffected. */
-.or-drawer .theme-toggle-pill:not(.in-header),
-.or-left .theme-toggle-pill:not(.in-header) {
-	display: none !important;
-}
-
-/* In the mobile drawer the <nav> and the footer (.or-mobile-footer) are siblings,
-   so the nav must size to its content and let the footer flow BELOW all nav rows.
-   LeftSidebar's nav carries Tailwind `h-full` (height:100%), which caps the nav
-   box to the drawer height while its rows overflow *visibly* past it — the footer
-   (theme toggle) was then painted ON TOP of the mid-list nav rows. Override h-full
-   here so the nav grows to its real height. Scoped to the drawer only: the desktop
-   `.or-left` keeps its in-nav footer as a flow list-item (not a sibling), so it has
-   no overlap and needs no override. */
+/* In the mobile drawer the whole <nav> scrolls. LeftSidebar's nav carries Tailwind
+   `h-full` (height:100%), which caps the nav box to the drawer height while its
+   content (nav rows + the theme/language footer row) overflows past it. Let the nav
+   size to its real height so the drawer scrolls cleanly. Scoped to the drawer; the
+   desktop `.or-left` is unaffected. */
 .or-drawer .or-sidenav {
 	height: auto;
 }
