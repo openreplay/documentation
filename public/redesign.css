@@ -104,11 +104,12 @@ body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { transform: translate
 #mobile-overlay { transition: opacity 0.25s ease; touch-action: none; }
 body.mobile-sidebar-toggle #mobile-overlay { opacity: 1 !important; pointer-events: auto !important; }
 
-/* When the drawer is open, lock the page scroll behind it. On phones the document is
-   the scroller (see the media query above), so lock the document itself — not .or-main
-   — and overscroll-behavior:contain on the drawer keeps touch scrolling inside it. */
-html:has(body.mobile-sidebar-toggle),
-body.mobile-sidebar-toggle { overflow: hidden; }
+/* We deliberately do NOT lock the page scroll with `overflow:hidden` on html/body when
+   the drawer opens. On phones the document is the scroller, and toggling overflow on the
+   ROOT scroller makes iOS Safari snap its toolbar back to the expanded state and leaves a
+   stuck black gap at the bottom that persists even after the drawer closes. Background
+   containment is handled instead without touching the root scroller: the drawer's
+   overscroll-behavior:contain (above) plus the overlay's touch-action:none (above). */
 
 /* The header has a translucent background + backdrop blur. The dark #mobile-overlay
    sits behind it, so the blur sampled the overlay and turned the header grey when the
