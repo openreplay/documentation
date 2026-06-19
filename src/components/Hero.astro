@@ -9,27 +9,36 @@ const { title, description, breadcrumb = [] } = Astro.props as Props;
 
 <div class="or-hero">
 	<div class="or-hero-dots"></div>
-	{
-		breadcrumb.length > 0 && (
-			<nav class="or-hero-crumb" aria-label="Breadcrumb">
-				{breadcrumb.map((c, i) => (
-					<>
-						{i > 0 && <span class="sep">/</span>}
-						{i === breadcrumb.length - 1 ? <span class="cur">{c}</span> : <span>{c}</span>}
-					</>
-				))}
-			</nav>
-		)
-	}
-	<h1 class="or-hero-h1" set:html={title}></h1>
-	{description && <p class="or-hero-desc">{description}</p>}
+	<div class="or-hero-inner">
+		{
+			breadcrumb.length > 0 && (
+				<nav class="or-hero-crumb" aria-label="Breadcrumb">
+					{breadcrumb.map((c, i) => (
+						<>
+							{i > 0 && <span class="sep">/</span>}
+							{i === breadcrumb.length - 1 ? <span class="cur">{c}</span> : <span>{c}</span>}
+						</>
+					))}
+				</nav>
+			)
+		}
+		<h1 class="or-hero-h1" set:html={title}></h1>
+		{description && <p class="or-hero-desc">{description}</p>}
+	</div>
 </div>
 
 <style>
 	.or-hero {
 		position: relative;
-		padding: 40px 56px 36px;
+		padding: 40px 0 36px;
 		overflow: hidden;
+	}
+	/* center the hero content on the same 1140px column as the body, while the
+	   glow band itself stays full-width */
+	.or-hero-inner {
+		max-width: var(--or-content-max);
+		margin-inline: auto;
+		padding-inline: 56px;
 	}
 	:global(html:not(.theme-dark)) .or-hero {
 		background: radial-gradient(125% 150% at 88% -35%, #dfe3ff, #eceeff 38%, #f1f1fb 66%, var(--page) 88%);
@@ -92,7 +101,8 @@ const { title, description, breadcrumb = [] } = Astro.props as Props;
 	:global(html.theme-dark) .or-hero-desc { color: rgba(255, 255, 255, 0.72); }
 
 	@media (max-width: 768px) {
-		.or-hero { padding: 26px 22px 24px; }
+		.or-hero { padding: 26px 0 24px; }
+		.or-hero-inner { padding-inline: 22px; }
 		.or-hero-h1 { font-size: 30px; }
 		.or-hero-desc { font-size: 15px; }
 		.or-hero-dots { width: 120px; }
