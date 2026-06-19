@@ -30,19 +30,20 @@ readFile(__dirname + '/../public/search-index.json', (err, data) => {
                 body: page.body
             })
         })
-        const chunkSize = 500;
-        for (let i = 0; i < objects.length; i += chunkSize) {
-            const chunk = objects.slice(i, i + chunkSize);
-            // do wher
-            index.saveObjects(chunk)
+        // replaceAllObjects atomically replaces the ENTIRE index with the current
+        // build's objects (temp index + atomic move, batching handled internally).
+        // Records for pages that no longer exist — e.g. old slug formats left over
+        // from earlier deploys — are dropped instead of lingering forever.
+        // saveObjects() only added/updated and never deleted, which is what left
+        // stale duplicates in the index.
+        index.replaceAllObjects(objects, { safe: true })
             .then( ({objectIDs}) => {
-                console.log(objectIDs.length, " elements indexed")
+                console.log(objectIDs.length, " elements indexed (index fully replaced)")
+                console.log("Process done")
             }).catch( err => {
                 console.log(err)
                 console.log(err.transporterStackTrace)
             })
-        }    
-        console.log("Process done")
     } catch (e) {
         console.error("Error parsing index JSON data")
         console.error(e)

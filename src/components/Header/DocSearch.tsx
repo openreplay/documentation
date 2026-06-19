@@ -66,6 +66,13 @@ export default function Search({ lang = 'en', labels }: Props) {
 			// searchParameters={{ facetFilters: [`lang:${lang}`, `version:${version}`] }}
 			// hitComponent={CustomHit}
 			transformItems={(items) => {
+				// Production/preview builds serve the default locale (en) at the site
+				// root (e.g. /installation/...), so a slug like "en/installation/x"
+				// must drop its /en prefix or the result 404s. On localhost pages are
+				// served under /en/, so keep it there.
+				const onLocalhost =
+					typeof location !== 'undefined' &&
+					(location.hostname === 'localhost' || location.hostname.startsWith('127.'));
 				return items.map((item) => {
 					// We transform the absolute URL into a relative URL to
 					// work better on localhost, preview URLS.
@@ -74,9 +81,10 @@ export default function Search({ lang = 'en', labels }: Props) {
 					item.type = 'lvl1';
 					item.title = '';
 					const hash = a.hash === '#overview' ? '' : a.hash;
+					const pathname = onLocalhost ? a.pathname : a.pathname.replace(/^\/en(?=\/|$)/, '');
 					return {
 						...item,
-						url: `${a.pathname}${hash}`,
+						url: `${pathname || '/'}${hash}`,
 					};
 				});
 			}}
