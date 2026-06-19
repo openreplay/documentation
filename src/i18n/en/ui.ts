@@ -57,8 +57,8 @@ export default {
 	'fallbackContent.linkText': 'Learn more about how you can contribute',
 	// 404 Page
 	'404.title': 'Not Found',
-	'404.content': 'This page isn’t in our solar system.',
-	'404.linkText': 'Take me home.',
+	'404.content': 'Looks like this page got unplugged.',
+	'404.linkText': 'Take me home',
 	// Aside component default labels
 	'aside.note': 'Note',
 	'aside.tip': 'Tip',

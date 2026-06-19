@@ -53,8 +53,8 @@ export default UIDictionary({
 	'fallbackContent.linkText': 'En savoir plus sur la façon de contribuer',
 	// 404 Page
 	'404.title': 'Page introuvable',
-	'404.content': 'Cette page ne fait pas partie de notre système solaire.',
-	'404.linkText': 'Ramenez moi à la maison',
+	'404.content': 'On dirait que cette page a été débranchée.',
+	'404.linkText': 'Retour à l’accueil',
 	// Aside component default labels
 	'aside.note': 'Note',
 	'aside.tip': 'Astuce',

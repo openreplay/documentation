@@ -1,6 +1,10 @@
 import { UIDictionary } from '../translation-checkers';
 
 export default UIDictionary({
+	// 404 Page
+	'404.title': 'الصفحة غير موجودة',
+	'404.content': 'يبدو أن هذه الصفحة قد فُصلت عن الطاقة.',
+	'404.linkText': 'العودة إلى الصفحة الرئيسية',
 	'leftSidebar.a11yTitle': 'التنقل الرئيسي',
 	'leftSidebar.learnTab': 'التعلّم',
 	'leftSidebar.referenceTab': 'المرجع',
