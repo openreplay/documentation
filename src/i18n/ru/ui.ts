@@ -1,6 +1,10 @@
 import { UIDictionary } from '../translation-checkers';
 
 export default UIDictionary({
+	// 404 Page
+	'404.title': 'Страница не найдена',
+	'404.content': 'Похоже, эта страница отключилась от сети.',
+	'404.linkText': 'На главную',
 	'rightSidebar.onThisPage': 'На этой странице',
 	'aside.note': 'Заметка',
 	'aside.tip': 'Подсказка',

@@ -58,6 +58,6 @@ export default UIDictionary({
 	'fallbackContent.linkText': 'Más información sobre cómo contribuir',
 	// 404 Page
 	'404.title': 'No encontrado',
-	'404.content': 'Esta página no está en nuestro sistema solar.',
-	'404.linkText': 'Volver a la página principal.',
+	'404.content': 'Parece que esta página se desconectó.',
+	'404.linkText': 'Volver al inicio',
 });

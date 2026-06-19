@@ -1,6 +1,10 @@
 import { UIDictionary } from '../translation-checkers';
 
 export default UIDictionary({
+	// 404 Page
+	'404.title': '未找到页面',
+	'404.content': '这个页面似乎已断电。',
+	'404.linkText': '返回首页',
 	'leftSidebar.a11yTitle': '主要',
 	'leftSidebar.learnTab': '学习',
 	'leftSidebar.referenceTab': '参考',
