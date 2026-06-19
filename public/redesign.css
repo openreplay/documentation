@@ -53,6 +53,16 @@ body {
 	overflow-y: auto;
 }
 
+/* Phone (the sidebar is a drawer and the TOC is hidden): drop the app shell's inner
+   scroll and let the DOCUMENT scroll instead. iOS Safari only retracts its toolbar on
+   a root-level scroll — with an inner scroller it stayed pinned and the page lost that
+   toolbar's worth of height ("not full height" on Safari; Chrome has no such toolbar,
+   so it looked fine). */
+@media (max-width: 767.98px) {
+	.or-shell { height: auto; overflow: visible; }
+	.or-main { overflow: visible; }
+}
+
 .or-main-wrap {
 	display: flex;
 	align-items: flex-start;
@@ -90,9 +100,11 @@ body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { transform: translate
 #mobile-overlay { transition: opacity 0.25s ease; }
 body.mobile-sidebar-toggle #mobile-overlay { opacity: 1 !important; pointer-events: auto !important; }
 
-/* When the drawer is open, lock the background page scroll (.or-main) so touch
-   scrolling stays inside the drawer instead of chaining into the page behind it. */
-body.mobile-sidebar-toggle .or-main { overflow: hidden; }
+/* When the drawer is open, lock the page scroll behind it. On phones the document is
+   the scroller (see the media query above), so lock the document itself — not .or-main
+   — and overscroll-behavior:contain on the drawer keeps touch scrolling inside it. */
+html:has(body.mobile-sidebar-toggle),
+body.mobile-sidebar-toggle { overflow: hidden; }
 
 /* The header has a translucent background + backdrop blur. The dark #mobile-overlay
    sits behind it, so the blur sampled the overlay and turned the header grey when the
