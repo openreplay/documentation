@@ -20,9 +20,30 @@ const MenuToggle: FunctionalComponent = () => {
     useEffect(() => {
         const body = document.getElementsByTagName('body')[0];
         if (sidebarShown) {
+            // iOS-safe scroll lock: pin the page at its current offset with position:fixed.
+            // On phones the document is the scroller; toggling `overflow:hidden` on the root
+            // instead makes iOS Safari's toolbar stick and leaves a black gap. Pinning the
+            // body and restoring the scroll on close keeps the toolbar behaving normally.
+            const scrollY = window.scrollY;
+            body.dataset.scrollLock = String(scrollY);
             body.classList.add('mobile-sidebar-toggle');
+            body.style.position = 'fixed';
+            body.style.top = `-${scrollY}px`;
+            body.style.left = '0';
+            body.style.right = '0';
         } else {
+            const locked = body.dataset.scrollLock;
             body.classList.remove('mobile-sidebar-toggle');
+            body.style.position = '';
+            body.style.top = '';
+            body.style.left = '';
+            body.style.right = '';
+            if (locked !== undefined) {
+                delete body.dataset.scrollLock;
+                // Restoring the offset also re-establishes the scroll context, so iOS Safari
+                // resumes hiding/showing its toolbar on scroll after the menu closes.
+                window.scrollTo(0, parseInt(locked, 10) || 0);
+            }
         }
         openCurrentMenu();
     }, [sidebarShown]);
