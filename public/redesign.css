@@ -90,7 +90,13 @@ body {
 	padding: 14px 12px 0;
 	border-inline-end: 1px solid var(--or-border);
 	transform: translateX(-100%);
-	transition: transform 0.25s ease;
+	/* `display:none` when closed removes the drawer from the layout entirely. A
+	   persistent full-viewport position:fixed element makes iOS Safari pin its layout
+	   viewport to the toolbar-hidden height and never revert — which leaves a stuck black
+	   gap at the bottom (on scroll-up) after the menu has been opened once, until reload.
+	   `allow-discrete` keeps the slide animation while still ending at display:none. */
+	display: none;
+	transition: transform 0.25s ease, display 0.25s allow-discrete;
 	/* Keep scroll momentum inside the drawer instead of chaining to the page behind
 	   it (which made it hard to scroll the menu back up on iOS). */
 	overscroll-behavior: contain;
@@ -109,13 +115,20 @@ body {
 	height: 38px;
 }
 [dir='rtl'] .or-drawer { transform: translateX(100%); }
-body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { transform: translateX(0); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3); }
+body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { display: block; transform: translateX(0); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3); }
+/* Slide-in start state (for the display:none → block transition above). */
+@starting-style {
+	body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { transform: translateX(-100%); }
+	[dir='rtl'] body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { transform: translateX(100%); }
+}
 /* touch-action:none stops a drag on the overlay from scrolling the page behind the
    drawer. On phones the document is the scroller, where `overflow:hidden` is an
    unreliable lock on iOS Safari; this (plus the drawer's overscroll-behavior:contain)
    keeps the background fixed. Taps still fire, so tap-to-close keeps working. */
-#mobile-overlay { transition: opacity 0.25s ease; touch-action: none; }
-body.mobile-sidebar-toggle #mobile-overlay { opacity: 1 !important; pointer-events: auto !important; }
+/* display:none when closed (same reason as the drawer above) — keep the overlay out of
+   the layout so it can't pin iOS Safari's viewport once the menu has been used. */
+#mobile-overlay { display: none; transition: opacity 0.25s ease; touch-action: none; }
+body.mobile-sidebar-toggle #mobile-overlay { display: block; opacity: 1 !important; pointer-events: auto !important; }
 
 /* We deliberately do NOT lock the page scroll with `overflow:hidden` on html/body when
    the drawer opens. On phones the document is the scroller, and toggling overflow on the
