@@ -96,16 +96,19 @@ body {
 	   gap at the bottom (on scroll-up) after the menu has been opened once, until reload.
 	   `allow-discrete` keeps the slide animation while still ending at display:none. */
 	display: none;
-	transition: transform 0.25s ease, display 0.25s allow-discrete;
 	/* Keep scroll momentum inside the drawer instead of chaining to the page behind
 	   it (which made it hard to scroll the menu back up on iOS). */
 	overscroll-behavior: contain;
-	/* Fill the visible viewport with an explicit height instead of relying on the
-	   Tailwind `bottom-0` on this fixed drawer — iOS Safari can resolve that `bottom`
-	   short, leaving the drawer well above the bottom with a dark gap below it. A dvh
-	   height is viewport-relative and reliable. */
+	/* Fill the FULL screen — including behind the iOS toolbar — so there's no dark band
+	   below the menu. `lvh` is the largest (toolbar-hidden) viewport; the translucent
+	   toolbar floats over the drawer's bottom and the long nav scrolls inside. Safe
+	   because the drawer is display:none when closed, so it can't pin the layout viewport.
+	   The open/close transition lives on the open-state rule below (not here) so closing
+	   is INSTANT — otherwise the drawer lingers ~0.25s before display:none, keeping iOS's
+	   viewport pinned and flashing the gap back (the "weird half-second delay"). */
 	bottom: auto;
-	height: calc(100dvh - var(--theme-navbar-height));
+	height: calc(100vh - var(--theme-navbar-height));
+	height: calc(100lvh - var(--theme-navbar-height));
 }
 
 /* Match the language pill's height to the sidebar's theme-toggle pill (38px) so the
@@ -115,7 +118,7 @@ body {
 	height: 38px;
 }
 [dir='rtl'] .or-drawer { transform: translateX(100%); }
-body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { display: block; transform: translateX(0); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3); }
+body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { display: block; transform: translateX(0); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3); transition: transform 0.25s ease, display 0.25s allow-discrete; }
 /* Slide-in start state (for the display:none → block transition above). */
 @starting-style {
 	body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { transform: translateX(-100%); }
@@ -127,7 +130,7 @@ body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { display: block; tran
    keeps the background fixed. Taps still fire, so tap-to-close keeps working. */
 /* display:none when closed (same reason as the drawer above) — keep the overlay out of
    the layout so it can't pin iOS Safari's viewport once the menu has been used. */
-#mobile-overlay { display: none; transition: opacity 0.25s ease; touch-action: none; }
+#mobile-overlay { display: none; bottom: auto; height: 100vh; height: 100lvh; transition: opacity 0.25s ease; touch-action: none; }
 body.mobile-sidebar-toggle #mobile-overlay { display: block; opacity: 1 !important; pointer-events: auto !important; }
 
 /* We deliberately do NOT lock the page scroll with `overflow:hidden` on html/body when
