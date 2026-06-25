@@ -4,12 +4,11 @@ export default UIDictionary({
 	'a11y.skipLink': 'Aller au contenu principal',
 	'navbar.a11yTitle': 'Navigation principale',
 	// Site settings
-	'site.title': 'Documentation Astro',
+	'site.title': 'Documentation OpenReplay',
 	'site.description':
-		'Compilez des sites plus rapidement avec moins de JavaScript pour vos utilisateurs.',
+		'Suite de session replay open source, conçue pour les développeurs.',
 	'site.og.imageSrc': '/default-og-image.png?v=1',
-	'site.og.imageAlt':
-		"Logo d'Astro dans l'espace, avec une planète violette dans le style de saturne flottant à droite de l'image.",
+	'site.og.imageAlt': 'Suite de session replay open source, conçue pour les développeurs.',
 	// Left Sidebar
 	'leftSidebar.a11yTitle': 'Navigation du site',
 	'leftSidebar.learnTab': 'Apprendre',
