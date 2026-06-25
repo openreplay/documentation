@@ -1,0 +1,150 @@
+---
+/**
+ * Emits schema.org JSON-LD (as a single @graph) for AI/GEO discoverability and
+ * rich results. Every page carries the identity nodes (Organization, WebSite,
+ * SoftwareApplication) so a crawler that fetches a single page gets a complete,
+ * self-resolving entity graph; content (non-home) pages additionally carry a
+ * TechArticle and a BreadcrumbList.
+ *
+ * Deliberately omitted (do not add without a real data source):
+ *  - dateModified: no date exists in frontmatter — fabricating one is worse than none.
+ *  - SearchAction: docs search is a client-side Algolia modal, not a query-string
+ *    URL, so there is no honest urlTemplate to advertise.
+ */
+import { normalizeLangTag } from '../i18n/bcp-normalize';
+import languages from '../i18n/languages';
+import { useTranslations } from '../i18n/util';
+import { getLanguageFromURL } from '../util';
+import { getBreadcrumbTrail } from '../util/getBreadcrumb';
+import { getOgImageUrl } from '../util/getOgImageUrl';
+
+export interface Props {
+	content: any;
+	canonicalURL: URL;
+}
+
+const { content = {}, canonicalURL } = Astro.props;
+const t = useTranslations(Astro);
+const site = Astro.site!; // configured as https://docs.openreplay.com/
+const abs = (path: string) => new URL(path, site).href;
+
+const lang = getLanguageFromURL(canonicalURL.pathname || '/');
+const bcpLang = normalizeLangTag(lang);
+
+// Stable global identifiers (resolved against the OpenReplay product site).
+const ORG_ID = 'https://openreplay.com/#organization';
+const WEBSITE_ID = `${site.origin}/#website`;
+const SOFTWARE_ID = 'https://openreplay.com/#software';
+
+// Is this the (localized) docs homepage? Strip lang + optional version + trailing slash.
+const pageSlug = canonicalURL.pathname
+	.replace(/^\/[a-z-]{2,5}(\/v\d+\.\d+\.\d+)?\//, '')
+	.replace(/\/+$/, '');
+const isHome = pageSlug === '' || pageSlug === 'home';
+
+const organization = {
+	'@type': 'Organization',
+	'@id': ORG_ID,
+	name: 'OpenReplay',
+	url: 'https://openreplay.com',
+	logo: {
+		'@type': 'ImageObject',
+		url: abs('/android-chrome-512x512.png'),
+		width: 512,
+		height: 512,
+		caption: 'OpenReplay',
+	},
+	description:
+		'OpenReplay is an open-source session replay suite for developers — session replay, co-browsing, and product analytics, self-hosted or cloud.',
+	sameAs: [
+		'https://github.com/openreplay',
+		'https://www.linkedin.com/company/openreplay',
+		'https://x.com/OpenReplayHQ',
+		'https://www.youtube.com/@openreplay',
+	],
+};
+
+const website = {
+	'@type': 'WebSite',
+	'@id': WEBSITE_ID,
+	name: t('site.title'),
+	url: abs(`/${lang}/home/`),
+	publisher: { '@id': ORG_ID },
+	inLanguage: Object.keys(languages).map((l) => normalizeLangTag(l)),
+};
+
+const software = {
+	'@type': 'SoftwareApplication',
+	'@id': SOFTWARE_ID,
+	name: 'OpenReplay',
+	applicationCategory: 'DeveloperApplication',
+	operatingSystem: 'Web, Linux',
+	description:
+		'Open-source session replay suite: session replay, co-browsing, and product analytics. Self-hosted or cloud.',
+	url: 'https://openreplay.com',
+	downloadUrl: 'https://github.com/openreplay/openreplay',
+	softwareHelp: abs(`/${lang}/home/`),
+	license: 'https://github.com/openreplay/openreplay/blob/main/LICENSE',
+	// Free to self-host and on the free cloud tier. `offers` is intentionally
+	// omitted: a SoftwareApplication Offer is only rich-result-eligible alongside
+	// an aggregateRating, and we have no honest rating source to cite.
+	isAccessibleForFree: true,
+	publisher: { '@id': ORG_ID },
+};
+
+const graph: Record<string, unknown>[] = [organization, website, software];
+
+if (!isHome) {
+	const title = content.title ?? t('site.title');
+	const description = content.description || content.metaDescription || t('site.description');
+
+	const ogImageUrl = getOgImageUrl(canonicalURL.pathname, !!Astro.params.fallback);
+	const imageSrc = content?.image?.src ?? ogImageUrl ?? t('site.og.imageSrc');
+
+	// Build the breadcrumb trail; guarantee the current page is the final crumb
+	// even when it isn't present in the nav tree.
+	const trail = getBreadcrumbTrail(canonicalURL.pathname);
+	const stripSlash = (s: string) => s.replace(/\/+$/, '');
+	if (stripSlash(trail[trail.length - 1]?.path ?? '') !== stripSlash(canonicalURL.pathname)) {
+		trail.push({ name: title, path: canonicalURL.pathname });
+	}
+	// Top-level docs section (the crumb right after "Docs"), when the page isn't
+	// itself a top-level page. Free to derive from the trail.
+	const articleSection = trail.length > 2 ? trail[1].name : undefined;
+
+	graph.push({
+		'@type': 'TechArticle',
+		'@id': `${canonicalURL.href}#article`,
+		headline: title,
+		name: title,
+		description,
+		url: canonicalURL.href,
+		mainEntityOfPage: canonicalURL.href,
+		inLanguage: bcpLang,
+		...(articleSection ? { articleSection } : {}),
+		image: new URL(imageSrc, site).href,
+		isPartOf: { '@id': WEBSITE_ID },
+		author: { '@id': ORG_ID },
+		publisher: { '@id': ORG_ID },
+		about: { '@id': SOFTWARE_ID },
+		breadcrumb: { '@id': `${canonicalURL.href}#breadcrumb` },
+	});
+
+	graph.push({
+		'@type': 'BreadcrumbList',
+		'@id': `${canonicalURL.href}#breadcrumb`,
+		itemListElement: trail.map((c, i) => ({
+			'@type': 'ListItem',
+			position: i + 1,
+			name: c.name,
+			item: abs(c.path),
+		})),
+	});
+}
+
+const jsonLd = { '@context': 'https://schema.org', '@graph': graph };
+// Escape "<" so a value containing "</script>" can't break out of the tag.
+const serialized = JSON.stringify(jsonLd).replace(/</g, '\\u003c');
+---
+
+<script type="application/ld+json" is:inline set:html={serialized} />
