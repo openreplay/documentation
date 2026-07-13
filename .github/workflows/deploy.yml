@@ -2,9 +2,15 @@ on:
   push:
     branches: [main]
 
+# Serialize deploys: at most one run touches S3 at a time. While one runs, only the
+# LATEST queued push waits (GitHub auto-supersedes older pending runs in the group).
+# cancel-in-progress must stay FALSE: cancelling a run mid "aws s3 sync" kills the
+# upload partway and leaves the live bucket half old / half new for the ~25 min the
+# next run needs to build. A deploy that started always finishes; the queued run
+# then brings the site to the newest commit.
 concurrency:
   group: deploy-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_CONTENT_ACCESS_ID }}
@@ -25,6 +31,9 @@ jobs:
   build-and-deploy:
     name: Build and Deploy
     runs-on: ubuntu-latest-l
+    # Deploys take ~25-28 min; bound a hung run so it can't hold the concurrency
+    # queue for the 6h default and stall every subsequent deploy behind it.
+    timeout-minutes: 60
 
     steps:
     - uses: actions/checkout@v6
