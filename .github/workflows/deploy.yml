@@ -50,8 +50,41 @@ jobs:
           echo "::error::Build looks truncated ($count HTML files < 5000); aborting before --delete sync."
           exit 1
         fi
-    # --delete keeps the bucket in exact sync with the build output, so pages removed
-    # from source (e.g. retired pre-v1.17.0 versions) are also removed from S3.
-    - run: aws s3 sync ./dist/ s3://openreplay-documentation --acl public-read --exact-timestamps --delete
+    # The sync is split into tiered passes so every object gets an explicit
+    # Cache-Control header. Objects used to ship with NO Cache-Control, so browsers
+    # cached them heuristically — iOS Safari served stale /redesign.css for days after
+    # deploys, masking fixes (see the mobile-drawer saga, PRs #278-#284).
+    # Pass order matters: hashed assets go up before the HTML that references them,
+    # so a page served mid-deploy never points at a missing asset.
+    # (--exact-timestamps was dropped from the old command: the AWS CLI only honors
+    # it for S3->local downloads, so it was a no-op here — aws/aws-cli#4460.)
+    - name: Sync hashed assets (cache 1 year, immutable)
+      run: >
+        aws s3 sync ./dist/ s3://openreplay-documentation
+        --exclude "*" --include "_astro/*"
+        --cache-control "public, max-age=31536000, immutable"
+        --acl public-read
+    - name: Sync unhashed static assets (cache 5 min)
+      run: >
+        aws s3 sync ./dist/ s3://openreplay-documentation
+        --exclude "_astro/*" --exclude "*.html"
+        --cache-control "public, max-age=300, must-revalidate"
+        --acl public-read
+    - name: Sync HTML (always revalidate)
+      run: >
+        aws s3 sync ./dist/ s3://openreplay-documentation
+        --exclude "*" --include "*.html"
+        --cache-control "public, max-age=0, must-revalidate"
+        --acl public-read
+    # Deletions run as a separate, UNFILTERED pass: mixing --delete with
+    # --exclude/--include has subtle semantics in the AWS CLI (aws-cli#1268, #4923),
+    # and a filtered delete that went wrong could wipe live objects outside its tier.
+    # --size-only makes this pass provably upload-nothing (every object was just
+    # synced above with identical sizes, so it can't re-upload and strip the
+    # Cache-Control set by the passes above, even under runner clock skew); it only
+    # removes objects that no longer exist in the build, exactly like the old single
+    # sync did (e.g. retired pre-v1.17.0 versions).
+    - name: Remove deleted pages from S3
+      run: aws s3 sync ./dist/ s3://openreplay-documentation --acl public-read --size-only --delete
     - run: aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CF_DISTRIBUTION_ID}} --paths "/*"
 
