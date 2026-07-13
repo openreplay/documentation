@@ -99,16 +99,22 @@ body {
 	/* Keep scroll momentum inside the drawer instead of chaining to the page behind
 	   it (which made it hard to scroll the menu back up on iOS). */
 	overscroll-behavior: contain;
-	/* Fill the FULL screen — including behind the iOS toolbar — so there's no dark band
-	   below the menu. `lvh` is the largest (toolbar-hidden) viewport; the translucent
-	   toolbar floats over the drawer's bottom and the long nav scrolls inside. Safe
-	   because the drawer is display:none when closed, so it can't pin the layout viewport.
+	/* Height comes from inset anchoring — the markup's `top-14 bottom-0` — and NOT from
+	   an explicit viewport-unit height. iOS 26 Safari (Liquid Glass) CLIPS fixed content
+	   that extends past the layout-viewport bottom instead of painting it behind the
+	   toolbar, so the previous `height: calc(100lvh - navbar)` lost its bottom slice
+	   whenever the toolbar was expanded: menu visibly cut short, dark band below it
+	   (Safari's own chrome-tint fill). Fixed upstream in Safari 26.1
+	   (webkit.org/blog/17541, "bottom gap ... viewport-sized fixed containers"), but
+	   26.0 devices remain. An lvh height was also broken on OLDER iOS: the bottom
+	   toolbar-slice of the drawer's own scrollport sat offscreen and a scroll container
+	   can't reveal its own offscreen portion, so the last nav items were unreachable.
+	   A top+bottom-anchored fixed element tracks the layout viewport in BOTH toolbar
+	   states on every iOS version (same pattern as Starlight/Docusaurus/shadcn).
+	   Do NOT add height/min-height in vh/lvh/dvh units here.
 	   The open/close transition lives on the open-state rule below (not here) so closing
 	   is INSTANT — otherwise the drawer lingers ~0.25s before display:none, keeping iOS's
 	   viewport pinned and flashing the gap back (the "weird half-second delay"). */
-	bottom: auto;
-	height: calc(100vh - var(--theme-navbar-height));
-	height: calc(100lvh - var(--theme-navbar-height));
 }
 
 /* Match the language pill's height to the sidebar's theme-toggle pill (38px) so the
@@ -118,7 +124,8 @@ body {
 	height: 38px;
 }
 [dir='rtl'] .or-drawer { transform: translateX(100%); }
-body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { display: block; transform: translateX(0); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3); transition: transform 0.25s ease, display 0.25s allow-discrete; }
+/* Second box-shadow = paint-only bleed below the drawer (same reason as #mobile-overlay). */
+body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { display: block; transform: translateX(0); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3), 0 120px 0 0 var(--page); transition: transform 0.25s ease, display 0.25s allow-discrete; }
 /* Slide-in start state (for the display:none → block transition above). */
 @starting-style {
 	body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { transform: translateX(-100%); }
@@ -129,9 +136,15 @@ body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { display: block; tran
    unreliable lock on iOS Safari; this (plus the drawer's overscroll-behavior:contain)
    keeps the background fixed. Taps still fire, so tap-to-close keeps working. */
 /* display:none when closed (same reason as the drawer above) — keep the overlay out of
-   the layout so it can't pin iOS Safari's viewport once the menu has been used. */
-#mobile-overlay { display: none; bottom: auto; height: 100vh; height: 100lvh; transition: opacity 0.25s ease; touch-action: none; }
-body.mobile-sidebar-toggle #mobile-overlay { display: block; opacity: 1 !important; pointer-events: auto !important; }
+   the layout so it can't pin iOS Safari's viewport once the menu has been used.
+   Sized by the markup's `inset-0` (inset anchoring, not viewport units) for the same
+   iOS 26 clipping reason as the drawer above. The box-shadow is a PAINT-ONLY bleed:
+   on pre-26 iOS the layout viewport ends at the expanded toolbar's top edge, and the
+   translucent toolbar would otherwise show the un-dimmed page through its glass — the
+   solid downward shadow paints the overlay's black into that strip without affecting
+   layout. Never turn this into a height/min-height (see the drawer note above). */
+#mobile-overlay { display: none; touch-action: none; box-shadow: 0 120px 0 0 rgb(0 0 0 / 0.9); }
+body.mobile-sidebar-toggle #mobile-overlay { display: block; }
 
 /* We deliberately do NOT lock the page scroll with `overflow:hidden` on html/body when
    the drawer opens. On phones the document is the scroller, and toggling overflow on the
