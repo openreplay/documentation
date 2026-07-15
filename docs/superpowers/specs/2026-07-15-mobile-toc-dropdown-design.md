@@ -82,7 +82,11 @@ but is **not** the scroller, so the spy never updates and the bottom-of-page gua
 
 ## Edge cases
 
-- **No h2/h3 headings:** MainLayout already skips rendering the slot — no bar.
+- **No h2/h3 headings:** ~~MainLayout already skips rendering the slot — no bar.~~
+  **As built:** the original `headings && …` guard passed for an *empty array*, so
+  MainLayout now checks `headings.some(h => h.depth > 1 && h.depth < 4)`; and because
+  Astro emits the slot wrapper even when the expression is falsy, redesign.css also
+  hides `.fixed-mobile-bar:not(:has(details.toc-mobile-container))`.
 - **RTL (ar-ae):** wrapper carries `dir`; use logical properties throughout; chevron
   rotation is direction-neutral.
 - **Long titles:** single line + `text-overflow: ellipsis` (existing behavior).
@@ -92,6 +96,12 @@ but is **not** the scroller, so the spy never updates and the bottom-of-page gua
   `scroll-margin-top` by the bar height so targets aren't obscured. The bar height is
   declared once as a CSS custom property (e.g. `--or-mobile-toc-h`) and reused by both
   the bar and the `scroll-margin-top` rule, so they can't drift apart.
+  **As built:** the anchor ids sit on the headings themselves (whose scroll-margin is
+  0), not on `.heading-wrapper`, so *scroller padding* is the reliable lever instead:
+  `#or-main-scroll { scroll-padding-top: calc(var(--or-mobile-toc-h) + 24px) }` for the
+  tablet regime, and on phones the `html` scroll-padding is retuned to
+  `calc(navbar + var(--or-mobile-toc-h) + 16px)` — snug under the bar and above the
+  scroll-spy activation line, so the label is correct right after a jump.
 
 ## Verification plan
 

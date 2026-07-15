@@ -25,7 +25,9 @@ import Modal from '../components/Modal.astro';
 	<RightSidebar slot="secondary-sidebar" headings={headings} content={content} githubEditUrl={githubEditUrl} />
 	<PageContent {...{content, previous, next}}>
 		{
-			headings && (
+			/* Match the component's own depth filter (h2/h3): an empty headings array is
+			   truthy and would render a pointless empty dropdown bar on mobile. */
+			headings && headings.some((h: { depth: number }) => h.depth > 1 && h.depth < 4) && (
 				<Fragment slot="before-article">
 					<nav>
 						<TableOfContents
