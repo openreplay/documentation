@@ -45,13 +45,15 @@ const TableOfContents: FunctionalComponent<Props> = ({ headings = [], labels, is
     };
 
     useEffect(() => {
-        // Position-based scroll-spy against the actual scroll container
-        // (#or-main-scroll). An IntersectionObserver top-zone can never
-        // activate the LAST heading (nothing below it pushes it into the zone),
-        // so we pick the last heading above an activation line and add an
-        // explicit "scrolled to bottom" guard.
-        const scroller =
-            (typeof document !== 'undefined' && document.getElementById('or-main-scroll')) || null;
+        // Position-based scroll-spy. Two scroll regimes (see redesign.css "APP SHELL"):
+        // phones (<768px) scroll the DOCUMENT; wider screens scroll #or-main-scroll.
+        // Bind both — only the real scroller emits scroll events — and resolve the
+        // active regime on every update so resizing across the breakpoint just works.
+        // An IntersectionObserver top-zone can never activate the LAST heading
+        // (nothing below it pushes it into the zone), so we pick the last heading
+        // above an activation line and add an explicit "scrolled to bottom" guard.
+        const phoneMQ = window.matchMedia('(max-width: 767.98px)');
+        const innerScroller = document.getElementById('or-main-scroll');
         const headingEls = () =>
             headings
                 .map(({ slug }) => document.getElementById(slug))
@@ -60,6 +62,9 @@ const TableOfContents: FunctionalComponent<Props> = ({ headings = [], labels, is
         const update = () => {
             const els = headingEls();
             if (!els.length) return;
+            const scroller = phoneMQ.matches ? null : innerScroller;
+            // Document regime: the line is viewport-anchored (top = 0). Inner regime:
+            // anchored to the scroller's top edge, as before.
             const top = scroller ? scroller.getBoundingClientRect().top : 0;
             const line = top + 120; // activation line ~120px below the scroll area's top
             let cur = els[0].id;
@@ -67,22 +72,21 @@ const TableOfContents: FunctionalComponent<Props> = ({ headings = [], labels, is
                 if (el.getBoundingClientRect().top <= line) cur = el.id;
             }
             // At (or near) the bottom, the last section is the active one.
-            if (
-                scroller &&
-                scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 8
-            ) {
+            const sc = scroller ?? (document.scrollingElement as HTMLElement | null);
+            if (sc && sc.scrollHeight - sc.scrollTop - sc.clientHeight < 8) {
                 cur = els[els.length - 1].id;
             }
             setCurrentID(cur);
         };
 
-        const target: HTMLElement | Window = scroller || window;
-        target.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('scroll', update, { passive: true });
+        innerScroller?.addEventListener('scroll', update, { passive: true });
         window.addEventListener('resize', update);
         update();
 
         return () => {
-            target.removeEventListener('scroll', update);
+            window.removeEventListener('scroll', update);
+            innerScroller?.removeEventListener('scroll', update);
             window.removeEventListener('resize', update);
         };
     }, [headings.map((h) => h.slug).join('|')]);

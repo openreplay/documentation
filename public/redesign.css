@@ -171,8 +171,122 @@ body.mobile-sidebar-toggle header {
 	height: auto;
 }
 
-/* hide the legacy mobile TOC bar — design hides TOC on small screens */
+/* ===================== MOBILE "ON THIS PAGE" BAR ===================== */
+/* Shown wherever the right-hand TOC is hidden (≤1024px, next block). In-flow at the
+   top of the article, pins on scroll (position:sticky). Phones pin below the fixed
+   header (the DOCUMENT scrolls there); tablets pin at the top of the inner
+   #or-main-scroll scroller (which already starts below the header).
+   Bar height lives in --or-mobile-toc-h so any future offset rules share one source.
+   The dropdown panel's max-height uses svh ONLY — never vh/lvh/dvh — per the iOS 26
+   layout-viewport clipping notes on .or-drawer above.
+   Selectors are ≥(0,2,0) on purpose: the component's legacy TableOfContents.css is
+   bundled into <style> tags whose order vs this file is not guaranteed, so we win on
+   specificity, not order.
+   The `display` toggles carry !important: PageContent.astro's *scoped* <style> sets
+   `.fixed-mobile-bar { display: block }` unconditionally (hiding it only at ≥80em),
+   which the Astro-scoped selector makes as specific as this plain one. Without
+   !important our base hide loses in the 1025–1279px gap (≤1024px here, ≥1280px there),
+   rendering BOTH this bar and the desktop .or-toc. !important restores the win — same
+   pattern as the sibling `.or-toc { display: none !important }` rule below. */
+:root { --or-mobile-toc-h: 44px; }
+
 .fixed-mobile-bar { display: none !important; }
+
+@media (max-width: 1024px) {
+	.fixed-mobile-bar {
+		display: block !important;
+		position: sticky;
+		top: 8px; /* tablet: #or-main-scroll's top edge is already below the header */
+		z-index: 10;
+		margin-bottom: 18px;
+	}
+	/* Pages without h2/h3 headings: MainLayout skips the TOC island, but Astro still
+	   emits the empty slot wrapper — hide it so it doesn't leave a sticky 18px gap.
+	   !important so it still wins over the block !important above (it does on
+	   specificity too, but keep both important to avoid a silent regression). */
+	.fixed-mobile-bar:not(:has(details.toc-mobile-container)) { display: none !important; }
+	.fixed-mobile-bar .toc-mobile-container {
+		display: block;
+		position: relative; /* anchors the absolute dropdown panel */
+	}
+	.fixed-mobile-bar .toc-mobile-header {
+		display: flex;
+		align-items: center;
+		height: var(--or-mobile-toc-h);
+		padding: 0 12px;
+		background: var(--page); /* opaque: content scrolls underneath while pinned */
+		border: 1px solid var(--or-border);
+		border-radius: 10px;
+		box-shadow: 0 6px 20px rgb(0 0 0 / 0.07);
+		cursor: pointer;
+	}
+	.fixed-mobile-bar .toc-mobile-header-content,
+	.fixed-mobile-bar .toc-toggle {
+		display: flex;
+		align-items: center;
+		min-width: 0;
+		width: 100%;
+		border: 0;
+		padding: 0;
+	}
+	/* legacy [open] rule paints --theme-bg-offset at (0,2,1); out-specific it */
+	.fixed-mobile-bar .toc-mobile-container[open] .toc-toggle { background: transparent; }
+	.fixed-mobile-bar .toc-mobile-header h2 {
+		flex: none;
+		margin: 0;
+		font-family: var(--fb);
+		font-size: 11px;
+		font-weight: 600;
+		letter-spacing: 0.09em;
+		text-transform: uppercase;
+		color: var(--text-3);
+	}
+	.fixed-mobile-bar .toc-mobile-header svg {
+		flex: none;
+		fill: var(--text-3);
+		margin-inline: 2px 6px;
+	}
+	.fixed-mobile-bar .toc-current-heading {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--text);
+	}
+	/* Anchor jumps must land clear of the pinned bar. Phones already reserve space
+	   via index.css's html scroll-padding (the DOCUMENT is the scroller there); this
+	   covers the tablet regime, where #or-main-scroll is the scroller. The anchor ids
+	   sit on the headings themselves (not .heading-wrapper), so scroller padding is
+	   the reliable lever. */
+	#or-main-scroll { scroll-padding-top: calc(var(--or-mobile-toc-h) + 24px); }
+	.fixed-mobile-bar .or-toc-list {
+		position: absolute;
+		inset-inline: 0;
+		top: calc(var(--or-mobile-toc-h) + 6px);
+		max-height: 60svh; /* svh only — see iOS 26 note above */
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		margin: 0;
+		padding: 10px 12px;
+		background: var(--page);
+		border: 1px solid var(--or-border);
+		border-radius: 12px;
+		box-shadow: 0 18px 44px rgb(0 0 0 / 0.14);
+		transform: none; /* cancel legacy translateY */
+	}
+}
+/* Phones: the document scrolls under the fixed header — pin below it. */
+@media (max-width: 767.98px) {
+	.fixed-mobile-bar { top: calc(var(--theme-navbar-height) + 8px); }
+	/* Anchor-jump landing offset for the document scroller. index.css reserves the
+	   LEGACY bar's 4rem (--theme-mobile-toc-height); size it to the real bar instead
+	   so targets land snug under it — and above the scroll-spy activation line
+	   (~120px), so the current-section label is correct right after a jump. */
+	html { scroll-padding-top: calc(var(--theme-navbar-height) + var(--or-mobile-toc-h) + 16px); }
+}
 
 @media (max-width: 1024px) {
 	.or-toc { display: none !important; }
@@ -532,6 +646,10 @@ body.mobile-sidebar-toggle header {
 	top: 15px;
 	width: 18px;
 	height: 18px;
+	/* reset the 0.1rem 1rem padding inherited from index.css's `blockquote:before`;
+	   otherwise the box is 50px wide and `mask: center / contain` re-centres the icon
+	   ~14px to the right, bleeding it into the "Note:" label. */
+	padding: 0;
 	background: var(--note-ic);
 	-webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M12%202C6.48%202%202%206.48%202%2012s4.48%2010%2010%2010%2010-4.48%2010-10S17.52%202%2012%202zm1%2015h-2v-6h2v6zm0-8h-2V7h2v2z'/%3E%3C/svg%3E") center / contain no-repeat;
 	mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M12%202C6.48%202%202%206.48%202%2012s4.48%2010%2010%2010%2010-4.48%2010-10S17.52%202%2012%202zm1%2015h-2v-6h2v6zm0-8h-2V7h2v2z'/%3E%3C/svg%3E") center / contain no-repeat;
