@@ -171,8 +171,100 @@ body.mobile-sidebar-toggle header {
 	height: auto;
 }
 
-/* hide the legacy mobile TOC bar — design hides TOC on small screens */
-.fixed-mobile-bar { display: none !important; }
+/* ===================== MOBILE "ON THIS PAGE" BAR ===================== */
+/* Shown wherever the right-hand TOC is hidden (≤1024px, next block). In-flow at the
+   top of the article, pins on scroll (position:sticky). Phones pin below the fixed
+   header (the DOCUMENT scrolls there); tablets pin at the top of the inner
+   #or-main-scroll scroller (which already starts below the header).
+   Bar height lives in --or-mobile-toc-h so any future offset rules share one source.
+   The dropdown panel's max-height uses svh ONLY — never vh/lvh/dvh — per the iOS 26
+   layout-viewport clipping notes on .or-drawer above.
+   Selectors are ≥(0,2,0) on purpose: the component's legacy TableOfContents.css is
+   bundled into <style> tags whose order vs this file is not guaranteed, so we win on
+   specificity, not order. */
+:root { --or-mobile-toc-h: 44px; }
+
+.fixed-mobile-bar { display: none; }
+
+@media (max-width: 1024px) {
+	.fixed-mobile-bar {
+		display: block;
+		position: sticky;
+		top: 8px; /* tablet: #or-main-scroll's top edge is already below the header */
+		z-index: 10;
+		margin-bottom: 18px;
+	}
+	.fixed-mobile-bar .toc-mobile-container {
+		display: block;
+		position: relative; /* anchors the absolute dropdown panel */
+	}
+	.fixed-mobile-bar .toc-mobile-header {
+		display: flex;
+		align-items: center;
+		height: var(--or-mobile-toc-h);
+		padding: 0 12px;
+		background: var(--page); /* opaque: content scrolls underneath while pinned */
+		border: 1px solid var(--or-border);
+		border-radius: 10px;
+		box-shadow: 0 6px 20px rgb(0 0 0 / 0.07);
+		cursor: pointer;
+	}
+	.fixed-mobile-bar .toc-mobile-header-content,
+	.fixed-mobile-bar .toc-toggle {
+		display: flex;
+		align-items: center;
+		min-width: 0;
+		width: 100%;
+		border: 0;
+		padding: 0;
+	}
+	/* legacy [open] rule paints --theme-bg-offset at (0,2,1); out-specific it */
+	.fixed-mobile-bar .toc-mobile-container[open] .toc-toggle { background: transparent; }
+	.fixed-mobile-bar .toc-mobile-header h2 {
+		flex: none;
+		margin: 0;
+		font-family: var(--fb);
+		font-size: 11px;
+		font-weight: 600;
+		letter-spacing: 0.09em;
+		text-transform: uppercase;
+		color: var(--text-3);
+	}
+	.fixed-mobile-bar .toc-mobile-header svg {
+		flex: none;
+		fill: var(--text-3);
+		margin-inline: 2px 6px;
+	}
+	.fixed-mobile-bar .toc-current-heading {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--text);
+	}
+	.fixed-mobile-bar .or-toc-list {
+		position: absolute;
+		inset-inline: 0;
+		top: calc(var(--or-mobile-toc-h) + 6px);
+		max-height: 60svh; /* svh only — see iOS 26 note above */
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		margin: 0;
+		padding: 10px 12px;
+		background: var(--page);
+		border: 1px solid var(--or-border);
+		border-radius: 12px;
+		box-shadow: 0 18px 44px rgb(0 0 0 / 0.14);
+		transform: none; /* cancel legacy translateY */
+	}
+}
+/* Phones: the document scrolls under the fixed header — pin below it. */
+@media (max-width: 767.98px) {
+	.fixed-mobile-bar { top: calc(var(--theme-navbar-height) + 8px); }
+}
 
 @media (max-width: 1024px) {
 	.or-toc { display: none !important; }
