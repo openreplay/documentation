@@ -205,6 +205,19 @@ body.mobile-sidebar-toggle header {
 	   !important so it still wins over the block !important above (it does on
 	   specificity too, but keep both important to avoid a silent regression). */
 	.fixed-mobile-bar:not(:has(details.toc-mobile-container)) { display: none !important; }
+	/* While the hamburger drawer is open, drop the bar out of the sticky
+	   (viewport-constrained) layer set. iOS 26.0 WebKit mis-sizes viewport-sized
+	   FIXED containers when its toolbar/layout-viewport recompute fires
+	   (webkit.org/blog/17541 "bottom gap ... viewport-sized fixed containers",
+	   bugs.webkit.org 158055568; trigger cluster: 297779, 300523) — the drawer
+	   rendered cut short again once this always-present sticky bar started
+	   engaging/disengaging on every page scroll. The bar sits behind the
+	   full-screen #mobile-overlay whenever the drawer is open, so demoting it to
+	   static there is invisible to users and removes the extra
+	   viewport-constrained layer at the exact commit where the drawer must be
+	   sized. body-prefixed selector = (0,2,1), deterministically beating
+	   PageContent.astro's scoped sticky rule at (0,2,0). */
+	body.mobile-sidebar-toggle .fixed-mobile-bar { position: static; }
 	.fixed-mobile-bar .toc-mobile-container {
 		display: block;
 		position: relative; /* anchors the absolute dropdown panel */
