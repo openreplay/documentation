@@ -181,22 +181,30 @@ body.mobile-sidebar-toggle header {
    layout-viewport clipping notes on .or-drawer above.
    Selectors are ≥(0,2,0) on purpose: the component's legacy TableOfContents.css is
    bundled into <style> tags whose order vs this file is not guaranteed, so we win on
-   specificity, not order. */
+   specificity, not order.
+   The `display` toggles carry !important: PageContent.astro's *scoped* <style> sets
+   `.fixed-mobile-bar { display: block }` unconditionally (hiding it only at ≥80em),
+   which the Astro-scoped selector makes as specific as this plain one. Without
+   !important our base hide loses in the 1025–1279px gap (≤1024px here, ≥1280px there),
+   rendering BOTH this bar and the desktop .or-toc. !important restores the win — same
+   pattern as the sibling `.or-toc { display: none !important }` rule below. */
 :root { --or-mobile-toc-h: 44px; }
 
-.fixed-mobile-bar { display: none; }
+.fixed-mobile-bar { display: none !important; }
 
 @media (max-width: 1024px) {
 	.fixed-mobile-bar {
-		display: block;
+		display: block !important;
 		position: sticky;
 		top: 8px; /* tablet: #or-main-scroll's top edge is already below the header */
 		z-index: 10;
 		margin-bottom: 18px;
 	}
 	/* Pages without h2/h3 headings: MainLayout skips the TOC island, but Astro still
-	   emits the empty slot wrapper — hide it so it doesn't leave a sticky 18px gap. */
-	.fixed-mobile-bar:not(:has(details.toc-mobile-container)) { display: none; }
+	   emits the empty slot wrapper — hide it so it doesn't leave a sticky 18px gap.
+	   !important so it still wins over the block !important above (it does on
+	   specificity too, but keep both important to avoid a silent regression). */
+	.fixed-mobile-bar:not(:has(details.toc-mobile-container)) { display: none !important; }
 	.fixed-mobile-bar .toc-mobile-container {
 		display: block;
 		position: relative; /* anchors the absolute dropdown panel */
