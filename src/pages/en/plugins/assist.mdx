@@ -106,9 +106,43 @@ trackerAssist({
    * Minimum amount of MESSAGES in a batch to trigger compression run
    * @default 5000
    * */
-   compressionMinBatchSize: number
+  compressionMinBatchSize: number;
+  /**
+   * Show only the first part of an agent's name in the call popup
+   * (e.g. "One Two" -> "One").
+   * @default false
+   */
+  agentShortNames: boolean;
+  /**
+   * Postpone assist start until a userID is set on the session.
+   * @default false
+   */
+  ignoreAnonymous: boolean;
+  /**
+   * When assist connects to the server:
+   * - Autostart.Auto (default): always on tracker start.
+   * - Autostart.Disabled: only via an explicit start() call.
+   * - Autostart.Continuation: only via assist.start(), but the choice is remembered
+   *   in sessionStorage so it auto-continues across page reloads until assist.stop().
+   * @default Autostart.Auto
+   */
+  autostart: Autostart;
 })
 ```
+
+### Autostart
+
+By default, assist connects to the server as soon as the tracker starts. The `autostart` option, together with the `Autostart` enum (exported by the plugin), lets you control this behavior:
+
+```js
+import trackerAssist, { Autostart } from '@openreplay/tracker-assist';
+
+tracker.use(trackerAssist({ autostart: Autostart.Disabled }));
+```
+
+- `Autostart.Auto` (default): assist always connects on tracker start.
+- `Autostart.Disabled`: assist never connects automatically; it starts only via an explicit [`start()`](#methods) call.
+- `Autostart.Continuation`: assist starts only via [`start()`](#methods), but the choice is remembered in `sessionStorage` so it auto-continues across page reloads until [`stop()`](#methods) is called.
 
 ### Widgets Customization
 
@@ -220,6 +254,24 @@ onDragCamera: (dx, dy) => {
   moveCamera(dx, dy)
 }
 ```
+
+## Methods
+
+`tracker.use()` returns the assist instance, which exposes methods to control assist at runtime:
+
+```js
+const assist = tracker.use(trackerAssist(options));
+
+assist.stop();
+assist.start();
+```
+
+- `start()`: (Re)starts assist. It's a no-op if the tracker itself isn't active yet (assist will start together with the tracker). In `Autostart.Continuation` mode, it persists a flag in `sessionStorage` so assist auto-continues across page reloads. An explicit `start()` also supersedes any `ignoreAnonymous` postponement.
+- `stop()`: Stops assist by disconnecting the socket and cleaning up all connections. Assist won't restart automatically until `start()` is called. In `Autostart.Continuation` mode, this also clears the persisted flag, so a reload won't auto-continue.
+
+<Aside type="caution">
+  `tracker.use()` returns `undefined` in environments where assist can't load (e.g. no media devices support, inside an iframe), so guard the returned instance accordingly.
+</Aside>
 
 ## Have questions?
 
