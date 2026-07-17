@@ -127,6 +127,21 @@ trackerAssist({
    * @default Autostart.Auto
    */
   autostart: Autostart;
+  /**
+   * Require explicit user confirmation before anything is shared with an
+   * agent: assist starts and opens the socket as usual, but no messages are
+   * sent through it until the user approves the confirmation popup, which is
+   * shown as soon as the first agent connects to the session. The approval
+   * is remembered per-tab (sessionStorage) until stop() is called.
+   * @default false
+   */
+  requestConfirm: boolean;
+  /** Text/style customization for the session view confirmation popup. */
+  sessionConfirm?: ConfirmOptions;
+  /** Called when the user approves session viewing (requestConfirm mode). */
+  onSessionConfirmApprove?: (agentInfo: Record<string, any>) => any;
+  /** Called when the user denies session viewing (requestConfirm mode). */
+  onSessionConfirmDeny?: (agentInfo: Record<string, any>) => any;
 })
 ```
 
@@ -143,6 +158,23 @@ tracker.use(trackerAssist({ autostart: Autostart.Disabled }));
 - `Autostart.Auto` (default): assist always connects on tracker start.
 - `Autostart.Disabled`: assist never connects automatically; it starts only via an explicit [`start()`](#methods) call.
 - `Autostart.Continuation`: assist starts only via [`start()`](#methods), but the choice is remembered in `sessionStorage` so it auto-continues across page reloads until [`stop()`](#methods) is called.
+
+### Session view confirmation
+
+Set `requestConfirm: true` to require the user's permission before an agent can view their session. Assist starts and connects as usual, but nothing is sent to agents until the user approves the confirmation popup, which is shown as soon as the first agent connects (default text: "Agent requested to view this session live. Allow?"). Once approved, tracking restarts so agents receive a full snapshot of the page.
+
+The approval is remembered per-tab (in `sessionStorage`) until [`stop()`](#methods) is called, which revokes it, so the next [`start()`](#methods) will prompt again.
+
+```js
+tracker.use(trackerAssist({
+  requestConfirm: true,
+  sessionConfirm: { text: 'A support agent would like to view your screen. Allow?' },
+  onSessionConfirmApprove: ({ email, name, query }) => console.log("Session viewing approved"),
+  onSessionConfirmDeny: ({ email, name, query }) => console.log("Session viewing denied"),
+}));
+```
+
+The popup's text and style can be customized via the `sessionConfirm` option, which takes the same `ConfirmOptions` object as `callConfirm` and `controlConfirm` (see [Remote Control Widget](#remote-control-widget)).
 
 ### Widgets Customization
 
@@ -247,6 +279,22 @@ onRecordingDeny: ({ email, name, query }) => {
 }
 ```
 
+- `onSessionConfirmApprove?: (agentInfo: Record<string, any>) => any;`: This callback function is fired when the user approves session viewing (in [`requestConfirm`](#session-view-confirmation) mode) and sends back the agent's details (email, name and query).
+
+```js
+onSessionConfirmApprove: ({ email, name, query }) => {
+  console.log("Session viewing approved for", email)
+}
+```
+
+- `onSessionConfirmDeny?: (agentInfo: Record<string, any>) => any;`: This callback function is fired when the user denies session viewing (in [`requestConfirm`](#session-view-confirmation) mode) and sends back the agent's details (email, name and query).
+
+```js
+onSessionConfirmDeny: ({ email, name, query }) => {
+  console.log("Session viewing denied")
+}
+```
+
 - `onDragCamera?: (dx: number, dy: number) => any;`: This function expects a handler that defines the behavior of a held mouse button within a Three.js canvas for remote control. The handler receives dx and dy, indicating the mouse movement deltas.
 
 ```js
@@ -267,7 +315,7 @@ assist.start();
 ```
 
 - `start()`: (Re)starts assist. It's a no-op if the tracker itself isn't active yet (assist will start together with the tracker). In `Autostart.Continuation` mode, it persists a flag in `sessionStorage` so assist auto-continues across page reloads. An explicit `start()` also supersedes any `ignoreAnonymous` postponement.
-- `stop()`: Stops assist by disconnecting the socket and cleaning up all connections. Assist won't restart automatically until `start()` is called. In `Autostart.Continuation` mode, this also clears the persisted flag, so a reload won't auto-continue.
+- `stop()`: Stops assist by disconnecting the socket and cleaning up all connections. Assist won't restart automatically until `start()` is called. In `Autostart.Continuation` mode, this also clears the persisted flag, so a reload won't auto-continue. In [`requestConfirm`](#session-view-confirmation) mode, it also revokes the user's approval, so the next `start()` will prompt again.
 
 <Aside type="caution">
   `tracker.use()` returns `undefined` in environments where assist can't load (e.g. no media devices support, inside an iframe), so guard the returned instance accordingly.
