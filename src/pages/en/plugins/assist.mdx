@@ -145,23 +145,13 @@ trackerAssist({
 })
 ```
 
-### Autostart
+### Widgets Customization
 
-By default, assist connects to the server as soon as the tracker starts. The `autostart` option, together with the `Autostart` enum (exported by the plugin), lets you control this behavior:
+The live view, remote control as well as the call widgets, those seen by the end user, can be fully customized.
 
-```js
-import trackerAssist, { Autostart } from '@openreplay/tracker-assist';
+#### Live View Widget
 
-tracker.use(trackerAssist({ autostart: Autostart.Disabled }));
-```
-
-- `Autostart.Auto` (default): assist always connects on tracker start.
-- `Autostart.Disabled`: assist never connects automatically; it starts only via an explicit [`start()`](#methods) call.
-- `Autostart.Continuation`: assist starts only via [`start()`](#methods), but the choice is remembered in `sessionStorage` so it auto-continues across page reloads until [`stop()`](#methods) is called.
-
-### Session view confirmation
-
-Set `requestConfirm: true` to require the user's permission before an agent can view their session. Assist starts and connects as usual, but nothing is sent to agents until the user approves the confirmation popup, which is shown as soon as the first agent connects (default text: "Agent requested to view this session live. Allow?"). Once approved, tracking restarts so agents receive a full snapshot of the page.
+Set `requestConfirm: true` to require the user's permission before an agent can view their session live. Assist starts and connects as usual, but the session remains invisible to the agent until the user approves the confirmation popup, which is shown as soon as the first agent connects. Once accepted, tracking restarts and the agent can then see the user's session live.
 
 The approval is remembered per-tab (in `sessionStorage`) until [`stop()`](#methods) is called, which revokes it, so the next [`start()`](#methods) will prompt again.
 
@@ -174,13 +164,25 @@ tracker.use(trackerAssist({
 }));
 ```
 
-The popup's text and style can be customized via the `sessionConfirm` option, which takes the same `ConfirmOptions` object as `callConfirm` and `controlConfirm` (see [Remote Control Widget](#remote-control-widget)).
+The popup's text and style can be customized via the `sessionConfirm` option, which takes the below `ConfirmOptions` object:
 
-### Widgets Customization
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
 
-The remote control as well as the call widgets, those seen by the end user, can be fully customized.
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
 
 #### Remote Control Widget
+
+The popup's text and style can be customized via the `controlConfirm` option, which takes the below `ConfirmOptions` object:
 
 ```js
 type ConfirmOptions = {
@@ -198,7 +200,23 @@ type ButtonOptions = HTMLButtonElement | string | {
 
 #### Call Widget
 
-It's possible to customize every aspect of this widget via the below set of `ids` and `classes`. `Ids` serve as anchors for individual buttons/elements whereas `classes` can be used for group containers.
+The popup's text and style can be customized via the `callConfirm` option, which takes the below `ConfirmOptions` object:
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
+
+It's also possible to customize every aspect of this widget via the below set of `ids` and `classes`. `Ids` serve as anchors for individual buttons/elements whereas `classes` can be used for group containers.
 
 | HTML Type | Name(s) | Description |
 |----------|-------------|-------------|
