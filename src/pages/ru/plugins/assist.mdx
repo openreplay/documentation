@@ -106,15 +106,83 @@ trackerAssist({
    * Minimum amount of MESSAGES in a batch to trigger compression run
    * @default 5000
    * */
-   compressionMinBatchSize: number
+  compressionMinBatchSize: number;
+  /**
+   * Show only the first part of an agent's name in the call popup
+   * (e.g. "One Two" -> "One").
+   * @default false
+   */
+  agentShortNames: boolean;
+  /**
+   * Postpone assist start until a userID is set on the session.
+   * @default false
+   */
+  ignoreAnonymous: boolean;
+  /**
+   * When assist connects to the server:
+   * - Autostart.Auto (default): always on tracker start.
+   * - Autostart.Disabled: only via an explicit start() call.
+   * - Autostart.Continuation: only via assist.start(), but the choice is remembered
+   *   in sessionStorage so it auto-continues across page reloads until assist.stop().
+   * @default Autostart.Auto
+   */
+  autostart: Autostart;
+  /**
+   * Require explicit user confirmation before anything is shared with an
+   * agent: assist starts and opens the socket as usual, but no messages are
+   * sent through it until the user approves the confirmation popup, which is
+   * shown as soon as the first agent connects to the session. The approval
+   * is remembered per-tab (sessionStorage) until stop() is called.
+   * @default false
+   */
+  requestConfirm: boolean;
+  /** Text/style customization for the session view confirmation popup. */
+  sessionConfirm?: ConfirmOptions;
+  /** Called when the user approves session viewing (requestConfirm mode). */
+  onSessionConfirmApprove?: (agentInfo: Record<string, any>) => any;
+  /** Called when the user denies session viewing (requestConfirm mode). */
+  onSessionConfirmDeny?: (agentInfo: Record<string, any>) => any;
 })
 ```
 
 ### Настройка виджетов
 
-Как удалённое управление, так и виджеты звонков, которые видит конечный пользователь, можно полностью настроить.
+Просмотр в реальном времени, удалённое управление, а также виджеты звонков, которые видит конечный пользователь, можно полностью настроить.
+
+#### Виджет просмотра в реальном времени
+
+Установите `requestConfirm: true`, чтобы требовать разрешения пользователя, прежде чем агент сможет просматривать его сессию в реальном времени. Assist запускается и подключается как обычно, но сессия остаётся невидимой для агента до тех пор, пока пользователь не подтвердит запрос во всплывающем окне, которое показывается, как только к сессии подключается первый агент. После принятия отслеживание перезапускается, и агент может видеть сессию пользователя в реальном времени.
+
+Разрешение запоминается для каждой вкладки (в `sessionStorage`) до вызова [`stop()`](#methods), который его отзывает, поэтому следующий вызов [`start()`](#methods) снова покажет запрос.
+
+```js
+tracker.use(trackerAssist({
+  requestConfirm: true,
+  sessionConfirm: { text: 'A support agent would like to view your screen. Allow?' },
+  onSessionConfirmApprove: ({ email, name, query }) => console.log("Session viewing approved"),
+  onSessionConfirmDeny: ({ email, name, query }) => console.log("Session viewing denied"),
+}));
+```
+
+Текст и стиль всплывающего окна можно настроить с помощью опции `sessionConfirm`, которая принимает приведённый ниже объект `ConfirmOptions`:
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
 
 #### Виджет удалённого управления
+
+Текст и стиль всплывающего окна можно настроить с помощью опции `controlConfirm`, которая принимает приведённый ниже объект `ConfirmOptions`:
 
 ```js
 type ConfirmOptions = {
@@ -131,6 +199,22 @@ type ButtonOptions = HTMLButtonElement | string | {
 ```
 
 #### Виджет звонка
+
+Текст и стиль всплывающего окна можно настроить с помощью опции `callConfirm`, которая принимает приведённый ниже объект `ConfirmOptions`:
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
 
 Можно настроить каждый аспект этого виджета с помощью приведённого ниже набора `ids` и `classes`. `Ids` служат якорями для отдельных кнопок/элементов, тогда как `classes` могут использоваться для групповых контейнеров.
 
@@ -213,6 +297,22 @@ onRecordingDeny: ({ email, name, query }) => {
 }
 ```
 
+- `onSessionConfirmApprove?: (agentInfo: Record<string, any>) => any;`: Эта функция обратного вызова срабатывает, когда пользователь подтверждает просмотр сессии (в режиме [`requestConfirm`](#session-view-confirmation)), и возвращает данные агента (email, имя и query).
+
+```js
+onSessionConfirmApprove: ({ email, name, query }) => {
+  console.log("Session viewing approved for", email)
+}
+```
+
+- `onSessionConfirmDeny?: (agentInfo: Record<string, any>) => any;`: Эта функция обратного вызова срабатывает, когда пользователь отклоняет просмотр сессии (в режиме [`requestConfirm`](#session-view-confirmation)), и возвращает данные агента (email, имя и query).
+
+```js
+onSessionConfirmDeny: ({ email, name, query }) => {
+  console.log("Session viewing denied")
+}
+```
+
 - `onDragCamera?: (dx: number, dy: number) => any;`: Эта функция ожидает обработчик, который определяет поведение удерживаемой кнопки мыши внутри canvas Three.js для удалённого управления. Обработчик получает dx и dy, указывающие на дельты движения мыши.
 
 ```js
@@ -220,6 +320,24 @@ onDragCamera: (dx, dy) => {
   moveCamera(dx, dy)
 }
 ```
+
+## Методы
+
+`tracker.use()` возвращает экземпляр assist, который предоставляет методы для управления assist во время выполнения:
+
+```js
+const assist = tracker.use(trackerAssist(options));
+
+assist.stop();
+assist.start();
+```
+
+- `start()`: (Пере)запускает assist. Это безоперационный вызов, если сам трекер ещё не активен (assist запустится вместе с трекером). В режиме `Autostart.Continuation` он сохраняет флаг в `sessionStorage`, чтобы assist автоматически продолжал работу при перезагрузках страницы. Явный вызов `start()` также отменяет любую отсрочку `ignoreAnonymous`.
+- `stop()`: Останавливает assist, отключая сокет и очищая все соединения. Assist не перезапустится автоматически до вызова `start()`. В режиме `Autostart.Continuation` это также очищает сохранённый флаг, поэтому перезагрузка не приведёт к автопродолжению. В режиме [`requestConfirm`](#session-view-confirmation) это также отзывает разрешение пользователя, поэтому следующий вызов `start()` снова покажет запрос.
+
+<Aside type="caution">
+  `tracker.use()` возвращает `undefined` в средах, где assist не может загрузиться (например, отсутствует поддержка медиаустройств, внутри iframe), поэтому проверяйте возвращаемый экземпляр соответствующим образом.
+</Aside>
 
 ## Есть вопросы?
 

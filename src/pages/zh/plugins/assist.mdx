@@ -106,15 +106,83 @@ trackerAssist({
    * Minimum amount of MESSAGES in a batch to trigger compression run
    * @default 5000
    * */
-   compressionMinBatchSize: number
+  compressionMinBatchSize: number;
+  /**
+   * Show only the first part of an agent's name in the call popup
+   * (e.g. "One Two" -> "One").
+   * @default false
+   */
+  agentShortNames: boolean;
+  /**
+   * Postpone assist start until a userID is set on the session.
+   * @default false
+   */
+  ignoreAnonymous: boolean;
+  /**
+   * When assist connects to the server:
+   * - Autostart.Auto (default): always on tracker start.
+   * - Autostart.Disabled: only via an explicit start() call.
+   * - Autostart.Continuation: only via assist.start(), but the choice is remembered
+   *   in sessionStorage so it auto-continues across page reloads until assist.stop().
+   * @default Autostart.Auto
+   */
+  autostart: Autostart;
+  /**
+   * Require explicit user confirmation before anything is shared with an
+   * agent: assist starts and opens the socket as usual, but no messages are
+   * sent through it until the user approves the confirmation popup, which is
+   * shown as soon as the first agent connects to the session. The approval
+   * is remembered per-tab (sessionStorage) until stop() is called.
+   * @default false
+   */
+  requestConfirm: boolean;
+  /** Text/style customization for the session view confirmation popup. */
+  sessionConfirm?: ConfirmOptions;
+  /** Called when the user approves session viewing (requestConfirm mode). */
+  onSessionConfirmApprove?: (agentInfo: Record<string, any>) => any;
+  /** Called when the user denies session viewing (requestConfirm mode). */
+  onSessionConfirmDeny?: (agentInfo: Record<string, any>) => any;
 })
 ```
 
 ### 微件自定义
 
-远程控制以及通话微件，即终端用户所看到的那些，都可以完全自定义。
+实时查看、远程控制以及通话微件，即终端用户所看到的那些，都可以完全自定义。
+
+#### 实时查看微件
+
+将 `requestConfirm: true` 设置为在坐席能够实时查看用户会话之前先获得用户的许可。Assist 会照常启动并连接，但在用户批准确认弹窗之前，会话对坐席保持不可见，该弹窗会在第一个坐席连接时立即显示。一旦被接受，追踪将重新启动，坐席便可以实时查看用户的会话。
+
+该批准会按标签页记住（存储在 `sessionStorage` 中），直到调用 [`stop()`](#methods)，此调用会撤销该批准，因此下一次 [`start()`](#methods) 将会再次提示。
+
+```js
+tracker.use(trackerAssist({
+  requestConfirm: true,
+  sessionConfirm: { text: 'A support agent would like to view your screen. Allow?' },
+  onSessionConfirmApprove: ({ email, name, query }) => console.log("Session viewing approved"),
+  onSessionConfirmDeny: ({ email, name, query }) => console.log("Session viewing denied"),
+}));
+```
+
+可以通过 `sessionConfirm` 选项来自定义弹窗的文本和样式，该选项接受以下 `ConfirmOptions` 对象：
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
 
 #### 远程控制微件
+
+可以通过 `controlConfirm` 选项来自定义弹窗的文本和样式，该选项接受以下 `ConfirmOptions` 对象：
 
 ```js
 type ConfirmOptions = {
@@ -131,6 +199,22 @@ type ButtonOptions = HTMLButtonElement | string | {
 ```
 
 #### 通话微件
+
+可以通过 `callConfirm` 选项来自定义弹窗的文本和样式，该选项接受以下 `ConfirmOptions` 对象：
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
 
 可以通过以下这组 `ids` 和 `classes` 来自定义此微件的各个方面。`Ids` 用作各个按钮/元素的锚点，而 `classes` 可用于分组容器。
 
@@ -213,6 +297,22 @@ onRecordingDeny: ({ email, name, query }) => {
 }
 ```
 
+- `onSessionConfirmApprove?: (agentInfo: Record<string, any>) => any;`：此回调函数在用户批准会话查看（处于 [`requestConfirm`](#session-view-confirmation) 模式）时触发，并返回坐席的详细信息（email、名称和 query）。
+
+```js
+onSessionConfirmApprove: ({ email, name, query }) => {
+  console.log("Session viewing approved for", email)
+}
+```
+
+- `onSessionConfirmDeny?: (agentInfo: Record<string, any>) => any;`：此回调函数在用户拒绝会话查看（处于 [`requestConfirm`](#session-view-confirmation) 模式）时触发，并返回坐席的详细信息（email、名称和 query）。
+
+```js
+onSessionConfirmDeny: ({ email, name, query }) => {
+  console.log("Session viewing denied")
+}
+```
+
 - `onDragCamera?: (dx: number, dy: number) => any;`：此函数需要一个处理程序，用于定义在用于远程控制的 Three.js canvas 内按住鼠标按钮的行为。该处理程序接收 dx 和 dy，表示鼠标移动的增量。
 
 ```js
@@ -220,6 +320,24 @@ onDragCamera: (dx, dy) => {
   moveCamera(dx, dy)
 }
 ```
+
+## 方法
+
+`tracker.use()` 返回 assist 实例，该实例暴露了可在运行时控制 assist 的方法：
+
+```js
+const assist = tracker.use(trackerAssist(options));
+
+assist.stop();
+assist.start();
+```
+
+- `start()`：（重新）启动 assist。如果追踪器本身尚未激活，则此操作为空操作（assist 将与追踪器一起启动）。在 `Autostart.Continuation` 模式下，它会在 `sessionStorage` 中持久化一个标志，以便 assist 在页面重新加载后自动继续。显式的 `start()` 还会取代任何 `ignoreAnonymous` 延迟。
+- `stop()`：通过断开套接字连接并清理所有连接来停止 assist。在调用 `start()` 之前，assist 不会自动重新启动。在 `Autostart.Continuation` 模式下，这还会清除已持久化的标志，因此重新加载不会自动继续。在 [`requestConfirm`](#session-view-confirmation) 模式下，它还会撤销用户的批准，因此下一次 `start()` 将会再次提示。
+
+<Aside type="caution">
+  在 assist 无法加载的环境中（例如不支持媒体设备、位于 iframe 内），`tracker.use()` 会返回 `undefined`，因此请相应地对返回的实例进行防护。
+</Aside>
 
 ## 有疑问？
 
