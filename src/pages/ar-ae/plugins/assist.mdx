@@ -106,15 +106,83 @@ trackerAssist({
    * Minimum amount of MESSAGES in a batch to trigger compression run
    * @default 5000
    * */
-   compressionMinBatchSize: number
+  compressionMinBatchSize: number;
+  /**
+   * Show only the first part of an agent's name in the call popup
+   * (e.g. "One Two" -> "One").
+   * @default false
+   */
+  agentShortNames: boolean;
+  /**
+   * Postpone assist start until a userID is set on the session.
+   * @default false
+   */
+  ignoreAnonymous: boolean;
+  /**
+   * When assist connects to the server:
+   * - Autostart.Auto (default): always on tracker start.
+   * - Autostart.Disabled: only via an explicit start() call.
+   * - Autostart.Continuation: only via assist.start(), but the choice is remembered
+   *   in sessionStorage so it auto-continues across page reloads until assist.stop().
+   * @default Autostart.Auto
+   */
+  autostart: Autostart;
+  /**
+   * Require explicit user confirmation before anything is shared with an
+   * agent: assist starts and opens the socket as usual, but no messages are
+   * sent through it until the user approves the confirmation popup, which is
+   * shown as soon as the first agent connects to the session. The approval
+   * is remembered per-tab (sessionStorage) until stop() is called.
+   * @default false
+   */
+  requestConfirm: boolean;
+  /** Text/style customization for the session view confirmation popup. */
+  sessionConfirm?: ConfirmOptions;
+  /** Called when the user approves session viewing (requestConfirm mode). */
+  onSessionConfirmApprove?: (agentInfo: Record<string, any>) => any;
+  /** Called when the user denies session viewing (requestConfirm mode). */
+  onSessionConfirmDeny?: (agentInfo: Record<string, any>) => any;
 })
 ```
 
 ### تخصيص عناصر الواجهة (Widgets)
 
-يمكن تخصيص كل من التحكم عن بُعد وعناصر واجهة المكالمة، تلك التي يراها المستخدم النهائي، تخصيصاً كاملاً.
+يمكن تخصيص العرض المباشر والتحكم عن بُعد وكذلك عناصر واجهة المكالمة، تلك التي يراها المستخدم النهائي، تخصيصاً كاملاً.
+
+#### عنصر واجهة العرض المباشر
+
+اضبط `requestConfirm: true` لطلب إذن المستخدم قبل أن يتمكّن الوكيل من مشاهدة جلسته مباشرةً. يبدأ Assist ويتصل كالمعتاد، لكن تبقى الجلسة غير مرئية للوكيل حتى يوافق المستخدم على النافذة المنبثقة للتأكيد، التي تظهر بمجرد اتصال أول وكيل. بمجرد القبول، يُعاد تشغيل التتبّع ويصبح بإمكان الوكيل حينها رؤية جلسة المستخدم مباشرةً.
+
+يتم تذكّر الموافقة لكل تبويب (في `sessionStorage`) حتى يتم استدعاء [`stop()`](#methods)، الذي يُلغيها، بحيث سيطلب [`start()`](#methods) التالي التأكيد مجدداً.
+
+```js
+tracker.use(trackerAssist({
+  requestConfirm: true,
+  sessionConfirm: { text: 'A support agent would like to view your screen. Allow?' },
+  onSessionConfirmApprove: ({ email, name, query }) => console.log("Session viewing approved"),
+  onSessionConfirmDeny: ({ email, name, query }) => console.log("Session viewing denied"),
+}));
+```
+
+يمكن تخصيص نص النافذة المنبثقة ونمطها عبر خيار `sessionConfirm`، الذي يأخذ كائن `ConfirmOptions` التالي:
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
 
 #### عنصر واجهة التحكم عن بُعد
+
+يمكن تخصيص نص النافذة المنبثقة ونمطها عبر خيار `controlConfirm`، الذي يأخذ كائن `ConfirmOptions` التالي:
 
 ```js
 type ConfirmOptions = {
@@ -131,6 +199,22 @@ type ButtonOptions = HTMLButtonElement | string | {
 ```
 
 #### عنصر واجهة المكالمة
+
+يمكن تخصيص نص النافذة المنبثقة ونمطها عبر خيار `callConfirm`، الذي يأخذ كائن `ConfirmOptions` التالي:
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
 
 من الممكن تخصيص كل جانب من جوانب عنصر الواجهة هذا عبر مجموعة `ids` و`classes` التالية. تُستخدم `Ids` كنقاط ربط للأزرار/العناصر الفردية، بينما يمكن استخدام `classes` لحاويات المجموعات.
 
@@ -213,6 +297,22 @@ onRecordingDeny: ({ email, name, query }) => {
 }
 ```
 
+- `onSessionConfirmApprove?: (agentInfo: Record<string, any>) => any;`: تُستدعى دالة الاستدعاء هذه عندما يوافق المستخدم على مشاهدة الجلسة (في وضع [`requestConfirm`](#session-view-confirmation)) وتعيد تفاصيل الوكيل (email والاسم وquery).
+
+```js
+onSessionConfirmApprove: ({ email, name, query }) => {
+  console.log("Session viewing approved for", email)
+}
+```
+
+- `onSessionConfirmDeny?: (agentInfo: Record<string, any>) => any;`: تُستدعى دالة الاستدعاء هذه عندما يرفض المستخدم مشاهدة الجلسة (في وضع [`requestConfirm`](#session-view-confirmation)) وتعيد تفاصيل الوكيل (email والاسم وquery).
+
+```js
+onSessionConfirmDeny: ({ email, name, query }) => {
+  console.log("Session viewing denied")
+}
+```
+
 - `onDragCamera?: (dx: number, dy: number) => any;`: تتوقّع هذه الدالة معالِجاً يحدّد سلوك زر الفأرة المضغوط داخل لوحة Three.js canvas للتحكم عن بُعد. يستقبل المعالِج dx وdy، اللذين يشيران إلى مقادير حركة الفأرة.
 
 ```js
@@ -220,6 +320,24 @@ onDragCamera: (dx, dy) => {
   moveCamera(dx, dy)
 }
 ```
+
+## الطرق
+
+تُعيد `tracker.use()` نسخة assist، التي تكشف طرقاً للتحكّم في assist أثناء التشغيل:
+
+```js
+const assist = tracker.use(trackerAssist(options));
+
+assist.stop();
+assist.start();
+```
+
+- `start()`: يعيد تشغيل assist (أو يشغّله). لا يفعل شيئاً إذا لم يكن المتتبّع نفسه نشطاً بعد (سيبدأ assist مع المتتبّع). في وضع `Autostart.Continuation`، يحفظ علامة في `sessionStorage` بحيث يستمر assist تلقائياً عبر عمليات إعادة تحميل الصفحة. كما أن استدعاء `start()` الصريح يتجاوز أي تأجيل بسبب `ignoreAnonymous`.
+- `stop()`: يوقف assist عن طريق قطع اتصال المقبس (socket) وتنظيف جميع الاتصالات. لن يُعاد تشغيل assist تلقائياً حتى يتم استدعاء `start()`. في وضع `Autostart.Continuation`، يمسح هذا أيضاً العلامة المحفوظة، بحيث لن تستمر إعادة التحميل تلقائياً. في وضع [`requestConfirm`](#session-view-confirmation)، يُلغي أيضاً موافقة المستخدم، بحيث سيطلب `start()` التالي التأكيد مجدداً.
+
+<Aside type="caution">
+  تُعيد `tracker.use()` القيمة `undefined` في البيئات التي لا يمكن فيها تحميل assist (مثل عدم دعم أجهزة الوسائط، أو داخل iframe)، لذا احرص على التحقّق من النسخة المُعادة وفقاً لذلك.
+</Aside>
 
 ## هل لديك أسئلة؟
 

@@ -106,15 +106,83 @@ trackerAssist({
    * Minimum amount of MESSAGES in a batch to trigger compression run
    * @default 5000
    * */
-   compressionMinBatchSize: number
+  compressionMinBatchSize: number;
+  /**
+   * Show only the first part of an agent's name in the call popup
+   * (e.g. "One Two" -> "One").
+   * @default false
+   */
+  agentShortNames: boolean;
+  /**
+   * Postpone assist start until a userID is set on the session.
+   * @default false
+   */
+  ignoreAnonymous: boolean;
+  /**
+   * When assist connects to the server:
+   * - Autostart.Auto (default): always on tracker start.
+   * - Autostart.Disabled: only via an explicit start() call.
+   * - Autostart.Continuation: only via assist.start(), but the choice is remembered
+   *   in sessionStorage so it auto-continues across page reloads until assist.stop().
+   * @default Autostart.Auto
+   */
+  autostart: Autostart;
+  /**
+   * Require explicit user confirmation before anything is shared with an
+   * agent: assist starts and opens the socket as usual, but no messages are
+   * sent through it until the user approves the confirmation popup, which is
+   * shown as soon as the first agent connects to the session. The approval
+   * is remembered per-tab (sessionStorage) until stop() is called.
+   * @default false
+   */
+  requestConfirm: boolean;
+  /** Text/style customization for the session view confirmation popup. */
+  sessionConfirm?: ConfirmOptions;
+  /** Called when the user approves session viewing (requestConfirm mode). */
+  onSessionConfirmApprove?: (agentInfo: Record<string, any>) => any;
+  /** Called when the user denies session viewing (requestConfirm mode). */
+  onSessionConfirmDeny?: (agentInfo: Record<string, any>) => any;
 })
 ```
 
 ### Personalización de los widgets
 
-Tanto el control remoto como los widgets de llamada, los que ve el usuario final, se pueden personalizar por completo.
+La vista en vivo, el control remoto, así como los widgets de llamada, los que ve el usuario final, se pueden personalizar por completo.
+
+#### Widget de vista en vivo
+
+Establece `requestConfirm: true` para requerir el permiso del usuario antes de que un agente pueda ver su sesión en vivo. Assist se inicia y se conecta como de costumbre, pero la sesión permanece invisible para el agente hasta que el usuario apruebe el popup de confirmación, que se muestra en cuanto el primer agente se conecta. Una vez aceptado, el seguimiento se reinicia y el agente puede entonces ver la sesión del usuario en vivo.
+
+La aprobación se recuerda por pestaña (en `sessionStorage`) hasta que se llama a [`stop()`](#methods), que la revoca, por lo que el siguiente [`start()`](#methods) volverá a solicitarla.
+
+```js
+tracker.use(trackerAssist({
+  requestConfirm: true,
+  sessionConfirm: { text: 'A support agent would like to view your screen. Allow?' },
+  onSessionConfirmApprove: ({ email, name, query }) => console.log("Session viewing approved"),
+  onSessionConfirmDeny: ({ email, name, query }) => console.log("Session viewing denied"),
+}));
+```
+
+El texto y el estilo del popup se pueden personalizar mediante la opción `sessionConfirm`, que toma el siguiente objeto `ConfirmOptions`:
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
 
 #### Widget de control remoto
+
+El texto y el estilo del popup se pueden personalizar mediante la opción `controlConfirm`, que toma el siguiente objeto `ConfirmOptions`:
 
 ```js
 type ConfirmOptions = {
@@ -131,6 +199,22 @@ type ButtonOptions = HTMLButtonElement | string | {
 ```
 
 #### Widget de llamada
+
+El texto y el estilo del popup se pueden personalizar mediante la opción `callConfirm`, que toma el siguiente objeto `ConfirmOptions`:
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
 
 Es posible personalizar todos los aspectos de este widget mediante el siguiente conjunto de `ids` y `classes`. Los `Ids` sirven como anclas para botones/elementos individuales, mientras que las `classes` pueden usarse para contenedores de grupo.
 
@@ -213,6 +297,22 @@ onRecordingDeny: ({ email, name, query }) => {
 }
 ```
 
+- `onSessionConfirmApprove?: (agentInfo: Record<string, any>) => any;`: Esta función de callback se dispara cuando el usuario aprueba la visualización de la sesión (en modo [`requestConfirm`](#session-view-confirmation)) y devuelve los detalles del agente (email, nombre y query).
+
+```js
+onSessionConfirmApprove: ({ email, name, query }) => {
+  console.log("Session viewing approved for", email)
+}
+```
+
+- `onSessionConfirmDeny?: (agentInfo: Record<string, any>) => any;`: Esta función de callback se dispara cuando el usuario deniega la visualización de la sesión (en modo [`requestConfirm`](#session-view-confirmation)) y devuelve los detalles del agente (email, nombre y query).
+
+```js
+onSessionConfirmDeny: ({ email, name, query }) => {
+  console.log("Session viewing denied")
+}
+```
+
 - `onDragCamera?: (dx: number, dy: number) => any;`: Esta función espera un handler que defina el comportamiento de un botón del ratón mantenido pulsado dentro de un canvas de Three.js para control remoto. El handler recibe dx y dy, que indican los deltas de movimiento del ratón.
 
 ```js
@@ -220,6 +320,24 @@ onDragCamera: (dx, dy) => {
   moveCamera(dx, dy)
 }
 ```
+
+## Métodos
+
+`tracker.use()` devuelve la instancia de assist, que expone métodos para controlar assist en tiempo de ejecución:
+
+```js
+const assist = tracker.use(trackerAssist(options));
+
+assist.stop();
+assist.start();
+```
+
+- `start()`: (Re)inicia assist. No hace nada si el propio tracker aún no está activo (assist se iniciará junto con el tracker). En el modo `Autostart.Continuation`, persiste un flag en `sessionStorage` para que assist continúe automáticamente entre recargas de página. Un `start()` explícito también anula cualquier aplazamiento de `ignoreAnonymous`.
+- `stop()`: Detiene assist desconectando el socket y limpiando todas las conexiones. Assist no se reiniciará automáticamente hasta que se llame a `start()`. En el modo `Autostart.Continuation`, esto también borra el flag persistido, por lo que una recarga no continuará automáticamente. En el modo [`requestConfirm`](#session-view-confirmation), también revoca la aprobación del usuario, por lo que el siguiente `start()` volverá a solicitarla.
+
+<Aside type="caution">
+  `tracker.use()` devuelve `undefined` en entornos donde assist no puede cargarse (por ejemplo, sin soporte de dispositivos multimedia, dentro de un iframe), así que protege la instancia devuelta en consecuencia.
+</Aside>
 
 ## ¿Tienes preguntas?
 
