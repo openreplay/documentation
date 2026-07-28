@@ -87,7 +87,14 @@ body {
 /* mobile drawer */
 .or-drawer {
 	background: var(--page);
-	padding: 14px 12px 0;
+	/* Bottom/inline padding pays the safe-area tax now that the document is full-bleed
+	   (viewport-fit=cover in HeadCommon.astro): the drawer reaches the physical screen
+	   bottom, so the last nav row would otherwise sit under the home indicator and the
+	   floating iOS 26 toolbar. env() resolves to 0 where there is no inset (desktop,
+	   Android, portrait Safari tabs), so these collapse to the original values. */
+	padding-top: 14px;
+	padding-inline: max(12px, env(safe-area-inset-left, 0px)) max(12px, env(safe-area-inset-right, 0px));
+	padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
 	border-inline-end: 1px solid var(--or-border);
 	transform: translateX(-100%);
 	/* `display:none` when closed removes the drawer from the layout entirely. A
@@ -100,18 +107,16 @@ body {
 	   it (which made it hard to scroll the menu back up on iOS). */
 	overscroll-behavior: contain;
 	/* Height comes from inset anchoring — the markup's `top-14 bottom-0` — and NOT from
-	   an explicit viewport-unit height. iOS 26 Safari (Liquid Glass) CLIPS fixed content
-	   that extends past the layout-viewport bottom instead of painting it behind the
-	   toolbar, so the previous `height: calc(100lvh - navbar)` lost its bottom slice
-	   whenever the toolbar was expanded: menu visibly cut short, dark band below it
-	   (Safari's own chrome-tint fill). Fixed upstream in Safari 26.1
-	   (webkit.org/blog/17541, "bottom gap ... viewport-sized fixed containers"), but
-	   26.0 devices remain. An lvh height was also broken on OLDER iOS: the bottom
-	   toolbar-slice of the drawer's own scrollport sat offscreen and a scroll container
-	   can't reveal its own offscreen portion, so the last nav items were unreachable.
-	   A top+bottom-anchored fixed element tracks the layout viewport in BOTH toolbar
-	   states on every iOS version (same pattern as Starlight/Docusaurus/shadcn).
+	   an explicit viewport-unit height. A vh/lvh/dvh height is wrong twice over: it
+	   overshoots the layout viewport (and WebKit CLIPS position:fixed to the inner
+	   viewport, so the overshoot is discarded, never painted behind the toolbar), and it
+	   puts the bottom slice of the drawer's OWN scrollport offscreen — a scroll container
+	   cannot reveal its own offscreen portion, so the last nav items become unreachable.
 	   Do NOT add height/min-height in vh/lvh/dvh units here.
+	   Inset anchoring only reaches the LAYOUT-viewport bottom, which on iOS 26 sits well
+	   above the physical screen bottom. Extending it is not a CSS job at all — it needs
+	   `viewport-fit=cover` on the meta viewport (see HeadCommon.astro). Without that opt-in
+	   the leftover strip is painted by Safari itself and reads as "the menu is cut short".
 	   The open/close transition lives on the open-state rule below (not here) so closing
 	   is INSTANT — otherwise the drawer lingers ~0.25s before display:none, keeping iOS's
 	   viewport pinned and flashing the gap back (the "weird half-second delay"). */
@@ -124,8 +129,11 @@ body {
 	height: 38px;
 }
 [dir='rtl'] .or-drawer { transform: translateX(100%); }
-/* Second box-shadow = paint-only bleed below the drawer (same reason as #mobile-overlay). */
-body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { display: block; transform: translateX(0); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3), 0 120px 0 0 var(--page); transition: transform 0.25s ease, display 0.25s allow-discrete; }
+/* No "bleed" shadow here: a second `0 120px 0 0` shadow used to try to paint the drawer's
+   background into the strip below the layout viewport, but WebKit clips position:fixed
+   painting to the inner viewport (even with negative offsets), so it was a no-op on exactly
+   the iOS versions it was added for. viewport-fit=cover is what actually closes that strip. */
+body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { display: block; transform: translateX(0); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3); transition: transform 0.25s ease, display 0.25s allow-discrete; }
 /* Slide-in start state (for the display:none → block transition above). */
 @starting-style {
 	body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { transform: translateX(-100%); }
@@ -138,13 +146,20 @@ body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { display: block; tran
 /* display:none when closed (same reason as the drawer above) — keep the overlay out of
    the layout so it can't pin iOS Safari's viewport once the menu has been used.
    Sized by the markup's `inset-0` (inset anchoring, not viewport units) for the same
-   iOS 26 clipping reason as the drawer above. The box-shadow is a PAINT-ONLY bleed:
-   on pre-26 iOS the layout viewport ends at the expanded toolbar's top edge, and the
-   translucent toolbar would otherwise show the un-dimmed page through its glass — the
-   solid downward shadow paints the overlay's black into that strip without affecting
-   layout. Never turn this into a height/min-height (see the drawer note above). */
-#mobile-overlay { display: none; touch-action: none; box-shadow: 0 120px 0 0 rgb(0 0 0 / 0.9); }
+   reason as the drawer above; never turn that into a height/min-height. Its bleed
+   box-shadow was removed too — see the note on the drawer's open-state rule. */
+#mobile-overlay { display: none; touch-action: none; }
 body.mobile-sidebar-toggle #mobile-overlay { display: block; }
+
+/* The open-state rules above (specificity 0,3,1 / 1,1,1) out-rank the markup's Tailwind
+   `md:hidden` (0,1,0), so with the drawer open a rotation to landscape on a large phone
+   (≥768px) left the drawer AND the full-screen overlay on screen — while the hamburger
+   that would close them is itself md:hidden. Nothing drops the body class on resize, so
+   the page was stuck behind a black overlay. This guard cannot be out-specified. */
+@media (min-width: 768px) {
+	#mobile-left-sidebar.or-drawer,
+	#mobile-overlay { display: none !important; }
+}
 
 /* We deliberately do NOT lock the page scroll with `overflow:hidden` on html/body when
    the drawer opens. On phones the document is the scroller, and toggling overflow on the
@@ -205,19 +220,18 @@ body.mobile-sidebar-toggle header {
 	   !important so it still wins over the block !important above (it does on
 	   specificity too, but keep both important to avoid a silent regression). */
 	.fixed-mobile-bar:not(:has(details.toc-mobile-container)) { display: none !important; }
-	/* While the hamburger drawer is open, drop the bar out of the sticky
-	   (viewport-constrained) layer set. iOS 26.0 WebKit mis-sizes viewport-sized
-	   FIXED containers when its toolbar/layout-viewport recompute fires
-	   (webkit.org/blog/17541 "bottom gap ... viewport-sized fixed containers",
-	   bugs.webkit.org 158055568; trigger cluster: 297779, 300523) — the drawer
-	   rendered cut short again once this always-present sticky bar started
-	   engaging/disengaging on every page scroll. The bar sits behind the
-	   full-screen #mobile-overlay whenever the drawer is open, so demoting it to
-	   static there is invisible to users and removes the extra
-	   viewport-constrained layer at the exact commit where the drawer must be
-	   sized. body-prefixed selector = (0,2,1), deterministically beating
-	   PageContent.astro's scoped sticky rule at (0,2,0). */
-	body.mobile-sidebar-toggle .fixed-mobile-bar { position: static; }
+	/* NOTE — do not re-add a `body.mobile-sidebar-toggle .fixed-mobile-bar { position: static }`
+	   rule here. PR #291 added one, believing this bar re-triggered an iOS 26.0 bug that
+	   cut the drawer short. That was wrong on two counts:
+	     1. The cited bug (Apple Radar 158055568) was already FIXED. webkit.org/blog/17541 is
+	        the "WebKit Features for Safari 26.1" release post (2025-11-03) and the quoted
+	        line is a RESOLVED-issues entry, not an open report. Independently confirmed by
+	        mui/material-ui#46953, closed after re-testing on the 26.1 simulator.
+	     2. Even if it were live, the rule only applies once the drawer is ALREADY open,
+	        while the trigger it blamed (sticky engage/disengage) happens during earlier
+	        scrolling — and the demotion lands in the same style/layout pass that sizes the
+	        drawer, so there is no second measurement for it to influence.
+	   The real cause was the missing `viewport-fit=cover` opt-in (see HeadCommon.astro). */
 	.fixed-mobile-bar .toc-mobile-container {
 		display: block;
 		position: relative; /* anchors the absolute dropdown panel */
@@ -307,8 +321,15 @@ body.mobile-sidebar-toggle header {
 	.or-footer-wrap { padding-left: 40px; padding-right: 40px; }
 }
 @media (max-width: 768px) {
-	.or-main-wrap { padding: 24px 22px 70px; }
-	.or-footer-wrap { padding: 0 22px 40px; }
+	/* max(22px, env(...)) keeps the reading column clear of the sensor housing / rounded
+	   corners in landscape now that viewport-fit=cover makes the document full-bleed.
+	   env() is 0 wherever there is no inset, so these stay 22px on every other device. */
+	.or-main-wrap {
+		padding: 24px max(22px, env(safe-area-inset-right, 0px)) 70px max(22px, env(safe-area-inset-left, 0px));
+	}
+	.or-footer-wrap {
+		padding: 0 max(22px, env(safe-area-inset-right, 0px)) 40px max(22px, env(safe-area-inset-left, 0px));
+	}
 	.or-left { width: 284px; }
 }
 
