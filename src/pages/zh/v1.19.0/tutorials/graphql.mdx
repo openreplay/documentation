@@ -115,11 +115,7 @@ ReactDOM.render(<ApolloProvider client={client}>
 
 完成之后，你的录像（replays）中会显示一个列出所有 GraphQL 操作的新区域。
 
-![The GraphQL UI inside the Session Replay](/images/graphql-ui.png)
-
 话虽如此，被 tracker 自动清理的敏感信息（例如电子邮件地址）不会被插件清理。因此你会遇到如下情况：DOM 中是已清理的数据，但操作详情却显示实际数据。
-
-![Sanitized vs Not Sanitized data](/images/sanitized-vs-not-sanitized.png)
 
 虽然插件本身并不提供任何清理函数，但我们仍然可以添加代码，将个人和隐私信息从录像中隐藏起来，以帮助保护用户的隐私。
 
@@ -184,8 +180,6 @@ const trackerApolloLink = new ApolloLink((operation, forward) => {
 1. 我们添加了两个函数，一个用于清理对象中的 `email`，另一个用于清理 GraphQL 操作的结果。
 2. 在 `map` 回调（来自 link 函数）内部，我们现在不再返回 graphqlTracker 的输出，因为该函数会原封不动地返回它收到的结果值。 1. 但该结果会被返回给客户端应用，如果我们清理了结果，用户就会看到该数据集的已清理版本。因此，我们需要克隆结果，以便修改被追踪的那个并返回原始结果。
 3. `sanitizeResult` 函数对对象进行深克隆，因为否则修改它会改变结果本身。
-
-![Sanitized data everywhere](/images/sanitized.png)
 
 ## 有疑问吗？
 
