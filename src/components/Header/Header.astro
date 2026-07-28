@@ -118,7 +118,10 @@ const docsearchStrings = getDocSearchStrings(Astro);
 		top: 0;
 		right: 0;
 		z-index: 9999;
-		padding: 0 22px;
+		/* Safe-area tax: viewport-fit=cover (HeadCommon.astro) makes the document
+		   full-bleed, so in landscape the logo/actions would sit under the sensor
+		   housing without this. env() is 0 where there is no inset. */
+		padding: 0 max(22px, env(safe-area-inset-right, 0px)) 0 max(22px, env(safe-area-inset-left, 0px));
 		background-color: var(--header-bg);
 		-webkit-backdrop-filter: blur(10px);
 		backdrop-filter: blur(10px);
@@ -221,7 +224,11 @@ const docsearchStrings = getDocSearchStrings(Astro);
 	/* show/hide helpers (≤768px = mobile) */
 	.hide-sm { display: inline-flex; }
 	@media (max-width: 768px) {
-		header { padding: 0 14px; }
+		/* keeps the safe-area tax from the base rule — this override is the one that
+		   actually applies on phones, which is where landscape insets matter */
+		header {
+			padding: 0 max(14px, env(safe-area-inset-right, 0px)) 0 max(14px, env(safe-area-inset-left, 0px));
+		}
 		.nav-wrapper { gap: 8px; }
 		.hide-sm { display: none !important; }
 	}
