@@ -113,11 +113,7 @@ ReactDOM.render(<ApolloProvider client={client}>
 
 完成后，你的回放将显示一个新的部分，列出所有 GraphQL 操作。
 
-![Session Replay 中的 GraphQL 界面](/images/graphql-ui.png)
-
 话虽如此，由 tracker 自动脱敏的敏感信息（例如电子邮件地址）不会被该插件脱敏。因此你会遇到如下情况：DOM 中是已脱敏的数据，但操作详情却显示真实数据。
-
-![已脱敏与未脱敏的数据对比](/images/sanitized-vs-not-sanitized.png)
 
 虽然插件本身并不提供任何脱敏函数，但我们仍然可以添加代码来在回放中隐藏个人和私密信息，从而帮助保护你用户的隐私。
 
@@ -182,8 +178,6 @@ const trackerApolloLink = new ApolloLink((operation, forward) => {
 1. 我们添加了两个函数，一个用于对对象中的 `email` 进行脱敏，另一个用于对 GraphQL 操作的结果进行脱敏。
 2. 在 `map` 回调内部（来自 link 函数），我们现在不再返回 graphqlTracker 的输出，因为该函数会原封不动地返回它收到的结果值。 1. 但该结果会返回给客户端应用，如果我们对结果进行脱敏，用户就会看到数据集的脱敏版本。相反，我们需要克隆结果，以便修改被跟踪的那一份并返回原始的那一份。
 3. `sanitizeResult` 函数对该对象进行深度克隆，因为以其他方式修改它会改变结果本身。
-
-![到处都是脱敏后的数据](/images/sanitized.png)
 
 ## 有问题吗？
 
