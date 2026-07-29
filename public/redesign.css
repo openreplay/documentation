@@ -84,19 +84,32 @@ body {
 
 .or-footer-wrap { padding: 0 56px 40px; max-width: var(--or-content-max); margin-inline: auto; }
 
-/* mobile drawer */
+/* mobile drawer — a FLOATING CARD, not a full-bleed panel.
+   Why (the end of the #278–#296 saga): on iOS Safari a bottom-anchored fixed element
+   can only reach the LAYOUT-viewport bottom, which in the toolbar-expanded state sits
+   ~90–100pt above the physical screen bottom. Nothing author-side moves that edge:
+   viewport-fit=cover only removes SAFE-AREA insets (verified live on-device, PR #296 —
+   deployed and changed nothing), and painting past the viewport (lvh heights, shadow
+   bleeds, overflow) is clipped by WebKit on some iOS 26 builds and not others
+   (bugs.webkit.org 301108 still open). So the design stops needing that edge: the
+   drawer floats with a deliberate margin inside whatever viewport Safari provides,
+   and the strip below belongs to the overlay/scrim (see #mobile-overlay), which is
+   black under BOTH WebKit behaviors. Identical rendering in Chrome/Android/desktop. */
 .or-drawer {
 	background: var(--page);
-	/* Bottom/inline padding pays the safe-area tax now that the document is full-bleed
-	   (viewport-fit=cover in HeadCommon.astro): the drawer reaches the physical screen
-	   bottom, so the last nav row would otherwise sit under the home indicator and the
-	   floating iOS 26 toolbar. env() resolves to 0 where there is no inset (desktop,
-	   Android, portrait Safari tabs), so these collapse to the original values. */
-	padding-top: 14px;
-	padding-inline: max(12px, env(safe-area-inset-left, 0px)) max(12px, env(safe-area-inset-right, 0px));
-	padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
-	border-inline-end: 1px solid var(--or-border);
-	transform: translateX(-100%);
+	/* Geometry is owned HERE, not by Tailwind utilities in BaseLayout.astro — the
+	   utilities load after this file in production and silently win ties (PR #289's
+	   cascade trap). Logical inset-inline-start also fixes RTL: the card now anchors
+	   to the right edge on ar-ae pages, matching its slide-from-right transform. */
+	top: calc(var(--theme-navbar-height) + 10px);
+	bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+	inset-inline-start: max(10px, env(safe-area-inset-left, 0px));
+	border: 1px solid var(--or-border);
+	border-radius: 16px;
+	padding: 14px 12px 12px;
+	/* Closed-state transform must clear the inline inset AND the open-state shadow
+	   (60px blur), or a sliver stays visible at the screen edge. */
+	transform: translateX(calc(-100% - 90px));
 	/* `display:none` when closed removes the drawer from the layout entirely. A
 	   persistent full-viewport position:fixed element makes iOS Safari pin its layout
 	   viewport to the toolbar-hidden height and never revert — which leaves a stuck black
@@ -106,17 +119,9 @@ body {
 	/* Keep scroll momentum inside the drawer instead of chaining to the page behind
 	   it (which made it hard to scroll the menu back up on iOS). */
 	overscroll-behavior: contain;
-	/* Height comes from inset anchoring — the markup's `top-14 bottom-0` — and NOT from
-	   an explicit viewport-unit height. A vh/lvh/dvh height is wrong twice over: it
-	   overshoots the layout viewport (and WebKit CLIPS position:fixed to the inner
-	   viewport, so the overshoot is discarded, never painted behind the toolbar), and it
-	   puts the bottom slice of the drawer's OWN scrollport offscreen — a scroll container
-	   cannot reveal its own offscreen portion, so the last nav items become unreachable.
-	   Do NOT add height/min-height in vh/lvh/dvh units here.
-	   Inset anchoring only reaches the LAYOUT-viewport bottom, which on iOS 26 sits well
-	   above the physical screen bottom. Extending it is not a CSS job at all — it needs
-	   `viewport-fit=cover` on the meta viewport (see HeadCommon.astro). Without that opt-in
-	   the leftover strip is painted by Safari itself and reads as "the menu is cut short".
+	/* No explicit height — inset anchoring sizes the card. A vh/lvh/dvh height would put
+	   the bottom slice of the drawer's own scrollport offscreen (a scroll container
+	   cannot reveal its own offscreen portion → last nav items unreachable).
 	   The open/close transition lives on the open-state rule below (not here) so closing
 	   is INSTANT — otherwise the drawer lingers ~0.25s before display:none, keeping iOS's
 	   viewport pinned and flashing the gap back (the "weird half-second delay"). */
@@ -128,16 +133,12 @@ body {
 .or-left .lang-pill {
 	height: 38px;
 }
-[dir='rtl'] .or-drawer { transform: translateX(100%); }
-/* No "bleed" shadow here: a second `0 120px 0 0` shadow used to try to paint the drawer's
-   background into the strip below the layout viewport, but WebKit clips position:fixed
-   painting to the inner viewport (even with negative offsets), so it was a no-op on exactly
-   the iOS versions it was added for. viewport-fit=cover is what actually closes that strip. */
+[dir='rtl'] .or-drawer { transform: translateX(calc(100% + 90px)); }
 body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { display: block; transform: translateX(0); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3); transition: transform 0.25s ease, display 0.25s allow-discrete; }
 /* Slide-in start state (for the display:none → block transition above). */
 @starting-style {
-	body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { transform: translateX(-100%); }
-	[dir='rtl'] body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { transform: translateX(100%); }
+	body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { transform: translateX(calc(-100% - 90px)); }
+	[dir='rtl'] body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { transform: translateX(calc(100% + 90px)); }
 }
 /* touch-action:none stops a drag on the overlay from scrolling the page behind the
    drawer. On phones the document is the scroller, where `overflow:hidden` is an
@@ -145,10 +146,25 @@ body.mobile-sidebar-toggle #mobile-left-sidebar.or-drawer { display: block; tran
    keeps the background fixed. Taps still fire, so tap-to-close keeps working. */
 /* display:none when closed (same reason as the drawer above) — keep the overlay out of
    the layout so it can't pin iOS Safari's viewport once the menu has been used.
-   Sized by the markup's `inset-0` (inset anchoring, not viewport units) for the same
-   reason as the drawer above; never turn that into a height/min-height. Its bleed
-   box-shadow was removed too — see the note on the drawer's open-state rule. */
+   Sized by the markup's `inset-0` (inset anchoring, not viewport units — a vh/lvh
+   height risks clipping AND over-constrained cascade traps; see the drawer note). */
 #mobile-overlay { display: none; touch-action: none; }
+/* The strip BETWEEN the layout-viewport bottom and the physical screen bottom (iOS 26's
+   toolbar inset) must read as overlay-black so the floating drawer card sits on a
+   continuous scrim. This ::after paints 180px past the overlay's bottom edge. It is
+   correct under BOTH observed WebKit behaviors: where below-viewport painting is
+   allowed, the strip IS this pseudo-element; where WebKit clips it, Safari fills the
+   strip itself by sampling the edge-touching fixed element's background — this same
+   overlay, the same near-black. Do not "simplify" this into a height on the overlay. */
+#mobile-overlay::after {
+	content: '';
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	height: 180px;
+	background: rgb(0 0 0 / 0.9);
+}
 body.mobile-sidebar-toggle #mobile-overlay { display: block; }
 
 /* The open-state rules above (specificity 0,3,1 / 1,1,1) out-rank the markup's Tailwind
