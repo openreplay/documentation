@@ -198,9 +198,9 @@ body.mobile-sidebar-toggle header {
    and `margin-bottom`. PageContent.astro and LadingContent.astro both render the bar and
    deliberately no longer declare z-index or margin-bottom; see the pointer comments in
    their scoped <style> blocks. They DO still declare `display`, `position: sticky` and
-   `inset-inline` (plus some em-breakpoint insets) — those are intentionally left with the
-   components and are not centralised here, so don't read this block as owning every
-   geometry property.
+   `inset-inline`, plus `margin-top: 0` at >=50em and `inset-inline-start` at >=64em —
+   those are intentionally left with the components and are not centralised here, so don't
+   read this block as owning every geometry property.
    Their scoped rules compile to `.fixed-mobile-bar[data-astro-cid-XXXX]` = (0,2,0), and
    this file's load order vs the Astro <style> bundle is NOT guaranteed. So the geometry
    rules below are written as `body .fixed-mobile-bar.fixed-mobile-bar` = (0,2,1).
@@ -215,12 +215,19 @@ body.mobile-sidebar-toggle header {
    Descendant rules further down (`.fixed-mobile-bar .toc-*`) are (0,2,0)+ and carry no
    `body` prefix. That is enough for the *unprefixed* legacy selectors in the component's
    TableOfContents.css, but NOT universally: `.page-index` is a real body class (set via
-   content.baseClass on every home.mdx), so TableOfContents.css:39
-   `.page-index .toc-mobile-header` (0,2,0) merely TIES our padding rule, and :135
-   `.page-index .toc-mobile-container ul` (0,2,1) actually OUTRANKS our `.or-toc-list`
-   (0,2,0). Both are harmless today only because the values happen to agree — if you
-   change a value in one of those pairs, raise the selector here rather than assuming
-   this block wins.
+   content.baseClass on all 60 archived version home.mdx pages, v1.17-v1.26 x 6 locales),
+   and TableOfContents.css ships inside the Astro CSS bundle, which the built <head> links
+   AFTER /redesign.css. So on those pages:
+     - :135 `.page-index .toc-mobile-container ul` (0,2,1) OUTRANKS our `.or-toc-list`
+       (0,2,0). Inert — both say `margin: 0`.
+     - :39 `.page-index .toc-mobile-header` (0,2,0) TIES our `.toc-mobile-header` rule and
+       then WINS on load order, so its `padding: 0` beats our `padding: 0 12px`. The bar
+       loses its horizontal padding on those 60 pages. This is a real pre-existing bug
+       (verified against the deployed CSS, not theory), left alone here only because
+       fixing it changes how those pages render and belongs in its own change — add a
+       `body` prefix to that rule to fix it.
+   Do not assume this block out-specifies TableOfContents.css: for a `.page-index`-
+   prefixed legacy selector it does not, and load order favours the legacy file.
    The `display` toggles carry !important: PageContent.astro's *scoped* <style> sets
    `.fixed-mobile-bar { display: block }` unconditionally (hiding it only at ≥80em),
    which the Astro scope hash lifts to (0,2,0) — outranking the bare-class base hide
