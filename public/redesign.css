@@ -194,31 +194,78 @@ body.mobile-sidebar-toggle header {
    Bar height lives in --or-mobile-toc-h so any future offset rules share one source.
    The dropdown panel's max-height uses svh ONLY — never vh/lvh/dvh — per the iOS 26
    layout-viewport clipping notes on .or-drawer above.
-   Selectors are ≥(0,2,0) on purpose: the component's legacy TableOfContents.css is
-   bundled into <style> tags whose order vs this file is not guaranteed, so we win on
-   specificity, not order.
+   SPECIFICITY — this file is the single source of truth for the bar's `top`, `z-index`
+   and `margin-bottom`. PageContent.astro and LadingContent.astro both render the bar and
+   deliberately no longer declare z-index or margin-bottom; see the pointer comments in
+   their scoped <style> blocks. They DO still declare `display`, `position: sticky` and
+   `inset-inline` (plus some em-breakpoint insets) — those are intentionally left with the
+   components and are not centralised here, so don't read this block as owning every
+   geometry property.
+   Their scoped rules compile to `.fixed-mobile-bar[data-astro-cid-XXXX]` = (0,2,0), and
+   this file's load order vs the Astro <style> bundle is NOT guaranteed. So the geometry
+   rules below are written as `body .fixed-mobile-bar.fixed-mobile-bar` = (0,2,1).
+   (0,2,0) — e.g. a bare `.fixed-mobile-bar.fixed-mobile-bar` — would only TIE and fall
+   back to source order, which is exactly what we cannot rely on. A bare class (0,1,0)
+   loses outright: that is how `z-index: 10` and `margin-bottom: 18px` sat here as dead
+   declarations while the components' values silently won. Both are now declared here at
+   the values that actually render (2 and 24px) — see the notes at each one.
+   Ties *within* this file are fine — source order inside one stylesheet is
+   deterministic. That is why the later `:not(:has(...))` hide, also (0,2,1), still beats
+   the base rule below.
+   Descendant rules further down (`.fixed-mobile-bar .toc-*`) are (0,2,0)+ and carry no
+   `body` prefix. That is enough for the *unprefixed* legacy selectors in the component's
+   TableOfContents.css, but NOT universally: `.page-index` is a real body class (set via
+   content.baseClass on every home.mdx), so TableOfContents.css:39
+   `.page-index .toc-mobile-header` (0,2,0) merely TIES our padding rule, and :135
+   `.page-index .toc-mobile-container ul` (0,2,1) actually OUTRANKS our `.or-toc-list`
+   (0,2,0). Both are harmless today only because the values happen to agree — if you
+   change a value in one of those pairs, raise the selector here rather than assuming
+   this block wins.
    The `display` toggles carry !important: PageContent.astro's *scoped* <style> sets
    `.fixed-mobile-bar { display: block }` unconditionally (hiding it only at ≥80em),
-   which the Astro-scoped selector makes as specific as this plain one. Without
+   which the Astro scope hash lifts to (0,2,0) — outranking the bare-class base hide
+   below at (0,1,0). Without
    !important our base hide loses in the 1025–1279px gap (≤1024px here, ≥1280px there),
    rendering BOTH this bar and the desktop .or-toc. !important restores the win — same
    pattern as the sibling `.or-toc { display: none !important }` rule below. */
-:root { --or-mobile-toc-h: 44px; }
+/* Bar height AND its bottom margin both live here so the anchor-jump offsets further
+   down derive from them instead of repeating literals (that is how the tablet
+   scroll-padding below drifted out of sync with the margin in the first place). */
+:root { --or-mobile-toc-h: 44px; --or-mobile-toc-mb: 24px; }
 
 .fixed-mobile-bar { display: none !important; }
 
 @media (max-width: 1024px) {
-	.fixed-mobile-bar {
+	body .fixed-mobile-bar.fixed-mobile-bar {
 		display: block !important;
 		position: sticky;
 		top: 8px; /* tablet: #or-main-scroll's top edge is already below the header */
-		z-index: 10;
-		margin-bottom: 18px;
+		/* 2, NOT 10: the bar must paint below SkipToContent.astro's `.skiplink
+		   { z-index: 9 }`, so the keyboard skip link is never covered when it takes
+		   focus. 2 is what has always actually rendered — it came from the components'
+		   scoped styles and silently beat a dead `z-index: 10` here, which PR #290 left
+		   non-important precisely so 2 kept winning. Declaring it here keeps the
+		   effective value and the declared value the same thing. Ceiling: < 9. */
+		z-index: 2;
+		/* 24px, NOT the 18px that used to be declared here. Same reasoning as z-index:
+		   this rule previously lost the cascade, so 18px never rendered — the value that
+		   has actually shipped is the components' `margin-bottom: 1.5rem` (24px), which
+		   d389627e set deliberately (down from 4.5rem). 18px entered via #290's plan doc
+		   with no design rationale, written by an author who already knew a bare-class
+		   selector here could not win. Making the dead declaration live would therefore
+		   be an unreviewed ~25% spacing change smuggled in under a cascade fix, so we
+		   keep the shipped value and make the declaration honest instead. If design does
+		   want 18px, change --or-mobile-toc-mb on purpose — the scroll-padding below
+		   follows automatically. */
+		margin-bottom: var(--or-mobile-toc-mb);
 	}
 	/* Pages without h2/h3 headings: MainLayout skips the TOC island, but Astro still
-	   emits the empty slot wrapper — hide it so it doesn't leave a sticky 18px gap.
-	   !important so it still wins over the block !important above (it does on
-	   specificity too, but keep both important to avoid a silent regression). */
+	   emits the empty slot wrapper — hide it so it doesn't leave a sticky
+	   --or-mobile-toc-mb gap. !important so it still wins over the block !important
+	   above. NOTE: this rule is (0,2,1) — the SAME as the base rule now that the base was
+	   raised from a bare class — so it no longer out-specifies it and wins purely by
+	   coming later in this file. Deterministic (one stylesheet), but it does mean this
+	   rule must stay below the base rule. */
 	.fixed-mobile-bar:not(:has(details.toc-mobile-container)) { display: none !important; }
 	/* NOTE — do not re-add a `body.mobile-sidebar-toggle .fixed-mobile-bar { position: static }`
 	   rule here. PR #291 added one, believing this bar re-triggered an iOS 26.0 bug that
@@ -256,7 +303,8 @@ body.mobile-sidebar-toggle header {
 		border: 0;
 		padding: 0;
 	}
-	/* legacy [open] rule paints --theme-bg-offset at (0,2,1); out-specific it */
+	/* legacy [open] rule (TableOfContents.css:77) paints --theme-bg-offset at (0,3,0);
+	   ours is (0,4,0), so it out-specifies it */
 	.fixed-mobile-bar .toc-mobile-container[open] .toc-toggle { background: transparent; }
 	.fixed-mobile-bar .toc-mobile-header h2 {
 		flex: none;
@@ -288,7 +336,7 @@ body.mobile-sidebar-toggle header {
 	   covers the tablet regime, where #or-main-scroll is the scroller. The anchor ids
 	   sit on the headings themselves (not .heading-wrapper), so scroller padding is
 	   the reliable lever. */
-	#or-main-scroll { scroll-padding-top: calc(var(--or-mobile-toc-h) + 24px); }
+	#or-main-scroll { scroll-padding-top: calc(var(--or-mobile-toc-h) + var(--or-mobile-toc-mb)); }
 	.fixed-mobile-bar .or-toc-list {
 		position: absolute;
 		inset-inline: 0;
@@ -307,7 +355,9 @@ body.mobile-sidebar-toggle header {
 }
 /* Phones: the document scrolls under the fixed header — pin below it. */
 @media (max-width: 767.98px) {
-	.fixed-mobile-bar { top: calc(var(--theme-navbar-height) + 8px); }
+	/* Must match the (0,2,1) shape of the ≤1024px base rule above, or that rule's
+	   `top: 8px` outranks this one — media-query order carries no specificity weight. */
+	body .fixed-mobile-bar.fixed-mobile-bar { top: calc(var(--theme-navbar-height) + 8px); }
 	/* Anchor-jump landing offset for the document scroller. index.css reserves the
 	   LEGACY bar's 4rem (--theme-mobile-toc-height); size it to the real bar instead
 	   so targets land snug under it — and above the scroll-spy activation line
