@@ -54,6 +54,11 @@ export default UIDictionary({
 	'404.title': 'Page introuvable',
 	'404.content': 'On dirait que cette page a été débranchée.',
 	'404.linkText': 'Retour à l’accueil',
+	// Retired integration pages
+	'removed.eyebrow': 'Non prise en charge',
+	'removed.content': 'OpenReplay ne prend plus en charge cette intégration ; sa documentation a donc été retirée. Consultez les intégrations actuelles pour trouver une alternative prise en charge.',
+	'removed.linkText': 'Voir toutes les intégrations',
+	'removed.archiveText': 'Voir la page archivée de la v1.26.0',
 	// Aside component default labels
 	'aside.note': 'Note',
 	'aside.tip': 'Astuce',

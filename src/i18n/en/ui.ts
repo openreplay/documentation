@@ -59,6 +59,11 @@ export default {
 	'404.title': 'Not Found',
 	'404.content': 'Looks like this page got unplugged.',
 	'404.linkText': 'Take me home',
+	// Retired integration pages (see src/pages/[lang]/integrations/[integration].astro)
+	'removed.eyebrow': 'No longer supported',
+	'removed.content': 'OpenReplay no longer supports this integration, so its documentation has been retired. Browse the current integrations to find a supported alternative.',
+	'removed.linkText': 'See all integrations',
+	'removed.archiveText': 'View the archived v1.26.0 page',
 	// Aside component default labels
 	'aside.note': 'Note',
 	'aside.tip': 'Tip',

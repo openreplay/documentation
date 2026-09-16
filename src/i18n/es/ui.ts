@@ -59,4 +59,9 @@ export default UIDictionary({
 	'404.title': 'No encontrado',
 	'404.content': 'Parece que esta página se desconectó.',
 	'404.linkText': 'Volver al inicio',
+	// Retired integration pages
+	'removed.eyebrow': 'Ya no es compatible',
+	'removed.content': 'OpenReplay ya no admite esta integración, por lo que su documentación ha sido retirada. Consulta las integraciones actuales para encontrar una alternativa compatible.',
+	'removed.linkText': 'Ver todas las integraciones',
+	'removed.archiveText': 'Ver la página archivada de la v1.26.0',
 });

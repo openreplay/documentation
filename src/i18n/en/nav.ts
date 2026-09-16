@@ -344,6 +344,7 @@ const nav: NavItem = {
         { text: 'MSTeams', slug: 'integrations/msteams', children: [] },
         { text: 'Jira Cloud', slug: 'integrations/jira', children: [] },
         { text: 'Zendesk', slug: 'integrations/zendesk', children: [] },
+        { text: 'Google Tag Manager', slug: 'integrations/google-tag-manager', children: [] },
       ]
     },
     {
