@@ -5,6 +5,11 @@ export default UIDictionary({
 	'404.title': 'Страница не найдена',
 	'404.content': 'Похоже, эта страница отключилась от сети.',
 	'404.linkText': 'На главную',
+	// Retired integration pages
+	'removed.eyebrow': 'Больше не поддерживается',
+	'removed.content': 'OpenReplay больше не поддерживает эту интеграцию, поэтому её документация удалена. Посмотрите текущие интеграции, чтобы подобрать поддерживаемую альтернативу.',
+	'removed.linkText': 'Все интеграции',
+	'removed.archiveText': 'Открыть архивную страницу v1.26.0',
 	'rightSidebar.onThisPage': 'На этой странице',
 	'aside.note': 'Заметка',
 	'aside.tip': 'Подсказка',
