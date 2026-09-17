@@ -5,11 +5,6 @@ export default UIDictionary({
 	'404.title': 'الصفحة غير موجودة',
 	'404.content': 'يبدو أن هذه الصفحة قد فُصلت عن الطاقة.',
 	'404.linkText': 'العودة إلى الصفحة الرئيسية',
-	// Retired integration pages
-	'removed.eyebrow': 'لم يعد مدعومًا',
-	'removed.content': 'لم تعد OpenReplay تدعم هذا التكامل، لذلك تمت إزالة توثيقه. تصفّح التكاملات الحالية للعثور على بديل مدعوم.',
-	'removed.linkText': 'عرض جميع التكاملات',
-	'removed.archiveText': 'عرض صفحة الإصدار v1.26.0 المؤرشفة',
 	'leftSidebar.a11yTitle': 'التنقل الرئيسي',
 	'leftSidebar.learnTab': 'التعلّم',
 	'leftSidebar.referenceTab': 'المرجع',

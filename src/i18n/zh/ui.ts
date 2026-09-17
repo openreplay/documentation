@@ -5,11 +5,6 @@ export default UIDictionary({
 	'404.title': '未找到页面',
 	'404.content': '这个页面似乎已断电。',
 	'404.linkText': '返回首页',
-	// Retired integration pages
-	'removed.eyebrow': '不再支持',
-	'removed.content': 'OpenReplay 已不再支持此集成，相关文档已下线。请浏览当前集成，选择受支持的替代方案。',
-	'removed.linkText': '查看所有集成',
-	'removed.archiveText': '查看 v1.26.0 存档页面',
 	'leftSidebar.a11yTitle': '主要',
 	'leftSidebar.learnTab': '学习',
 	'leftSidebar.referenceTab': '参考',
