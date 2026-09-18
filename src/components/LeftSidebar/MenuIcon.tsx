@@ -32,6 +32,10 @@ const MenuIcon = (props) => {
 					</clipPath>
 				</defs>
 			</svg>);
+		case 'flutter_app':
+			return (<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+				<path d="M14.314 0L2.3 12l3.68 3.68L21.657.013h-7.343zm.014 11.072L7.857 17.53l6.47 6.47H21.7l-6.46-6.468 6.46-6.46h-7.37z" />
+			</svg>);
 		case 'session-replay':
 			return (<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
 				<svg viewBox="0 0 16 16" width="16px" height="16px">
