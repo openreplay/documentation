@@ -3,6 +3,7 @@ title: "Events"
 metaTitle: "OpenReplay Analytics SDK — Events"
 metaDescription: "Define and manage super properties for OpenReplay tracker analytics events."
 ---
+import Aside from '~/components/Aside.astro'
 
 ## Events
 
@@ -28,11 +29,17 @@ Event properties are passed only for a single call to `track/sendEvent` and are 
 
 ## Reserved keys
 
-These keys are reserved and cannot be created/removed via the super properties helpers:
+Two different sets of keys are rejected, depending on the helper:
 
-- `properties`
-- `token`
-- `timestamp`
+**Default properties** — collected by the SDK itself and sent with every event. `setProperty` silently skips them, so you cannot shadow them with a super property:
+
+`os`, `os_version`, `browser`, `browser_version`, `platform`, `screen_height`, `screen_width`, `initial_referrer`, `utm_source`, `utm_medium`, `utm_campaign`, `user_id`, `distinct_id`, `sdk_edition`, `sdk_version`, `timezone`, `search_engine`
+
+**Payload keys** — `properties`, `token` and `timestamp`. These are part of the event envelope, so `setPropertiesOnce` and `unsetProperties` skip them.
+
+<Aside type="note">
+	The two lists are enforced by different methods: `setProperty` guards the default properties, `setPropertiesOnce` and `unsetProperties` guard the payload keys. The same split applies on the People module, where `setProperties`, `setPropertiesOnce` and `appendValues` all guard the default properties.
+</Aside>
 
 ## Top-level signatures
 
@@ -110,7 +117,8 @@ tracker.analytics.events.setProperty("build_sha", "3f2c9a1")
 
 ### Notes:
 
-- Default/internal keys (tracked by the SDK) are ignored and won’t be added as super properties.
+- The [default properties](#reserved-keys) collected by the SDK are ignored and won’t be added as super properties.
+- The key/value form is ignored when `value` is `undefined`; pass `null` to store an empty value.
 - Changes are saved locally only if something actually changed.
 
 ## setPropertiesOnce

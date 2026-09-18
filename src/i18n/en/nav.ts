@@ -224,6 +224,27 @@ const nav: NavItem = {
       ]
     },
     {
+      text: 'Flutter (beta)',
+      slug: 'flutter-sdk',
+      icon: 'flutter_app',
+      children: [
+        { text: { en: 'Initialization', fr: 'Initialisation', es: 'Inicialización', ru: 'Инициализация', zh: '初始化', 'ar-ae': 'التهيئة' }, slug: 'flutter-sdk/init', children: [] },
+        { text: { en: 'Modules', fr: 'Modules', es: 'Módulos', ru: 'Модули', zh: '模块', 'ar-ae': 'الوحدات' }, slug: 'flutter-sdk/modules', children: [] },
+        { text: { en: 'Methods', fr: 'Méthodes', es: 'Métodos', ru: 'Методы', zh: '方法', 'ar-ae': 'الوظائف' }, slug: 'flutter-sdk/methods', children: [
+          { text: 'event', slug: 'flutter-sdk/methods/event' , children: []},
+          { text: 'setUserID', slug: 'flutter-sdk/methods/set-user-id', children: [] },
+          { text: 'userAnonymousID', slug: 'flutter-sdk/methods/user-anonymous-id', children: [] },
+          { text: 'setMetadata', slug: 'flutter-sdk/methods/set-metadata', children: [] },
+          { text: 'start', slug: 'flutter-sdk/methods/start', children: [] },
+          { text: 'stop', slug: 'flutter-sdk/methods/stop', children: [] },
+          { text: 'patchNetwork', slug: 'flutter-sdk/methods/patch-network', children: [] },
+        ] },
+        { text: { en: 'Inputs', fr: 'Entrées', es: 'Entradas', ru: 'Входные данные', zh: '输入', 'ar-ae': 'المدخلات' }, slug: 'flutter-sdk/inputs', children: [] },
+        { text: { en: 'Network Options', fr: 'Options réseau', es: 'Opciones de red', ru: 'Сетевые параметры', zh: '网络选项', 'ar-ae': 'خيارات الشبكة' }, slug: 'flutter-sdk/network', children: [] },
+        { text: { en: 'Sanitize Data', fr: 'Nettoyer les données', es: 'Sanear datos', ru: 'Очистка данных', zh: '数据脱敏', 'ar-ae': 'تنقية البيانات' }, slug: 'flutter-sdk/sanitization', children: [] },
+      ]
+    },
+    {
       text: { en: 'Products', fr: 'Produits', es: 'Productos', ru: 'Продукты', zh: '产品', 'ar-ae': 'المنتجات' },
       slug: null,
       icon: 'null',
