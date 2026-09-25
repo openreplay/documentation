@@ -1,0 +1,96 @@
+---
+title: "SDK de Flutter - Interceptar la red"
+metaTitle: "SDK de Flutter - Interceptar la red"
+metaDescription: "Detalles sobre la interceptación de red para el tracker de Flutter"
+---
+import Aside from '~/components/Aside.astro'
+
+## Interceptar la red
+
+Llama a `patchNetwork()` una vez, después de iniciar el tracker:
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+OpenReplay.instance.patchNetwork();
+```
+
+Esto instala un `HttpOverrides`, encadenándolo a lo que estuviera instalado antes, y captura todas las llamadas de `HttpClient` de `dart:io`, lo que cubre `IOClient` de `package:http` y el adaptador predeterminado de Dio. Es idempotente; `unpatchNetwork()` restaura los overrides anteriores.
+
+El tráfico de ingesta propio del tracker nunca se captura: su `HttpClient` se construye directamente, omitiendo los overrides.
+
+## Opciones de red
+
+`ORNetworkOptions` refleja las opciones de red del tracker web:
+
+- `capturePayload: bool` Registra los cuerpos de las solicitudes y respuestas. Valor predeterminado: `false`; los cuerpos se descartan a menos que lo actives.
+- `ignoreHeaders: List<String>` Nombres de encabezados que se descartan, comparados sin distinguir mayúsculas y minúsculas. Valor predeterminado: `['cookie', 'set-cookie', 'authorization']`.
+- `ignoreAllHeaders: bool` Descarta todos los encabezados. (El tracker web lo expresa como `ignoreHeaders: true`; Dart no tiene ese tipo de unión, por lo que es un flag independiente.) Valor predeterminado: `false`.
+- `failuresOnly: bool` Registra solo las respuestas fuera del rango 2xx. Valor predeterminado: `false`.
+- `sessionTokenHeader: String?` Si se establece, se añade a las solicitudes salientes un encabezado con este nombre que lleva el token de sesión, para que los logs de tu backend puedan correlacionarse con la reproducción. Valor predeterminado: `null`.
+- `sanitizer: ORRequestResponse? Function(ORRequestResponse)?` Tiene la última palabra sobre lo que se registra. Valor predeterminado: `null`.
+
+```dart
+OpenReplay.instance.patchNetwork(const ORNetworkOptions(
+  capturePayload: true,
+  failuresOnly: true,
+  sessionTokenHeader: 'X-OpenReplay-Session',
+));
+```
+
+## Sanear la solicitud
+
+El sanitizer recibe un `ORRequestResponse` por cada llamada capturada y lo devuelve (modificado como quieras) o devuelve `null` para descartar la llamada por completo.
+
+```dart
+OpenReplay.instance.patchNetwork(ORNetworkOptions(
+  capturePayload: true,
+  sanitizer: (record) {
+    if (record.url.contains('/internal/')) return null; // drop it
+
+    record.url = record.url.replaceAll(RegExp(r'token=[^&]+'), 'token=***');
+    record.requestHeaders.remove('x-api-key');
+
+    final body = record.requestBody;
+    if (body is Map) body.remove('password');
+
+    return record;
+  },
+));
+```
+
+`ORRequestResponse` contiene `url`, `method`, `status`, `duration`, `requestHeaders`, `responseHeaders`, `requestBody` y `responseBody`. Los cuerpos se decodifican cuando se pueden analizar como JSON, por lo que el sanitizer recibe un objeto en lugar de una cadena, igual que en el tracker web.
+
+## Registrar llamadas manualmente
+
+Un adaptador personalizado de Dio (o cualquier cliente que omita `HttpOverrides`) necesita su propio interceptor:
+
+```dart
+OpenReplay.instance.networkRequest(
+  url: 'https://api.example.com/cart',
+  method: 'POST',
+  requestJson: '{"sku":"A1"}',
+  responseJson: '{"ok":true}',
+  status: 200,
+  duration: 132, // ms
+);
+```
+
+Las operaciones GraphQL tienen su propio mensaje, para usar con los plugins gql de OpenReplay:
+
+```dart
+OpenReplay.instance.graphQL(
+  operationKind: 'query',
+  operationName: 'GetCart',
+  variables: '{"id":"42"}',
+  response: '{"data":{...}}',
+  duration: 87,
+);
+```
+
+<Aside type="note">
+	Consulta [sanear datos](/flutter-sdk/sanitization) para enmascarar la propia pantalla.
+</Aside>
+
+## ¿Tienes preguntas?
+Si tienes alguna pregunta sobre este proceso, no dudes en contactarnos en nuestro [Slack](https://slack.openreplay.com) o consulta nuestro [Foro](https://forum.openreplay.com).

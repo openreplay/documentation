@@ -1,0 +1,59 @@
+---
+title: "Flutter SDK - Sanitize sensitive data"
+metaTitle: "Flutter SDK - Sanitize sensitive data"
+metaDescription: "Details about sanitizing recordings and network data in the Flutter tracker"
+---
+import Aside from '~/components/Aside.astro'
+
+## UI Components
+
+Wrap anything that must not appear in the replay in `ORSanitizedView`. The region is blurred and hatched in the recording, matching the iOS SDK, and the widget deregisters itself as soon as it leaves the tree.
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+ORSanitizedView(
+  child: TextField(
+    controller: _cardNumber,
+    decoration: const InputDecoration(labelText: 'Card number'),
+  ),
+)
+```
+
+Masking is applied as a second raster pass over the captured frame, so it never changes what your user sees on screen.
+
+<Aside type="note">
+	`ORSanitizedView` hides the widget on the recorded screen. To also keep an input's *value* out of the event stream, pass `masked: true` to [`observeInput`](/flutter-sdk/inputs).
+</Aside>
+
+## Platform views
+
+Platform views — WebViews, maps, camera previews — render in separate native layers that Flutter cannot read back, so they would otherwise appear as blank regions. The tracker covers them with a placeholder by default. Opt out with `maskPlatformViews: false`:
+
+```dart
+await OpenReplay.instance.start(
+  projectKey: 'YOUR_PROJECT_KEY',
+  options: const OROptions(maskPlatformViews: false),
+);
+```
+
+## Network Requests
+
+Bodies are dropped unless you set `capturePayload: true`, and `cookie`, `set-cookie` and `authorization` headers are dropped by default. Beyond that, `sanitizer` has the last say over every captured call:
+
+```dart
+OpenReplay.instance.patchNetwork(ORNetworkOptions(
+  capturePayload: true,
+  ignoreHeaders: ['cookie', 'set-cookie', 'authorization', 'x-api-key'],
+  sanitizer: (record) {
+    final body = record.requestBody;
+    if (body is Map) body.remove('password');
+    return record; // return null to drop the call entirely
+  },
+));
+```
+
+See [network options](/flutter-sdk/network) for the full list of fields.
+
+## Have questions?
+If you have any questions about this process, feel free to reach out to us on our [Slack](https://slack.openreplay.com) or check out our [Forum](https://forum.openreplay.com).

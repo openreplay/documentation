@@ -4,10 +4,35 @@ metaTitle: "使用 OpenReplay tracker 分析 SDK"
 metaDescription: "了解如何设置和使用 OpenReplay tracker 分析 SDK"
 ---
 import LinkRow from '~/components/LinkRow.astro'
+import Aside from '~/components/Aside.astro'
 
 ## 分析 SDK
 
 了解如何设置 OpenReplay tracker 分析 SDK。
+
+## 启用 SDK
+
+分析 SDK 需要**主动启用（opt-in）**。只有在向 tracker 构造函数传入 `analytics.active` 时才会实例化——在此之前，`tracker.analytics` 为 `null`，`tracker.track()` 不执行任何操作。
+
+```js
+import Tracker from '@openreplay/tracker'
+
+const tracker = new Tracker({
+  projectKey: "YOUR_PROJECT_KEY",
+  analytics: { active: true },
+})
+
+tracker.start()
+```
+
+### 选项
+
+- `active: boolean` 启用分析 SDK。默认值：`false`。
+- `ingestPoint?: string` 分析批次数据发送到的端点。仅适用于自托管部署——在 OpenReplay Cloud 上会忽略此选项并使用 `https://api.openreplay.com/ingest`。默认为 tracker 的 `ingestPoint`。
+
+<Aside type="note">
+	事件会被放入队列，每 5 秒刷新一次；标签页可见性发生变化时也会刷新，这样即使标签页关闭，缓冲的事件也不会丢失。未能发送到后端的批次会被放回队列头部，并在下一次刷新时重试。
+</Aside>
 
 ## 模块
 
@@ -24,12 +49,43 @@ import LinkRow from '~/components/LinkRow.astro'
 // Identify a user with an id (e.g. email, username, etc.)
 tracker.analytics.identify(userId: string): void
 // same as
-tracker.analytics.people.identify()
+tracker.analytics.people.identify(userId)
 
 // Add event to batch with option to send it immediately
 tracker.analytics.track(eventName: string, tempProperties?: Record<string, any>, options?: { send_immediately: boolean })
 // same as
-tracker.analytics.events.track()
+tracker.analytics.events.track(eventName, tempProperties, options)
+
+// Clear user id, people properties and super properties, and stop the batcher
+tracker.analytics.reset(): void
+```
+
+## Tracker 级别的快捷方法
+
+这些方法直接位于 tracker 本身，因此无需访问 `tracker.analytics` 即可安全调用（在分析功能禁用时，它们不执行任何操作）：
+
+```ts
+// Same as tracker.analytics.track(...)
+tracker.track(eventName: string, properties?: Record<string, any>, options?: { send_immediately: boolean })
+
+// Sets the replay's user ID *and* calls analytics.people.identify() with it
+tracker.setUserID(id: string): void
+tracker.identify(id: string): void // alias of setUserID
+
+// Send analytics events under your own token, without session recording
+tracker.setAnalyticsToken(token: string): void
+```
+
+<Aside type="note">
+	`tracker.setUserID()` 会同时为回放和分析档案识别用户。直接调用 `tracker.analytics.people.identify()` 只会设置分析档案。
+</Aside>
+
+## reset
+
+清除已识别的用户（包括持久化的设备 id）、所有 people 属性、所有超级属性，并停止批处理器。请在用户登出时调用。
+
+```ts
+tracker.analytics.reset()
 ```
 
 ## 有疑问吗？

@@ -1,0 +1,147 @@
+---
+title: "Flutter SDK - Инициализация SDK"
+metaTitle: "Flutter SDK - Инициализация SDK"
+metaDescription: "Параметры конфигурации для метода start трекера Flutter"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	Flutter SDK находится в стадии Beta. Не стесняйтесь оставлять нам отзывы или сообщать о любых проблемах, с которыми вы можете столкнуться, в нашем [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com).
+</Aside>
+
+## Требования
+
+- Flutter `3.41` или новее (Dart SDK `^3.0.0`).
+- Бэкенд OpenReplay версии `v1.26.0` или новее. Более старые бэкенды не поддерживают кадры: события по-прежнему записываются, а экран — нет.
+
+У пакета **нет зависимостей из pub** — протокол передачи, пакетирование, gzip и multipart полностью реализованы на Dart, а всё нативное проходит через единственный platform channel.
+
+## Установка
+
+```sh
+flutter pub add openreplay
+```
+
+Или добавьте его в ваш `pubspec.yaml`:
+
+```yaml
+dependencies:
+  openreplay: ^1.0.9
+```
+
+## Инициализация
+
+Вы должны передать `projectKey` в `start()`. Вы можете получить это значение в панели управления OpenReplay в разделе 'Preferences > Projects'.
+
+<Aside type="tip">
+	Обратите внимание, что если у вас несколько проектов, нужно внимательно выбирать, какой ключ проекта использовать.
+</Aside>
+
+### Добавление кода отслеживания
+
+Оберните ваше приложение в `OpenReplayWidget`, а затем запустите трекер. Эта обёртка **обязательна**: она предоставляет repaint boundary, из которой захватываются кадры, поэтому без неё ничего не записывается.
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:openreplay/openreplay.dart';
+
+void main() {
+  runApp(const OpenReplayWidget(child: MyApp()));
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await OpenReplay.instance.start(
+        projectKey: 'YOUR_PROJECT_KEY',
+        // not required if you're using our SaaS version
+        serverUrl: 'https://your.instance.com/ingest',
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+        // records screen transitions
+        navigatorObservers: [ORNavigatorObserver()],
+        home: const HomePage(),
+      );
+}
+```
+
+`start()` можно безопасно вызывать до первого кадра — захват начинается только после того, как `OpenReplayWidget` пройдёт layout.
+
+### Настройка слушателя навигации
+
+Добавьте `ORNavigatorObserver` в ваш `MaterialApp` (или `CupertinoApp`, или любой `Navigator`), чтобы добавляемые и удаляемые маршруты отображались на временной шкале воспроизведения:
+
+```dart
+MaterialApp(
+  navigatorObservers: [ORNavigatorObserver()],
+  // ...
+)
+```
+
+Маршруты передаются по `route.settings.name`. Для безымянных маршрутов используется их позиция в стеке (`route/2`), поэтому именованные маршруты делают временную шкалу гораздо более читаемой.
+
+### Очистка данных
+
+Подробнее см. [как очищать данные в записях Flutter](/flutter-sdk/sanitization).
+
+## Параметры инициализации
+
+Параметры передаются в `start()` в виде `OROptions`:
+
+```dart
+await OpenReplay.instance.start(
+  projectKey: 'YOUR_PROJECT_KEY',
+  options: const OROptions(
+    logs: false,
+    targetLongEdge: 1080,
+  ),
+);
+```
+
+- `crashes: bool` Фиксирует ошибки Dart. Для нативных сбоев по-прежнему нужен нативный инструмент отчётов. По умолчанию: `true`.
+- `analytics: bool` Фиксирует касания, свайпы, экраны и поля ввода. По умолчанию: `true`.
+- `performances: bool` Фиксирует загрузку CPU, память, заряд батареи и тепловое состояние. По умолчанию: `true`.
+- `logs: bool` Фиксирует вывод `debugPrint`. По умолчанию: `true`.
+- `screen: bool` Включает захват кадров. По умолчанию: `true`.
+- `screenshotBatchSize: ScreenshotBatchSize` Количество кадров, буферизуемых перед упаковкой и отправкой пакета — `low` (10), `normal` (20) или `high` (30). По умолчанию: `normal`.
+- `targetLongEdge: int` Длина самой длинной стороны захваченного кадра в пикселях. Ограничивает затраты на кадр, чтобы они не зависели от размера экрана. По умолчанию: `720`.
+- `dedupeFrames: bool` Пропускает кадры, пиксели которых побайтово совпадают с предыдущим. На воспроизведение это не влияет — плеер удерживает последний снимок, сделанный в текущий момент или раньше. По умолчанию: `true`.
+- `maskPlatformViews: bool` Закрывает platform views (WebView, карты, превью камеры) заглушкой. Они отрисовываются в нативных слоях, которые Flutter не может считать, поэтому без этого параметра они выглядят пустыми. По умолчанию: `true`.
+- `wifiOnly: bool` Зарезервирован; **пока не применяется**. По умолчанию: `true`.
+- `debugLogs: bool` Включает собственное логирование SDK. По умолчанию: `false`.
+- `debugImages: bool` Сохраняет захваченные кадры для отладки. По умолчанию: `false`.
+
+Доступны два пресета: `OROptions.defaults` (все перечисленные выше значения) и `OROptions.defaultDebug` (то же самое, но с `debugLogs: true`).
+
+<Aside type="note">
+	Частота кадров и качество изображения **не** задаются здесь. Они берутся из настроек вашего проекта и передаются в ответе `/start`.
+</Aside>
+
+## URL сервера
+
+По умолчанию `serverUrl` указывает на OpenReplay Cloud. В self-hosted развёртываниях его передают в `start()` или задают заранее:
+
+```dart
+OpenReplay.instance.serverUrl = 'https://your.instance.com/ingest';
+```
+
+## Модули
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="Познакомьтесь с модулями Flutter SDK" url="/flutter-sdk/modules" hideIcon={true} width="100"/>
+</div>
+
+## Методы
+
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="Познакомьтесь с методами Flutter SDK" url="/flutter-sdk/methods" hideIcon={true} width="100"/>
+</div>
+
+## Остались вопросы?
+Если у вас есть какие-либо вопросы об этом процессе, не стесняйтесь обращаться к нам в нашем [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com).

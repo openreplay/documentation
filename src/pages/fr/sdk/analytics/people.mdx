@@ -61,7 +61,9 @@ tracker.analytics.people.identify("nikita@openreplay.com")
 
 Si un utilisateur différent avait déjà été identifié, le SDK réinitialise les propriétés people locales avant de basculer vers le nouvel id.
 
-`options.fromTracker` est utilisé en interne pour éviter de déclencher deux fois le hook d'id au niveau du tracker ; en général, vous n'en avez pas besoin.
+`user_id` doit être une chaîne non vide ; toute autre valeur lève une exception.
+
+`options.fromTracker` est utilisé en interne pour éviter de déclencher deux fois le hook d'id au niveau du tracker ; en général, vous n'en avez pas besoin. `tracker.setUserID()` appelle déjà `identify` pour vous.
 
 ## reset
 
@@ -105,7 +107,9 @@ tracker.analytics.people.setProperties("plan", "enterprise")
 
 ### Notes :
 
-Les clés réservées/par défaut (clés internes du tracker) sont ignorées pour le cache local du SDK.
+Les [propriétés par défaut](/sdk/analytics/events#clés-réservées) collectées par le SDK sont ignorées pour le cache local du SDK.
+
+La forme clé/valeur exige que les deux arguments soient truthy : `setProperties("plan", "")` ou `setProperties("seats", 0)` lève l'erreur `invalid user properties provided to set`. Utilisez la forme objet pour les valeurs falsy.
 
 Un événement est mis en file d'attente avec la charge utile `properties` complète que vous transmettez.
 

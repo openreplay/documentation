@@ -1,0 +1,96 @@
+---
+title: "Flutter SDK - اعتراض الشبكة"
+metaTitle: "Flutter SDK - اعتراض الشبكة"
+metaDescription: "تفاصيل حول اعتراض الشبكة لمتتبّع Flutter"
+---
+import Aside from '~/components/Aside.astro'
+
+## اعتراض الشبكة
+
+استدعِ `patchNetwork()` مرة واحدة، بعد بدء تشغيل المتتبّع:
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+OpenReplay.instance.patchNetwork();
+```
+
+يؤدي ذلك إلى تثبيت `HttpOverrides`، مع ربطه بسلسلة بأي تجاوزات مُثبّتة من قبل، ويلتقط كل استدعاء لـ `HttpClient` من `dart:io` — وهو ما يشمل `IOClient` من `package:http` والمحوّل (adapter) الافتراضي لـ Dio. هذه الطريقة متساوية القوة (idempotent)؛ وتعيد `unpatchNetwork()` التجاوزات السابقة.
+
+لا يتم التقاط حركة الاستيعاب (ingest) الخاصة بالمتتبّع نفسه أبدًا: إذ يُنشأ `HttpClient` الخاص به مباشرةً، متجاوزًا تلك التجاوزات.
+
+## خيارات الشبكة
+
+يحاكي `ORNetworkOptions` خيارات الشبكة في متتبّع الويب:
+
+- `capturePayload: bool` يسجّل أجسام الطلبات والاستجابات. القيمة الافتراضية: `false` — يتم تجاهل الأجسام ما لم تختر تفعيلها.
+- `ignoreHeaders: List<String>` أسماء الترويسات المراد تجاهلها، وتُقارن دون تمييز حالة الأحرف. القيمة الافتراضية: `['cookie', 'set-cookie', 'authorization']`.
+- `ignoreAllHeaders: bool` يتجاهل جميع الترويسات. (يعبّر متتبّع الويب عن ذلك بـ `ignoreHeaders: true`؛ ولا يوجد في Dart نوع اتحاد (union type) كهذا، لذا فهو علامة منفصلة.) القيمة الافتراضية: `false`.
+- `failuresOnly: bool` يسجّل فقط الاستجابات خارج نطاق 2xx. القيمة الافتراضية: `false`.
+- `sessionTokenHeader: String?` عند ضبطه، تُضاف ترويسة بهذا الاسم تحمل رمز الجلسة (session token) إلى الطلبات الصادرة، بحيث يمكن ربط سجلات الواجهة الخلفية لديك بإعادة التشغيل. القيمة الافتراضية: `null`.
+- `sanitizer: ORRequestResponse? Function(ORRequestResponse)?` الكلمة الأخيرة فيما يتم تسجيله. القيمة الافتراضية: `null`.
+
+```dart
+OpenReplay.instance.patchNetwork(const ORNetworkOptions(
+  capturePayload: true,
+  failuresOnly: true,
+  sessionTokenHeader: 'X-OpenReplay-Session',
+));
+```
+
+## تنقية الطلب
+
+تتلقّى دالة التنقية (sanitizer) كائن `ORRequestResponse` واحدًا لكل استدعاء ملتقَط وتُرجعه — بعد تعديله كما تشاء — أو تُرجع `null` لتجاهل الاستدعاء بالكامل.
+
+```dart
+OpenReplay.instance.patchNetwork(ORNetworkOptions(
+  capturePayload: true,
+  sanitizer: (record) {
+    if (record.url.contains('/internal/')) return null; // drop it
+
+    record.url = record.url.replaceAll(RegExp(r'token=[^&]+'), 'token=***');
+    record.requestHeaders.remove('x-api-key');
+
+    final body = record.requestBody;
+    if (body is Map) body.remove('password');
+
+    return record;
+  },
+));
+```
+
+يحمل `ORRequestResponse` الحقول `url` و`method` و`status` و`duration` و`requestHeaders` و`responseHeaders` و`requestBody` و`responseBody`. تُفكّ ترميز الأجسام عندما يمكن تحليلها كـ JSON، لذا تحصل دالة التنقية على كائن بدلًا من سلسلة نصية — بما يطابق سلوك متتبّع الويب.
+
+## تسجيل الاستدعاءات يدويًا
+
+يحتاج محوّل Dio المخصّص (أو أي عميل يتجاوز `HttpOverrides`) إلى معترض (interceptor) خاص به:
+
+```dart
+OpenReplay.instance.networkRequest(
+  url: 'https://api.example.com/cart',
+  method: 'POST',
+  requestJson: '{"sku":"A1"}',
+  responseJson: '{"ok":true}',
+  status: 200,
+  duration: 132, // ms
+);
+```
+
+لعمليات GraphQL رسالتها الخاصة، لاستخدامها مع إضافات gql من OpenReplay:
+
+```dart
+OpenReplay.instance.graphQL(
+  operationKind: 'query',
+  operationName: 'GetCart',
+  variables: '{"id":"42"}',
+  response: '{"data":{...}}',
+  duration: 87,
+);
+```
+
+<Aside type="note">
+	راجع [تنقية البيانات](/flutter-sdk/sanitization) لإخفاء الشاشة نفسها.
+</Aside>
+
+## هل لديك أسئلة؟
+إذا كانت لديك أي أسئلة حول هذه العملية، فلا تتردد في التواصل معنا عبر [Slack](https://slack.openreplay.com) الخاص بنا أو الاطلاع على [المنتدى](https://forum.openreplay.com) الخاص بنا.

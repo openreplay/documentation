@@ -1,0 +1,38 @@
+---
+title: "Flutter SDK - patchNetwork 方法"
+metaTitle: "Flutter SDK - patchNetwork 方法"
+metaDescription: "关于 OpenReplay Flutter SDK 中 patchNetwork 方法的详细说明"
+---
+import Aside from '~/components/Aside.astro'
+
+开始捕获 `dart:io` HTTP 流量。这会安装一个 `HttpOverrides`（并链接到任何已存在的覆盖），因此它既能直接覆盖 `HttpClient`，也能覆盖 `package:http` 的 `IOClient` 以及 Dio 的默认适配器。
+
+## 签名
+
+```dart
+OpenReplay.instance.patchNetwork([ORNetworkOptions options = const ORNetworkOptions()])
+OpenReplay.instance.unpatchNetwork()
+```
+
+`patchNetwork()` 是幂等的。`unpatchNetwork()` 会停止捕获并恢复之前的覆盖。
+
+## 示例
+
+```dart
+OpenReplay.instance.patchNetwork(ORNetworkOptions(
+  capturePayload: true,
+  sanitizer: (record) {
+    record.url = record.url.replaceAll(RegExp(r'token=[^&]+'), 'token=***');
+    return record; // return null to drop the call entirely
+  },
+));
+```
+
+有关 `ORNetworkOptions` 的所有字段，请参阅[网络选项](/flutter-sdk/network)。
+
+<Aside type="note">
+	自定义的 Dio 适配器会绕过 `HttpOverrides`。在这种情况下，请添加你自己的拦截器，并在其中调用 `OpenReplay.instance.networkRequest(...)`。
+</Aside>
+
+## 有疑问吗？
+如果你对此流程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

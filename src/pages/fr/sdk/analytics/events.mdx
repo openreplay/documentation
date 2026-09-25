@@ -3,6 +3,7 @@ title: "Événements"
 metaTitle: "SDK Analytics OpenReplay — Événements"
 metaDescription: "Définissez et gérez les super propriétés pour les événements analytics du tracker OpenReplay."
 ---
+import Aside from '~/components/Aside.astro'
 
 ## Événements
 
@@ -28,11 +29,17 @@ Les propriétés d'événement ne sont transmises que pour un seul appel à `tra
 
 ## Clés réservées
 
-Ces clés sont réservées et ne peuvent pas être créées/supprimées via les helpers de super propriétés :
+Deux ensembles de clés différents sont rejetés, selon le helper :
 
-- `properties`
-- `token`
-- `timestamp`
+**Propriétés par défaut** : collectées par le SDK lui-même et envoyées avec chaque événement. `setProperty` les ignore silencieusement, vous ne pouvez donc pas les masquer avec une super propriété :
+
+`os`, `os_version`, `browser`, `browser_version`, `platform`, `screen_height`, `screen_width`, `initial_referrer`, `utm_source`, `utm_medium`, `utm_campaign`, `user_id`, `distinct_id`, `sdk_edition`, `sdk_version`, `timezone`, `search_engine`
+
+**Clés de payload** : `properties`, `token` et `timestamp`. Elles font partie de l'enveloppe de l'événement, c'est pourquoi `setPropertiesOnce` et `unsetProperties` les ignorent.
+
+<Aside type="note">
+	Les deux listes sont appliquées par des méthodes différentes : `setProperty` protège les propriétés par défaut, tandis que `setPropertiesOnce` et `unsetProperties` protègent les clés de payload. La même répartition s'applique au module People, où `setProperties`, `setPropertiesOnce` et `appendValues` protègent tous les propriétés par défaut.
+</Aside>
 
 ## Signatures de premier niveau
 
@@ -110,7 +117,8 @@ tracker.analytics.events.setProperty("build_sha", "3f2c9a1")
 
 ### Remarques :
 
-- Les clés par défaut/internes (suivies par le SDK) sont ignorées et ne seront pas ajoutées en tant que super propriétés.
+- Les [propriétés par défaut](#clés-réservées) collectées par le SDK sont ignorées et ne seront pas ajoutées en tant que super propriétés.
+- La forme clé/valeur est ignorée lorsque `value` vaut `undefined` ; passez `null` pour stocker une valeur vide.
 - Les modifications ne sont enregistrées localement que si quelque chose a réellement changé.
 
 ## setPropertiesOnce

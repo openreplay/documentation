@@ -1,0 +1,53 @@
+---
+title: "Flutter SDK - 跟踪屏幕和视图"
+metaTitle: "Flutter SDK - 跟踪屏幕和视图"
+metaDescription: "关于使用 Flutter 跟踪器跟踪屏幕和视图的详细信息"
+---
+import Aside from '~/components/Aside.astro'
+
+启用 `analytics`（默认启用）后，跟踪器会自动捕获点击、滑动、视口变化和输入事件。屏幕和单个视图则通过两个导出的组件（widget）上报。
+
+## 屏幕
+
+将 `ORNavigatorObserver` 添加到应用的导航器中，以记录路由切换：
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+MaterialApp(
+  navigatorObservers: [ORNavigatorObserver()],
+  // ...
+)
+```
+
+push、pop、replace 和 remove 操作都会被上报。路由以 `route.settings.name` 命名；未命名的路由会回退为其在栈中的位置（`route/2`），因此使用命名路由可以让时间线更易读。
+
+## 被跟踪的视图
+
+用 `ORTrackedView` 包裹任意组件，即可将其作为一个具名的、可观察的视图上报。它在挂载和卸载时都会发出可见性事件，其名称会用作落在其内部的触摸事件的标签。
+
+- `screenName: String` — 屏幕或功能标题
+- `viewName: String` — 被跟踪视图的名称
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+ORTrackedView(
+  screenName: 'Checkout',
+  viewName: 'Pay button',
+  child: ElevatedButton(onPressed: _pay, child: const Text('Pay')),
+)
+```
+
+## 触摸
+
+点击和滑动通过指针路由器（pointer router）的全局路由捕获，因此跟踪器可以看到每一个指针事件，而无需参与手势竞技场（gesture arena）的竞争——它不会吞掉你的应用所需的点击。移动距离超过 10 个逻辑像素的指针会被记录为带有主方向的滑动，更短的则记录为点击。
+
+触摸标签来自对指针下方文本的命中测试，或来自外层的 `ORTrackedView`。
+
+<Aside type="note">
+	标签永远不会从组件或渲染对象的类型名称派生：`flutter build --obfuscate` 会把这些名称变成无意义的字符。
+</Aside>
+
+## 有疑问？
+如果你对此流程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或者查看我们的[论坛](https://forum.openreplay.com)。

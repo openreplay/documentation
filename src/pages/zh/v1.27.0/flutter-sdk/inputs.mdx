@@ -1,0 +1,47 @@
+---
+title: "Flutter SDK - 跟踪输入框"
+metaTitle: "Flutter SDK - 跟踪输入框"
+metaDescription: "关于使用 Flutter 跟踪器跟踪输入框的详细信息"
+---
+import Aside from '~/components/Aside.astro'
+
+文本输入框不会被自动观察——Flutter 没有类似 UIKit 响应者链（responder chain）那样可供挂接的机制。将跟踪器附加到你关心的控制器上，它就会监听值变化事件（已防抖处理），并将最终值发送到 OpenReplay 后端。
+
+## 添加被跟踪的输入框
+
+使用 `observeInput(controller, label:, masked:)`：
+
+- `controller: TextEditingController` — 要观察的控制器
+- `label: String` — 所记录输入的标签
+- `masked: bool` — 如果为 `true`，跟踪器会记录输入事件，但发送 `****` 而不是实际值。默认值：`false`。
+
+它会返回一个用于移除监听器的回调，因此请将其接入 `dispose()`：
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+class _LoginFormState extends State<LoginForm> {
+  final _email = TextEditingController();
+  late final VoidCallback _stopObserving;
+
+  @override
+  void initState() {
+    super.initState();
+    _stopObserving = OpenReplay.instance.observeInput(_email, label: 'Email');
+  }
+
+  @override
+  void dispose() {
+    _stopObserving();
+    _email.dispose();
+    super.dispose();
+  }
+}
+```
+
+<Aside type="note">
+	`masked: true` 只会在事件流中隐藏该值。该输入框在录制的屏幕上仍然可见——请用 [`ORSanitizedView`](/flutter-sdk/sanitization) 包裹它，以便在屏幕上也将其隐藏。
+</Aside>
+
+## 有疑问？
+如果你对此流程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

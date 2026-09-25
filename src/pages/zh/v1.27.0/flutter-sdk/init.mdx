@@ -1,0 +1,147 @@
+---
+title: "Flutter SDK - 初始化 SDK"
+metaTitle: "Flutter SDK - 初始化 SDK"
+metaDescription: "Flutter 跟踪器 start 方法的配置选项"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	Flutter SDK 目前处于 Beta 阶段。欢迎在我们的 [Slack](https://slack.openreplay.com) 上向我们提供反馈或报告您遇到的任何问题，也可以查看我们的[论坛](https://forum.openreplay.com)。
+</Aside>
+
+## 要求
+
+- Flutter `3.41` 或更高版本（Dart SDK `^3.0.0`）。
+- OpenReplay 后端 `v1.26.0` 或更高版本。较旧的后端不支持帧（frames）：事件仍会被记录，但屏幕不会。
+
+该软件包**没有任何 pub 依赖**——传输协议、批处理、gzip 和 multipart 全部用 Dart 实现，所有原生功能都通过单一的平台通道（platform channel）完成。
+
+## 安装
+
+```sh
+flutter pub add openreplay
+```
+
+或者将其添加到您的 `pubspec.yaml` 中：
+
+```yaml
+dependencies:
+  openreplay: ^1.0.9
+```
+
+## 初始化
+
+您必须将 `projectKey` 传给 `start()`。您可以在 OpenReplay 仪表盘的 'Preferences > Projects' 下获取该值。
+
+<Aside type="tip">
+	请注意，如果您有多个项目，需要谨慎选择使用哪个项目密钥。
+</Aside>
+
+### 添加跟踪代码
+
+用 `OpenReplayWidget` 包裹您的应用，然后启动跟踪器。该包装组件是**必需的**：它提供了用于捕获帧的重绘边界（repaint boundary），没有它将不会录制任何内容。
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:openreplay/openreplay.dart';
+
+void main() {
+  runApp(const OpenReplayWidget(child: MyApp()));
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await OpenReplay.instance.start(
+        projectKey: 'YOUR_PROJECT_KEY',
+        // not required if you're using our SaaS version
+        serverUrl: 'https://your.instance.com/ingest',
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+        // records screen transitions
+        navigatorObservers: [ORNavigatorObserver()],
+        home: const HomePage(),
+      );
+}
+```
+
+`start()` 可以安全地在第一帧之前调用——只有在 `OpenReplayWidget` 完成布局后才会开始捕获。
+
+### 设置导航监听器
+
+将 `ORNavigatorObserver` 添加到您的 `MaterialApp`（或 `CupertinoApp`，或任意 `Navigator`）中，这样 push 和 pop 的路由就会显示在回放时间线中：
+
+```dart
+MaterialApp(
+  navigatorObservers: [ORNavigatorObserver()],
+  // ...
+)
+```
+
+路由以 `route.settings.name` 上报。未命名的路由会回退为其在栈中的位置（`route/2`），因此使用命名路由可以让时间线更易读。
+
+### 数据脱敏
+
+有关更多详情，请参阅[如何在 Flutter 回放中对数据进行脱敏](/flutter-sdk/sanitization)。
+
+## 初始化选项
+
+选项以 `OROptions` 的形式传给 `start()`：
+
+```dart
+await OpenReplay.instance.start(
+  projectKey: 'YOUR_PROJECT_KEY',
+  options: const OROptions(
+    logs: false,
+    targetLongEdge: 1080,
+  ),
+);
+```
+
+- `crashes: bool` 捕获 Dart 错误。原生崩溃仍需要原生崩溃上报工具。默认值：`true`。
+- `analytics: bool` 捕获触摸、滑动、屏幕和输入。默认值：`true`。
+- `performances: bool` 捕获 CPU、内存、电池和温度状态。默认值：`true`。
+- `logs: bool` 捕获 `debugPrint` 输出。默认值：`true`。
+- `screen: bool` 启用帧捕获。默认值：`true`。
+- `screenshotBatchSize: ScreenshotBatchSize` 打包并上传一个批次之前缓冲的帧数——`low`（10）、`normal`（20）或 `high`（30）。默认值：`normal`。
+- `targetLongEdge: int` 捕获帧的最长边，单位为像素。限制每帧的开销，使其不随屏幕尺寸波动。默认值：`720`。
+- `dedupeFrames: bool` 跳过像素与上一帧逐字节相同的帧。回放不受影响——播放器会保持当前时间点或之前的最后一个快照。默认值：`true`。
+- `maskPlatformViews: bool` 用占位符覆盖平台视图（WebView、地图、相机预览）。它们在 Flutter 无法回读的原生图层中渲染，因此不启用此选项时它们会显示为空白。默认值：`true`。
+- `wifiOnly: bool` 预留选项；**尚未生效**。默认值：`true`。
+- `debugLogs: bool` 启用 SDK 自身的日志。默认值：`false`。
+- `debugImages: bool` 导出捕获的帧以便调试。默认值：`false`。
+
+提供了两个预设：`OROptions.defaults`（即以上所有默认值）和 `OROptions.defaultDebug`（相同，但 `debugLogs: true`）。
+
+<Aside type="note">
+	帧率和图像质量**不**在此处设置。它们来自您的项目设置，并通过 `/start` 响应下发。
+</Aside>
+
+## 服务器 URL
+
+`serverUrl` 默认指向 OpenReplay Cloud。自托管部署需要将其传给 `start()`，或者预先设置：
+
+```dart
+OpenReplay.instance.serverUrl = 'https://your.instance.com/ingest';
+```
+
+## 模块
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="了解 Flutter SDK 的模块" url="/flutter-sdk/modules" hideIcon={true} width="100"/>
+</div>
+
+## 方法
+
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="了解 Flutter SDK 的方法" url="/flutter-sdk/methods" hideIcon={true} width="100"/>
+</div>
+
+## 有疑问吗？
+如果您对此流程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

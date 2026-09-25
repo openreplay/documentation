@@ -1,0 +1,47 @@
+---
+title: "SDK Flutter - suivi des champs de saisie"
+metaTitle: "SDK Flutter - suivi des champs de saisie"
+metaDescription: "Détails sur le suivi des champs de saisie avec le tracker Flutter"
+---
+import Aside from '~/components/Aside.astro'
+
+Les champs de texte ne sont pas observés automatiquement : Flutter n'a pas d'équivalent de la responder chain d'UIKit sur laquelle se greffer. Attachez le tracker aux contrôleurs qui vous intéressent, et il écoutera les changements de valeur (avec debounce) et enverra la valeur résultante au backend d'OpenReplay.
+
+## Ajouter des champs de saisie suivis
+
+Utilisez `observeInput(controller, label:, masked:)` :
+
+- `controller: TextEditingController` — le contrôleur à observer
+- `label: String` — libellé du champ de saisie enregistré
+- `masked: bool` — si `true`, le tracker enregistre l'événement de saisie mais envoie `****` à la place de la valeur. Par défaut : `false`.
+
+Elle renvoie un callback qui supprime le listener, branchez-le donc dans `dispose()` :
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+class _LoginFormState extends State<LoginForm> {
+  final _email = TextEditingController();
+  late final VoidCallback _stopObserving;
+
+  @override
+  void initState() {
+    super.initState();
+    _stopObserving = OpenReplay.instance.observeInput(_email, label: 'Email');
+  }
+
+  @override
+  void dispose() {
+    _stopObserving();
+    _email.dispose();
+    super.dispose();
+  }
+}
+```
+
+<Aside type="note">
+	`masked: true` masque uniquement la valeur dans le flux d'événements. Le champ reste visible sur l'écran enregistré : enveloppez-le dans [`ORSanitizedView`](/flutter-sdk/sanitization) pour le masquer là aussi.
+</Aside>
+
+## Des questions ?
+Si vous avez des questions sur ce processus, n'hésitez pas à nous contacter sur notre [Slack](https://slack.openreplay.com) ou à consulter notre [Forum](https://forum.openreplay.com).

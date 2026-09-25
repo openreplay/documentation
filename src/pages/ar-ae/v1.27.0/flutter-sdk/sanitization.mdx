@@ -1,0 +1,59 @@
+---
+title: "Flutter SDK - تنقية البيانات الحساسة"
+metaTitle: "Flutter SDK - تنقية البيانات الحساسة"
+metaDescription: "تفاصيل حول تنقية التسجيلات وبيانات الشبكة في متتبّع Flutter"
+---
+import Aside from '~/components/Aside.astro'
+
+## مكوّنات واجهة المستخدم
+
+غلّف أي شيء يجب ألا يظهر في إعادة التشغيل بـ `ORSanitizedView`. تظهر المنطقة مموّهة ومخطّطة في التسجيل، بما يطابق iOS SDK، ويُلغي عنصر الواجهة (widget) تسجيل نفسه بمجرد مغادرته شجرة العناصر.
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+ORSanitizedView(
+  child: TextField(
+    controller: _cardNumber,
+    decoration: const InputDecoration(labelText: 'Card number'),
+  ),
+)
+```
+
+يُطبَّق الإخفاء كتمريرة تنقيط (raster) ثانية على الإطار الملتقَط، لذا فهو لا يغيّر أبدًا ما يراه المستخدم على الشاشة.
+
+<Aside type="note">
+	يُخفي `ORSanitizedView` عنصر الواجهة على الشاشة المُسجَّلة. ولإبقاء *قيمة* حقل الإدخال خارج تدفّق الأحداث أيضًا، مرّر `masked: true` إلى [`observeInput`](/flutter-sdk/inputs).
+</Aside>
+
+## طرق عرض المنصّة (Platform views)
+
+تُعرض طرق عرض المنصّة — WebViews والخرائط ومعاينات الكاميرا — في طبقات أصلية منفصلة لا يستطيع Flutter قراءتها، لذا ستظهر خلاف ذلك كمناطق فارغة. تغطّيها أداة التتبّع بعنصر نائب بشكل افتراضي. يمكنك إلغاء ذلك باستخدام `maskPlatformViews: false`:
+
+```dart
+await OpenReplay.instance.start(
+  projectKey: 'YOUR_PROJECT_KEY',
+  options: const OROptions(maskPlatformViews: false),
+);
+```
+
+## طلبات الشبكة
+
+يتم تجاهل الأجسام ما لم تضبط `capturePayload: true`، كما يتم تجاهل ترويسات `cookie` و`set-cookie` و`authorization` بشكل افتراضي. وإلى جانب ذلك، تكون الكلمة الأخيرة لـ `sanitizer` في كل استدعاء ملتقَط:
+
+```dart
+OpenReplay.instance.patchNetwork(ORNetworkOptions(
+  capturePayload: true,
+  ignoreHeaders: ['cookie', 'set-cookie', 'authorization', 'x-api-key'],
+  sanitizer: (record) {
+    final body = record.requestBody;
+    if (body is Map) body.remove('password');
+    return record; // return null to drop the call entirely
+  },
+));
+```
+
+راجع [خيارات الشبكة](/flutter-sdk/network) للاطلاع على القائمة الكاملة للحقول.
+
+## هل لديك أسئلة؟
+إذا كانت لديك أي أسئلة حول هذه العملية، فلا تتردد في التواصل معنا عبر [Slack](https://slack.openreplay.com) أو زيارة [المنتدى](https://forum.openreplay.com).

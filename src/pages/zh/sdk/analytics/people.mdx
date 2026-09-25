@@ -61,7 +61,9 @@ tracker.analytics.people.identify("nikita@openreplay.com")
 
 如果之前已经识别了另一个用户，SDK 会在切换到新 id 之前重置本地的 people 属性。
 
-`options.fromTracker` 在内部使用，以避免重复调用追踪器层级的 id 钩子；通常你不需要用到它。
+`user_id` 必须是非空字符串——其他任何值都会抛出错误。
+
+`options.fromTracker` 在内部使用，以避免重复调用追踪器层级的 id 钩子；通常你不需要用到它。`tracker.setUserID()` 已经会为你调用 `identify`。
 
 ## reset
 
@@ -105,7 +107,9 @@ tracker.analytics.people.setProperties("plan", "enterprise")
 
 ### 说明：
 
-对于 SDK 的本地缓存，保留键/默认键（追踪器内部键）会被忽略。
+对于 SDK 的本地缓存，SDK 收集的[默认属性](/sdk/analytics/events#保留键)会被忽略。
+
+键/值形式要求两个参数都为真值（truthy）——`setProperties("plan", "")` 或 `setProperties("seats", 0)` 会抛出 `invalid user properties provided to set` 错误。对于假值（falsy），请使用对象形式。
 
 会将一个携带你所传入完整 `properties` 负载的事件加入队列。
 

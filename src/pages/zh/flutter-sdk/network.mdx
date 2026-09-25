@@ -1,0 +1,96 @@
+---
+title: "Flutter SDK - 拦截网络"
+metaTitle: "Flutter SDK - 拦截网络"
+metaDescription: "关于 Flutter 跟踪器网络拦截的详细信息"
+---
+import Aside from '~/components/Aside.astro'
+
+## 拦截网络
+
+在启动跟踪器之后，调用一次 `patchNetwork()`：
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+OpenReplay.instance.patchNetwork();
+```
+
+这会安装一个 `HttpOverrides`（并链接到此前已安装的任何覆盖），捕获每一个 `dart:io` `HttpClient` 调用——这涵盖了 `package:http` 的 `IOClient` 以及 Dio 的默认适配器。该调用是幂等的；`unpatchNetwork()` 会恢复之前的覆盖。
+
+跟踪器自身的数据上报（ingest）流量永远不会被捕获：它的 `HttpClient` 是直接构造的，绕过了这些覆盖。
+
+## 网络选项
+
+`ORNetworkOptions` 与 Web 跟踪器的网络选项保持一致：
+
+- `capturePayload: bool` 记录请求体和响应体。默认值：`false`——除非你主动启用，否则请求体和响应体都会被丢弃。
+- `ignoreHeaders: List<String>` 要丢弃的请求头名称，比较时不区分大小写。默认值：`['cookie', 'set-cookie', 'authorization']`。
+- `ignoreAllHeaders: bool` 丢弃所有请求头。（Web 跟踪器用 `ignoreHeaders: true` 来表示这一点；Dart 没有这样的联合类型，因此它是一个单独的标志。）默认值：`false`。
+- `failuresOnly: bool` 只记录状态码不在 2xx 范围内的响应。默认值：`false`。
+- `sessionTokenHeader: String?` 设置后，会在发出的请求中添加一个以此命名、携带会话令牌的请求头，以便将你的后端日志与回放关联起来。默认值：`null`。
+- `sanitizer: ORRequestResponse? Function(ORRequestResponse)?` 对记录内容拥有最终决定权。默认值：`null`。
+
+```dart
+OpenReplay.instance.patchNetwork(const ORNetworkOptions(
+  capturePayload: true,
+  failuresOnly: true,
+  sessionTokenHeader: 'X-OpenReplay-Session',
+));
+```
+
+## 清理请求
+
+sanitizer 会针对每个被捕获的调用接收一个 `ORRequestResponse`，并将其返回（可按需修改），或者返回 `null` 以完全丢弃该调用。
+
+```dart
+OpenReplay.instance.patchNetwork(ORNetworkOptions(
+  capturePayload: true,
+  sanitizer: (record) {
+    if (record.url.contains('/internal/')) return null; // drop it
+
+    record.url = record.url.replaceAll(RegExp(r'token=[^&]+'), 'token=***');
+    record.requestHeaders.remove('x-api-key');
+
+    final body = record.requestBody;
+    if (body is Map) body.remove('password');
+
+    return record;
+  },
+));
+```
+
+`ORRequestResponse` 包含 `url`、`method`、`status`、`duration`、`requestHeaders`、`responseHeaders`、`requestBody` 和 `responseBody`。当请求体和响应体可以解析为 JSON 时会被解码，因此 sanitizer 拿到的是对象而不是字符串——与 Web 跟踪器的行为一致。
+
+## 手动记录调用
+
+自定义的 Dio 适配器（或任何绕过 `HttpOverrides` 的客户端）需要自己的拦截器：
+
+```dart
+OpenReplay.instance.networkRequest(
+  url: 'https://api.example.com/cart',
+  method: 'POST',
+  requestJson: '{"sku":"A1"}',
+  responseJson: '{"ok":true}',
+  status: 200,
+  duration: 132, // ms
+);
+```
+
+GraphQL 操作有专门的消息，供 OpenReplay gql 插件使用：
+
+```dart
+OpenReplay.instance.graphQL(
+  operationKind: 'query',
+  operationName: 'GetCart',
+  variables: '{"id":"42"}',
+  response: '{"data":{...}}',
+  duration: 87,
+);
+```
+
+<Aside type="note">
+	有关如何对屏幕本身进行遮盖，请参阅[数据脱敏](/flutter-sdk/sanitization)。
+</Aside>
+
+## 有疑问？
+如果你对此流程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

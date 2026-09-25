@@ -4,10 +4,35 @@ metaTitle: "استخدام حزمة تطوير تحليلات المتتبع ف�
 metaDescription: "تعرّف على كيفية إعداد واستخدام حزمة تطوير تحليلات المتتبع في OpenReplay"
 ---
 import LinkRow from '~/components/LinkRow.astro'
+import Aside from '~/components/Aside.astro'
 
 ## حزمة تطوير التحليلات (SDK)
 
 تعرّف على كيفية إعداد حزمة تطوير تحليلات المتتبع في OpenReplay.
+
+## تفعيل الـ SDK
+
+إن حزمة تطوير التحليلات **اختيارية التفعيل (opt-in)**. فهي لا تُنشأ إلا عندما تمرّر `analytics.active` إلى مُنشئ (constructor) أداة التتبّع — وحتى ذلك الحين تكون `tracker.analytics` مساوية لـ `null` ولا يُنفّذ `tracker.track()` أي شيء.
+
+```js
+import Tracker from '@openreplay/tracker'
+
+const tracker = new Tracker({
+  projectKey: "YOUR_PROJECT_KEY",
+  analytics: { active: true },
+})
+
+tracker.start()
+```
+
+### الخيارات
+
+- `active: boolean` يُفعّل حزمة تطوير التحليلات. القيمة الافتراضية: `false`.
+- `ingestPoint?: string` نقطة النهاية التي تُرسَل إليها دفعات التحليلات. لعمليات النشر ذاتية الاستضافة فقط — على OpenReplay Cloud يتم تجاهلها ويُستخدم `https://api.openreplay.com/ingest`. القيمة الافتراضية هي `ingestPoint` الخاص بأداة التتبّع.
+
+<Aside type="note">
+	تُوضع الأحداث في قائمة انتظار وتُرسَل كل 5 ثوانٍ، وكذلك عند تغيّر ظهور علامة التبويب بحيث تنجو الأحداث المخزّنة مؤقتًا من إغلاق علامة التبويب. أما الدفعة التي تفشل في الوصول إلى الواجهة الخلفية فتُعاد إلى مقدّمة قائمة الانتظار ويُعاد إرسالها في عملية الإرسال التالية.
+</Aside>
 
 ## الوحدات
 
@@ -24,12 +49,43 @@ import LinkRow from '~/components/LinkRow.astro'
 // Identify a user with an id (e.g. email, username, etc.)
 tracker.analytics.identify(userId: string): void
 // same as
-tracker.analytics.people.identify()
+tracker.analytics.people.identify(userId)
 
 // Add event to batch with option to send it immediately
 tracker.analytics.track(eventName: string, tempProperties?: Record<string, any>, options?: { send_immediately: boolean })
 // same as
-tracker.analytics.events.track()
+tracker.analytics.events.track(eventName, tempProperties, options)
+
+// Clear user id, people properties and super properties, and stop the batcher
+tracker.analytics.reset(): void
+```
+
+## اختصارات على مستوى أداة التتبّع
+
+توجد هذه الطرق على أداة التتبّع نفسها، لذا من الآمن استدعاؤها دون الوصول إلى `tracker.analytics` (فهي لا تُنفّذ أي شيء طالما كانت التحليلات معطّلة):
+
+```ts
+// Same as tracker.analytics.track(...)
+tracker.track(eventName: string, properties?: Record<string, any>, options?: { send_immediately: boolean })
+
+// Sets the replay's user ID *and* calls analytics.people.identify() with it
+tracker.setUserID(id: string): void
+tracker.identify(id: string): void // alias of setUserID
+
+// Send analytics events under your own token, without session recording
+tracker.setAnalyticsToken(token: string): void
+```
+
+<Aside type="note">
+	تتعرّف `tracker.setUserID()` على المستخدم في كلٍّ من إعادة التشغيل وملف تعريف التحليلات. أما استدعاء `tracker.analytics.people.identify()` مباشرةً فيضبط ملف تعريف التحليلات فقط.
+</Aside>
+
+## reset
+
+تمسح المستخدم المُتعرَّف عليه (بما في ذلك معرّف الجهاز الدائم)، وجميع خصائص people، وجميع الخصائص الفائقة، وتوقف أداة التجميع في دفعات (batcher). استدعِها عند تسجيل الخروج.
+
+```ts
+tracker.analytics.reset()
 ```
 
 ## هل لديك أسئلة؟

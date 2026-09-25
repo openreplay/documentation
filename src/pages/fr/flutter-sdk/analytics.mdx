@@ -1,0 +1,53 @@
+---
+title: "SDK Flutter - Suivi des écrans et des vues"
+metaTitle: "SDK Flutter - Suivi des écrans et des vues"
+metaDescription: "Détails sur le suivi des écrans et des vues avec le tracker Flutter"
+---
+import Aside from '~/components/Aside.astro'
+
+Lorsque `analytics` est activé (par défaut), le tracker capture de lui-même les tapotements, les balayages, les changements de viewport et les événements de saisie. Les écrans et les vues individuelles sont signalés par deux widgets exportés.
+
+## Écrans
+
+Ajoutez `ORNavigatorObserver` au navigateur de votre application pour enregistrer les transitions de routes :
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+MaterialApp(
+  navigatorObservers: [ORNavigatorObserver()],
+  // ...
+)
+```
+
+Les ajouts (push), retraits (pop), remplacements et suppressions de routes sont tous signalés. Une route est nommée par `route.settings.name` ; une route sans nom se rabat sur sa position dans la pile (`route/2`), c'est pourquoi les routes nommées donnent des chronologies beaucoup plus lisibles.
+
+## Vues suivies
+
+Enveloppez n'importe quel widget dans `ORTrackedView` pour le signaler comme une vue nommée et observable. Un événement de visibilité est émis lorsqu'il est monté et lorsqu'il est démonté, et son nom est utilisé comme libellé pour les interactions tactiles qui s'y produisent.
+
+- `screenName: String` — titre de l'écran ou de la fonctionnalité
+- `viewName: String` — nom de la vue suivie
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+ORTrackedView(
+  screenName: 'Checkout',
+  viewName: 'Pay button',
+  child: ElevatedButton(onPressed: _pay, child: const Text('Pay')),
+)
+```
+
+## Interactions tactiles
+
+Les tapotements et les balayages sont capturés via la route globale du pointer router, de sorte que le tracker voit chaque événement de pointeur sans jamais entrer en concurrence dans la gesture arena : il ne peut pas intercepter un tapotement dont votre application avait besoin. Un pointeur qui parcourt plus de 10 pixels logiques est enregistré comme un balayage avec sa direction dominante, tout déplacement plus court comme un clic.
+
+Les libellés des interactions tactiles proviennent d'un hit-test du texte situé sous le pointeur, ou de l'`ORTrackedView` englobante.
+
+<Aside type="note">
+	Les libellés ne sont jamais dérivés des noms de type des widgets ou des render objects : `flutter build --obfuscate` les réduit à du bruit.
+</Aside>
+
+## Des questions ?
+Si vous avez des questions sur ce processus, n'hésitez pas à nous contacter sur notre [Slack](https://slack.openreplay.com) ou à consulter notre [Forum](https://forum.openreplay.com).
