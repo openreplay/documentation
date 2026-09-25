@@ -4,10 +4,35 @@ metaTitle: "Использование SDK аналитики трекера Ope
 metaDescription: "Узнайте, как настроить и использовать SDK аналитики трекера OpenReplay"
 ---
 import LinkRow from '~/components/LinkRow.astro'
+import Aside from '~/components/Aside.astro'
 
 ## SDK аналитики
 
 Узнайте, как настроить SDK аналитики трекера OpenReplay.
+
+## Включение SDK
+
+SDK аналитики включается **по желанию** (opt-in). Он создаётся только в том случае, если вы передаёте `analytics.active` в конструктор трекера — до этого `tracker.analytics` равен `null`, а `tracker.track()` ничего не делает.
+
+```js
+import Tracker from '@openreplay/tracker'
+
+const tracker = new Tracker({
+  projectKey: "YOUR_PROJECT_KEY",
+  analytics: { active: true },
+})
+
+tracker.start()
+```
+
+### Параметры
+
+- `active: boolean` Включает SDK аналитики. По умолчанию: `false`.
+- `ingestPoint?: string` Эндпоинт, на который отправляются пакеты аналитики. Только для self-hosted развёртываний — в OpenReplay Cloud этот параметр игнорируется и используется `https://api.openreplay.com/ingest`. По умолчанию используется `ingestPoint` трекера.
+
+<Aside type="note">
+	События ставятся в очередь и отправляются каждые 5 секунд, а также при изменении видимости вкладки, чтобы буферизованные события не терялись при закрытии вкладки. Пакет, который не удалось доставить на бэкенд, возвращается в начало очереди и повторно отправляется при следующей отправке.
+</Aside>
 
 ## Модули
 
@@ -24,12 +49,43 @@ import LinkRow from '~/components/LinkRow.astro'
 // Identify a user with an id (e.g. email, username, etc.)
 tracker.analytics.identify(userId: string): void
 // same as
-tracker.analytics.people.identify()
+tracker.analytics.people.identify(userId)
 
 // Add event to batch with option to send it immediately
 tracker.analytics.track(eventName: string, tempProperties?: Record<string, any>, options?: { send_immediately: boolean })
 // same as
-tracker.analytics.events.track()
+tracker.analytics.events.track(eventName, tempProperties, options)
+
+// Clear user id, people properties and super properties, and stop the batcher
+tracker.analytics.reset(): void
+```
+
+## Сокращённые методы на уровне трекера
+
+Эти методы находятся непосредственно в трекере, поэтому их можно безопасно вызывать, не обращаясь к `tracker.analytics` (пока аналитика отключена, они ничего не делают):
+
+```ts
+// Same as tracker.analytics.track(...)
+tracker.track(eventName: string, properties?: Record<string, any>, options?: { send_immediately: boolean })
+
+// Sets the replay's user ID *and* calls analytics.people.identify() with it
+tracker.setUserID(id: string): void
+tracker.identify(id: string): void // alias of setUserID
+
+// Send analytics events under your own token, without session recording
+tracker.setAnalyticsToken(token: string): void
+```
+
+<Aside type="note">
+	`tracker.setUserID()` идентифицирует пользователя как для записи, так и для профиля аналитики. Прямой вызов `tracker.analytics.people.identify()` задаёт только профиль аналитики.
+</Aside>
+
+## reset
+
+Очищает идентифицированного пользователя (включая постоянный идентификатор устройства), все свойства people, все суперсвойства и останавливает отправку пакетов. Вызывайте этот метод при выходе из системы.
+
+```ts
+tracker.analytics.reset()
 ```
 
 ## Остались вопросы?

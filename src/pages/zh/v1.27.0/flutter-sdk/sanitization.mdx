@@ -1,0 +1,59 @@
+---
+title: "Flutter SDK - 敏感数据脱敏"
+metaTitle: "Flutter SDK - 敏感数据脱敏"
+metaDescription: "关于在 Flutter 跟踪器中对录制内容和网络数据进行脱敏的详细说明"
+---
+import Aside from '~/components/Aside.astro'
+
+## UI 组件
+
+将任何不应出现在回放中的内容用 `ORSanitizedView` 包裹起来。该区域在录制中会被模糊处理并加上阴影线，与 iOS SDK 保持一致；一旦该组件离开组件树，它就会自动注销。
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+ORSanitizedView(
+  child: TextField(
+    controller: _cardNumber,
+    decoration: const InputDecoration(labelText: 'Card number'),
+  ),
+)
+```
+
+遮盖是在捕获的帧上以第二次光栅化处理的方式应用的，因此它绝不会改变用户在屏幕上看到的内容。
+
+<Aside type="note">
+	`ORSanitizedView` 会在录制的屏幕上隐藏该组件。若还想让输入框的*值*不出现在事件流中，请向 [`observeInput`](/flutter-sdk/inputs) 传入 `masked: true`。
+</Aside>
+
+## 平台视图
+
+平台视图——WebView、地图、相机预览——在 Flutter 无法回读的独立原生图层中渲染，否则它们会显示为空白区域。跟踪器默认会用占位符覆盖它们。可以通过 `maskPlatformViews: false` 关闭此行为：
+
+```dart
+await OpenReplay.instance.start(
+  projectKey: 'YOUR_PROJECT_KEY',
+  options: const OROptions(maskPlatformViews: false),
+);
+```
+
+## 网络请求
+
+除非你设置 `capturePayload: true`，否则请求体和响应体都会被丢弃，并且 `cookie`、`set-cookie` 和 `authorization` 请求头默认也会被丢弃。除此之外，`sanitizer` 对每个被捕获的调用拥有最终决定权：
+
+```dart
+OpenReplay.instance.patchNetwork(ORNetworkOptions(
+  capturePayload: true,
+  ignoreHeaders: ['cookie', 'set-cookie', 'authorization', 'x-api-key'],
+  sanitizer: (record) {
+    final body = record.requestBody;
+    if (body is Map) body.remove('password');
+    return record; // return null to drop the call entirely
+  },
+));
+```
+
+有关完整的字段列表，请参阅[网络选项](/flutter-sdk/network)。
+
+## 有疑问吗？
+如果你对此流程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

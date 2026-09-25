@@ -1,0 +1,53 @@
+---
+title: "SDK de Flutter - Seguimiento de pantallas y vistas"
+metaTitle: "SDK de Flutter - Seguimiento de pantallas y vistas"
+metaDescription: "Detalles sobre el seguimiento de pantallas y vistas con el tracker de Flutter"
+---
+import Aside from '~/components/Aside.astro'
+
+Con `analytics` habilitado (el valor predeterminado), el tracker captura por sí solo los toques, deslizamientos, cambios de viewport y eventos de entrada. Las pantallas y las vistas individuales se reportan mediante dos widgets exportados.
+
+## Pantallas
+
+Añade `ORNavigatorObserver` al navigator de tu aplicación para grabar las transiciones de ruta:
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+MaterialApp(
+  navigatorObservers: [ORNavigatorObserver()],
+  // ...
+)
+```
+
+Se reportan todas las operaciones push, pop, replace y remove. Una ruta se nombra mediante `route.settings.name`; una ruta sin nombre recurre a su posición en la pila (`route/2`), por lo que las rutas con nombre producen líneas de tiempo mucho más legibles.
+
+## Vistas rastreadas
+
+Envuelve cualquier widget en `ORTrackedView` para reportarlo como una vista observable con nombre. Se emite un evento de visibilidad cuando se monta y cuando se desmonta, y su nombre se usa como etiqueta para los toques que caen dentro de él.
+
+- `screenName: String` — título de la pantalla o funcionalidad
+- `viewName: String` — nombre de la vista rastreada
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+ORTrackedView(
+  screenName: 'Checkout',
+  viewName: 'Pay button',
+  child: ElevatedButton(onPressed: _pay, child: const Text('Pay')),
+)
+```
+
+## Toques
+
+Los toques y deslizamientos se capturan a través de la ruta global del pointer router, por lo que el tracker ve todos los eventos de puntero sin competir nunca en el gesture arena: no puede tragarse un toque que tu aplicación necesitaba. Un puntero que se desplaza más de 10 píxeles lógicos se graba como un deslizamiento con su dirección dominante; cualquier desplazamiento más corto, como un clic.
+
+Las etiquetas de los toques provienen del hit-testing del texto bajo el puntero, o del `ORTrackedView` que lo contiene.
+
+<Aside type="note">
+	Las etiquetas nunca se derivan de los nombres de tipo de los widgets o render objects: `flutter build --obfuscate` los reduce a ruido.
+</Aside>
+
+## ¿Tienes preguntas?
+Si tienes alguna pregunta sobre este proceso, no dudes en contactarnos en nuestro [Slack](https://slack.openreplay.com) o consulta nuestro [Foro](https://forum.openreplay.com).

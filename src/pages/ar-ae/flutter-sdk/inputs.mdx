@@ -1,0 +1,47 @@
+---
+title: "Flutter SDK - تتبّع حقول الإدخال"
+metaTitle: "Flutter SDK - تتبّع حقول الإدخال"
+metaDescription: "تفاصيل حول تتبّع حقول الإدخال باستخدام أداة تتبّع Flutter"
+---
+import Aside from '~/components/Aside.astro'
+
+لا تتم مراقبة حقول النص تلقائيًا — إذ لا يمتلك Flutter ما يعادل سلسلة المستجيبين (responder chain) في UIKit للارتباط بها. اربط أداة التتبّع بوحدات التحكم (controllers) التي تهمّك، وستستمع إلى تغيّرات القيمة (مع تأخير debounce) وترسل القيمة الناتجة إلى الواجهة الخلفية لـ OpenReplay.
+
+## إضافة حقول إدخال متتبَّعة
+
+استخدم `observeInput(controller, label:, masked:)`:
+
+- `controller: TextEditingController` — وحدة التحكم المراد مراقبتها
+- `label: String` — تسمية حقل الإدخال المُسجَّل
+- `masked: bool` — إذا كانت القيمة `true`، فستُسجّل أداة التتبّع حدث الإدخال لكنها سترسل `****` بدلًا من القيمة. القيمة الافتراضية: `false`.
+
+تُرجع هذه الطريقة دالة استدعاء (callback) تُزيل المستمع، لذا اربطها بـ `dispose()`:
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+class _LoginFormState extends State<LoginForm> {
+  final _email = TextEditingController();
+  late final VoidCallback _stopObserving;
+
+  @override
+  void initState() {
+    super.initState();
+    _stopObserving = OpenReplay.instance.observeInput(_email, label: 'Email');
+  }
+
+  @override
+  void dispose() {
+    _stopObserving();
+    _email.dispose();
+    super.dispose();
+  }
+}
+```
+
+<Aside type="note">
+	يُخفي `masked: true` القيمة من تدفّق الأحداث فقط. يظل الحقل مرئيًا على الشاشة المُسجَّلة — غلّفه بـ [`ORSanitizedView`](/flutter-sdk/sanitization) لإخفائه هناك أيضًا.
+</Aside>
+
+## هل لديك أسئلة؟
+إذا كانت لديك أي أسئلة حول هذه العملية، فلا تتردّد في التواصل معنا عبر [Slack](https://slack.openreplay.com) أو الاطّلاع على [المنتدى](https://forum.openreplay.com) الخاص بنا.

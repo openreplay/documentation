@@ -92,7 +92,7 @@ Il existe un ensemble d'options que vous pouvez passer au constructeur. Seule `p
 ### Usage général
 
 - `projectKey: string` L'ID du projet que vous suivez.
-- `sessionHash?: string` Le hash de la session initiale. Cela est utile lorsque les sessions traversent différents sous-domaines de votre application web mais que vous souhaitez les assembler en un seul enregistrement. Si la session ne peut pas être poursuivie (elle n'existe pas ou est terminée), le tracker en démarrera automatiquement une nouvelle. Il est également retourné par `stop()`. Plus de détails à ce sujet [ici](/troubleshooting/session-recordings#replaysarebrokenacrosssubdomains).
+- `sessionHash?: string` Le hash de la session initiale. Cela est utile lorsque les sessions traversent différents sous-domaines de votre application web mais que vous souhaitez les assembler en un seul enregistrement. Si la session ne peut pas être poursuivie (elle n'existe pas ou est terminée), le tracker en démarrera automatiquement une nouvelle. Il est également retourné par `stop()`. Plus de détails à ce sujet [ici](/troubleshooting/session-recordings#les-relectures-sont-rompues-entre-les-sous-domaines).
 - `ingestPoint?: string` Votre domaine OpenReplay (c'est-à-dire https://openreplay.mydomain.com/ingest), vers lequel le tracker enverra les événements. Cette option est facultative pour les utilisateurs d'OpenReplay Cloud. Valeur par défaut : `https://api.openreplay.com/ingest` (qui pointe vers OpenReplay Cloud).
 - `revID?: string` L'ID de révision de votre application web. Utile lors de la recherche de problèmes survenant sur une version de publication spécifique.
 - `resourceBaseHref?: string` Fait référence au domaine accessible publiquement à partir duquel les ressources (styles, polices et icônes) peuvent être récupérées par OpenReplay. Comme elles sont nécessaires à une reproduction de session correcte, cette option est utile pour contourner la limitation liée au fait que votre site (et donc les ressources) soit hébergé sur un domaine privé. Exemple : `https://mypublicsite.com/assets/`.
@@ -109,6 +109,7 @@ Il existe un ensemble d'options que vous pouvez passer au constructeur. Seule `p
 - `fixedCanvasScaling: boolean` Force le rendu des images de canvas avec une densité de pixels de 1 au lieu de devicePixelRatio. (réduit la qualité potentielle d'une image afin de diminuer la taille du résultat final). Valeur par défaut : `false`.
 - `disableCanvas?: boolean` Désactive l'enregistrement des éléments canvas. Valeur par défaut : `false`.
 - `assistSocketHost?: string` Peut être utilisé pour définir un hôte spécifique pour la connexion du plugin assist. Par défaut, prend la valeur d'`ingestPoint`.
+- `analytics?: { active: boolean, ingestPoint?: string }` Active le [SDK d'analyse](/sdk/analytics), qui expose `tracker.analytics` (événements, super propriétés et profils utilisateur) ainsi que le raccourci de premier niveau `tracker.track()`. Le SDK n'est **pas** instancié tant que `active` ne vaut pas `true`, et `tracker.analytics` reste `null` jusque-là. `ingestPoint` permet aux déploiements auto-hébergés d'envoyer les données d'analyse vers un point de terminaison différent de celui d'ingestion des replays ; il est ignoré sur OpenReplay Cloud. Valeur par défaut : `{ active: false }`.
 - `nodes?: { maintainer: MaintainerOptions }` La nouvelle option `nodes.maintainer` aide à gérer la mémoire et à nettoyer les nœuds du DOM qui ne sont plus utilisés. Elle dispose des paramètres suivants :
     - `interval: number` : Intervalle de temps (en millisecondes) entre les exécutions de nettoyage. Valeur par défaut : `30 * 1000` (30 secondes).
     - `batchSize: number` : Nombre de nœuds à vérifier lors de chaque exécution de nettoyage. Valeur par défaut : `2500`.
@@ -132,7 +133,7 @@ Il existe un ensemble d'options que vous pouvez passer au constructeur. Seule `p
 - `obscureTextEmails?: boolean` Masque les adresses e-mail dans les éléments de texte. Les e-mails seront convertis en une chaîne aléatoire d'astérisques. Valeur par défaut : `true`.
 - `obscureTextNumbers?: boolean` Masque les nombres dans les éléments de texte. Les nombres seront convertis en une chaîne aléatoire d'astérisques. Valeur par défaut : `false`.
 - `obscureInputEmails?: boolean` Masque les adresses e-mail dans les champs de saisie. Les valeurs d'e-mail seront converties en une chaîne aléatoire d'astérisques. Valeur par défaut : `true`.
-- `obscureInputNumbers?: boolean` Masque les nombres dans les champs de saisie. Les valeurs numériques seront converties en une chaîne aléatoire d'astérisques. Si cette option est désactivée, veillez à [assainir les champs de saisie](/installation/sanitize-data/#granular-level) susceptibles de contenir des données sensibles telles que des codes postaux ou des coordonnées de carte de crédit. Valeur par défaut : `true`.
+- `obscureInputNumbers?: boolean` Masque les nombres dans les champs de saisie. Les valeurs numériques seront converties en une chaîne aléatoire d'astérisques. Si cette option est désactivée, veillez à [assainir les champs de saisie](/sdk/sanitize-data#niveau-granulaire) susceptibles de contenir des données sensibles telles que des codes postaux ou des coordonnées de carte de crédit. Valeur par défaut : `true`.
 - `obscureInputDates?: boolean` Masque les dates dans les champs de saisie. Les valeurs de date seront converties en une chaîne aléatoire d'astérisques. Valeur par défaut : `false`.
 - `defaultInputMode?: 0 | 1 | 2` Mode de capture par défaut pour les valeurs de saisie. Respectivement : brut, masqué ou ignoré. Valeur par défaut : `2` (ignoré).
 - `urls` : Vous permet de personnaliser la manière dont les événements de localisation de page sont enregistrés via les options suivantes :
@@ -140,7 +141,7 @@ Il existe un ensemble d'options que vous pouvez passer au constructeur. Seule `p
 	- `titleSanitizer?: (title: string) => string` Vous permet d'assainir le titre de la page.
 - `resourceNameSanitizer?: (url: string) => string` Vous permet d'assainir les URL des ressources réseau enregistrées.
 
-Notez que les données exclues sont masquées ou supprimées avant l'envoi des données vers les serveurs d'OpenReplay. Les modifications appliquées aux options ci-dessus ne peuvent pas être rétroactives et ne s'appliqueront qu'aux données nouvellement collectées. Consultez [Sanitize Data](/installation/sanitize-data) pour plus de détails.
+Notez que les données exclues sont masquées ou supprimées avant l'envoi des données vers les serveurs d'OpenReplay. Les modifications appliquées aux options ci-dessus ne peuvent pas être rétroactives et ne s'appliqueront qu'aux données nouvellement collectées. Consultez [Sanitize Data](/sdk/sanitize-data) pour plus de détails.
 
 ### Console
 

@@ -1,0 +1,64 @@
+---
+title: "Flutter SDK - دالة start"
+metaTitle: "Flutter SDK - دالة start"
+metaDescription: "تفاصيل حول دالة 'start' في Flutter SDK من OpenReplay"
+---
+import Aside from '~/components/Aside.astro'
+
+تُستخدم هذه الدالة لبدء تشغيل المتعقّب (tracker). عند بدء تشغيل المتعقّب، يبدأ تسجيل الجلسة.
+
+## التوقيع
+
+```dart
+Future<void> OpenReplay.instance.start({
+  required String projectKey,
+  OROptions options = OROptions.defaults,
+  String? serverUrl,
+})
+```
+
+## المعاملات
+
+- `projectKey: String`: تجده في لوحة تحكم OpenReplay الخاصة بك ضمن 'Preferences > Projects'.
+- `options: OROptions`: ما يلتقطه المتعقّب، انظر أدناه.
+- `serverUrl: String?`: نقطة نهاية الاستيعاب (ingest) لعمليات النشر ذاتية الاستضافة. احذفه عند استخدام OpenReplay Cloud.
+
+<Aside type="note">
+	يجب تغليف تطبيقك بـ `OpenReplayWidget` لكي تُسجَّل الشاشة. من الآمن استدعاء `start()` قبل الإطار الأول — إذ يبدأ الالتقاط بمجرد اكتمال تخطيط عنصر الواجهة.
+</Aside>
+
+### خيارات التهيئة
+
+الخيارات المتاحة:
+
+- `crashes: bool` يلتقط أخطاء Dart.
+- `analytics: bool` يلتقط اللمسات والسحبات والشاشات وحقول الإدخال.
+- `performances: bool` يلتقط حالة المعالج (CPU) والذاكرة والبطارية والحرارة.
+- `logs: bool` يلتقط مخرجات `debugPrint`.
+- `screen: bool` يُفعّل التقاط الإطارات.
+- `screenshotBatchSize: ScreenshotBatchSize` عدد الإطارات في كل عملية رفع — `low` (10)، `normal` (20)، `high` (30). القيمة الافتراضية: `normal`.
+- `targetLongEdge: int` الحافة الأطول للإطار الملتقَط، بالبكسل. القيمة الافتراضية: `720`.
+- `dedupeFrames: bool` يتخطّى الإطارات المطابقة للإطار السابق.
+- `maskPlatformViews: bool` يغطّي WebViews والخرائط ومعاينات الكاميرا بعنصر نائب.
+- `wifiOnly: bool` محجوز؛ غير مُطبَّق بعد.
+- `debugLogs: bool` / `debugImages: bool` مخرجات تصحيح الأخطاء الخاصة بالـ SDK نفسه. القيمة الافتراضية: `false`.
+
+القيمة الافتراضية: جميع القيم المنطقية `true` باستثناء `debugLogs` و`debugImages`. راجع [التهيئة](/flutter-sdk/init#خيارات-التهيئة) للاطلاع على الوصف الكامل لكل منها.
+
+يأتي معدّل الإطارات وجودة الصورة من إعدادات مشروعك، وليس من هذه الخيارات.
+
+## البدء المُخزَّن مؤقتًا
+
+للتسجيل في مخزن مؤقت متجدّد (rolling buffer) دون إنشاء جلسة — بحيث يمكن لمُشغِّل لاحق إرسال الثواني السابقة — ابدأ باستخدام `coldStart()` ثم رقِّه باستخدام `triggerRecording()`:
+
+```dart
+await OpenReplay.instance.coldStart(projectKey: 'YOUR_PROJECT_KEY');
+
+// later, when something worth recording happens
+await OpenReplay.instance.triggerRecording(condition: 'checkout_error');
+```
+
+لا يتوفّر تقييم الشروط من جانب الخادم بعد في Flutter SDK؛ استدعِ `triggerRecording()` من الكود الخاص بك.
+
+## هل لديك أسئلة؟
+إذا كانت لديك أي أسئلة حول هذه العملية، فلا تتردد في التواصل معنا عبر [Slack](https://slack.openreplay.com) أو الاطلاع على [المنتدى](https://forum.openreplay.com) الخاص بنا.

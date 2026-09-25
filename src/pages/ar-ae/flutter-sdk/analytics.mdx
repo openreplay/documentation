@@ -1,0 +1,53 @@
+---
+title: "Flutter SDK - تتبّع الشاشات وطرق العرض"
+metaTitle: "Flutter SDK - تتبّع الشاشات وطرق العرض"
+metaDescription: "تفاصيل حول تتبّع الشاشات وطرق العرض باستخدام أداة تتبّع Flutter"
+---
+import Aside from '~/components/Aside.astro'
+
+عند تفعيل `analytics` (وهو الإعداد الافتراضي)، تلتقط أداة التتبّع النقرات والسحبات وتغيّرات منفذ العرض (viewport) وأحداث الإدخال من تلقاء نفسها. أما الشاشات وطرق العرض الفردية فيتم الإبلاغ عنها عبر عنصرَي واجهة (widgets) مُصدَّرين.
+
+## الشاشات (Screens)
+
+أضف `ORNavigatorObserver` إلى أداة التنقّل (navigator) في تطبيقك لتسجيل الانتقالات بين المسارات (routes):
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+MaterialApp(
+  navigatorObservers: [ORNavigatorObserver()],
+  // ...
+)
+```
+
+يتم الإبلاغ عن عمليات الدفع (push) والإزالة (pop) والاستبدال والحذف جميعها. يُسمّى المسار وفقًا لـ `route.settings.name`؛ أما المسار غير المُسمّى فيُستخدم موضعه في المكدّس بديلًا (`route/2`)، لذا فإن المسارات المُسمّاة تجعل الخطوط الزمنية أسهل قراءة بكثير.
+
+## طرق العرض المتتبَّعة
+
+غلّف أي عنصر واجهة (widget) بـ `ORTrackedView` للإبلاغ عنه كطريقة عرض مُسمّاة وقابلة للمراقبة. يُطلَق حدث ظهور عند تركيبه (mount) وعند إزالة تركيبه (unmount)، ويُستخدم اسمه كتسمية للّمسات التي تقع داخله.
+
+- `screenName: String` — عنوان الشاشة أو الميزة
+- `viewName: String` — اسم طريقة العرض المتتبَّعة
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+ORTrackedView(
+  screenName: 'Checkout',
+  viewName: 'Pay button',
+  child: ElevatedButton(onPressed: _pay, child: const Text('Pay')),
+)
+```
+
+## اللمسات (Touches)
+
+تُلتقط النقرات والسحبات عبر المسار العام لموجّه المؤشر (pointer router)، لذا ترى أداة التتبّع كل حدث مؤشر دون أن تتنافس أبدًا في ساحة الإيماءات (gesture arena) — فلا يمكنها ابتلاع نقرة يحتاجها تطبيقك. يُسجَّل المؤشر الذي يقطع أكثر من 10 بكسلات منطقية على أنه سحبة مع اتجاهها الغالب، وأي حركة أقصر على أنها نقرة.
+
+تأتي تسميات اللمسات من اختبار النقر (hit-testing) على النص الموجود تحت المؤشر، أو من `ORTrackedView` المحيط.
+
+<Aside type="note">
+	لا تُشتق التسميات أبدًا من أسماء أنواع عناصر الواجهة (widgets) أو كائنات العرض (render objects): إذ يحوّل الأمر `flutter build --obfuscate` تلك الأسماء إلى ضجيج لا معنى له.
+</Aside>
+
+## هل لديك أسئلة؟
+إذا كانت لديك أي أسئلة حول هذه العملية، فلا تتردد في التواصل معنا عبر [Slack](https://slack.openreplay.com) أو الاطلاع على [المنتدى](https://forum.openreplay.com) الخاص بنا.

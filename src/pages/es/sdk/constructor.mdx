@@ -92,7 +92,7 @@ Hay un conjunto de opciones que puedes pasar al constructor. Solo `projectKey` e
 ### Propósito general
 
 - `projectKey: string` El ID del proyecto que estás rastreando.
-- `sessionHash?: string` El hash de la sesión inicial. Esto resulta útil cuando las sesiones recorren diferentes subdominios de tu aplicación web pero quieres unirlas en una sola grabación. En caso de que no sea posible continuar la sesión (no existe o ha finalizado), el tracker iniciará automáticamente una nueva. También se devuelve en `stop()`. Más detalles al respecto [aquí](/troubleshooting/session-recordings#replaysarebrokenacrosssubdomains).
+- `sessionHash?: string` El hash de la sesión inicial. Esto resulta útil cuando las sesiones recorren diferentes subdominios de tu aplicación web pero quieres unirlas en una sola grabación. En caso de que no sea posible continuar la sesión (no existe o ha finalizado), el tracker iniciará automáticamente una nueva. También se devuelve en `stop()`. Más detalles al respecto [aquí](/troubleshooting/session-recordings#las-reproducciones-se-rompen-entre-subdominios).
 - `ingestPoint?: string` Tu dominio de OpenReplay (es decir, https://openreplay.mydomain.com/ingest), al que el tracker enviará los eventos. Es opcional para los usuarios de OpenReplay Cloud. Valor predeterminado: `https://api.openreplay.com/ingest` (que apunta a OpenReplay Cloud).
 - `revID?: string` El ID de revisión de tu aplicación web. Útil al buscar problemas que ocurren en una versión de lanzamiento específica.
 - `resourceBaseHref?: string` Se refiere al dominio de acceso público desde el que OpenReplay puede obtener los recursos (estilos, fuentes e iconos). Dado que son necesarios para una correcta reproducción de la sesión, esta opción resulta útil para sortear la limitación de tener tu sitio (y, por tanto, los recursos) alojado en un dominio privado. Ejemplo: `https://mypublicsite.com/assets/`.
@@ -109,6 +109,7 @@ Hay un conjunto de opciones que puedes pasar al constructor. Solo `projectKey` e
 - `fixedCanvasScaling: boolean` Fuerza a que las imágenes del canvas se rendericen con una densidad de píxeles de 1 en lugar de devicePixelRatio. (reduce la calidad potencial de una imagen para que el resultado final tenga un tamaño menor). Valor predeterminado: `false`.
 - `disableCanvas?: boolean` Desactiva la grabación de los elementos canvas. Valor predeterminado: `false`.
 - `assistSocketHost?: string` Se puede usar para establecer un host específico para la conexión del plugin assist. Su valor predeterminado es el de `ingestPoint`.
+- `analytics?: { active: boolean, ingestPoint?: string }` Habilita el [SDK de analíticas](/sdk/analytics), que expone `tracker.analytics` (eventos, super propiedades y perfiles de usuario) además del atajo de nivel superior `tracker.track()`. El SDK **no** se instancia a menos que `active` sea `true`, y `tracker.analytics` sigue siendo `null` hasta entonces. `ingestPoint` permite que los despliegues self-hosted envíen las analíticas a un endpoint distinto del ingest de reproducción; se ignora en OpenReplay Cloud. Valor predeterminado: `{ active: false }`.
 - `nodes?: { maintainer: MaintainerOptions }` La nueva opción `nodes.maintainer` ayuda a administrar la memoria y a limpiar los nodos del DOM que ya no se utilizan. Tiene los siguientes parámetros:
     - `interval: number`: Intervalo de tiempo (en milisegundos) entre las ejecuciones de limpieza. Valor predeterminado: `30 * 1000` (30 segundos).
     - `batchSize: number`: Número de nodos que se comprueban durante cada ejecución de limpieza. Valor predeterminado: `2500`.
@@ -132,7 +133,7 @@ Hay un conjunto de opciones que puedes pasar al constructor. Solo `projectKey` e
 - `obscureTextEmails?: boolean` Oculta los correos electrónicos en los elementos de texto. Los correos electrónicos se convertirán en una cadena aleatoria de asteriscos. Valor predeterminado: `true`.
 - `obscureTextNumbers?: boolean` Oculta los números en los elementos de texto. Los números se convertirán en una cadena aleatoria de asteriscos. Valor predeterminado: `false`.
 - `obscureInputEmails?: boolean` Oculta los correos electrónicos en los campos de entrada. Los valores de correo electrónico se convertirán en una cadena aleatoria de asteriscos. Valor predeterminado: `true`.
-- `obscureInputNumbers?: boolean` Oculta los números en los campos de entrada. Los valores numéricos se convertirán en una cadena aleatoria de asteriscos. Si se desactiva, asegúrate de [sanear los campos de entrada](/installation/sanitize-data/#granular-level) que puedan contener datos sensibles, como códigos postales o datos de tarjetas de crédito. Valor predeterminado: `true`.
+- `obscureInputNumbers?: boolean` Oculta los números en los campos de entrada. Los valores numéricos se convertirán en una cadena aleatoria de asteriscos. Si se desactiva, asegúrate de [sanear los campos de entrada](/sdk/sanitize-data#nivel-granular) que puedan contener datos sensibles, como códigos postales o datos de tarjetas de crédito. Valor predeterminado: `true`.
 - `obscureInputDates?: boolean` Oculta las fechas en los campos de entrada. Los valores de fecha se convertirán en una cadena aleatoria de asteriscos. Valor predeterminado: `false`.
 - `defaultInputMode?: 0 | 1 | 2` Modo de captura predeterminado para los valores de entrada. Respectivamente: plano, oculto o ignorado. Valor predeterminado: `2` (ignorado).
 - `urls`: Te permite personalizar cómo se graban los eventos de ubicación de página mediante las siguientes opciones:
@@ -140,7 +141,7 @@ Hay un conjunto de opciones que puedes pasar al constructor. Solo `projectKey` e
 	- `titleSanitizer?: (title: string) => string` Te permite sanear el título de la página.
 - `resourceNameSanitizer?: (url: string) => string` Te permite sanear las URLs de los recursos de red grabados.
 
-Ten en cuenta que los datos excluidos se ocultan o suprimen antes de enviarlos a los servidores de OpenReplay. Los cambios aplicados a las opciones anteriores no pueden ser retroactivos y solo se aplicarán a los datos recién recopilados. Consulta [Sanitize Data](/installation/sanitize-data) para obtener más detalles.
+Ten en cuenta que los datos excluidos se ocultan o suprimen antes de enviarlos a los servidores de OpenReplay. Los cambios aplicados a las opciones anteriores no pueden ser retroactivos y solo se aplicarán a los datos recién recopilados. Consulta [Sanitize Data](/sdk/sanitize-data) para obtener más detalles.
 
 ### Consola
 

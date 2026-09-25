@@ -1,0 +1,64 @@
+---
+title: "Flutter SDK - start 方法"
+metaTitle: "Flutter SDK - start 方法"
+metaDescription: "关于 OpenReplay Flutter SDK 中 'start' 方法的详细信息"
+---
+import Aside from '~/components/Aside.astro'
+
+此方法用于启动跟踪器。启动跟踪器后，会话录制即开始。
+
+## 签名
+
+```dart
+Future<void> OpenReplay.instance.start({
+  required String projectKey,
+  OROptions options = OROptions.defaults,
+  String? serverUrl,
+})
+```
+
+## 参数
+
+- `projectKey: String`：可在 OpenReplay 仪表盘的 'Preferences > Projects' 下找到。
+- `options: OROptions`：跟踪器捕获哪些内容，见下文。
+- `serverUrl: String?`：自托管部署的数据上报（ingest）端点。使用 OpenReplay Cloud 时请省略。
+
+<Aside type="note">
+	你的应用必须用 `OpenReplayWidget` 包裹，屏幕才会被录制。`start()` 可以安全地在第一帧之前调用——在该组件完成布局后才会开始捕获。
+</Aside>
+
+### 初始化选项
+
+可用选项：
+
+- `crashes: bool` 捕获 Dart 错误。
+- `analytics: bool` 捕获触摸、滑动、屏幕和输入。
+- `performances: bool` 捕获 CPU、内存、电池和温度状态。
+- `logs: bool` 捕获 `debugPrint` 输出。
+- `screen: bool` 启用帧捕获。
+- `screenshotBatchSize: ScreenshotBatchSize` 每次上传的帧数——`low`（10）、`normal`（20）、`high`（30）。默认值：`normal`。
+- `targetLongEdge: int` 捕获帧的最长边，单位为像素。默认值：`720`。
+- `dedupeFrames: bool` 跳过与上一帧完全相同的帧。
+- `maskPlatformViews: bool` 用占位符覆盖 WebView、地图和相机预览。
+- `wifiOnly: bool` 预留选项；尚未生效。
+- `debugLogs: bool` / `debugImages: bool` SDK 自身的调试输出。默认值：`false`。
+
+默认值：除 `debugLogs` 和 `debugImages` 外，所有布尔选项均为 `true`。有关每个选项的完整说明，请参阅[初始化](/flutter-sdk/init#初始化选项)。
+
+帧率和图像质量来自你的项目设置，而不是这些选项。
+
+## 缓冲启动
+
+若要在不创建会话的情况下录制到滚动缓冲区中——以便稍后的触发可以发送之前几秒的内容——请使用 `coldStart()` 启动，并通过 `triggerRecording()` 将其升级为正式录制：
+
+```dart
+await OpenReplay.instance.coldStart(projectKey: 'YOUR_PROJECT_KEY');
+
+// later, when something worth recording happens
+await OpenReplay.instance.triggerRecording(condition: 'checkout_error');
+```
+
+Flutter SDK 尚不支持服务端条件评估；请在你自己的代码中调用 `triggerRecording()`。
+
+## 有疑问？
+如果你对此流程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

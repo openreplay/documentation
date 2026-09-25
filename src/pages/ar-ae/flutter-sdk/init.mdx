@@ -1,0 +1,147 @@
+---
+title: "Flutter SDK - تهيئة الـ SDK"
+metaTitle: "Flutter SDK - تهيئة الـ SDK"
+metaDescription: "خيارات التهيئة للطريقة start الخاصة بمتتبّع Flutter"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	إن Flutter SDK في مرحلة Beta. لا تتردد في تزويدنا بملاحظاتك أو الإبلاغ عن أي مشكلة قد تواجهها عبر [Slack](https://slack.openreplay.com) الخاص بنا أو تفقّد [المنتدى](https://forum.openreplay.com) الخاص بنا.
+</Aside>
+
+## المتطلبات
+
+- Flutter `3.41` أو أحدث (Dart SDK `^3.0.0`).
+- واجهة خلفية لـ OpenReplay بالإصدار `v1.26.0` أو أحدث. تُفيد الواجهات الخلفية الأقدم بعدم دعم الإطارات (frames): تظل الأحداث تُسجَّل، لكن الشاشة لا تُسجَّل.
+
+لا تعتمد الحزمة على **أي اعتماديات من pub** — فبروتوكول النقل والتجميع في دفعات وضغط gzip وmultipart كلها مُنفَّذة بلغة Dart، وكل ما هو أصلي (native) يمرّ عبر قناة منصّة (platform channel) واحدة.
+
+## التثبيت
+
+```sh
+flutter pub add openreplay
+```
+
+أو أضفها إلى ملف `pubspec.yaml` الخاص بك:
+
+```yaml
+dependencies:
+  openreplay: ^1.0.9
+```
+
+## التهيئة
+
+يجب عليك تمرير `projectKey` إلى `start()`. يمكنك الحصول على هذه القيمة من لوحة تحكم OpenReplay الخاصة بك ضمن 'Preferences > Projects'.
+
+<Aside type="tip">
+	لاحظ أنه إذا كان لديك عدة مشاريع، فعليك توخّي الحذر بشأن مفتاح المشروع الذي تختاره.
+</Aside>
+
+### إضافة كود التتبّع
+
+غلّف تطبيقك بـ `OpenReplayWidget`، ثم ابدأ تشغيل المتتبّع. هذا الغلاف **مطلوب**: فهو يوفّر حدّ إعادة الرسم (repaint boundary) الذي تُلتقط منه الإطارات، ومن دونه لا يُسجَّل أي شيء.
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:openreplay/openreplay.dart';
+
+void main() {
+  runApp(const OpenReplayWidget(child: MyApp()));
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await OpenReplay.instance.start(
+        projectKey: 'YOUR_PROJECT_KEY',
+        // not required if you're using our SaaS version
+        serverUrl: 'https://your.instance.com/ingest',
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+        // records screen transitions
+        navigatorObservers: [ORNavigatorObserver()],
+        home: const HomePage(),
+      );
+}
+```
+
+من الآمن استدعاء `start()` قبل الإطار الأول — إذ لا يبدأ الالتقاط إلا بعد أن يكتمل تخطيط `OpenReplayWidget`.
+
+### إعداد مستمع التنقّل
+
+أضف `ORNavigatorObserver` إلى `MaterialApp` (أو `CupertinoApp`، أو أي `Navigator`) لكي تظهر المسارات المدفوعة والمُزالة في الخط الزمني لإعادة التشغيل:
+
+```dart
+MaterialApp(
+  navigatorObservers: [ORNavigatorObserver()],
+  // ...
+)
+```
+
+يتم الإبلاغ عن المسارات وفقًا لـ `route.settings.name`. أما المسارات غير المُسمّاة فيُستخدم موضعها في المكدّس بديلًا (`route/2`)، لذا تمنحك المسارات المُسمّاة خطوطًا زمنية أسهل قراءة بكثير.
+
+### تنقية البيانات
+
+راجع [كيفية تنقية البيانات في عمليات إعادة تشغيل Flutter](/flutter-sdk/sanitization) لمزيد من التفاصيل.
+
+## خيارات التهيئة
+
+تُمرَّر الخيارات على هيئة `OROptions` إلى `start()`:
+
+```dart
+await OpenReplay.instance.start(
+  projectKey: 'YOUR_PROJECT_KEY',
+  options: const OROptions(
+    logs: false,
+    targetLongEdge: 1080,
+  ),
+);
+```
+
+- `crashes: bool` يلتقط أخطاء Dart. لا تزال الأعطال الأصلية (native) تحتاج إلى أداة إبلاغ أصلية. القيمة الافتراضية: `true`.
+- `analytics: bool` يلتقط اللمسات والسحبات والشاشات وحقول الإدخال. القيمة الافتراضية: `true`.
+- `performances: bool` يلتقط حالة المعالج (CPU) والذاكرة والبطارية والحرارة. القيمة الافتراضية: `true`.
+- `logs: bool` يلتقط مخرجات `debugPrint`. القيمة الافتراضية: `true`.
+- `screen: bool` يُفعّل التقاط الإطارات. القيمة الافتراضية: `true`.
+- `screenshotBatchSize: ScreenshotBatchSize` عدد الإطارات المخزّنة مؤقتًا قبل تجميع الدفعة ورفعها — `low` (10) أو `normal` (20) أو `high` (30). القيمة الافتراضية: `normal`.
+- `targetLongEdge: int` الحافة الأطول للإطار الملتقَط، بالبكسل. يحدّ من تكلفة كل إطار بحيث لا تتقلّب بحسب حجم الشاشة. القيمة الافتراضية: `720`.
+- `dedupeFrames: bool` يتخطّى الإطارات التي تتطابق وحدات البكسل فيها بايتًا ببايت مع الإطار السابق. لا يتأثر التشغيل — إذ يحتفظ المشغّل بآخر لقطة عند الوقت الحالي أو قبله. القيمة الافتراضية: `true`.
+- `maskPlatformViews: bool` يغطّي طرق عرض المنصّة (WebView والخرائط ومعاينة الكاميرا) بعنصر نائب. فهي تُعرض في طبقات أصلية لا يستطيع Flutter قراءتها، لذا تظهر فارغة من دون هذا الخيار. القيمة الافتراضية: `true`.
+- `wifiOnly: bool` محجوز؛ **غير مُطبَّق بعد**. القيمة الافتراضية: `true`.
+- `debugLogs: bool` يُفعّل السجلات الخاصة بالـ SDK نفسه. القيمة الافتراضية: `false`.
+- `debugImages: bool` يُفرغ الإطارات الملتقَطة لأغراض تصحيح الأخطاء. القيمة الافتراضية: `false`.
+
+يتوفّر إعدادان مسبقان: `OROptions.defaults` (جميع ما سبق) و`OROptions.defaultDebug` (الإعدادات نفسها، مع `debugLogs: true`).
+
+<Aside type="note">
+	لا يتم ضبط معدّل الإطارات وجودة الصورة هنا **إطلاقًا**. بل يأتيان من إعدادات مشروعك، ويتم تسليمهما في استجابة `/start`.
+</Aside>
+
+## عنوان URL للخادم
+
+تكون القيمة الافتراضية لـ `serverUrl` هي OpenReplay Cloud. تمرّره عمليات النشر ذاتية الاستضافة إلى `start()`، أو تضبطه مسبقًا:
+
+```dart
+OpenReplay.instance.serverUrl = 'https://your.instance.com/ingest';
+```
+
+## الوحدات
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="تعرّف على وحدات Flutter SDK" url="/flutter-sdk/modules" hideIcon={true} width="100"/>
+</div>
+
+## الطرق
+
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="تعرّف على طرق Flutter SDK" url="/flutter-sdk/methods" hideIcon={true} width="100"/>
+</div>
+
+## هل لديك أسئلة؟
+إذا كانت لديك أي أسئلة حول هذه العملية، فلا تتردد في التواصل معنا عبر [Slack](https://slack.openreplay.com) الخاص بنا أو تفقّد [المنتدى](https://forum.openreplay.com) الخاص بنا.

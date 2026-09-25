@@ -1,0 +1,64 @@
+---
+title: "Flutter SDK - метод start"
+metaTitle: "Flutter SDK - метод start"
+metaDescription: "Подробности о методе 'start' из Flutter SDK от OpenReplay"
+---
+import Aside from '~/components/Aside.astro'
+
+Этот метод используется для запуска трекера. При запуске трекера начинается запись сессии.
+
+## Сигнатура
+
+```dart
+Future<void> OpenReplay.instance.start({
+  required String projectKey,
+  OROptions options = OROptions.defaults,
+  String? serverUrl,
+})
+```
+
+## Параметры
+
+- `projectKey: String`: Находится в панели управления OpenReplay в разделе 'Preferences > Projects'.
+- `options: OROptions`: Что фиксирует трекер, см. ниже.
+- `serverUrl: String?`: Ingest-эндпоинт для self-hosted развёртываний. Не указывайте его в OpenReplay Cloud.
+
+<Aside type="note">
+	Чтобы экран записывался, ваше приложение должно быть обёрнуто в `OpenReplayWidget`. `start()` можно безопасно вызывать до первого кадра — захват начинается после того, как виджет пройдёт layout.
+</Aside>
+
+### Параметры инициализации
+
+Доступные параметры:
+
+- `crashes: bool` Фиксирует ошибки Dart.
+- `analytics: bool` Фиксирует касания, свайпы, экраны и поля ввода.
+- `performances: bool` Фиксирует загрузку CPU, память, заряд батареи и тепловое состояние.
+- `logs: bool` Фиксирует вывод `debugPrint`.
+- `screen: bool` Включает захват кадров.
+- `screenshotBatchSize: ScreenshotBatchSize` Количество кадров на одну отправку — `low` (10), `normal` (20), `high` (30). По умолчанию: `normal`.
+- `targetLongEdge: int` Длина самой длинной стороны захваченного кадра в пикселях. По умолчанию: `720`.
+- `dedupeFrames: bool` Пропускает кадры, идентичные предыдущему.
+- `maskPlatformViews: bool` Закрывает WebView, карты и превью камеры заглушкой.
+- `wifiOnly: bool` Зарезервирован; пока не применяется.
+- `debugLogs: bool` / `debugImages: bool` Собственный отладочный вывод SDK. По умолчанию: `false`.
+
+По умолчанию: все логические параметры равны `true`, кроме `debugLogs` и `debugImages`. Полное описание каждого из них см. в разделе [инициализация](/flutter-sdk/init#параметры-инициализации).
+
+Частота кадров и качество изображения берутся из настроек вашего проекта, а не из этих параметров.
+
+## Буферизованный запуск
+
+Чтобы записывать в кольцевой буфер без создания сессии — так, чтобы последующий триггер мог отправить предшествующие секунды, — запустите трекер с помощью `coldStart()` и переведите его в режим записи с помощью `triggerRecording()`:
+
+```dart
+await OpenReplay.instance.coldStart(projectKey: 'YOUR_PROJECT_KEY');
+
+// later, when something worth recording happens
+await OpenReplay.instance.triggerRecording(condition: 'checkout_error');
+```
+
+Серверная проверка условий пока недоступна во Flutter SDK; вызывайте `triggerRecording()` из собственного кода.
+
+## Остались вопросы?
+Если у вас есть какие-либо вопросы об этом процессе, не стесняйтесь обращаться к нам в нашем [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com).

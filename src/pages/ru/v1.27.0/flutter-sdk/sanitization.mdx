@@ -1,0 +1,59 @@
+---
+title: "Flutter SDK - Очистка конфиденциальных данных"
+metaTitle: "Flutter SDK - Очистка конфиденциальных данных"
+metaDescription: "Подробности об очистке записей и сетевых данных в трекере Flutter"
+---
+import Aside from '~/components/Aside.astro'
+
+## Компоненты UI
+
+Оберните в `ORSanitizedView` всё, что не должно появляться в воспроизведении. В записи эта область размывается и заштриховывается, как в iOS SDK, а виджет снимает свою регистрацию, как только покидает дерево.
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+ORSanitizedView(
+  child: TextField(
+    controller: _cardNumber,
+    decoration: const InputDecoration(labelText: 'Card number'),
+  ),
+)
+```
+
+Маскирование применяется вторым проходом растеризации поверх захваченного кадра, поэтому оно никогда не меняет того, что ваш пользователь видит на экране.
+
+<Aside type="note">
+	`ORSanitizedView` скрывает виджет на записанном экране. Чтобы также не допустить попадания *значения* поля ввода в поток событий, передайте `masked: true` в [`observeInput`](/flutter-sdk/inputs).
+</Aside>
+
+## Platform views
+
+Platform views — WebView, карты, превью камеры — отрисовываются в отдельных нативных слоях, которые Flutter не может считать, поэтому иначе они выглядели бы как пустые области. По умолчанию трекер закрывает их заглушкой. Отключить это можно с помощью `maskPlatformViews: false`:
+
+```dart
+await OpenReplay.instance.start(
+  projectKey: 'YOUR_PROJECT_KEY',
+  options: const OROptions(maskPlatformViews: false),
+);
+```
+
+## Сетевые запросы
+
+Тела отбрасываются, если вы не установите `capturePayload: true`, а заголовки `cookie`, `set-cookie` и `authorization` отбрасываются по умолчанию. Помимо этого, последнее слово по каждому зафиксированному вызову остаётся за `sanitizer`:
+
+```dart
+OpenReplay.instance.patchNetwork(ORNetworkOptions(
+  capturePayload: true,
+  ignoreHeaders: ['cookie', 'set-cookie', 'authorization', 'x-api-key'],
+  sanitizer: (record) {
+    final body = record.requestBody;
+    if (body is Map) body.remove('password');
+    return record; // return null to drop the call entirely
+  },
+));
+```
+
+Полный список полей см. в разделе [параметры сети](/flutter-sdk/network).
+
+## Остались вопросы?
+Если у вас есть какие-либо вопросы об этом процессе, не стесняйтесь обращаться к нам в нашем [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com).

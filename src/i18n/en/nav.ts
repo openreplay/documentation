@@ -239,6 +239,7 @@ const nav: NavItem = {
           { text: 'stop', slug: 'flutter-sdk/methods/stop', children: [] },
           { text: 'patchNetwork', slug: 'flutter-sdk/methods/patch-network', children: [] },
         ] },
+        { text: { en: 'Analytics', fr: 'Analytique', es: 'Analítica', ru: 'Аналитика', zh: '分析', 'ar-ae': 'التحليلات' }, slug: 'flutter-sdk/analytics', children: [] },
         { text: { en: 'Inputs', fr: 'Entrées', es: 'Entradas', ru: 'Входные данные', zh: '输入', 'ar-ae': 'المدخلات' }, slug: 'flutter-sdk/inputs', children: [] },
         { text: { en: 'Network Options', fr: 'Options réseau', es: 'Opciones de red', ru: 'Сетевые параметры', zh: '网络选项', 'ar-ae': 'خيارات الشبكة' }, slug: 'flutter-sdk/network', children: [] },
         { text: { en: 'Sanitize Data', fr: 'Nettoyer les données', es: 'Sanear datos', ru: 'Очистка данных', zh: '数据脱敏', 'ar-ae': 'تنقية البيانات' }, slug: 'flutter-sdk/sanitization', children: [] },

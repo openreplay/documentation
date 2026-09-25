@@ -3,6 +3,7 @@ title: "Eventos"
 metaTitle: "SDK de Analítica de OpenReplay — Eventos"
 metaDescription: "Define y gestiona super propiedades para los eventos de analítica del tracker de OpenReplay."
 ---
+import Aside from '~/components/Aside.astro'
 
 ## Eventos
 
@@ -28,11 +29,17 @@ Las propiedades de evento se pasan únicamente en una sola llamada a `track/send
 
 ## Claves reservadas
 
-Estas claves están reservadas y no se pueden crear/eliminar mediante los helpers de super propiedades:
+Se rechazan dos conjuntos distintos de claves, según el helper:
 
-- `properties`
-- `token`
-- `timestamp`
+**Propiedades predeterminadas**: las recopila el propio SDK y se envían con cada evento. `setProperty` las omite silenciosamente, por lo que no puedes sobrescribirlas con una super propiedad:
+
+`os`, `os_version`, `browser`, `browser_version`, `platform`, `screen_height`, `screen_width`, `initial_referrer`, `utm_source`, `utm_medium`, `utm_campaign`, `user_id`, `distinct_id`, `sdk_edition`, `sdk_version`, `timezone`, `search_engine`
+
+**Claves del payload**: `properties`, `token` y `timestamp`. Forman parte del envoltorio del evento, por lo que `setPropertiesOnce` y `unsetProperties` las omiten.
+
+<Aside type="note">
+	Las dos listas las aplican métodos distintos: `setProperty` protege las propiedades predeterminadas, y `setPropertiesOnce` y `unsetProperties` protegen las claves del payload. La misma división se aplica en el módulo People, donde `setProperties`, `setPropertiesOnce` y `appendValues` protegen todas las propiedades predeterminadas.
+</Aside>
 
 ## Firmas de nivel superior
 
@@ -110,7 +117,8 @@ tracker.analytics.events.setProperty("build_sha", "3f2c9a1")
 
 ### Notas:
 
-- Las claves predeterminadas/internas (rastreadas por el SDK) se ignoran y no se añadirán como super propiedades.
+- Las [propiedades predeterminadas](#claves-reservadas) recopiladas por el SDK se ignoran y no se añadirán como super propiedades.
+- La forma clave/valor se ignora cuando `value` es `undefined`; pasa `null` para almacenar un valor vacío.
 - Los cambios se guardan localmente solo si algo cambió realmente.
 
 ## setPropertiesOnce

@@ -1,0 +1,147 @@
+---
+title: "Flutter SDK - Initializing the SDK"
+metaTitle: "Flutter SDK - Initializing the SDK"
+metaDescription: "Configuration options for the Flutter tracker's start method"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	Flutter SDK is in Beta. Feel free to give us feedback or report any issue you may encounter on our [Slack](https://slack.openreplay.com) or check out our [Forum](https://forum.openreplay.com).
+</Aside>
+
+## Requirements
+
+- Flutter `3.41` or newer (Dart SDK `^3.0.0`).
+- An OpenReplay backend of `v1.26.0` or newer. Older backends report no frames support: events are still recorded, but the screen is not.
+
+The package has **no pub dependencies** — the wire protocol, batching, gzip and multipart are all implemented in Dart, and everything native goes through a single platform channel.
+
+## Installation
+
+```sh
+flutter pub add openreplay
+```
+
+Or add it to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  openreplay: ^1.0.9
+```
+
+## Initialization
+
+You must pass the `projectKey` to `start()`. You can get this value from your OpenReplay dashboard under 'Preferences > Projects'.
+
+<Aside type="tip">
+	Note that if you have multiple projects, you need to be careful which project key you choose.
+</Aside>
+
+### Adding the tracking code
+
+Wrap your app in `OpenReplayWidget`, then start the tracker. The wrapper is **required**: it provides the repaint boundary frames are captured from, so without it nothing is recorded.
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:openreplay/openreplay.dart';
+
+void main() {
+  runApp(const OpenReplayWidget(child: MyApp()));
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await OpenReplay.instance.start(
+        projectKey: 'YOUR_PROJECT_KEY',
+        // not required if you're using our SaaS version
+        serverUrl: 'https://your.instance.com/ingest',
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+        // records screen transitions
+        navigatorObservers: [ORNavigatorObserver()],
+        home: const HomePage(),
+      );
+}
+```
+
+`start()` is safe to call before the first frame — capture only begins once `OpenReplayWidget` has laid out.
+
+### Setting up the navigation listener
+
+Add `ORNavigatorObserver` to your `MaterialApp` (or `CupertinoApp`, or any `Navigator`) so pushed and popped routes appear in the replay timeline:
+
+```dart
+MaterialApp(
+  navigatorObservers: [ORNavigatorObserver()],
+  // ...
+)
+```
+
+Routes are reported by `route.settings.name`. Unnamed routes fall back to their position in the stack (`route/2`), so named routes give far more readable timelines.
+
+### Sanitize Data
+
+See [how to sanitize data in Flutter replays](/flutter-sdk/sanitization) for more details.
+
+## Initialization Options
+
+Options are passed as `OROptions` to `start()`:
+
+```dart
+await OpenReplay.instance.start(
+  projectKey: 'YOUR_PROJECT_KEY',
+  options: const OROptions(
+    logs: false,
+    targetLongEdge: 1080,
+  ),
+);
+```
+
+- `crashes: bool` Captures Dart errors. Native crashes still need a native reporter. Default: `true`.
+- `analytics: bool` Captures touches, swipes, screens and inputs. Default: `true`.
+- `performances: bool` Captures CPU, memory, battery and thermal state. Default: `true`.
+- `logs: bool` Captures `debugPrint` output. Default: `true`.
+- `screen: bool` Enables frame capture. Default: `true`.
+- `screenshotBatchSize: ScreenshotBatchSize` Frames buffered before a batch is packed and uploaded — `low` (10), `normal` (20) or `high` (30). Default: `normal`.
+- `targetLongEdge: int` Longest edge of a captured frame, in pixels. Caps per-frame cost so it does not swing with screen size. Default: `720`.
+- `dedupeFrames: bool` Skips frames whose pixels are byte-identical to the previous one. Playback is unaffected — the player holds the last snapshot at or before the current time. Default: `true`.
+- `maskPlatformViews: bool` Covers platform views (WebView, maps, camera preview) with a placeholder. They render in native layers Flutter cannot read back, so without this they appear blank. Default: `true`.
+- `wifiOnly: bool` Reserved; **not yet enforced**. Default: `true`.
+- `debugLogs: bool` Enables the SDK's own logging. Default: `false`.
+- `debugImages: bool` Dumps captured frames for debugging. Default: `false`.
+
+Two presets are provided: `OROptions.defaults` (all of the above) and `OROptions.defaultDebug` (the same, with `debugLogs: true`).
+
+<Aside type="note">
+	Frame rate and image quality are **not** set here. They come from your project settings, delivered in the `/start` response.
+</Aside>
+
+## Server URL
+
+`serverUrl` defaults to OpenReplay Cloud. Self-hosted deployments pass it to `start()`, or set it ahead of time:
+
+```dart
+OpenReplay.instance.serverUrl = 'https://your.instance.com/ingest';
+```
+
+## Modules
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="Get to know the modules of the Flutter SDK" url="/flutter-sdk/modules" hideIcon={true} width="100"/>
+</div>
+
+## Methods
+
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="Get to know the methods of the Flutter SDK" url="/flutter-sdk/methods" hideIcon={true} width="100"/>
+</div>
+
+## Have questions?
+If you have any questions about this process, feel free to reach out to us on our [Slack](https://slack.openreplay.com) or check out our [Forum](https://forum.openreplay.com).

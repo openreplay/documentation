@@ -1,0 +1,53 @@
+---
+title: "Flutter SDK - Tracking screens and views"
+metaTitle: "Flutter SDK - Tracking screens and views"
+metaDescription: "Details about tracking screens and views with the Flutter tracker"
+---
+import Aside from '~/components/Aside.astro'
+
+With `analytics` enabled (the default), the tracker captures taps, swipes, viewport changes and input events on its own. Screens and individual views are reported by two exported widgets.
+
+## Screens
+
+Add `ORNavigatorObserver` to your app's navigator to record route transitions:
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+MaterialApp(
+  navigatorObservers: [ORNavigatorObserver()],
+  // ...
+)
+```
+
+Pushes, pops, replacements and removals are all reported. A route is named by `route.settings.name`; an unnamed route falls back to its position in the stack (`route/2`), so named routes make for much more readable timelines.
+
+## Tracked views
+
+Wrap any widget in `ORTrackedView` to report it as a named, observable view. A visibility event is emitted when it mounts and when it unmounts, and its name is used as the label for touches landing inside it.
+
+- `screenName: String` — screen or feature title
+- `viewName: String` — name of the tracked view
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+ORTrackedView(
+  screenName: 'Checkout',
+  viewName: 'Pay button',
+  child: ElevatedButton(onPressed: _pay, child: const Text('Pay')),
+)
+```
+
+## Touches
+
+Taps and swipes are captured through the pointer router's global route, so the tracker sees every pointer event without ever competing in the gesture arena — it cannot swallow a tap your app needed. A pointer that travels more than 10 logical pixels is recorded as a swipe with its dominant direction, anything shorter as a click.
+
+Touch labels come from hit-testing the text under the pointer, or from the enclosing `ORTrackedView`.
+
+<Aside type="note">
+	Labels are never derived from widget or render-object type names: `flutter build --obfuscate` reduces those to noise.
+</Aside>
+
+## Have questions?
+If you have any questions about this process, feel free to reach out to us on our [Slack](https://slack.openreplay.com) or check out our [Forum](https://forum.openreplay.com).

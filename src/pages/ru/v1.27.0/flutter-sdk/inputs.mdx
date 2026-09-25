@@ -1,0 +1,47 @@
+---
+title: "Flutter SDK - отслеживание полей ввода"
+metaTitle: "Flutter SDK - отслеживание полей ввода"
+metaDescription: "Подробности об отслеживании полей ввода с помощью трекера Flutter"
+---
+import Aside from '~/components/Aside.astro'
+
+Текстовые поля не отслеживаются автоматически — во Flutter нет аналога цепочки респондеров UIKit, к которой можно было бы подключиться. Подключите трекер к нужным вам контроллерам, и он будет прослушивать изменения значения (с задержкой debounce) и отправлять полученное значение в бэкенд OpenReplay.
+
+## Добавление отслеживаемых полей ввода
+
+Используйте `observeInput(controller, label:, masked:)`:
+
+- `controller: TextEditingController` — контроллер, который нужно отслеживать
+- `label: String` — метка для записываемого поля ввода
+- `masked: bool` — если `true`, трекер записывает событие ввода, но вместо значения отправляет `****`. По умолчанию: `false`.
+
+Метод возвращает callback, который удаляет слушатель, поэтому вызовите его в `dispose()`:
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+class _LoginFormState extends State<LoginForm> {
+  final _email = TextEditingController();
+  late final VoidCallback _stopObserving;
+
+  @override
+  void initState() {
+    super.initState();
+    _stopObserving = OpenReplay.instance.observeInput(_email, label: 'Email');
+  }
+
+  @override
+  void dispose() {
+    _stopObserving();
+    _email.dispose();
+    super.dispose();
+  }
+}
+```
+
+<Aside type="note">
+	`masked: true` скрывает значение только из потока событий. Поле по-прежнему видно на записанном экране — оберните его в [`ORSanitizedView`](/flutter-sdk/sanitization), чтобы скрыть и там.
+</Aside>
+
+## Остались вопросы?
+Если у вас есть какие-либо вопросы об этом процессе, не стесняйтесь обращаться к нам в нашем [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com).

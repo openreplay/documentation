@@ -3,6 +3,7 @@ title: "الأحداث"
 metaTitle: "حزمة تطوير برمجيات التحليلات في OpenReplay — الأحداث"
 metaDescription: "حدّد وأدِر الخصائص الفائقة لأحداث التحليلات الخاصة بمتعقّب OpenReplay."
 ---
+import Aside from '~/components/Aside.astro'
 
 ## الأحداث
 
@@ -28,11 +29,17 @@ metaDescription: "حدّد وأدِر الخصائص الفائقة لأحداث
 
 ## المفاتيح المحجوزة
 
-هذه المفاتيح محجوزة ولا يمكن إنشاؤها/إزالتها عبر مساعِدات الخصائص الفائقة:
+تُرفَض مجموعتان مختلفتان من المفاتيح، بحسب الدالة المساعِدة:
 
-- `properties`
-- `token`
-- `timestamp`
+**الخصائص الافتراضية** — تجمعها حزمة تطوير البرمجيات (SDK) بنفسها وتُرسَل مع كل حدث. تتخطّاها `setProperty` بصمت، لذا لا يمكنك حجبها بخاصية فائقة:
+
+`os`, `os_version`, `browser`, `browser_version`, `platform`, `screen_height`, `screen_width`, `initial_referrer`, `utm_source`, `utm_medium`, `utm_campaign`, `user_id`, `distinct_id`, `sdk_edition`, `sdk_version`, `timezone`, `search_engine`
+
+**مفاتيح الحمولة** — `properties` و`token` و`timestamp`. وهي جزء من غلاف الحدث (envelope)، لذا تتخطّاها `setPropertiesOnce` و`unsetProperties`.
+
+<Aside type="note">
+	تُطبَّق القائمتان عبر دوال مختلفة: تحمي `setProperty` الخصائص الافتراضية، بينما تحمي `setPropertiesOnce` و`unsetProperties` مفاتيح الحمولة. وينطبق التقسيم نفسه على وحدة People، حيث تحمي كلٌّ من `setProperties` و`setPropertiesOnce` و`appendValues` الخصائص الافتراضية.
+</Aside>
 
 ## التواقيع عالية المستوى
 
@@ -110,7 +117,8 @@ tracker.analytics.events.setProperty("build_sha", "3f2c9a1")
 
 ### ملاحظات:
 
-- يتم تجاهل المفاتيح الافتراضية/الداخلية (التي تتعقّبها حزمة تطوير البرمجيات) ولن تُضاف كخصائص فائقة.
+- يتم تجاهل [الخصائص الافتراضية](#المفاتيح-المحجوزة) التي تجمعها حزمة تطوير البرمجيات ولن تُضاف كخصائص فائقة.
+- يتم تجاهل صيغة المفتاح/القيمة عندما تكون `value` مساوية لـ `undefined`؛ مرّر `null` لتخزين قيمة فارغة.
 - تُحفَظ التغييرات محليًا فقط إذا تغيّر شيء ما فعليًا.
 
 ## setPropertiesOnce

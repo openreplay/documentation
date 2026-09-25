@@ -4,10 +4,35 @@ metaTitle: "Utilisation du SDK d'analyse du tracker OpenReplay"
 metaDescription: "Découvrez comment configurer et utiliser le SDK d'analyse du tracker OpenReplay"
 ---
 import LinkRow from '~/components/LinkRow.astro'
+import Aside from '~/components/Aside.astro'
 
 ## SDK d'analyse
 
 Découvrez comment configurer le SDK d'analyse du tracker OpenReplay.
+
+## Activer le SDK
+
+Le SDK d'analyse est **optionnel** (opt-in). Il n'est instancié que lorsque vous passez `analytics.active` au constructeur du tracker ; jusque-là, `tracker.analytics` vaut `null` et `tracker.track()` n'a aucun effet.
+
+```js
+import Tracker from '@openreplay/tracker'
+
+const tracker = new Tracker({
+  projectKey: "YOUR_PROJECT_KEY",
+  analytics: { active: true },
+})
+
+tracker.start()
+```
+
+### Options
+
+- `active: boolean` Active le SDK d'analyse. Par défaut : `false`.
+- `ingestPoint?: string` Point de terminaison auquel les lots d'analyse sont envoyés. Uniquement pour les déploiements auto-hébergés : sur OpenReplay Cloud, cette option est ignorée et `https://api.openreplay.com/ingest` est utilisé. Par défaut, la valeur de `ingestPoint` du tracker.
+
+<Aside type="note">
+	Les événements sont mis en file d'attente et envoyés toutes les 5 secondes, ainsi qu'à chaque changement de visibilité de l'onglet, afin que les événements en mémoire tampon survivent à la fermeture d'un onglet. Un lot qui ne parvient pas à atteindre le backend est remis en tête de la file d'attente et renvoyé lors de l'envoi suivant.
+</Aside>
 
 ## Modules
 
@@ -24,12 +49,43 @@ Pour en savoir plus sur la gestion de vos données d'analyse dans l'interface d'
 // Identify a user with an id (e.g. email, username, etc.)
 tracker.analytics.identify(userId: string): void
 // same as
-tracker.analytics.people.identify()
+tracker.analytics.people.identify(userId)
 
 // Add event to batch with option to send it immediately
 tracker.analytics.track(eventName: string, tempProperties?: Record<string, any>, options?: { send_immediately: boolean })
 // same as
-tracker.analytics.events.track()
+tracker.analytics.events.track(eventName, tempProperties, options)
+
+// Clear user id, people properties and super properties, and stop the batcher
+tracker.analytics.reset(): void
+```
+
+## Raccourcis au niveau du tracker
+
+Ces méthodes se trouvent sur le tracker lui-même : vous pouvez donc les appeler sans risque sans passer par `tracker.analytics` (elles n'ont aucun effet tant que l'analyse est désactivée) :
+
+```ts
+// Same as tracker.analytics.track(...)
+tracker.track(eventName: string, properties?: Record<string, any>, options?: { send_immediately: boolean })
+
+// Sets the replay's user ID *and* calls analytics.people.identify() with it
+tracker.setUserID(id: string): void
+tracker.identify(id: string): void // alias of setUserID
+
+// Send analytics events under your own token, without session recording
+tracker.setAnalyticsToken(token: string): void
+```
+
+<Aside type="note">
+	`tracker.setUserID()` identifie l'utilisateur à la fois pour le replay et pour le profil d'analyse. Appeler directement `tracker.analytics.people.identify()` ne définit que le profil d'analyse.
+</Aside>
+
+## reset
+
+Efface l'utilisateur identifié (y compris l'identifiant persistant de l'appareil), toutes les propriétés people, toutes les super propriétés, et arrête le batcher. Appelez-la lors de la déconnexion.
+
+```ts
+tracker.analytics.reset()
 ```
 
 ## Vous avez des questions ?
