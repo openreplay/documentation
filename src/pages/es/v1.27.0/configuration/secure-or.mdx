@@ -1,0 +1,126 @@
+---
+title: "Proteger OpenReplay"
+metaTitle: "Proteger OpenReplay"
+metaDescription: "Proteja OpenReplay configurando SSL y reCaptcha."
+---
+
+## Restringir el acceso al nodo
+
+Es muy recomendable **permitir únicamente los puertos abiertos 80/443 hacia la máquina** mediante grupos de seguridad. Hay algunos componentes que escuchan en la dirección 0.0.0.0 para facilitar la red, como la API del servidor k3s, la API de flannel, etc.
+
+## Configurar SSL
+
+Si va a aportar su propio certificado, cree un secreto SSL con el siguiente comando: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
+
+> **Nota:** Si no dispone de un certificado, genere uno que se renueve automáticamente para su subdominio (el que proporcionó durante la instalación) usando Let's Encrypt. Simplemente conéctese a la instancia de OpenReplay, ejecute `cd openreplay/scripts/helmcharts && bash certmanager.sh` y siga los pasos.
+
+Si desea habilitar la redirección de http a https (recomendado), descomente el siguiente bloque, bajo la sección `ingress-nginx`:
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+> **Nota:** Nuestro `ingress-nginx` se ejecuta de forma predeterminada en los puertos `80|443`, pero esto se puede cambiar fácilmente, si es necesario, en `openreplay -e`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+Guarde y salga usando `:wq` para que el servicio se recargue.
+
+## Reforzar X-Frame-Options
+
+Para indicar si un navegador debe o no permitir representar una página en un `<frame>, <iframe>, <embed>` u `<object>` y evitar ataques de click-jacking, configure el encabezado de respuesta `X-Frame-Options` editando la configuración con `openreplay -e`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    addHeaders:
+      X-Frame-Options: "SAMEORIGIN"
+```
+
+Luego, guarde y salga usando `:wq` para que el servicio se recargue.
+
+## Configurar reCaptcha
+
+OpenReplay admite reCaptcha (v2) para mayor seguridad. Para habilitar esta protección:
+
+1. Obtenga una clave de reCaptcha v2 de Google, con el modo `invisible` habilitado, es decir, que no solicite `tick I am not a human`.
+2. Ejecute `openreplay -e`, luego descomente y actualice las siguientes variables de entorno en la sección `chalice`:
+- `captcha_server`: La URL de su servicio de reCaptcha (p. ej. https://www.google.com/recaptcha/api/siteverify)
+- `captcha_key`: Su clave secreta de reCaptcha
+
+3. Edite `.env` en `openreplay/frontend/` (copie `.env.sample` si no existe) y sustituya la variable `CAPTCHA_SITE_KEY` por su clave de sitio de reCaptcha.
+4. Reconstruya el frontend:
+
+```bash
+cd openreplay/frontend
+IMAGE_TAG=my-custom-image PUSH_IMAGE=1 DOCKER_REPO=my-docker-user-name bash -x build.sh
+```
+
+5. Ejecute `openreplay -e` y especifique la imagen del frontend recién construida en el bloque `frontend`:
+
+```yaml
+frontend:
+  image:
+    repository: "my-docker-username/frontend"
+    tag: "my-custom-image"
+```
+
+6. Reinicie los servicios del frontend y del servidor web para que los cambios surtan efecto:
+
+```bash
+ openreplay -R
+```
+
+## Política de seguridad de contenido (CSP)
+
+Este es un ejemplo de una política (CSP) que permite a OpenReplay grabar sesiones. Debe adaptarse según su dominio y sus requisitos de seguridad:
+
+```html
+worker-src ‘self’ blob: https://openreplay.mycompany.com https://*.openreplay.com; script-src ‘self’ https://openreplay.mycompany.com https://*.openreplay.com;
+```
+
+Para aplicar su CSP a NGINX, conéctese a su instancia de OpenReplay y siga estos pasos:
+
+1. Ejecute `openreplay -e` y agregue su CSP en el bloque `frontend`. Asegúrese de actualizar 
+
+```yaml
+frontend:
+  ingress:
+    cspSnippet: |
+      add_header Content-Security-Policy "worker-src 'self' blob: https://openreplay.mycompany.com https://*.openreplay.com; script-src 'self' https://openreplay.mycompany.com https://*.openreplay.com;";
+```
+
+> **Nota:** Asegúrese de reemplazar las apariciones de `https://openreplay.mycompany.com` en la CSP anterior por el nombre de dominio de su OpenReplay. El valor debe ser el mismo que `DOMAIN_NAME` cuando ejecuta `openreplay -e`. 
+
+2. Guarde y salga usando `:wq` para aplicar su CSP recién agregada
+
+## Habilitar CORS
+
+Las solicitudes entre dominios están permitidas, de forma predeterminada, desde todos los orígenes (`Access-Control-Allow-Origin: *`). Si desea restringir las grabaciones a solo unos pocos dominios, ejecute `openreplay -e` y actualice el bloque `http` agregando las siguientes anotaciones:
+
+```yaml
+http:
+  ingress:
+    annotations:
+      nginx.ingress.kubernetes.io/cors-allow-methods: POST
+      nginx.ingress.kubernetes.io/cors-allow-headers: Content-Type,Authorization,Content-Encoding
+      nginx.ingress.kubernetes.io/cors-allow-origin: https://app1.mycompany.com,https://app2.mycompany.com,https://*.mycompany.com
+      nginx.ingress.kubernetes.io/enable-cors: "true"
+			nginx.ingress.kubernetes.io/cors-expose-headers: "Content-Length"
+```
+
+Luego guarde y salga usando `:wq` para aplicar su CSP recién agregada.
+
+## ¿Tiene preguntas?
+Si tiene alguna pregunta sobre este proceso, no dude en contactarnos en nuestro [Slack](https://slack.openreplay.com) o consultar nuestro [Foro](https://forum.openreplay.com).

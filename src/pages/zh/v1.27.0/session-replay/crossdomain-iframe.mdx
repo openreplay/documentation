@@ -1,0 +1,50 @@
+---
+title: "跨域 iFrame 跟踪"
+metaTitle: "跨域 iFrame 跟踪"
+metaDescription: "使用 OpenReplay 跟踪跨域 iFrame 中的用户交互。"
+---
+
+要启用跨域 iFrame 跟踪，你需要在 tracker 的构造函数中添加 `crossdomain.enabled` 选项，如下所示：
+
+```html
+<iframe
+	title="test"
+	src="http://iframe1.website.com/iframe-path"
+	width="300"
+	height="300"
+></iframe>
+``` 
+
+在你的 tracker 构造函数中添加如下 `crossdomain` 选项：
+
+```js
+tracker.configure({
+	projectKey: PROJECT_KEY,
+	crossdomain: {
+		enabled: true
+	},
+	captureIFrames: true
+});
+```
+
+然后在所需的 iFrame 内初始化 tracker 实例，并在其构造函数中添加 `crossdomain.parentDomain`：
+
+```js
+tracker.configure({
+	projectKey: PROJECT_KEY,
+	crossdomain: {
+	  // Specifies the domain of the parent window
+	  // If not specified, it will be set to '*'
+	  // Which means that child window will send messages to all domains inside the browser window
+	  // Consult your CSP settings to ensure that '*' is allowed or specify the parent domain
+		parentDomain: '*',
+	  enabled: true
+	}
+});
+```
+
+请注意，如果你使用 tracker 代码片段，对于子 iframe，我们建议使用常规实例（openreplay.js）而非 `openreplay-assist.js`（因为 assist 会话应仅连接到父实例）。
+
+## 有疑问？
+
+如果你遇到任何问题，请加入我们的 [Slack](https://slack.openreplay.com) 或查看我们的[论坛](https://forum.openreplay.com)，从我们的社区获得帮助。

@@ -1,0 +1,53 @@
+---
+title: "SDK JavaScript - méthode resanitize"
+metaTitle: "SDK JavaScript - méthode resanitize"
+metaDescription: "Détails sur la méthode resanitize du SDK d'OpenReplay"
+---
+import Aside from '~/components/Aside.astro'
+
+Cette méthode réévalue la [sanitisation](/sdk/sanitize-data) par rapport au DOM actuel et réémet tout ce qui a changé, en mettant à jour les nœuds déjà enregistrés en cours de session.
+
+La sanitisation est normalement appliquée lorsqu'un nœud est enregistré pour la première fois. Si vous modifiez ce qui doit être masqué ou caché *après* qu'un nœud a déjà été capturé, ce changement ne sera pas reflété de lui-même dans le replay. Appelez `resanitize()` pour forcer le tracker à réanalyser et à appliquer les règles de sanitisation mises à jour aux nœuds qui font déjà partie de l'enregistrement.
+
+Appelez-la après :
+
+- avoir basculé les attributs `data-openreplay-obscured` / `data-openreplay-hidden` sur des éléments déjà présents sur la page, ou
+- avoir modifié ce sur quoi se base votre [`domSanitizer`](/sdk/sanitize-data#using-the-domsanitizer-function) (classe, id, etc.).
+
+<Aside type="note">
+Les éléments sanitisés sont masqués/expurgés au niveau de la source (le tracker), de sorte que tout ce qui est masqué ou caché n'atteint jamais l'instance OpenReplay. Comme toute sanitisation, `resanitize()` n'affecte que les données capturées à partir de ce moment — elle ne peut pas nettoyer rétroactivement les données qui ont déjà été envoyées au backend en clair.
+</Aside>
+
+## Signature
+
+```js
+resanitize(el?: Element): void
+```
+
+## Paramètres
+
+- `el?: Element` : Le nœud le plus haut que vous avez modifié. Le tracker réanalyse cet élément et son sous-arbre. Omettez-le pour réanalyser l'ensemble du document.
+
+<Aside type="tip">
+Passez l'élément le plus spécifique possible. Analyser l'ensemble du document est en O(taille du DOM) ; passer le sous-arbre modifié permet donc de garder la réanalyse peu coûteuse sur les grandes pages.
+</Aside>
+
+## Valeur de retour
+
+Cette méthode ne renvoie aucune valeur. La sanitisation réévaluée est appliquée directement à l'enregistrement en cours et les résultats sont visibles dans la plateforme OpenReplay.
+
+## Exemple
+
+```js
+// Obscure a section after the user opens sensitive content
+const panel = document.getElementById('account-details')
+panel.setAttribute('data-openreplay-obscured', '')
+
+// Tell the tracker to re-apply sanitization to that subtree
+tracker.resanitize(panel)
+```
+
+```js
+// Re-scan the whole document after changing domSanitizer rules
+tracker.resanitize()
+```

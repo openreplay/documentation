@@ -1,0 +1,53 @@
+---
+title: "JavaScript SDK - resanitize 方法"
+metaTitle: "JavaScript SDK - resanitize 方法"
+metaDescription: "关于 OpenReplay SDK 中 resanitize 方法的详细说明"
+---
+import Aside from '~/components/Aside.astro'
+
+此方法会针对当前 DOM 重新评估[脱敏](/sdk/sanitize-data)，并重新发送所有发生变化的内容，在会话进行中更新已经录制的节点。
+
+脱敏通常在节点首次被录制时应用。如果你在某个节点已被捕获*之后*更改了应被遮蔽或隐藏的内容，该更改不会自动反映到回放中。调用 `resanitize()` 可强制 tracker 重新扫描，并将更新后的脱敏规则应用到已经属于录制内容的节点上。
+
+请在以下情况之后调用它：
+
+- 在已经位于页面上的元素上切换 `data-openreplay-obscured` / `data-openreplay-hidden` 属性，或
+- 更改了你的 [`domSanitizer`](/sdk/sanitize-data#using-the-domsanitizer-function) 所依据的内容（class、id 等）。
+
+<Aside type="note">
+被脱敏的元素会在来源（tracker）层级被遮蔽/编辑，因此任何被遮蔽或隐藏的内容都不会到达 OpenReplay 实例。与所有脱敏一样，`resanitize()` 仅影响从此刻起捕获的数据 —— 它无法追溯清除已经以明文形式发送到后端的数据。
+</Aside>
+
+## 签名
+
+```js
+resanitize(el?: Element): void
+```
+
+## 参数
+
+- `el?: Element`：你所更改的最上层节点。tracker 会重新扫描该元素及其子树。省略它则会重新扫描整个文档。
+
+<Aside type="tip">
+请尽可能传入最具体的元素。扫描整个文档的复杂度为 O(DOM 大小)，因此传入发生变化的子树可在大型页面上保持重新扫描的开销较低。
+</Aside>
+
+## 返回值
+
+此方法不返回任何值。重新评估后的脱敏会直接应用到正在进行的录制中，结果可在 OpenReplay 平台中查看。
+
+## 示例
+
+```js
+// Obscure a section after the user opens sensitive content
+const panel = document.getElementById('account-details')
+panel.setAttribute('data-openreplay-obscured', '')
+
+// Tell the tracker to re-apply sanitization to that subtree
+tracker.resanitize(panel)
+```
+
+```js
+// Re-scan the whole document after changing domSanitizer rules
+tracker.resanitize()
+```

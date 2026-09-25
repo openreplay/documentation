@@ -1,0 +1,87 @@
+---
+title: "Идентификация пользователя"
+metaTitle: "Идентификация пользователя"
+metaDescription: "Как связать внутренний id пользователя с записью сессии."
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="Посмотрите, как идентифицировать пользователей в ваших повторах"
+  description="Если вы не любите читать, вы можете посмотреть этот видеоурок, который показывает, как связать ваши повторы с вашими пользователями."
+  videoURL="https://youtu.be/xfotXkeyXZM"
+/>
+
+Свяжите ваш внутренний id пользователя с записываемой сессией, выполнив указанные ниже шаги.
+
+### С помощью NPM
+
+Внедрите userID при запуске трекера:
+
+```js
+tracker.configure({
+  projectKey: PROJECT_KEY
+});
+
+tracker.start({
+  userID: "john@doe.com",
+  metadata: {
+    balance: "10M",
+    plan: "free"
+  }
+});
+```
+
+Если это невозможно (userID становится известен позже в процессе навигации, то есть значительно после запуска трекера), то вызовите метод `setUserID` для идентификации ваших пользователей. Личность пользователя можно изменить в любой момент во время сессии, вызвав `setUserID`. Однако OpenReplay сохранит только последний внедрённый id пользователя.
+
+```js
+tracker.setUserID('john@doe.com'); // after tracker.start()
+```
+
+### С помощью фрагмента JavaScript
+
+Ниже приведён пример того, как внедрить userID с помощью фрагмента. Обратите внимание на переменную/строку `startOpts` для внедрения userID.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: getUserID() }; // use startOpts variable to inject userID
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+```
+
+Если это невозможно (userID становится известен позже в процессе навигации, то есть значительно после запуска трекера), то вместо этого вызовите метод `setUserID` для идентификации ваших пользователей. Личность пользователя можно изменить в любой момент во время сессии, вызвав `setUserID`. Однако OpenReplay сохранит только последний внедрённый id пользователя.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" };
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+  ...
+  OpenReplay.setUserID("john@doe.com"); // set the userID later in your code
+  ...
+```
+
+### С помощью приложения iOS
+
+Просто вызовите `setUserID(String)` в любой момент во время вашего повтора.
+
+```swift
+import ORTracker
+
+// ... your code
+
+ORTracker.shared.setUserID(_ userID: String)
+```
+
+## Остались вопросы?
+Если у вас есть вопросы об этом процессе, не стесняйтесь обращаться к нам в нашем [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com).

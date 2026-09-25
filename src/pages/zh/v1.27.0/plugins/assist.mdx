@@ -1,0 +1,344 @@
+---
+title: "Assist"
+metaTitle: "Assist"
+metaDescription: "如何设置 OpenReplay Assist 并通过实时屏幕和 WebRTC 为您的终端用户提供支持。"
+---
+
+import Aside from '~/components/Aside.astro'
+
+OpenReplay Assist 让您能够通过查看用户的实时屏幕并立即与他们进行通话（WebRTC）来为用户提供支持，而无需任何第三方屏幕共享软件。
+
+<Aside type="tip">
+  我们还提供了一份详细的教程，介绍如何使用 Assist 与您的用户进行实时互动，您可以在[这里](/tutorials/assist)查看。
+</Aside>
+
+## 安装
+
+```bash
+npm i @openreplay/tracker-assist
+```
+
+## 用法
+
+### 使用 JavaScript 代码片段
+
+如果您的 OpenReplay 跟踪器是使用 JS 代码片段设置的，那么只需将出现的 `.../openreplay.js` 替换为 `.../openreplay-assist.js`。下面是更改后脚本应有样子的示例：
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" };
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay-assist.js", 1, 0, initOpts, startOpts);
+</script>
+```
+
+### 使用 NPM
+
+初始化跟踪器，然后加载 `@openreplay/tracker-assist` 插件。
+
+#### 如果您的网站是单页应用程序（SPA）
+
+```js
+import trackerAssist from '@openreplay/tracker-assist';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+tracker.use(trackerAssist(options)); // check the list of available options below
+
+tracker.start();
+
+```
+
+#### 如果您的 Web 应用程序是服务端渲染（SSR）
+
+如果您的应用程序是 SSR，请遵循以下示例。请确保 `tracker.start()`
+在应用程序处于浏览器环境后被调用（即通过 `useEffect` 或 `componentDidMount`）。
+
+```js
+import trackerAssist from '@openreplay/tracker-assist';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+tracker.use(trackerAssist(options)); // check the list of available options below
+
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, [])
+//...
+}
+```
+
+## 选项
+
+assist 插件支持以下选项：
+
+```js
+trackerAssist({
+  callConfirm?: string|ConfirmOptions;
+  controlConfirm?: string|ConfirmOptions;
+  config?: object;
+  onAgentConnect?: () => (()=>void | void);
+  onCallStart?: () => (()=>void | void);
+  onRemoteControlStart?: () => (()=>void | void);
+  onCallDeny?: () => any;
+  onRemoteControlDeny?: (agentInfo: Record<string, any>) => any;
+  onRecordingDeny?: (agentInfo: Record<string, any>) => any;
+  onDragCamera?: (dx: number, dy: number) => any;
+  callUITemplate?: string
+  /** 
+   * enables gzip compression for big batches on client side
+   * */
+  compressionEnabled: boolean;
+  /**
+   * Minimum amount of MESSAGES in a batch to trigger compression run
+   * @default 5000
+   * */
+  compressionMinBatchSize: number;
+  /**
+   * Show only the first part of an agent's name in the call popup
+   * (e.g. "One Two" -> "One").
+   * @default false
+   */
+  agentShortNames: boolean;
+  /**
+   * Postpone assist start until a userID is set on the session.
+   * @default false
+   */
+  ignoreAnonymous: boolean;
+  /**
+   * When assist connects to the server:
+   * - Autostart.Auto (default): always on tracker start.
+   * - Autostart.Disabled: only via an explicit start() call.
+   * - Autostart.Continuation: only via assist.start(), but the choice is remembered
+   *   in sessionStorage so it auto-continues across page reloads until assist.stop().
+   * @default Autostart.Auto
+   */
+  autostart: Autostart;
+  /**
+   * Require explicit user confirmation before anything is shared with an
+   * agent: assist starts and opens the socket as usual, but no messages are
+   * sent through it until the user approves the confirmation popup, which is
+   * shown as soon as the first agent connects to the session. The approval
+   * is remembered per-tab (sessionStorage) until stop() is called.
+   * @default false
+   */
+  requestConfirm: boolean;
+  /** Text/style customization for the session view confirmation popup. */
+  sessionConfirm?: ConfirmOptions;
+  /** Called when the user approves session viewing (requestConfirm mode). */
+  onSessionConfirmApprove?: (agentInfo: Record<string, any>) => any;
+  /** Called when the user denies session viewing (requestConfirm mode). */
+  onSessionConfirmDeny?: (agentInfo: Record<string, any>) => any;
+})
+```
+
+### 微件自定义
+
+实时查看、远程控制以及通话微件，即终端用户所看到的那些，都可以完全自定义。
+
+#### 实时查看微件
+
+将 `requestConfirm: true` 设置为在坐席能够实时查看用户会话之前先获得用户的许可。Assist 会照常启动并连接，但在用户批准确认弹窗之前，会话对坐席保持不可见，该弹窗会在第一个坐席连接时立即显示。一旦被接受，追踪将重新启动，坐席便可以实时查看用户的会话。
+
+该批准会按标签页记住（存储在 `sessionStorage` 中），直到调用 [`stop()`](#methods)，此调用会撤销该批准，因此下一次 [`start()`](#methods) 将会再次提示。
+
+```js
+tracker.use(trackerAssist({
+  requestConfirm: true,
+  sessionConfirm: { text: 'A support agent would like to view your screen. Allow?' },
+  onSessionConfirmApprove: ({ email, name, query }) => console.log("Session viewing approved"),
+  onSessionConfirmDeny: ({ email, name, query }) => console.log("Session viewing denied"),
+}));
+```
+
+可以通过 `sessionConfirm` 选项来自定义弹窗的文本和样式，该选项接受以下 `ConfirmOptions` 对象：
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
+
+#### 远程控制微件
+
+可以通过 `controlConfirm` 选项来自定义弹窗的文本和样式，该选项接受以下 `ConfirmOptions` 对象：
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
+
+#### 通话微件
+
+可以通过 `callConfirm` 选项来自定义弹窗的文本和样式，该选项接受以下 `ConfirmOptions` 对象：
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
+
+可以通过以下这组 `ids` 和 `classes` 来自定义此微件的各个方面。`Ids` 用作各个按钮/元素的锚点，而 `classes` 可用于分组容器。
+
+| HTML 类型 | 名称 | 描述 |
+|----------|-------------|-------------|
+|id | `or-assist` | 微件容器 |
+|class | `card`、`border-dark`、`shadow` 和 `drag-area` | 卡片边框和阴影的样式 |
+|id | `controls`  | 微件内通话部分的容器 |
+|class | `card-header` | 通话微件卡片头部的样式（即在计时器旁显示坐席名称的那个） |
+|id | `agent-name` | 坐席名称的容器 |
+|id | `duration` | 计时器的容器 |
+|id | `video-container` | 用户自己的视频画面容器 |
+|id | `remote-stream` | 坐席的视频画面 |
+|class | `card-footer` | 静音、视频、结束通话按钮的容器 |
+|id | `audio-btn` | 静音按钮 |
+|id | `video-btn` | 视频按钮 |
+|id | `end-call-btn` | 结束通话按钮 |
+|id | `remote-control-row` | 远程控制行 |
+|id | `end-control-btn` | 结束控制按钮的 Id |
+
+### 回调
+
+以下是所有回调的列表：
+
+- `callConfirm`：自定义通话请求弹窗的文本和/或布局。 
+- `controlConfirm`：自定义远程控制请求弹窗的文本和/或布局。
+- `config`：包含自定义的 ICE/TURN 服务器配置。默认为 `{ 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }], 'sdpSemantics': 'unified-plan' }`。
+- `onAgentConnect: () => (()=>void | void)`：此回调函数在实时会话开始时立即触发，并返回坐席的详细信息（email、名称和 query）。它还可以返回 `onAgentDisconnect`，该函数将在会话断开连接时被调用。在连接不稳定的情况下，可能会被多次调用。下面是一个示例：
+
+```js
+onAgentConnect = ({ email, name, query }) => {
+  console.log("Live session started")
+  const onAgentDisconnect =  () => console.log("Live session stopped")
+  return onAgentDisconnect
+}
+```
+
+- `onCallStart: ({ email, name, query }) => (()=>void | void)`：此回调函数在通话（webRTC）开始时立即触发，并返回坐席的详细信息（email、名称和 query）。它还可以返回 `onCallEnd`，该函数将在通话结束时被调用。在连接不稳定的情况下，可能会被多次调用。下面是一个示例：
+
+```js
+onCallStart: () => {
+  console.log("Call started")
+  const onCallEnd = () => console.log("Call ended")
+  return onCallEnd
+}
+```
+
+- `onRemoteControlStart: ({ email, name, query }) => (()=>void | void)`：此回调函数在远程控制会话开始时立即触发，并返回坐席的详细信息（email、名称和 query）。它还可以返回 `onRemoteControlEnd`，该函数将在远程控制权限被撤销时被调用。下面是一个示例：
+
+```js
+onRemoteControlStart: () => {
+  console.log("Remote control started")
+  const onControlEnd = () => console.log("Remote control ended")
+  return onControlEnd
+}
+```
+
+- `onCallDeny?: () => any;`：此回调函数在用户于请求阶段拒绝通话时触发。
+
+```js
+onCallDeny: () => {
+  console.log("Call denied")
+}
+```
+
+- `onRemoteControlDeny?: (agentInfo: Record<string, any>) => any;`：此回调函数在用户于请求阶段拒绝远程控制会话时触发，并返回坐席的详细信息（email、名称和 query）。
+
+```js
+onRemoteControlDeny: ({ email, name, query }) => {
+  console.log("Remote control request denied for", email)
+}
+```
+
+- `onRecordingDeny?: (agentInfo: Record<string, any>) => any;`：此回调函数在用户于请求阶段拒绝录制会话时触发，并返回坐席的详细信息（email、名称和 query）。
+
+```js
+onRecordingDeny: ({ email, name, query }) => {
+  console.log("Recording session denied")
+ 
+}
+```
+
+- `onSessionConfirmApprove?: (agentInfo: Record<string, any>) => any;`：此回调函数在用户批准会话查看（处于 [`requestConfirm`](#session-view-confirmation) 模式）时触发，并返回坐席的详细信息（email、名称和 query）。
+
+```js
+onSessionConfirmApprove: ({ email, name, query }) => {
+  console.log("Session viewing approved for", email)
+}
+```
+
+- `onSessionConfirmDeny?: (agentInfo: Record<string, any>) => any;`：此回调函数在用户拒绝会话查看（处于 [`requestConfirm`](#session-view-confirmation) 模式）时触发，并返回坐席的详细信息（email、名称和 query）。
+
+```js
+onSessionConfirmDeny: ({ email, name, query }) => {
+  console.log("Session viewing denied")
+}
+```
+
+- `onDragCamera?: (dx: number, dy: number) => any;`：此函数需要一个处理程序，用于定义在用于远程控制的 Three.js canvas 内按住鼠标按钮的行为。该处理程序接收 dx 和 dy，表示鼠标移动的增量。
+
+```js
+onDragCamera: (dx, dy) => {
+  moveCamera(dx, dy)
+}
+```
+
+## 方法
+
+`tracker.use()` 返回 assist 实例，该实例暴露了可在运行时控制 assist 的方法：
+
+```js
+const assist = tracker.use(trackerAssist(options));
+
+assist.stop();
+assist.start();
+```
+
+- `start()`：（重新）启动 assist。如果追踪器本身尚未激活，则此操作为空操作（assist 将与追踪器一起启动）。在 `Autostart.Continuation` 模式下，它会在 `sessionStorage` 中持久化一个标志，以便 assist 在页面重新加载后自动继续。显式的 `start()` 还会取代任何 `ignoreAnonymous` 延迟。
+- `stop()`：通过断开套接字连接并清理所有连接来停止 assist。在调用 `start()` 之前，assist 不会自动重新启动。在 `Autostart.Continuation` 模式下，这还会清除已持久化的标志，因此重新加载不会自动继续。在 [`requestConfirm`](#session-view-confirmation) 模式下，它还会撤销用户的批准，因此下一次 `start()` 将会再次提示。
+
+<Aside type="caution">
+  在 assist 无法加载的环境中（例如不支持媒体设备、位于 iframe 内），`tracker.use()` 会返回 `undefined`，因此请相应地对返回的实例进行防护。
+</Aside>
+
+## 有疑问？
+
+在设置此插件时遇到问题？请加入我们的 [Slack](https://slack.openreplay.com) 或查看我们的[论坛](https://forum.openreplay.com)，从我们的社区获得帮助。

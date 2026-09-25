@@ -1,0 +1,166 @@
+---
+title: "إدارة OpenReplay"
+metaTitle: "إدارة OpenReplay"
+metaDescription: "كيفية إدارة وتنظيم نسخة OpenReplay الخاصة بك بسهولة."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+## CLI
+
+تُعدّ واجهة سطر الأوامر (CLI) مفيدة لإدارة الجوانب الأساسية لنسخة OpenReplay الخاصة بك، مثل إعادة تشغيل أو إعادة تثبيت خدمة، أو الوصول إلى سجلات أحد المكوّنات، أو ببساطة التحقق من حالة خدمات الواجهة الخلفية لديك.
+
+شغّل واجهة سطر الأوامر مع الخيار `-h`:
+
+```bash
+openreplay -h
+```
+
+واطّلع على قائمة جميع الخيارات المتاحة:
+
+```shellsession
+  ___                   ____            _
+ / _ \ _ __   ___ _ __ |  _ \ ___ _ __ | | __ _ _   _
+| | | | '_ \ / _ \ '_ \| |_) / _ \ '_ \| |/ _` | | | |
+| |_| | |_) |  __/ | | |  _ <  __/ |_) | | (_| | |_| |
+ \___/| .__/ \___|_| |_|_| \_\___| .__/|_|\__,_|\__, |
+      |_|                        |_|            |___/
+
+[INFO]
+  Usage: openreplay [ -h | --help ]
+                    [ -s | --status ]
+                    [ -i | --install DOMAIN_NAME ]
+                    [ -u | --upgrade ]
+                    [ -U | --deprecated-upgrade /path/to/old_vars.yaml]
+                    [ -r | --restart ]
+                    [ -R | --Reload ]
+                    [ -c | --cleanup N (in days) ]
+                    [ -e | --edit ]
+                    [ -p | --install-packages ]
+                    [ -l | --logs SERVICE ]
+         Services: alerts assets assist chalice
+                   db ender frontend heuristics
+                   http integrations nginx-controller
+                   peers sink sourcemapreader storage
+```
+
+تعتمد الواجهة الخلفية لـ OpenReplay على المكوّنات/الخدمات التالية:
+
+| الخدمة | الوصف |
+|---------|-------------|
+| http | تستوعب الأحداث وتسجيلات الجلسات |
+| sink | تقرأ البيانات من خط أنابيب البث (Redis أو Kafka في الإصدار enterprise) وتُدخلها في تخزين مؤقت (NFS) |
+| storage | تنقل ملفات تسجيلات الجلسات المؤقتة إلى خدمة تخزين الكائنات |
+| assets | لتخزين الموارد مؤقتًا (CSS والخطوط والأيقونات) لعرض التسجيلات بشكل صحيح |
+| db | تقرأ وتكتب في قواعد بيانات متعددة (Postgres + ClickHouse في الإصدار enterprise) |
+| ender | تُنهي جلسات المستخدم إذا كانت غير نشطة أو منقطعة الاتصال |
+| chalice | واجهة برمجة التطبيقات (API) لتقديم الواجهة الأمامية |
+| alerts | ترسل الإشعارات (البريد الإلكتروني، slack، داخل التطبيق، webhook) عند بلوغ حدّ يحدّده المستخدم لأيٍّ من مقاييس الأداء |
+| integrations |  تدفع البيانات وتسحبها من واجهات برمجة التطبيقات الخارجية المدعومة (Sentry وElastic وGitHub وJira وغيرها) |
+
+## أوامر مفيدة
+
+- التحقق من حالة سلامة OpenReplay
+
+```sh
+openreplay -s
+```
+
+- التحقق من سجلات الخدمات
+
+```sh
+openreplay -l <service name>
+```
+
+## زيادة سعة الخدمة
+
+من الممكن زيادة سعة أي خدمة عن طريق تجاوز القيم الافتراضية لتخصيص وحدة المعالجة المركزية/الذاكرة. تُحدَّد هذه القيم الأخيرة أثناء عملية الإعداد بناءً على سعة نسختك ويجب أن تناسب احتياجات معظم عمليات التثبيت.
+
+ إذا كان لديك حجم كبير وجهاز قوي، فما عليك سوى تشغيل ملف `openreplay -e` وتجاوز موارد الخدمة. في المثال أدناه، نقوم بذلك للعامل (worker) المسمّى `http`. لكن يمكن القيام بذلك لأي خدمة (أي sink وstorage وpostgresql وredis وغيرها) عن طريق إلغاء التعليق عن الكتلة أدناه وتحديثها. وإذا كان عليك القيام بذلك لأكثر من خدمة واحدة، فما عليك سوى نسخ الكتلة نفسها وإعادة تسميتها/تحديثها (انتبه للتكرارات).
+
+```yaml
+http:
+  resources:
+    limits:
+      cpu: 4096m
+      memory: 8192Mi
+    requests:
+      cpu: 1024m
+      memory: 2056Mi
+```
+
+أخيرًا، أعد تثبيت الخدمة لكي تدخل الحدود الجديدة حيّز التنفيذ (لن تفقد بياناتك):
+
+```bash
+openreplay -R
+```
+
+## ترقية PostgreSQL
+
+فيما يلي تعليمات ترقية PostgreSQL إلى الإصدار 1.16 أو أحدث:
+
+1. خذ نسخة احتياطية (dump) لقاعدة البيانات في وحدة التخزين الدائمة:
+
+   إذا كنت تستخدم تثبيتًا قياسيًا، فنفّذ الأمر التالي لأخذ نسخة احتياطية لقاعدة البيانات:
+
+   > ملاحظة: يمكنك توقّع أن يتم ضغط البيانات بنسبة 3:1 (مثال: إذا كان لديك 15G من بيانات postgres، فستكون 5G في النسخة الاحتياطية). لذا تأكّد من توفّر مساحة قرص كافية لديك.
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'PGPASSWORD=$POSTGRES_PASSWORD PGUSER=postgres pg_dumpall -v > /bitnami/postgresql/dumpall.sql'
+   ```
+
+2. احذف دليل البيانات الموجود:
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'rm -rf /bitnami/postgresql/data'
+   ```
+
+3. قلّص StatefulSet الخاص بـ PostgreSQL إلى صفر لإيقاف الـ pods الحالية:
+
+   ```sh
+   kubectl scale sts postgresql --replicas=0 -n db
+   ```
+
+4. حدّث صورة PostgreSQL إلى الإصدار 16.3.0 أو أحدث:
+
+   ```sh
+   kubectl set image statefulset/postgresql postgresql=bitnamilegacy/postgresql:16.3.0-debian-12-r9 -n db
+   ```
+
+5. أعِد توسيع StatefulSet إلى واحد لبدء الـ pod المحدّث:
+
+   ```sh
+   kubectl scale sts postgresql --replicas=1 -n db
+   ```
+
+6. تأكّد من أن الـ pod قيد التشغيل وأن عملية التوسيع قد اكتملت:
+
+   ```sh
+   kubectl get pod -n db -l app.kubernetes.io/name=postgresql
+   ```
+
+7. استعِد قاعدة البيانات من النسخة الاحتياطية:
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'PGPASSWORD=$POSTGRES_PASSWORD PGUSER=postgres psql -f /bitnami/postgresql/dumpall.sql'
+   ```
+
+8. بمجرد اكتمال الترقية، يمكنك حذف ملف النسخة الاحتياطية من الـ pod الخاص بـ PostgreSQL:
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'rm /bitnami/postgresql/dumpall.sql'
+   ```
+
+## إلغاء تثبيت OpenReplay
+
+شغّل الأوامر أدناه لإلغاء تثبيت OpenReplay:
+
+```sh
+sudo k3s-uninstall.sh
+```
+
+جميع الإعدادات مخزّنة في `/var/lib/openreplay/`.
+
+```sh
+sudo rm -rf /var/lib/openreplay
+```

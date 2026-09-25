@@ -1,0 +1,82 @@
+---
+title: "代理设置"
+metaTitle: "代理设置"
+metaDescription: "在 NGINX 或 Apache2 等代理后运行 OpenReplay 的设置。"
+---
+
+## 使用反向代理将 OpenReplay 与其他应用一起托管
+
+当 OpenReplay 在一台机器上运行时，它会使用 80/443 端口来对外提供应用访问。但当你使用反向代理时，可以将 OpenReplay 配置为使用其他端口来访问应用。以下是具体操作步骤：
+
+1. 编辑配置文件：
+
+```bash
+openreplay -e
+```
+
+2. 修改 nginx 配置部分：
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+	...
+	...
+    service:
+      externalTrafficPolicy: "Local"
+      ports:
+        http: 880   # Change this port for http
+        https: 8443 # Change this port for https
+```
+3. 使用 `:wq` 保存并退出配置，以便 OpenReplay 可以重新加载配置。
+
+随后即可配置你的反向代理。请参考下面的章节进行操作。
+
+### NGINX 设置
+
+请确保你的代理发送 `X-Forwarded-For` 和 `X-Forwarded-Proto` 请求头。同时还必须启用 SSL，OpenReplay 才能正常工作。其余配置应如下所示：
+
+```nginx
+location / {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        proxy_pass http://1.2.3.4:880; # replace with OpenReplay instance IP
+    }
+```
+
+### Apache2 设置
+
+请确保已启用 `proxy`、`proxy_http` 和 `proxy_html` 模块。同样也应配置 SSL，其余设置应与以下内容类似：
+
+```
+<VirtualHost *:443>
+    ProxyPass / http://1.2.3.4:880 <!-- replace with instance IP -->
+    RequestHeader set X-Forwarded-Proto expr=%{REQUEST_SCHEME}
+    # SSL + other config here
+</VirtualHost>
+```
+
+## 公共端点
+
+如果你使用代理来保护 OpenReplay 实例，请确保下列端点可公开访问，以便 OpenReplay 正常工作。
+
+| 端点 | 描述 | 来源 |
+|----------|-------------|------------|
+| /ingest | 用于接收来自你的应用的事件和录制内容 | 你所追踪的应用（如果可公开访问，则此端点也应公开） |
+| /ws-assist | 用于与最终用户进行实时会话回放（WebSocket） | 你所追踪的应用（如果可公开访问，则此端点也应公开） |
+| /api | 用于身份验证以及获取会话、项目、RBAC 和账户数据 | OpenReplay 仪表盘 |
+| /v2/api | 用于搜索、分析、会话回放和协同浏览 | OpenReplay 仪表盘 |
+| /spots | 用于从对象存储中拉取 spot 视频 | OpenReplay 仪表盘 |
+| /mobs | 用于从对象存储中拉取会话回放 | OpenReplay 仪表盘 |
+| /sessions-assets | 用于从对象存储中拉取缓存的样式表和字体 | OpenReplay 仪表盘 |
+| /static | 用于拉取与协同浏览会话相关的数据 | OpenReplay 仪表盘 |
+| /records | 用于从对象存储中拉取协同浏览录制内容 | OpenReplay 仪表盘 |
+| /integrations | 用于从第三方集成（如 Sentry 或 Datadog）获取日志 | OpenReplay 仪表盘 |
+| /sourcemaps | 用于上传 sourcemap | Sourcemaps CLI |
+| /spot | 用于获取与 spot 录制相关的数据 | Spot Chrome 扩展 |
+| /script | 如果你希望从自己的环境提供 openreplay-*.js 文件（否则默认使用 OpenReplay CDN），此端点会很有用 | 你所追踪的应用 |
+
+## 有疑问吗？
+
+如果你对此流程有任何疑问，欢迎随时通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或查看我们的[论坛](https://forum.openreplay.com)。

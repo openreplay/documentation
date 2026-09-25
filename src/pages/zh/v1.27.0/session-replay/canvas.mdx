@@ -1,0 +1,59 @@
+---
+title: "Canvas 和 WebGL"
+metaTitle: "Canvas 和 WebGL"
+metaDescription: "如何在会话回放中录制 canvas 和 WebGL 元素。"
+---
+> 注意：Canvas 录制仅在我们的 [Dedicated Cloud](https://console.openreplay.com/signup) 产品中启用。
+
+OpenReplay 可以录制 `<canvas>` 元素的内容，并支持 WebGL。
+
+> 注意：如果你使用 WebGL 上下文，请确保在 .getContext 选项中添加 `{ preserveDrawingBuffer: true }`，以防止出现空白帧，因为从 canvas 提取图像数据通常依赖于默认情况下被省略的绘制层。
+
+## 启用 Canvas 录制
+
+这必须在后端层面完成。要启用 canvas 录制，只需运行 `openreplay -e`，然后添加下面的代码块以更新 `http` 服务。
+
+```yaml
+http:
+  env:
+    RECORD_CANVAS: true
+    CANVAS_QUALITY: low
+    CANVAS_FPS: 1
+```
+
+完成后，使用 `:wq` 保存并退出配置，以便 OpenReplay 可以负责应用这些更改。
+
+你可以根据需要微调下面的选项。事实上，某些应用可能需要更高的帧率。尽管快照的捕获和编码是在后台（web-worker）完成的，不会影响你应用的性能，但选择较高的值会在终端用户一侧消耗更多带宽，并且需要在你的 OpenReplay 实例（后端）上占用更多磁盘存储空间。由 tracker 捕获的图像/快照会被发送到后端，然后为会话回放目的进行处理。
+
+- `CANVAS_QUALITY: 'low' | 'medium' | 'high'`：设置录制快照的质量。默认值为 `low`。
+- `CANVAS_FPS: number`：定义录制 canvas 元素的每秒帧数。默认值为 `1`。
+
+## Canvas 选项（SDK）
+
+JavaScript SDK [选项](/sdk/constructor) 的 `canvas` 命名空间提供以下选项：
+
+```js
+canvas?: {
+  disableCanvas?: boolean
+  fixedCanvasScaling?: boolean
+  useAnimationFrame?: boolean
+  fileExt?: 'webp' | 'png' | 'jpeg' | 'avif'
+}
+```
+
+- `disableCanvas`：为已启动的会话禁用 canvas 录制。默认值：`true`。
+- `fixedCanvasScaling`：在高 DPI 显示器上强制以原生 600x600 分辨率捕获 canvas。默认值：`false`。
+- `useAnimationFrame`：启用同步录制，以获得更稳定的 webGL 元素渲染。这可能会引入开销/延迟，因此仅适用于低 FPS 的应用。默认值：`false`。
+- `fileExt`：选择录制图像的格式 `(webp|png|jpeg|avif)`。默认值：`webp`（用于 WebGL 中的 alpha 通道支持）。
+
+### 数据脱敏
+
+在隐私方面，canvas 元素的内容无法进行脱敏处理。
+
+### 协同浏览会话
+
+对于实时会话（即 Assist），无需任何特定设置。Canvas 将默认启用并被捕获，数据将通过 P2P 协议传输。为确保最佳的网络使用效率，仅当有坐席正在观看实时会话且 canvas 内容正在变化时，才会传输数据。
+
+## 有疑问吗？
+
+如果你对此流程有任何疑问，欢迎通过我们的 [Slack](https://slack.openreplay.com) 联系我们，或访问我们的 [论坛](https://forum.openreplay.com)。

@@ -1,0 +1,59 @@
+---
+title: "JavaScript SDK - метод 'start'"
+metaTitle: "JavaScript SDK - метод 'start'"
+metaDescription: "Подробности о методе 'start' из SDK OpenReplay"
+---
+
+Этот метод используется для запуска трекера. При запуске трекера начинается запись сессии.
+
+## Сигнатура
+
+```js
+start(startOpts?: Partial<StartOptions>): Promise<StartPromiseReturn>
+```
+
+### Параметры
+Метод `start` принимает необязательный параметр, с помощью которого можно настроить различные аспекты записи:
+- `userID: string`: используется для ручной установки ID пользователя, чтобы отслеживать его между сессиями. Это строковое значение, и оно может быть любым, каким вы захотите.
+- `metadata: Record<string, string>`: ручная установка значений метаданных. Подробнее об этой функции см. в [разделе «Метаданные»](/installation/metadata/).
+- `forceNew: boolean`: используется для принудительного создания новой сессии после перезагрузки страницы. По умолчанию установлено значение `false`, поэтому после перезагрузки сессия сохраняется.
+- `sessionToken: string`: используется в некоторых интеграциях.
+- `assistOnly: boolean`: запускает трекер в режиме «только ассистирование», при котором отправка данных сессии в бэкенд будет пропущена (функция редакции EE)
+- `startCallback?: (result: StartPromiseReturn) => void`: Функция обратного вызова (callback), срабатывающая, когда трекер запускается или не может запуститься. Возвращает информацию либо об успехе, либо о неудаче.
+
+
+### Возвращаемое значение
+
+После запуска метод вернёт промис с объектом информации о сессии, содержащим:
+
+- `sessionID: string`: Строковое значение, представляющее ID запущенной сессии.
+- `sessionToken: string`: Токен сессии.
+- `userUUID: string`: Уникальный идентификатор пользователя.
+
+`StartPromiseReturn` может быть либо:
+
+```js
+// Successful start
+interface OnStartInfo {
+  sessionID: string;
+  sessionToken: string;
+  userUUID: string;
+}
+
+const SuccessfulStart = (body: OnStartInfo): SuccessfulStart => ({
+  ...body,
+  success: true,
+});
+
+// Unsuccessful start
+const UnsuccessfulStart = (reason: string): UnsuccessfulStart => ({
+  reason,
+  success: false,
+});
+
+// Type for start promise return
+export type StartPromiseReturn = SuccessfulStart | UnsuccessfulStart;
+```
+
+- **Случай успеха**: В случае успеха промис вернёт sessionID, sessionToken и userUUID.
+- **Случай неудачи**: В случае неудачи он вернёт reason и success: false.

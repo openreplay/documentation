@@ -1,0 +1,166 @@
+---
+title: "项目"
+metaTitle: "项目"
+metaDescription: "如何创建和获取项目。"
+---
+
+所有响应均为 JSON 格式，并包装在 `{ "data": ... }` 中。错误会返回 `{ "error": "..." }`，并附带相应的 HTTP 状态码。
+
+## 创建项目
+
+通过指定 `name` 以及可选的 `platform` 来创建新项目。
+
+### 方法
+`POST`
+
+### URL
+`/public/projects`
+
+### 请求体
+
+| 名称     | 类型   | 说明                                                         |
+|----------|--------|--------------------------------------------------------------|
+| name     | string | 项目名称（必填，最多 200 个字符）                            |
+| platform | string | 项目平台：`web`（默认）或 `ios`                              |
+
+### 请求头
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### 状态码
+
+`200`：项目已创建，返回在响应体中  
+`400`：请求体无效、名称缺失/过长、平台未知，或名称已存在
+
+### 示例请求
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/projects \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "name": "MyFirstProject",
+    "platform": "web"
+  }'
+```
+
+### 示例响应
+
+```json
+{
+  "data": {
+    "projectId": 42,
+    "name": "MyFirstProject",
+    "projectKey": "QsLA07Oa5sqTfwnNaFwS",
+    "tenantId": 1,
+    "maxSessionDuration": 7200000,
+    "sampleRate": 100,
+    "saveRequestPayloads": false,
+    "beaconSize": 0,
+    "platform": "web",
+    "metadata1": null,
+    "metadata2": null,
+    "metadata3": null,
+    "metadata4": null,
+    "metadata5": null,
+    "metadata6": null,
+    "metadata7": null,
+    "metadata8": null,
+    "metadata9": null,
+    "metadata10": null
+  }
+}
+```
+
+## 列出项目
+
+返回当前租户的所有项目。
+
+### 方法
+`GET`
+
+### URL
+`/public/projects`
+
+### 请求头
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### 示例请求
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/projects \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### 示例响应
+
+```json
+{
+  "data": [
+    {
+      "projectId": 42,
+      "name": "MyFirstProject",
+      "projectKey": "QsLA07Oa5sqTfwnNaFwS",
+      "tenantId": 1,
+      "platform": "web"
+    },
+    {
+      "projectId": 43,
+      "name": "MobileApp",
+      "projectKey": "9cACFRuQVidq0sqS7Bny",
+      "tenantId": 1,
+      "platform": "ios"
+    }
+  ]
+}
+```
+
+## 获取项目
+
+返回指定项目的详细信息。
+
+### 方法
+`GET`
+
+### URL
+`/public/projects/:projectKey`
+
+### 参数
+
+| 名称       | 类型   | 说明                         |
+|------------|--------|------------------------------|
+| projectKey | string | 项目密钥（必填）             |
+
+### 请求头
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### 状态码
+
+`200`：返回在响应体中  
+`404`：未找到项目
+
+### 示例请求
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/projects/7ePSXFuQVidq9pqS6Xyn \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### 示例响应
+
+```json
+{
+  "data": {
+    "projectId": 42,
+    "name": "MyFirstProject",
+    "projectKey": "7ePSXFuQVidq9pqS6Xyn",
+    "tenantId": 1,
+    "platform": "web"
+  }
+}
+```

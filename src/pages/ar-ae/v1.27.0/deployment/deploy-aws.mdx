@@ -1,0 +1,114 @@
+---
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+title: "النشر على AWS"
+metaTitle: "النشر على AWS"
+metaDescription: "دليل خطوة بخطوة لنشر OpenReplay على Amazon AWS."
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="شاهد كيفية نشر OpenReplay في بنيتك التحتية على AWS"
+  description="إذا كنت لا تحب القراءة، يمكنك متابعة هذا الدليل المرئي الذي يوضح لك كيفية نشر OpenReplay على AWS"
+  videoURL="https://www.youtube.com/watch?v=0-02jJyL4_A"
+  />
+
+
+يمكن تثبيت حزمة OpenReplay على جهاز واحد، وتُعد AWS EC2 مرشحًا مثاليًا لذلك.
+
+
+## إطلاق نسخة EC2
+
+1. انتقل إلى لوحة تحكم AWS EC2
+2. 'Launch a new instance' (بنية قائمة على x86)
+3. اختر صورة AMI الخاصة بك. في هذا الدليل، سنستخدم *Ubuntu Server 24.04 LTS*
+4. اختر نوع النسخة. المواصفات الدنيا هي `2 vCPUs, 8 GB of RAM, 50 GB of storage`، وإلا فإن خدمات الواجهة الخلفية لـ OpenReplay لن تبدأ ببساطة. لذلك، نوصي **على الأقل** بنوع `t3.large` (أو ما يعادله)، وهو كافٍ لحجم منخفض/معتدل. إذا كنت تتوقع حركة مرور عالية، فينبغي عليك التوسع انطلاقًا من هنا.
+5. تكوين تفاصيل النسخة: اضبط معاملات Network/Subnet إذا لزم الأمر أو ببساطة احتفظ بالقيم الافتراضية
+6. إضافة التخزين: اضبط الحجم على 50 جيجابايت (General Purpose SSD (gp2))
+7. إضافة العلامات: اضبط المعاملات أو احتفظ بالقيم الافتراضية
+8. مجموعات الأمان: احتفظ بقاعدة SSH الموجودة وأضف قاعدتين أخريين لـ HTTP (80) و HTTPS (443) (المصدر: 0.0.0.0/0). تأكد من أن منافذ DNS (TCP/UDP) مفتوحة في مجموعة الأمان الصادرة
+9. انقر على 'Review and Launch'
+10. أنشئ/حمّل مفتاح SSH ثم اضغط على 'Launch instances'
+
+## نشر OpenReplay
+
+1. تأكد من أن نسختك في حالة `Running` ثم اتصل بها:
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem #! wherever you've saved the SSH key
+INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
+chmod 400 $SSH_KEY
+ssh -i $SSH_KEY ubuntu@$INSTANCE_IP
+```
+
+2. ثبّت OpenReplay عن طريق توفير النطاق الذي سيعمل عليه (على سبيل المثال، DOMAIN_NAME=openreplay.mycompany.com):
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## تكوين TLS/SSL
+
+يتعامل OpenReplay مع بيانات حساسة للمستخدمين ولذلك يتطلب HTTPS لكي يعمل. هذا إلزامي، وإلا فإن أداة التتبع لن تبدأ التسجيل ببساطة. والأمر نفسه ينطبق على لوحة التحكم، فبدون HTTPS لن تتمكن من إعادة تشغيل جلسات المستخدمين.
+
+أسهل طريقة للتعامل مع SSL في AWS هي إعداد موازن تحميل (ELB) وتشغيل OpenReplay خلفه. خيار آخر هو إنشاء أو استخدام شهادة SSL الخاصة بك وتوجيه النطاق الفرعي الخاص بك (أي openreplay.mycompany.com) إلى نسخة OpenReplay. مزيد من التفاصيل حول كلا الخيارين أدناه.
+
+### إعداد موازن تحميل AWS (الخيار 1)
+
+1. انتقل إلى 'EC2' > 'Load Balancers'
+2. 'Create Load Balancer' واختر *Application Load Balancer*
+3. أضف مُستمعًا (listener) لـ HTTPS (احتفظ بهذا فقط) وتأكد من اختيار الشبكة (الشبكات) الفرعية نفسها التي تعمل فيها نسخة OpenReplay الخاصة بك.
+4. اختر شهادة موجودة (أي *.mycompany.com) أو أنشئ واحدة جديدة من AWS Certificate Manager (ACM). يمكنك أيضًا استيراد شهادتك الخاصة.
+5. تكوين مجموعات الأمان: اختر مجموعة الأمان التي أُنشئت سابقًا لنسخة OpenReplay (يمكنك العثور عليها في 'EC2 Dashboard' ضمن علامة التبويب 'Security')
+6. تكوين المُستمع والتوجيه: احتفظ بالبروتوكول والمنفذ الافتراضيين (`HTTP:80`). الآن، أنشئ مجموعة هدف جديدة. أعطها اسمًا واختر `IP addresses` في *Target Type*. تأكد من ضبط *Health check path* على `/healthz` مع الاحتفاظ بالمعاملات الافتراضية الأخرى. انقر على 'Next' لتسجيل الأهداف، أضف عنوان IPv4 الداخلي (private) لنسخة OpenReplay (المنفذ `80`) ثم أضف الهدف إلى القائمة (يمكن العثور على عنوان IP الداخلي في لوحة تحكم EC2). راجع ثم انقر على 'Create target group'.
+7. الآن، عُد إلى صفحة إنشاء موازن التحميل (LB) ووجّه مجموعة الهدف الجديدة هذه إلى مُستمع موازن التحميل.
+8. راجع ثم اضغط على 'Create load balancer'
+
+بمجرد الإنشاء، انتقل إلى Route 53 (أو مزود خدمة DNS الخاص بك) وأنشئ `A Record` يشير إلى موازن التحميل باستخدام اسم DNS الخاص به (يمكن العثور عليه في لوحة تحكم ELB).
+
+أنت الآن جاهز تمامًا، وينبغي أن يكون OpenReplay متاحًا بشكل آمن على النطاق الفرعي الذي أعددته للتو. يمكنك إنشاء حساب بزيارة صفحة `/signup` (أي openreplay.mycompany.com/signup).
+
+### أحضر/أنشئ شهادة SSL الخاصة بك (الخيار 2)
+
+بدلًا من إنشاء موازن تحميل، يمكنك إحضار (أو إنشاء) شهادة SSL الخاصة بك.
+
+1. أولًا، انتقل إلى Route 53 (أو مزود خدمة DNS الآخر الخاص بك) وأنشئ `A Record`. استخدم النطاق الذي قدّمته سابقًا أثناء خطوة التثبيت ووجّهه إلى النسخة باستخدام عنوان IP العام الخاص بها (يمكن العثور عليه في لوحة تحكم EC2).
+
+2. إذا كنت تُحضر شهادتك الخاصة، فأنشئ سرًّا (secret) لـ SSL باستخدام الأمر التالي: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
+
+> **ملاحظة:** إذا لم تكن لديك شهادة، فأنشئ واحدة تتجدد تلقائيًا لنطاقك الفرعي (الذي قُدِّم أثناء التثبيت) باستخدام Let's Encrypt. ما عليك سوى الاتصال بنسخة EC2 الخاصة بـ OpenReplay، وتشغيل `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` ومتابعة الخطوات.
+
+3. إذا كنت ترغب في تفعيل إعادة التوجيه من http إلى https (موصى به)، فألغِ التعليق عن الكتلة أدناه، ضمن قسم `ingress-nginx`، في `/var/lib/openreplay/vars.yaml`:
+  
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+من الجدير بالذكر أن `ingress-nginx` الخاص بنا يعمل افتراضيًا على المنفذين `80|443`، لكن يمكن تغيير ذلك بسهولة، عند الحاجة، في `vars.yaml`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. أخيرًا، أعد تثبيت NGINX الخاص بـ OpenReplay:
+
+```bash
+openreplay -R
+```
+
+أنت الآن جاهز تمامًا، وينبغي أن يكون OpenReplay متاحًا على نطاقك الفرعي. يمكنك إنشاء حساب بزيارة صفحة `/signup` (أي openreplay.mycompany.com/signup).
+
+## لديك أسئلة؟
+
+إذا واجهت أي مشكلات، انضم إلى قناتنا على [Slack](https://slack.openreplay.com) أو تفقّد [المنتدى](https://forum.openreplay.com) الخاص بنا واحصل على المساعدة من مجتمعنا.

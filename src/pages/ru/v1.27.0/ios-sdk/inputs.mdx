@@ -1,0 +1,38 @@
+---
+title: "iOS SDK - отслеживание полей ввода"
+metaTitle: "iOS SDK - отслеживание полей ввода"
+metaDescription: "Подробности об отслеживании полей ввода с помощью iOS-трекера"
+---
+
+Трекер будет прослушивать событие изменения значения (с задержкой debounce) и отправлять полученное значение на бэкенд OpenReplay.
+
+## Добавление отслеживаемых полей ввода
+
+### SwiftUI
+
+используйте `.observeInput(text:label:masked)` для наблюдения за событиями ввода,
+
+- `text: String` - текстовое значение поля ввода
+- `label: String` - метка для записываемого поля ввода
+- `masked: Bool` - если `true`, трекер будет записывать только само событие ввода, а не значение; не забудьте добавить `.sensitive`, чтобы размыть поле ввода в записи.
+
+```swift
+import ORTracker
+
+TextField("Input", text: $text)
+.observeInput(text: $text, label: "tracker input #1", masked: Bool)
+
+```
+
+### UIKit
+
+UIKit будет использовать placeholder в качестве метки и sender.isSecureTextEntry для маскирования поля ввода
+
+```swift
+import ORTracker
+
+Analytics.shared.addObservedInput(inputEl)
+```
+
+## Есть вопросы?
+Если у вас возникнут вопросы по этому процессу, свяжитесь с нами в нашем [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com).

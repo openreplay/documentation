@@ -1,0 +1,47 @@
+---
+title: "Base de données externe (Postgres)"
+metaTitle: "Base de données externe (Postgres)"
+metaDescription: "Comment changer la destination par défaut de la base de données d'OpenReplay et en utiliser une externe."
+---
+
+Notre service de base de données, Postgres, est installé par défaut avec OpenReplay et s'exécute dans un conteneur dédié sur votre instance afin de réduire le coût de déploiement. Si vous recherchez une meilleure évolutivité ou des opérations plus simples, vous pouvez toujours utiliser un Postgres externe (par exemple AWS RDS ou GCP Cloud SQL).
+
+## Exporter le schéma et les données existants
+
+> **Remarque :** Si vous démarrez de zéro et n'avez pas encore installé OpenReplay, poursuivez simplement la configuration et ignorez les étapes suivantes.
+
+Le schéma local et les données enregistrées doivent désormais être exportés vers le Postgres externe :
+
+1. Tout d'abord, sauvegardez la base de données locale :
+
+```bash
+kubectl exec -n db postgresql-0 -- bash -c 'PGPASSWORD=<postgresPassword from vars.yaml> pg_dumpall -U postgres '  > ~/path/to/dump.sql
+```
+
+2. Installez le client Postgres sur votre instance OpenReplay et assurez-vous qu'il a accès à la base de données externe :
+
+```bash
+sudo apt install postgresql-client
+```
+   
+3. Restaurez la sauvegarde dans le nouveau externalPostgres :
+
+```bash
+PGPASSWORD=PG_PASSWORD psql -U PG_USERNAME -h {RDS_URL} -d postgres < /path/to/dump.sql
+```
+
+4. Enfin, mettez à jour toutes les variables `postgres` dans `openreplay -e` et faites-les pointer vers la base de données externe :
+
+```yaml
+  postgresqlPassword: "changeMePassword"
+  postgresqlHost: "postgresql.db.svc.cluster.local"
+  postgresqlPort: "5432"
+  postgresqlUser: "postgres"
+  postgresqlDatabase: "postgres"
+```
+
+5. Enregistrez et quittez à l'aide de `:wq` pour que les modifications prennent effet
+
+## Des questions ?
+
+Si vous rencontrez des problèmes, connectez-vous à notre [Slack](https://slack.openreplay.com) ou consultez notre [Forum](https://forum.openreplay.com) et obtenez de l'aide de notre communauté.

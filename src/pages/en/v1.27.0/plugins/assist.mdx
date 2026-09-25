@@ -1,0 +1,342 @@
+---
+title: "Assist"
+metaTitle: "Assist"
+metaDescription: "How to setup OpenReplay Assist and support your end users through live screen and WebRTC."
+---
+
+import Aside from '~/components/Aside.astro'
+
+OpenReplay Assist allows you to support your users by seeing their live screen and instantly hopping on call (WebRTC) with them without requiring any 3rd-party screen sharing software.
+
+<Aside type="tip">
+  We also have a detailed tutorial on how to use Assist to engage live with your users, you can check it out [here](/tutorials/assist).
+</Aside>
+
+## Installation
+
+```bash
+npm i @openreplay/tracker-assist
+```
+
+## Usage
+
+### With JavaScript snippet
+
+If your OpenReplay tracker is set up using the JS snippet, then simply replace the `.../openreplay.js` occurrence with `.../openreplay-assist.js`. Below is an example of how the script should like after the change:
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" };
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay-assist.js", 1, 0, initOpts, startOpts);
+</script>
+```
+
+### With NPM
+
+Initialize the tracker then load the `@openreplay/tracker-assist` plugin.
+
+#### If your website is a Single Page Application (SPA)
+
+```js
+import trackerAssist from '@openreplay/tracker-assist';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+tracker.use(trackerAssist(options)); // check the list of available options below
+
+tracker.start();
+
+```
+
+#### If your web app is Server-Side-Rendered (SSR)
+
+Follow the below example if your app is SSR. Ensure `tracker.start()` 
+is called once the app is in the browser env (i.e via `useEffect` or `componentDidMount`).
+
+```js
+import trackerAssist from '@openreplay/tracker-assist';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+tracker.use(trackerAssist(options)); // check the list of available options below
+
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, [])
+//...
+}
+```
+
+## Options
+
+The assist plugin supports the below options:
+
+```js
+trackerAssist({
+  callConfirm?: string|ConfirmOptions;
+  controlConfirm?: string|ConfirmOptions;
+  config?: object;
+  onAgentConnect?: () => (()=>void | void);
+  onCallStart?: () => (()=>void | void);
+  onRemoteControlStart?: () => (()=>void | void);
+  onCallDeny?: () => any;
+  onRemoteControlDeny?: (agentInfo: Record<string, any>) => any;
+  onRecordingDeny?: (agentInfo: Record<string, any>) => any;
+  onDragCamera?: (dx: number, dy: number) => any;
+  callUITemplate?: string
+  /** 
+   * enables gzip compression for big batches on client side
+   * */
+  compressionEnabled: boolean;
+  /**
+   * Minimum amount of MESSAGES in a batch to trigger compression run
+   * @default 5000
+   * */
+  compressionMinBatchSize: number;
+  /**
+   * Show only the first part of an agent's name in the call popup
+   * (e.g. "One Two" -> "One").
+   * @default false
+   */
+  agentShortNames: boolean;
+  /**
+   * Postpone assist start until a userID is set on the session.
+   * @default false
+   */
+  ignoreAnonymous: boolean;
+  /**
+   * When assist connects to the server:
+   * - Autostart.Auto (default): always on tracker start.
+   * - Autostart.Disabled: only via an explicit start() call.
+   * - Autostart.Continuation: only via assist.start(), but the choice is remembered
+   *   in sessionStorage so it auto-continues across page reloads until assist.stop().
+   * @default Autostart.Auto
+   */
+  autostart: Autostart;
+  /**
+   * Require explicit user confirmation before anything is shared with an
+   * agent: assist starts and opens the socket as usual, but no messages are
+   * sent through it until the user approves the confirmation popup, which is
+   * shown as soon as the first agent connects to the session. The approval
+   * is remembered per-tab (sessionStorage) until stop() is called.
+   * @default false
+   */
+  requestConfirm: boolean;
+  /** Text/style customization for the session view confirmation popup. */
+  sessionConfirm?: ConfirmOptions;
+  /** Called when the user approves session viewing (requestConfirm mode). */
+  onSessionConfirmApprove?: (agentInfo: Record<string, any>) => any;
+  /** Called when the user denies session viewing (requestConfirm mode). */
+  onSessionConfirmDeny?: (agentInfo: Record<string, any>) => any;
+})
+```
+
+### Widgets Customization
+
+The live view, remote control as well as the call widgets, those seen by the end user, can be fully customized.
+
+#### Live View Widget
+
+Set `requestConfirm: true` to require the user's permission before an agent can view their session live. Assist starts and connects as usual, but the session remains invisible to the agent until the user approves the confirmation popup, which is shown as soon as the first agent connects. Once accepted, tracking restarts and the agent can then see the user's session live. The approval is remembered until [`stop()`](#methods) is called, which revokes it, so the next [`start()`](#methods) will prompt again.
+
+```js
+tracker.use(trackerAssist({
+  requestConfirm: true,
+  sessionConfirm: { text: 'A support agent would like to view your screen. Allow?' },
+  onSessionConfirmApprove: ({ email, name, query }) => console.log("Session viewing approved"),
+  onSessionConfirmDeny: ({ email, name, query }) => console.log("Session viewing denied"),
+}));
+```
+
+The popup's text and style can be customized via the `sessionConfirm` option, which takes the below `ConfirmOptions` object:
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
+
+#### Remote Control Widget
+
+The popup's text and style can be customized via the `controlConfirm` option, which takes the below `ConfirmOptions` object:
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
+
+#### Call Widget
+
+The popup's text and style can be customized via the `callConfirm` option, which takes the below `ConfirmOptions` object:
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
+
+It's also possible to customize every aspect of this widget via the below set of `ids` and `classes`. `Ids` serve as anchors for individual buttons/elements whereas `classes` can be used for group containers.
+
+| HTML Type | Name(s) | Description |
+|----------|-------------|-------------|
+|id | `or-assist` | Widget container |
+|class | `card`, `border-dark`, `shadow` and `drag-area` | Styles for the card's border and shadow |
+|id | `controls`  | Container for the calling part inside the widget |
+|class | `card-header` | Styles for card header of the call widget (the one showing the agent name next to a timer) |
+|id | `agent-name` | Container for agent's name |
+|id | `duration` | Container for timer |
+|id | `video-container` | User’s own video feed container |
+|id | `remote-stream` | Agent’s video feed |
+|class | `card-footer` | Container for buttons Mute, Video, End Call |
+|id | `audio-btn` | Mute button |
+|id | `video-btn` | Video button |
+|id | `end-call-btn` | End call button |
+|id | `remote-control-row` | Row for remote controls |
+|id | `end-control-btn` | Id for the end control button |
+
+### Callbacks
+
+Here is the list of all callbacks:
+
+- `callConfirm`: Customize the text and/or layout of the call request popup. 
+- `controlConfirm`: Customize the text and/or layout of the remote control request popup.
+- `config`: Contains custom ICE/TURN server configuration. Defaults to `{ 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }], 'sdpSemantics': 'unified-plan' }`.
+- `onAgentConnect: () => (()=>void | void)`: This callback function is fired as soon as a live session starts and sends back the agent's details (email, name and query). It can also return `onAgentDisconnect` which will be called when the session is disconnected. In case of an unstable connection, this may be called several times. Below is an example:
+
+```js
+onAgentConnect = ({ email, name, query }) => {
+  console.log("Live session started")
+  const onAgentDisconnect =  () => console.log("Live session stopped")
+  return onAgentDisconnect
+}
+```
+
+- `onCallStart: ({ email, name, query }) => (()=>void | void)`: This callback function is fired as soon as a call (webRTC) starts  and sends back the agent's details (email, name and query). It can also return `onCallEnd` which will be called when the call ends. In case of an unstable connection, this may be called several times. Below is an example:
+
+```js
+onCallStart: () => {
+  console.log("Call started")
+  const onCallEnd = () => console.log("Call ended")
+  return onCallEnd
+}
+```
+
+- `onRemoteControlStart: ({ email, name, query }) => (()=>void | void)`: This callback function is fired as soon as a remote control session starts and sends back the agent's details (email, name and query). It can also return `onRemoteControlEnd` which will be called when the remote control permissions are revoked. Below is an example:
+
+```js
+onRemoteControlStart: () => {
+  console.log("Remote control started")
+  const onControlEnd = () => console.log("Remote control ended")
+  return onControlEnd
+}
+```
+
+- `onCallDeny?: () => any;`: This callback function is fired when call was denied by a user during requesting phase.
+
+```js
+onCallDeny: () => {
+  console.log("Call denied")
+}
+```
+
+- `onRemoteControlDeny?: (agentInfo: Record<string, any>) => any;`: This callback function is fired when remote control session was denied by a user during requesting phase and sends back the agent's details (email, name and query).
+
+```js
+onRemoteControlDeny: ({ email, name, query }) => {
+  console.log("Remote control request denied for", email)
+}
+```
+
+- `onRecordingDeny?: (agentInfo: Record<string, any>) => any;`: This callback function is fired when recording session was denied by a user during requesting phase and sends back the agent's details (email, name and query).
+
+```js
+onRecordingDeny: ({ email, name, query }) => {
+  console.log("Recording session denied")
+ 
+}
+```
+
+- `onSessionConfirmApprove?: (agentInfo: Record<string, any>) => any;`: This callback function is fired when the user approves session viewing (in [`requestConfirm`](#session-view-confirmation) mode) and sends back the agent's details (email, name and query).
+
+```js
+onSessionConfirmApprove: ({ email, name, query }) => {
+  console.log("Session viewing approved for", email)
+}
+```
+
+- `onSessionConfirmDeny?: (agentInfo: Record<string, any>) => any;`: This callback function is fired when the user denies session viewing (in [`requestConfirm`](#session-view-confirmation) mode) and sends back the agent's details (email, name and query).
+
+```js
+onSessionConfirmDeny: ({ email, name, query }) => {
+  console.log("Session viewing denied")
+}
+```
+
+- `onDragCamera?: (dx: number, dy: number) => any;`: This function expects a handler that defines the behavior of a held mouse button within a Three.js canvas for remote control. The handler receives dx and dy, indicating the mouse movement deltas.
+
+```js
+onDragCamera: (dx, dy) => {
+  moveCamera(dx, dy)
+}
+```
+
+## Methods
+
+`tracker.use()` returns the assist instance, which exposes methods to control assist at runtime:
+
+```js
+const assist = tracker.use(trackerAssist(options));
+
+assist.stop();
+assist.start();
+```
+
+- `start()`: (Re)starts assist. It's a no-op if the tracker itself isn't active yet (assist will start together with the tracker). In `Autostart.Continuation` mode, it persists a flag in `sessionStorage` so assist auto-continues across page reloads. An explicit `start()` also supersedes any `ignoreAnonymous` postponement.
+- `stop()`: Stops assist by disconnecting the socket and cleaning up all connections. Assist won't restart automatically until `start()` is called. In `Autostart.Continuation` mode, this also clears the persisted flag, so a reload won't auto-continue. In [`requestConfirm`](#session-view-confirmation) mode, it also revokes the user's approval, so the next `start()` will prompt again.
+
+<Aside type="caution">
+  `tracker.use()` returns `undefined` in environments where assist can't load (e.g. no media devices support, inside an iframe), so guard the returned instance accordingly.
+</Aside>
+
+## Have questions?
+
+Having trouble setting up this plugin? Please connect to our [Slack](https://slack.openreplay.com) or check out our [Forum](https://forum.openreplay.com) and get help from our community.

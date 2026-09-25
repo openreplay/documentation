@@ -1,0 +1,87 @@
+---
+title: "تحديد هوية المستخدم"
+metaTitle: "تحديد هوية المستخدم"
+metaDescription: "كيفية ربط معرّف المستخدم الداخلي بتسجيل الجلسة."
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="شاهد كيفية تحديد هوية المستخدمين في عمليات إعادة التشغيل الخاصة بك"
+  description="إذا كنت لا تفضّل القراءة، يمكنك متابعة هذا الفيديو التعليمي الذي يوضّح لك كيفية ربط عمليات إعادة التشغيل بمستخدميك."
+  videoURL="https://youtu.be/xfotXkeyXZM"
+/>
+
+اربط معرّف المستخدم الداخلي الخاص بك بالجلسة التي يتم تسجيلها باتباع الخطوات التالية.
+
+### باستخدام NPM
+
+قم بحقن userID عند بدء تشغيل المتعقّب (tracker):
+
+```js
+tracker.configure({
+  projectKey: PROJECT_KEY
+});
+
+tracker.start({
+  userID: "john@doe.com",
+  metadata: {
+    balance: "10M",
+    plan: "free"
+  }
+});
+```
+
+إذا لم يكن ذلك ممكنًا (إذا أصبح userID معروفًا في مرحلة لاحقة من تدفّق التنقّل، أي بعد بدء المتعقّب بفترة)، فاستدعِ عندئذٍ الطريقة `setUserID` لتحديد هوية مستخدميك. يمكن تغيير هوية المستخدم في أي وقت أثناء الجلسة عن طريق استدعاء `setUserID`. ومع ذلك، سيحتفظ OpenReplay فقط بآخر معرّف مستخدم تم حقنه.
+
+```js
+tracker.setUserID('john@doe.com'); // after tracker.start()
+```
+
+### باستخدام مقتطف JavaScript
+
+فيما يلي مثال على كيفية حقن userID باستخدام المقتطف. لاحظ المتغيّر/السطر `startOpts` لحقن userID.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: getUserID() }; // use startOpts variable to inject userID
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+```
+
+إذا لم يكن ذلك ممكنًا (إذا أصبح userID معروفًا في مرحلة لاحقة من تدفّق التنقّل، أي بعد بدء المتعقّب بفترة)، فاستدعِ بدلًا من ذلك الطريقة `setUserID` لتحديد هوية مستخدميك. يمكن تغيير هوية المستخدم في أي وقت أثناء الجلسة عن طريق استدعاء `setUserID`. ومع ذلك، سيحتفظ OpenReplay فقط بآخر معرّف مستخدم تم حقنه.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" };
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+  ...
+  OpenReplay.setUserID("john@doe.com"); // set the userID later in your code
+  ...
+```
+
+### باستخدام تطبيق iOS
+
+ما عليك سوى استدعاء `setUserID(String)` في أي وقت أثناء إعادة التشغيل.
+
+```swift
+import ORTracker
+
+// ... your code
+
+ORTracker.shared.setUserID(_ userID: String)
+```
+
+## هل لديك أسئلة؟
+إذا كانت لديك أي أسئلة حول هذه العملية، فلا تتردّد في التواصل معنا عبر [Slack](https://slack.openreplay.com) الخاص بنا أو الاطلاع على [المنتدى](https://forum.openreplay.com) الخاص بنا.

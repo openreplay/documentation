@@ -1,0 +1,113 @@
+---
+title: "تحويل أحداث الجلسة إلى اختبار E2E"
+metaTitle: "تحويل تسجيلات الجلسات إلى كود اختبار E2E آلي"
+metaDescription: "تعرّف على كيفية تحويل تسجيلات جلسات OpenReplay إلى كود اختبار E2E آلي لأطر Cypress وPlaywright وPuppeteer"
+---
+
+تتيح لك ميزة تحويل أحداث الجلسة إلى اختبار E2E تحويل جلسات المستخدمين المسجّلة إلى كود اختبار آلي شامل من البداية إلى النهاية. تسدّ هذه القدرة القوية الفجوة بين السلوك الفعلي للمستخدم وأتمتة الاختبار، مما يتيح لك إعادة إنشاء رحلات المستخدمين بسرعة في إطار الاختبار الذي تختاره.
+
+## كيف تعمل: تحويل الجلسات إلى كود اختبار E2E
+
+1. انتقل إلى عرض **Sessions** في لوحة التحكم
+2. اختر أي جلسة مسجّلة لفتح عرض **Session Replay**
+3. انقر على علامة التبويب **Activity** لعرض الخط الزمني للأحداث
+4. ابحث عن أيقونة **Copy Events** بجوار شريط البحث
+5. انقر على الأيقونة لفتح القائمة المنسدلة لخيارات التصدير
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/images/products/session-replay/generate-e2e-test.gif" alt="تحويل أحداث الجلسة إلى اختبار E2E" style={{ width: '700px', height: 'auto' }} />
+</div>
+
+## استخدام ميزة تحويل أحداث الجلسة إلى اختبار E2E
+
+### الاستخدام الأساسي
+
+1. انقر على أيقونة **Copy Events** في عرض Activity
+2. من القائمة المنسدلة، اختر إطار الاختبار الذي تريده (Cypress أو Playwright أو Puppeteer)
+3. اختر بين **Events Only** أو **Complete Test**
+4. طبّق "Select events on the timeline" لتحديد الأحداث التي تريد تضمينها
+5. انقر على **Copy** لنسخ الكود الذي تم إنشاؤه إلى الحافظة
+6. الصقه مباشرة في ملف الاختبار الخاص بك
+
+### خيارات التصدير
+
+#### أطر الاختبار
+
+تدعم الميزة التصدير إلى ثلاثة أطر اختبار شائعة:
+
+- **Cypress** - إطار اختبار ويب يركّز على تجربة المطوّر والموثوقية
+- **Playwright** - مكتبة اختبار حديثة مع دعم متعدد المتصفحات
+- **Puppeteer** - مكتبة أتمتة متصفح بدون واجهة (headless)
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/images/products/session-replay/test-framework.png" alt="أطر الاختبار" style={{ width: '700px', height: 'auto' }} />
+</div>
+
+#### أنواع التصدير
+
+يمكنك الاختيار بين نوعين من التصدير:
+
+- **Events Only** - يُنشئ أوامر الإجراءات فقط دون أي بنية اختبار
+- **Complete Test** - يُنشئ اختبارًا منظّمًا بالكامل مع الكود النموذجي المناسب
+
+#### تحديد الأحداث
+
+تتيح لك أداة التحديد على الخط الزمني ما يلي:
+
+- تحديد نطاق معيّن من الأحداث لتضمينه في عملية التصدير
+- سحب المقابض لضبط نقطتي البداية والنهاية
+
+## مثال على المخرجات
+
+### مثال Cypress
+
+**Events Only:**
+```javascript
+cy.visit('/en/deployment/')
+cy.get('a:nth-of-type(9)').click()
+cy.visit('/en/deployment/deploy-docker/')
+cy.get('.active li:nth-of-type(13) > a').click()
+cy.visit('/en/deployment/upgrade/')
+cy.get('.active > .justify-between').click()
+cy.get('.left-nav-parent > li:nth-of-type(4) > .flex').click()
+cy.get('.active li:nth-of-type(5) > a').click()
+cy.visit('/en/using-or/next/')
+cy.get('.left-nav-parent > li:nth-of-type(5) > .flex').click()
+cy.get('.left-nav-parent > li:nth-of-type(6) > .flex').click()
+cy.visit('/en/installation/')
+cy.get('.active li:nth-of-type(2) > a').click()
+cy.visit('/en/installation/identify-user/')
+cy.get('li:nth-of-type(7) > .flex').click()
+cy.get('.logo-clickarea').click()
+```
+
+**Complete Test:**
+```javascript
+// cypress/e2e/session_replay_test.cy.js
+
+describe('Deployment - OpenReplay Documentation', () => {
+  it('Navigates through /en/deployment/', () => {
+    cy.visit('/en/deployment/')
+    cy.get('a:nth-of-type(9)').click()
+    cy.visit('/en/deployment/deploy-docker/')
+    cy.get('.active li:nth-of-type(13) > a').click()
+    cy.visit('/en/deployment/upgrade/')
+    cy.get('.active > .justify-between').click()
+    cy.get('.left-nav-parent > li:nth-of-type(4) > .flex').click()
+    cy.get('.active li:nth-of-type(5) > a').click()
+    cy.visit('/en/using-or/next/')
+    cy.get('.left-nav-parent > li:nth-of-type(5) > .flex').click()
+    cy.get('.left-nav-parent > li:nth-of-type(6) > .flex').click()
+    cy.visit('/en/installation/')
+    cy.get('.active li:nth-of-type(2) > a').click()
+    cy.visit('/en/installation/identify-user/')
+    cy.get('li:nth-of-type(7) > .flex').click()
+    cy.get('.logo-clickarea').click()
+  })
+})
+```
+
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات في إنشاء اختبارات E2E من جلساتك، فيرجى التواصل معنا عبر [مجتمع Slack](https://slack.openreplay.com/) الخاص بنا وطرح أسئلتك مباشرةً على مطوّرينا!

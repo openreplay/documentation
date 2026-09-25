@@ -1,0 +1,43 @@
+---
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+title: "النشر باستخدام Docker Compose"
+metaTitle: "النشر باستخدام Docker Compose"
+metaDescription: "دليل خطوة بخطوة لنشر OpenReplay باستخدام Docker Compose."
+---
+import Aside from '~/components/Aside.astro'
+
+<Aside type="tip">
+	هذه ميزة تجريبية وقد يتطور تنفيذها في المستقبل. لا يمكن تشغيل OpenReplay محليًا، لذا فحتى مع Docker ستظل بحاجة إلى خادم. ننصحك بالاطلاع على [خيارات النشر](/deployment) الأخرى لدينا.
+</Aside>
+
+يمكن تثبيت حزمة OpenReplay على جهاز واحد باستخدام Docker Compose. 
+
+## المتطلبات المسبقة
+
+1. Ubuntu 20.04 LTS (يُنصح باستخدام إصدار LTS)
+2. عنوان IP عام مرتبط بالجهاز. وهذا يعني أن خادمك يمكن الوصول إليه من الإنترنت.
+3. يجب أن يكون لديك اسم نطاق مرتبط بعنوان الـ IP.
+4. اختر نوع المثيل (instance) الخاص بك. الحد الأدنى من المواصفات هو `2 vCPUs, 8 GB of RAM, 50 GB of storage` ومعمارية x86، وإلا فإن خدمات OpenReplay الخلفية (backend) لن تبدأ ببساطة. لذلك، نوصي **على الأقل** باستخدام `t3.large` (أو ما يعادله)، وهو ما يكفي لحجم منخفض/معتدل. إذا كنت تتوقع حركة مرور عالية، فينبغي عليك التوسّع انطلاقًا من هنا.
+
+## نشر OpenReplay
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem #! wherever you've saved the SSH key
+INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
+chmod 400 $SSH_KEY
+ssh -i $SSH_KEY ubuntu@$INSTANCE_IP
+```
+
+2. ثبّت OpenReplay عن طريق تحديد النطاق الذي سيعمل عليه (مثل DOMAIN_NAME=openreplay.mycompany.com):
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/docker-compose/docker-install.sh)"
+```
+
+كل شيء جاهز الآن، ومن المفترض أن يكون OpenReplay متاحًا بشكل آمن على النطاق الذي أنشأته أولًا. يمكنك إنشاء حساب بزيارة صفحة `/signup` (أي openreplay.mycompany.com/signup).
+
+## لديك أسئلة؟
+
+إذا واجهت أي مشكلات، انضمّ إلى [Slack](https://slack.openreplay.com) الخاص بنا أو اطّلع على [المنتدى](https://forum.openreplay.com) واحصل على المساعدة من مجتمعنا.

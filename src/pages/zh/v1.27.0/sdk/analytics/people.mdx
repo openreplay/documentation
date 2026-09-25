@@ -1,0 +1,219 @@
+---
+title: "People"
+metaTitle: "OpenReplay 分析 SDK — People"
+metaDescription: "使用 OpenReplay 追踪器分析 People 模块识别用户并管理用户属性。"
+---
+
+## People
+
+该模块用于识别用户并修改用户档案属性（设置、仅设置一次、追加、递增、删除）。
+
+要进一步了解如何在 OpenReplay 界面中管理用户数据，请访问 [数据管理](/product-analytics/data-management)。
+
+可通过以下方式访问：
+
+`tracker.analytics.people`
+
+顶层别名：`tracker.analytics.identify(...)` → 等同于 `tracker.analytics.people.identify(...)`
+
+## 签名
+
+```ts
+// Identify a user (required before other operations except reset)
+tracker.analytics.people.identify(user_id: string, options?: { fromTracker: boolean }): void
+
+// Reset local user context & properties (optionally, destroy device id)
+// should be called on logout and session end
+tracker.analytics.people.reset(hard?: boolean): void
+
+// Delete user on backend, then reset local properties
+tracker.analytics.people.deleteUser(): void
+
+// Set properties (overwrite existing values)
+tracker.analytics.people.setProperties(properties: Record<string, string | number>): void
+tracker.analytics.people.setProperties(key: string, value: string | number): void
+
+// Set properties only if they don't exist yet
+tracker.analytics.people.setPropertiesOnce(properties: Record<string, string | number>): void
+
+// Append values to an existing property (string becomes array)
+tracker.analytics.people.appendValues(key: string, value: string | number): void
+
+// Append value only if it’s not already present (requires property to exist locally)
+tracker.analytics.people.appendUniqueValues(key: string, value: string | number): void
+
+// Increment (or decrement) a numeric property
+tracker.analytics.people.increment(key: string, value: number): void
+
+// Read current user id
+tracker.analytics.people.user_id: string | null | undefined
+```
+
+## identify
+
+通过字符串 id（电子邮件、用户名、内部 id 等）识别当前用户，并将一个身份事件加入队列。
+
+```ts
+tracker.analytics.people.identify("nikita@openreplay.com")
+```
+
+### 说明：
+
+如果之前已经识别了另一个用户，SDK 会在切换到新 id 之前重置本地的 people 属性。
+
+`options.fromTracker` 在内部使用，以避免重复调用追踪器层级的 id 钩子；通常你不需要用到它。
+
+## reset
+
+重置当前用户 id 以及所有本地的 people 属性。
+
+```ts
+// soft reset
+tracker.analytics.people.reset()
+
+// hard reset (also clears persistent device id)
+tracker.analytics.people.reset(true)
+```
+
+## deleteUser
+
+在后端删除当前已识别的用户（通过发送一个删除变更），然后清除本地状态。
+
+```ts
+tracker.analytics.people.deleteUser()
+```
+
+### 说明：
+
+如果没有识别任何用户，则该操作不执行任何动作。
+
+调用此方法后，`user_id` 将被清除，本地属性也会被清空。
+
+## setProperties
+
+设置用户属性，覆盖现有的值。
+
+```ts
+tracker.analytics.people.setProperties({
+	plan: "pro",
+	seats: 5,
+})
+
+// or key/value
+tracker.analytics.people.setProperties("plan", "enterprise")
+```
+
+### 说明：
+
+对于 SDK 的本地缓存，保留键/默认键（追踪器内部键）会被忽略。
+
+会将一个携带你所传入完整 `properties` 负载的事件加入队列。
+
+## setPropertiesOnce
+
+仅在属性尚不存在时（从 SDK 的本地视角而言）才设置属性。
+
+```ts
+tracker.analytics.people.setPropertiesOnce({
+	signup_source: "docs",
+	first_seen_at: Date.now(),
+})
+```
+
+### 说明：
+
+只有本地 people 缓存中尚不存在的属性才会被写入本地。
+
+无论如何，都会将一个携带你所传入属性的 `setPropertyOnce` 变更事件加入队列。
+
+## appendValues
+
+向现有属性追加一个值。如果该属性当前是字符串/数字，它会变成一个数组。
+
+```ts
+// start with something
+tracker.analytics.people.setProperties({ tags: "new" })
+
+// append
+tracker.analytics.people.appendValues("tags", "beta-user")
+```
+
+### 说明：
+
+只有当该属性已在本地存在时，SDK 才会更新本地缓存。
+
+追加变更事件始终会被加入队列。
+
+## appendUniqueValues
+
+仅在值尚不存在时才追加该值。
+
+```ts
+tracker.analytics.people.setProperties({ tags: ["new"] })
+tracker.analytics.people.appendUniqueValues("tags", "new") // no change
+tracker.analytics.people.appendUniqueValues("tags", "beta-user") // appended
+```
+
+### 说明：
+
+如果该属性在本地尚不存在，此次调用不会执行任何操作（提前返回）。请先通过 `setProperties` / `setPropertiesOnce` 进行设置。
+
+## increment
+
+向数字属性添加一个数值（包括负值）。
+
+```ts
+tracker.analytics.people.increment("logins", 1)
+tracker.analytics.people.increment("credits", -10)
+```
+
+### 说明：
+
+如果该属性在本地不存在，则在递增之前会先初始化为 `0`。
+
+如果该属性存在但不是数字类型，SDK 会抛出错误。
+
+## 与 Mixpanel 兼容的别名
+
+所有方法都支持为方便习惯用户而提供的兼容层：
+
+```ts
+tracker.analytics.people.set // setProperties
+tracker.analytics.people.set_once // setPropertiesOnce
+tracker.analytics.people.append // appendValues
+tracker.analytics.people.union // appendUniqueValues
+tracker.analytics.people.incrementBy // increment
+```
+
+## 示例
+典型流程
+
+```ts
+tracker.analytics.people.identify("user_123")
+
+tracker.analytics.people.setProperties({
+	email: "user@example.com",
+	plan: "pro",
+})
+
+tracker.analytics.people.increment("sessions", 1)
+tracker.analytics.people.appendUniqueValues("features_used", "analytics")
+```
+
+### 切换用户
+
+请记住，截至 1.24.0 版本，OpenReplay 会话仅支持单个用户，这意味着新用户会在会话中覆盖之前的用户。
+在切换用户时，请同时使用 `forceNew` 选项重启追踪器。
+
+```ts
+tracker.analytics.people.identify("user_a")
+tracker.analytics.people.setProperties({ plan: "free" })
+
+// switching user resets local people properties automatically
+tracker.analytics.people.identify("user_b")
+```
+
+
+## 有疑问吗？
+
+如果你遇到任何问题，请加入我们的 [Slack](https://slack.openreplay.com) 或查看我们的 [论坛](https://forum.openreplay.com)，并从我们的社区获得帮助。

@@ -1,0 +1,115 @@
+---
+title: "إعداد OpenReplay"
+metaTitle: "إعداد OpenReplay"
+metaDescription: "كيفية إعداد OpenReplay بسرعة والبدء في تسجيل الجلسات والمقاييس."
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+import LinkRow from '~/components/LinkRow.astro'
+
+<YoutubeVideo title="شاهد كيفية البدء مع OpenReplay"
+  description="إذا كنت لا تفضّل القراءة، يمكنك متابعة هذا الفيديو التعليمي الذي يوضّح لك كيفية البدء مع OpenReplay في 3 دقائق أو أقل"
+  videoURL="https://www.youtube.com/watch?v=EWbtMK3qK30"
+  />
+
+
+البدء مع OpenReplay أمر بسيط. 
+
+إذا كنت ترغب في مشاهدة درس تعليمي سريع حول كيفية البدء، فاستخدم [فيديو YouTube هذا](https://www.youtube.com/watch?v=EWbtMK3qK30)، وإلا فتابع القراءة لمزيد من التفاصيل.
+
+هناك طريقتان لتشغيل OpenReplay وتجهيزه: باستخدام السكربت أو باستخدام حزمة npm.
+
+## استخدام السكربت
+
+انسخ مقتطف الكود والصقه مباشرةً داخل `</head>` في تطبيق الويب الخاص بك. يمكن العثور على السكربت في لوحة تحكم OpenReplay ضمن 'Preferences > Projects' وهو فريد لكل مشروع.
+
+إذا كان موقعك الإلكتروني يدعم Google Tag Manager، فيمكنك اتباع [دليل GTM خطوة بخطوة](/integrations/google-tag-manager).
+
+## استخدام NPM
+
+ثبّت حزمة npm أولاً.
+
+```bash
+npm i @openreplay/tracker
+```
+
+ثم قم بتهيئة الحزمة من نقطة دخول قاعدة الكود الخاصة بك وابدأ التتبّع (tracker). يجب عليك ضبط الخيار `projectKey` في الدالة البانية (constructor). يمكن العثور على قيمته في لوحة تحكم OpenReplay ضمن 'Preferences > Projects'.
+
+### إذا كان موقعك الإلكتروني تطبيق صفحة واحدة (SPA)
+
+يمكنك استخدام الـ tracker كنسخة وحيدة (singleton)، وهي الطريقة الموصى بها لاستخدامه. 
+بهذه الطريقة، يمكنك الوصول إلى الـ tracker من أي مكان في تطبيقك:
+
+```js
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+	projectKey: PROJECT_KEY,
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+})
+
+tracker.start() // returns a promise with session info (sessionID, sessionHash, userUUID)
+```
+
+أو يمكنك استخدام الفئة `Tracker` مباشرةً للتعامل مع نسختها يدويًا:
+
+```js
+import OpenReplay from '@openreplay/tracker';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY,
+  ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
+});
+
+tracker.start();
+```
+
+### إذا كان تطبيق الويب الخاص بك مُصيّرًا من جانب الخادم (SSR)
+
+اتبع المقتطف أدناه إذا كان تطبيق الويب الخاص بك مُصيّرًا من جانب الخادم (SSR) (أي NextJS وNuxtJS). 
+تأكّد من أن الـ tracker يعمل في بيئة المتصفح وأن `tracker.start()` يُستدعى بمجرد تقديم التطبيق إلى العميل (أي ضمن `useEffect` أو `componentDidMount`).
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+//...
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY
+});
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, []);
+}
+```
+
+إذا كنت ترغب في التعمّق أكثر في تهيئة الـ tracker، فراجع [JavaScript SDK](/installation/javascript-sdk#options) للاطلاع على قائمة الخيارات المتاحة.
+
+## التكامل مع أطر العمل الأخرى
+إذا لم تكن تستخدم OpenReplay داخل تطبيق بسيط، فمن المرجّح أنك تستخدم إطار عمل لتطوير الويب، مثل Next.js أو Nuxt أو غيرهما.
+اطّلع على دروسنا التعليمية المخصّصة لكل من أطر العمل المدعومة:
+
+<div class="or-feature">
+  <div class="or-chips" style="margin:0;">
+    <a class="or-chip" href="/sdk/using-or/react"><img src="/redesign/frameworks/react.svg" alt="" />React</a>
+    <a class="or-chip" href="/sdk/using-or/vue"><img src="/redesign/frameworks/vue.svg" alt="" />Vue</a>
+    <a class="or-chip" href="/sdk/using-or/angular"><img src="/redesign/frameworks/angular.svg" alt="" />Angular</a>
+    <a class="or-chip" href="/sdk/using-or/next"><img src="/redesign/frameworks/nextjs.svg" alt="" />NextJS</a>
+    <a class="or-chip" href="/sdk/using-or/nuxt"><img src="/redesign/frameworks/nuxt.svg" alt="" />Nuxt</a>
+  </div>
+</div>
+
+## الخطوات التالية
+
+الآن وقد قمت بتثبيت الـ tracker ونشر تطبيق الويب الخاص بك، يُفترض أن تظهر تسجيلات الجلسات خلال بضع دقائق. أحسنت!
+
+في غضون ذلك، يمكنك المضي قدمًا في عملية الإعداد لتحقيق أقصى استفادة من OpenReplay. كلما زاد ما تلتقطه، كان ذلك أفضل لإعادة إنتاج المشكلات وإصلاحها بسرعة:
+
+<div class="or-rowlist">
+  <LinkRow href="/installation/identify-user" title="تحديد هوية المستخدم" icon="user" desc="اربط معرّف المستخدم الداخلي الخاص بك بالجلسة التي يجري تسجيلها." />
+  <LinkRow href="/installation/metadata" title="البيانات الوصفية (Metadata)" icon="metadata" desc="يُشار إليها أيضًا بالسمات (traits) أو متغيّرات المستخدم، وتوفّر البيانات الوصفية معلومات إضافية عن المستخدمين أثناء تسجيل الجلسات." />
+  <LinkRow href="/installation/custom-events" title="الأحداث المخصّصة" icon="api" desc="أضِف مزيدًا من الذكاء عبر تسجيل أحداث خاصة بمجالك إلى جانب عمليات إعادة تشغيل الجلسات." />
+  <LinkRow href="/installation/error-reporting" title="الإبلاغ عن الأخطاء" icon="error" desc="أبلِغ عن الأخطاء والاستثناءات وشاهِدها ضمن علامة التبويب ERRORS." />
+  <LinkRow href="/installation/upload-sourcemaps" title="رفع Source-Maps" icon="highlight" desc="اطّلع على سياق الكود المصدري المستخرَج من تتبّعات المكدّس (stack traces) بصورته الأصلية." />
+  <LinkRow href="/plugins" title="الإضافات (Plugins)" icon="settings" desc="افهم ما يحدث في الخلفية عبر التقاط المخزن (store) الخاص بتطبيقك ومراقبة استعلامات HTTP وGraphQL لديك." />
+  <LinkRow href="/integrations" title="التكاملات" icon="data" desc="اربط OpenReplay بأدوات التسجيل (logging) الخاصة بك وقم بمزامنة أخطاء الواجهة الخلفية (backend) مع عمليات إعادة تشغيل الجلسات." />
+</div>

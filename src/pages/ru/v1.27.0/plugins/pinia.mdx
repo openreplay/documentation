@@ -1,0 +1,96 @@
+---
+title: "Pinia"
+metaTitle: "Pinia"
+metaDescription: "Плагин Pinia для OpenReplay."
+---
+import Aside from '~/components/Aside.astro'
+
+Этот плагин позволяет захватывать мутации/состояние `Pinia` и просматривать их позже при воспроизведении записей сессий. Это очень полезно для понимания и устранения проблем.
+
+
+<Aside type="tip">
+  У нас также есть подробное руководство о том, как использовать плагин Pinia для захвата состояния вашего приложения при работе с этой библиотекой, ознакомиться с ним можно [здесь](/tutorials/pinia).
+</Aside>
+
+
+
+
+## Установка
+
+```bash
+npm i @openreplay/tracker-vuex
+```
+
+## Использование
+
+Инициализируйте пакет `@openreplay/tracker` как обычно и загрузите в него плагин. Вызовите плагин и задайте имя хранилища — это вернёт именованный экземпляр трекера хранилища, который вы можете вызвать, передав ваш экземпляр хранилища в качестве аргумента, чтобы включить отслеживание этого хранилища.
+
+### Если ваш сайт является одностраничным приложением (SPA)
+
+```js
+import OpenReplay from '@openreplay/tracker';
+import trackerVuex from '@openreplay/tracker-vuex';
+```
+
+### Если ваше веб-приложение использует серверный рендеринг (SSR)
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+import trackerVuex from '@openreplay/tracker-vuex/cjs';
+```
+
+### Отслеживание хранилища Pinia
+
+```js
+
+//...
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+// ...
+
+const examplePiniaStore = useExamplePiniaStore()
+const vuexPlugin = tracker.use(trackerVuex(<options>)) // check list of available options below
+
+const piniaStorePlugin = vuexPlugin('STORE NAME') // add a name to your store, 
+                                                  // optional (will be randomly generated otherwise)
+piniaStorePlugin(examplePiniaStore) // start tracking state updates
+
+// now you can use examplePiniaStore as usual pinia store (destructure values or return it as a whole etc)
+```
+
+## Параметры
+
+Вы можете настроить поведение плагина с помощью параметров для очистки ваших данных. Они аналогичны параметрам стандартного плагина `createLogger`.
+
+```js
+trackerVuex({
+  filter (mutation, state) {
+    // returns `true` if a mutation should be logged
+    // `mutation` is a `{ type, payload }`
+    return mutation.type !== "aBlacklistedMutation";
+  },
+  transformer (state) {
+    // transforms the state before logging it.
+    // for example return only a specific sub-tree
+    return state.subTree;
+  },
+  mutationTransformer (mutation) {
+    // mutations are logged in the format of `{ type, payload }`
+    // we can format it any way we want.
+    return mutation.type;
+  },
+})
+```
+
+## Руководство
+
+Если вы ищете практический пример того, как использовать этот плагин для захвата изменений состояния в ваших записях сессий, ознакомьтесь с [нашим подробным руководством здесь](/tutorials/pinia).
+
+## Есть вопросы?
+
+Возникли трудности с настройкой этого плагина? Подключайтесь к нашему [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com) и получите помощь от нашего сообщества.
