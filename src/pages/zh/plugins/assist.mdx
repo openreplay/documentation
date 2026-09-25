@@ -153,7 +153,7 @@ trackerAssist({
 
 将 `requestConfirm: true` 设置为在坐席能够实时查看用户会话之前先获得用户的许可。Assist 会照常启动并连接，但在用户批准确认弹窗之前，会话对坐席保持不可见，该弹窗会在第一个坐席连接时立即显示。一旦被接受，追踪将重新启动，坐席便可以实时查看用户的会话。
 
-该批准会按标签页记住（存储在 `sessionStorage` 中），直到调用 [`stop()`](#methods)，此调用会撤销该批准，因此下一次 [`start()`](#methods) 将会再次提示。
+该批准会按标签页记住（存储在 `sessionStorage` 中），直到调用 [`stop()`](#方法)，此调用会撤销该批准，因此下一次 [`start()`](#方法) 将会再次提示。
 
 ```js
 tracker.use(trackerAssist({
@@ -297,7 +297,7 @@ onRecordingDeny: ({ email, name, query }) => {
 }
 ```
 
-- `onSessionConfirmApprove?: (agentInfo: Record<string, any>) => any;`：此回调函数在用户批准会话查看（处于 [`requestConfirm`](#session-view-confirmation) 模式）时触发，并返回坐席的详细信息（email、名称和 query）。
+- `onSessionConfirmApprove?: (agentInfo: Record<string, any>) => any;`：此回调函数在用户批准会话查看（处于 [`requestConfirm`](#实时查看微件) 模式）时触发，并返回坐席的详细信息（email、名称和 query）。
 
 ```js
 onSessionConfirmApprove: ({ email, name, query }) => {
@@ -305,7 +305,7 @@ onSessionConfirmApprove: ({ email, name, query }) => {
 }
 ```
 
-- `onSessionConfirmDeny?: (agentInfo: Record<string, any>) => any;`：此回调函数在用户拒绝会话查看（处于 [`requestConfirm`](#session-view-confirmation) 模式）时触发，并返回坐席的详细信息（email、名称和 query）。
+- `onSessionConfirmDeny?: (agentInfo: Record<string, any>) => any;`：此回调函数在用户拒绝会话查看（处于 [`requestConfirm`](#实时查看微件) 模式）时触发，并返回坐席的详细信息（email、名称和 query）。
 
 ```js
 onSessionConfirmDeny: ({ email, name, query }) => {
@@ -333,7 +333,7 @@ assist.start();
 ```
 
 - `start()`：（重新）启动 assist。如果追踪器本身尚未激活，则此操作为空操作（assist 将与追踪器一起启动）。在 `Autostart.Continuation` 模式下，它会在 `sessionStorage` 中持久化一个标志，以便 assist 在页面重新加载后自动继续。显式的 `start()` 还会取代任何 `ignoreAnonymous` 延迟。
-- `stop()`：通过断开套接字连接并清理所有连接来停止 assist。在调用 `start()` 之前，assist 不会自动重新启动。在 `Autostart.Continuation` 模式下，这还会清除已持久化的标志，因此重新加载不会自动继续。在 [`requestConfirm`](#session-view-confirmation) 模式下，它还会撤销用户的批准，因此下一次 `start()` 将会再次提示。
+- `stop()`：通过断开套接字连接并清理所有连接来停止 assist。在调用 `start()` 之前，assist 不会自动重新启动。在 `Autostart.Continuation` 模式下，这还会清除已持久化的标志，因此重新加载不会自动继续。在 [`requestConfirm`](#实时查看微件) 模式下，它还会撤销用户的批准，因此下一次 `start()` 将会再次提示。
 
 <Aside type="caution">
   在 assist 无法加载的环境中（例如不支持媒体设备、位于 iframe 内），`tracker.use()` 会返回 `undefined`，因此请相应地对返回的实例进行防护。
