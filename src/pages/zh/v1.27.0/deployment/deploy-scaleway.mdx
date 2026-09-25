@@ -1,0 +1,88 @@
+---
+title: "部署到 Scaleway"
+metaTitle: "部署到 Scaleway"
+metaDescription: "在 Scaleway Elements 上部署 OpenReplay 的分步指南。"
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+OpenReplay 技术栈可以安装在单个实例上，而 Scaleway Elements 是一个理想的选择。下面介绍具体的操作方法。
+
+## 启动实例
+
+1. 进入 Scaleway 控制台
+2. 导航至 'Compute > Instances'，然后点击 'Create an instance'
+3. 选择您偏好的可用区
+4. 选择一个镜像。本指南中，我们将使用 *Ubuntu Server 24.04 LTS*
+5. 选择您的实例类型。最低配置要求为 `2 vCPUs, 8 GB of RAM, 50 GB of storage`，且需采用 x86 架构，否则 OpenReplay 后端服务根本无法启动。因此，我们建议**至少**使用 `DEV1-L`（或同等配置），这足以应对低/中等流量。如果您预计会有高流量，则应在此基础上进行扩展。
+6. 添加存储卷：将大小设置为至少 50 GB（无论是本地存储还是块存储）
+7. 为您的实例起一个好听的名字（例如 openreplay）
+8. SSH 密钥：确保您已经有一个与项目关联的密钥，以便能够连接到您的实例
+9. 点击 'Create a new instance'
+
+> **注意：** SMTP 端口（25、465、587）默认被 Scaleway 屏蔽。除非您从安全组配置中启用 SMTP，否则您的 OpenReplay 实例将无法发送电子邮件。要执行此操作，请查看此[快速教程](https://www.scaleway.com/en/faq/why-can-i-not-send-any-email/)。
+
+## 部署 OpenReplay
+
+1. 确保您的实例处于 `Started` 状态，然后连接到它：
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem #! wherever you've saved the SSH key
+INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
+chmod 400 $SSH_KEY
+ssh -i $SSH_KEY root@$INSTANCE_IP
+```
+
+2. 通过提供它将要运行的域名来安装 OpenReplay（例如 DOMAIN_NAME=openreplay.mycompany.com）：
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## 配置 TLS/SSL
+
+OpenReplay 处理敏感的用户数据，因此需要 HTTPS 才能运行。这是强制性的，否则 tracker 根本不会开始录制。仪表盘也是如此，如果没有 HTTPS，您将无法回放用户会话。
+
+因此，您必须自带（或生成）您自己的 SSL 证书。
+
+1. 首先，进入 'Network' > 'DNS'（或您的其他 DNS 服务提供商）并创建一条 `A Record`。使用您之前在安装步骤中提供的域名，并使用实例的公网 IP 将其指向该实例（可在 'Compute' > 'Instances' 中找到）。
+
+2. 如果您要自带证书，请使用以下命令创建一个 SSL secret：`kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`。
+
+> **注意：** 如果您没有证书，请使用 Let's Encrypt 为您的子域名（即安装期间提供的那个）生成一个可自动续期的证书。只需连接到 OpenReplay 实例，运行 `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` 并按照步骤操作即可。
+
+3. 如果您希望启用 http 到 https 的重定向（推荐），请在 `/var/lib/openreplay/vars.yaml` 文件中 `ingress-nginx` 部分下取消注释以下代码块：
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+值得一提的是，我们的 `ingress-nginx` 默认运行在 `80|443` 端口上，但如有需要，可以在 `vars.yaml` 中轻松更改：
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. 最后，重新安装 OpenReplay NGINX：
+
+```bash
+openreplay -R
+```
+
+现在一切就绪，OpenReplay 应该可以在您的子域名上访问了。您可以通过访问 `/signup` 页面来创建账户（例如 openreplay.mycompany.com/signup）。
+
+## 有疑问吗？
+
+如果您遇到任何问题，请加入我们的 [Slack](https://slack.openreplay.com) 或访问我们的[论坛](https://forum.openreplay.com)，从我们的社区获得帮助。

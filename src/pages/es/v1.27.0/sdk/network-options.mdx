@@ -1,0 +1,134 @@
+---
+title: "Opciones de Red"
+metaTitle: "Opciones de Red"
+metaDescription: "Plugin de opciones de red para OpenReplay."
+---
+import Aside from '~/components/Aside.astro'
+
+Esta página describe el espacio de nombres `network` de las [opciones](/sdk/constructor) del SDK de JavaScript de OpenReplay. Se refiere a la captura de solicitudes de red como `fetch` y `XHR`, incluyendo los payloads si es necesario, e inspeccionarlas posteriormente mientras se reproducen las grabaciones de sesiones. Esto es muy útil para comprender y solucionar problemas.
+
+## Opciones
+
+```js
+network?: {
+  failuresOnly: boolean;
+  sessionTokenHeader: string | boolean;
+  ignoreHeaders: Array<string> | boolean;
+  capturePayload: boolean;
+  sanitizer: (RequestResponseData) => RequestResponseData | null;
+  captureInIframes: boolean;
+  axiosInstances: AxiosInstance[];
+  useProxy?: boolean;
+	tokenUrlMatcher?: (url: string) => boolean;
+}
+```
+
+- `useProxy`: Cambia el tracker de parchear window.fetch/window.XMLRequest a usar objetos proxy. Por defecto: `true`.
+- `failuresOnly`: Captura las solicitudes que tienen un código de estado HTTP 4xx-5xx. Por defecto: `false`.
+- `sessionTokenHeader`: En caso de que hayas habilitado alguna de nuestras [integraciones](/integrations) de backend (es decir, Sentry), puedes usar esta opción para especificar el nombre del encabezado (o activar el predeterminado 'X-OpenReplay-SessionToken' estableciendo la opción en `true`). Este último se añade automáticamente a cada solicitud fetch/XHR para contener el valor del sessionToken de OpenReplay. Por defecto: `false`.
+- `tokenUrlMatcher`: Obtiene la url de la solicitud actual del tracker y devuelve un `boolean`. Si está presente, `sessionTokenHeader` solo se aplicará cuando esta función devuelva `true`. Por defecto: `undefined`.
+- `ignoreHeaders`: Ayuda a definir una lista de encabezados que no deseas capturar. Establece su valor en `false` para capturarlos todos (`true` para ninguno). Por defecto: `['Cookie', 'Set-Cookie', 'Authorization']` para que los encabezados sensibles no se capturen.
+- `capturePayload`: Almacena los payloads del cuerpo de las solicitudes/respuestas. Esto puede ser muy útil para fines de resolución de problemas, pero puede volverse pesado en el uso de la red si tu aplicación utiliza ampliamente solicitudes Fetch/XHR. Por defecto: `false`.
+
+<Aside type="caution">
+	Capturar payloads HTTP puede registrar datos altamente sensibles (es decir, contraseñas) o información privada que tu aplicación podría estar enviando/recibiendo en solicitudes/respuestas Fetch/XHR, así que asegúrate de sanear esos datos usando la opción `sanitizer` que se describe a continuación.
+</Aside>
+
+- `captureInIframes`: Para deshabilitar el seguimiento de red dentro de iFrames. Por defecto: `true`.
+- `axiosInstances`: Útil en situaciones específicas para rastrear instancias personalizadas de axios, si la configuración habitual (proxy api) no funciona. Por defecto: `undefined`.
+- `sanitizer`: Sanea los datos sensibles de las solicitudes/respuestas Fetch/XHR o ignora la solicitud por completo. Puedes redactar campos del objeto de solicitud modificándolo y luego devolviéndolo desde la función (consulta los ejemplos a continuación). El saneamiento se aplica **después** de todo el filtrado y las modificaciones inducidas por otras opciones (es decir, el argumento no contendrá el payload `body` si `capturePayload` no se estableció explícitamente en `true`).
+
+```typescript
+interface RequestData {
+  body: BodyInit | null | undefined; // whatewer you've put in the init.body in fetch(url, init) or xhr.send(body)
+  headers: Record<string, string>;
+}
+
+interface ResponseData {
+  body: string | Object | null;  // Object if response is of JSON type
+  headers: Record<string, string>;
+}
+
+interface RequestResponseData {
+  readonly status: number;
+  readonly method: string;
+  url: string;
+  request: RequestData;
+  response: ResponseData;
+}
+
+sanitizer: (data: RequestResponseData) => { // sanitise the body or headers
+  if (data.url === "/auth") {
+    data.request.body = null
+  }
+
+  if (data.request.headers['x-auth-token']) { // can also use ignoreHeaders option instead
+    data.request.headers['x-auth-token'] = 'SANITISED';
+  }
+
+  // Sanitize response
+  if (data.status < 400 && data.response.body.token) {
+    data.response.body.token = "<TOKEN>"  
+  }
+
+  return data
+}
+
+// OR
+
+sanitizer: data => { // ignore payloads for calls that start with /secure
+  if (data.url.startsWith("/secure")) {
+    data.request.body = null;
+    data.response.body = null;
+  }
+  return data
+}
+
+// OR
+
+sanitizer: data => { // sanitize request url: replace all numbers
+  data.url = data.url.replace(/\d/g, "*")
+  return data
+}
+```
+
+## Ejemplos
+
+A continuación se muestran ejemplos sobre cómo usar la opción `network`. 
+
+### Con NPM
+
+```js
+tracker.configure({
+  projectKey: PROJECT_KEY,
+  network: {
+    capturePayload: true // Capture HTTP payload
+  }
+});
+```
+
+### Con el snippet de JavaScript
+
+Observa la variable/línea `initOpts` para establecer la opción `network`.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { 
+  projectKey: "GxPpaDARdn2345fgt321", 
+  network: { // Enable HTTP payload capture in the network option
+    capturePayload: true
+  } 
+};
+
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+```
+
+## Resolución de problemas
+
+¿Tienes problemas para configurar estas opciones? Conéctate a nuestro [Slack](https://slack.openreplay.com) o consulta nuestro [Foro](https://forum.openreplay.com) y obtén ayuda de nuestra comunidad.

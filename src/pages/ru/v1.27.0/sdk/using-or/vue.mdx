@@ -1,0 +1,52 @@
+---
+title: "Использование OpenReplay с Vue"
+metaTitle: "Добавление трекера OpenReplay в ваше приложение Vue"
+metaDescription: "Узнайте, как настроить работу трекера в вашем приложении Vue"
+---
+import Aside from '~/components/Aside.astro'
+
+Настроить работу трекера в приложении Vue довольно просто. 
+
+## Добавление кода отслеживания
+
+Предполагая, что вы создаёте SPA (Single Page Application), всё, что вам нужно сделать, — это добавить следующий код в ваш скрипт setup в главном файле.
+
+```html
+<script setup>
+// note that you can manually import Tracker class if you want to handle the instance manually
+import { tracker } from '@openreplay/tracker'
+//... your code here
+tracker.configure({
+  projectKey: "<your project key>",
+  ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
+});
+
+tracker.start();
+//... more code here
+</script>
+```
+
+<Aside type="tip">
+Хотя вы можете получить [версию JS-сниппета](/using-or/snippet#getting-the-snippet) нашего трекера прямо из нашего CDN при создании нового проекта, этот код слишком упрощён и усложнит его настройку и добавление дополнительных плагинов.
+</Aside>
+
+### Работа с «projectKey» в вашем коде
+
+В целях безопасности избегайте жёсткого прописывания вашего `projectKey` непосредственно в коде приложения. Вместо этого храните его в файле конфигурации или в системе окружения.
+
+Один из вариантов — добавить переменную окружения в файл `.env` в корне вашего проекта и снабдить её префиксом `VITE_`, что сделает её доступной в вашем коде Vue. Позже вы сможете использовать её через `import.meta.env.<your variable name>`.
+
+Вот пример:
+```javascript
+tracker.configure({
+  projectKey: import.meta.env.VITE_VUE_APP_PROJECT_KEY,
+});
+ ```
+
+## Создаёте что-то более сложное?
+
+Если вы создаёте сложное приложение на Vue, скорее всего, вы используете [Nuxt](/using-or/nuxt) или что-то подобное. Обязательно загляните в наш раздел [Tracker Setup](/using-or), чтобы найти фреймворк, с которым вы работаете.
+
+## Есть вопросы?
+
+Если у вас возникнут какие-либо проблемы с настройкой трекера в вашем проекте Vue, свяжитесь с нами в нашем [сообществе Slack](https://slack.openreplay.com/) и задайте вопрос напрямую нашим разработчикам!

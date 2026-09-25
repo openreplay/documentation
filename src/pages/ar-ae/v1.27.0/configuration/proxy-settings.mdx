@@ -1,0 +1,82 @@
+---
+title: "إعدادات الوكيل (Proxy)"
+metaTitle: "إعدادات الوكيل (Proxy)"
+metaDescription: "إعدادات تشغيل OpenReplay خلف وكيل مثل NGINX أو Apache2."
+---
+
+## استضافة OpenReplay مع تطبيقات أخرى باستخدام وكيل عكسي (Reverse Proxy)
+
+عند تشغيل OpenReplay على جهاز ما، فإنه يستخدم المنفذ 80/443 لإتاحة التطبيق. لكن عند استخدامك لوكيل عكسي، يمكن تهيئة OpenReplay لاستخدام منفذ آخر للوصول إلى التطبيق. فيما يلي الخطوات الخاصة بكيفية القيام بذلك:
+
+1. عدّل ملف الإعدادات:
+
+```bash
+openreplay -e
+```
+
+2. غيّر قسم إعدادات nginx:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+	...
+	...
+    service:
+      externalTrafficPolicy: "Local"
+      ports:
+        http: 880   # Change this port for http
+        https: 8443 # Change this port for https
+```
+3. احفظ الإعدادات واخرج منها باستخدام `:wq` حتى يتمكن OpenReplay من إعادة تحميل الإعدادات.
+
+بعد ذلك يمكن تهيئة الوكيل العكسي الخاص بك. راجع الأقسام أدناه للقيام بذلك.
+
+### إعدادات NGINX
+
+تأكد من أن الوكيل الخاص بك يرسل ترويستي `X-Forwarded-For` و`X-Forwarded-Proto`. يجب أيضًا تفعيل SSL لكي يعمل OpenReplay. أما بقية الإعدادات فينبغي أن تبدو على النحو التالي:
+
+```nginx
+location / {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        proxy_pass http://1.2.3.4:880; # replace with OpenReplay instance IP
+    }
+```
+
+### إعدادات Apache2
+
+تأكد من تفعيل وحدات `proxy` و`proxy_http` و`proxy_html`. ويجب أيضًا تهيئة SSL، وينبغي أن تكون بقية الإعدادات مشابهة لما يلي:
+
+```
+<VirtualHost *:443>
+    ProxyPass / http://1.2.3.4:880 <!-- replace with instance IP -->
+    RequestHeader set X-Forwarded-Proto expr=%{REQUEST_SCHEME}
+    # SSL + other config here
+</VirtualHost>
+```
+
+## نقاط النهاية العامة (Public endpoints)
+
+في حال كنت تحمي نسخة OpenReplay الخاصة بك باستخدام وكيل، تأكد من أن نقاط النهاية أدناه يمكن الوصول إليها بشكل عام حتى يعمل OpenReplay بشكل صحيح.
+
+| نقطة النهاية | الوصف | المصدر |
+|----------|-------------|------------|
+| /ingest | لاستقبال الأحداث والتسجيلات الواردة من تطبيقك | تطبيقك (تطبيقاتك) الخاضع للتتبّع (إذا كان متاحًا للعموم فيجب أن تكون نقطة النهاية هذه عامة أيضًا) |
+| /ws-assist | لإعادة تشغيل الجلسات المباشرة مع المستخدمين النهائيين (WebSocket) | تطبيقك (تطبيقاتك) الخاضع للتتبّع (إذا كان متاحًا للعموم فيجب أن تكون نقطة النهاية هذه عامة أيضًا) |
+| /api | للمصادقة وجلب الجلسات والمشاريع وبيانات RBAC وبيانات الحساب | لوحة تحكم OpenReplay |
+| /v2/api | للبحث والتحليلات وإعادة تشغيل الجلسات والتصفح المشترك | لوحة تحكم OpenReplay |
+| /spots | لسحب مقاطع فيديو spot من تخزين الكائنات | لوحة تحكم OpenReplay |
+| /mobs | لسحب عمليات إعادة تشغيل الجلسات من تخزين الكائنات | لوحة تحكم OpenReplay |
+| /sessions-assets | لسحب أوراق الأنماط والخطوط المخزّنة مؤقتًا من تخزين الكائنات | لوحة تحكم OpenReplay |
+| /static | لسحب البيانات المتعلقة بجلسات التصفح المشترك | لوحة تحكم OpenReplay |
+| /records | لسحب تسجيلات التصفح المشترك من تخزين الكائنات | لوحة تحكم OpenReplay |
+| /integrations | لجلب السجلات من عمليات التكامل مع جهات خارجية (مثل Sentry أو Datadog) | لوحة تحكم OpenReplay |
+| /sourcemaps | لرفع ملفات sourcemaps | واجهة سطر أوامر Sourcemaps |
+| /spot | لجلب البيانات المتعلقة بتسجيلات spot | إضافة Spot لمتصفح Chrome |
+| /script | مفيدة إذا كنت ترغب في تقديم ملفات openreplay-*.js من إعداداتك الخاصة (وإلا فإنها تعود افتراضيًا إلى شبكة توصيل المحتوى CDN الخاصة بـ OpenReplay) | تطبيقك (تطبيقاتك) الخاضع للتتبّع |
+
+## هل لديك أسئلة؟
+
+إذا كان لديك أي أسئلة حول هذه العملية، فلا تتردد في التواصل معنا عبر [Slack](https://slack.openreplay.com) الخاص بنا أو الاطلاع على [المنتدى](https://forum.openreplay.com).

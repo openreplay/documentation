@@ -1,0 +1,329 @@
+---
+title: "SSO"
+metaTitle: "SSO"
+metaDescription: "如何通过 SAML2 设置单点登录（SSO）。"
+---
+import ORDynamicCode from '../../../components/Code/ORDynamicCode';
+export const initialValues = {domain: "YOUR_DOMAIN", tenantId: "TENANT_ID", tenantKey: "TENANT_KEY", port: "PORT"};
+export const ignoreValues = {jumpcloud: "https://sso.jumpcloud.com"};
+
+单点登录（通过 SAML2）仅在 OpenReplay Enterprise Edition 中可用。
+
+## 身份提供商（IDP）配置
+
+在你的身份提供商的控制面板中，创建一个名为 `openreplay` 的新应用（你可以使用此<a href="https://docs.openreplay.com/static/OpenReplay.png" target="_blank">图标</a>）。在配置页面中，请务必设置以下值（请务必将 <code>{initialValues.domain}</code> 替换为正确的值，例如 `https://openreplay.mycompany.com`）：
+
+| 变量 | 值 |
+|----------|-------------|
+| ACS URL（也称为 Single Sign On URL 或 Consumer URL） | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/</code> |
+| Entity ID（也称为 Audience） | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code> |
+| Single Logout URL（也称为 SLO URL） | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/sls/</code>（可选） |
+| Name ID（有时可在 'Attribute Statements' 或 'Parameters' 部分进行配置） | `Email` 或 `EmailAddress` 或 `urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress`，具体取决于你的身份提供商 |
+| SAML initiator | 将其设置为 `Service Provider`（可选） |
+
+在 'Attribute Statements' 或 'Parameters' 部分，请务必定义以下字段：
+
+| 字段 | 值 |
+|----------|-------------|
+| tenantKey | <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> 其值可在 Dashboard 的 'Preferences' > 'Account' 中找到（如果你使用的是我们的 Cloud Dedicated 套餐，则不得添加此属性） |
+| firstName | `user.firstName` |
+| lastName |  `user.lastName` |
+| internalId | 内部 ID 或 `user.email`（用户在你的身份管理系统中的 ID）（可选） |
+| groups | 表示用户在 OpenReplay 中的角色和管理员权限，取决于你的身份提供商，它可以是 `user.role` 或 `group` 等（可选，默认值 = `member`，无管理员权限）。为了从 IdP 端简化 OpenReplay 角色管理，你可以创建一个名为 OpenReplay-admin 的组，在其中放置具有管理员权限的用户，并创建一个名为 OpenReplay-member 的组，在其中放置具有 'member' 角色的用户 |
+
+现在你应该已经拥有下一步/下一节所需的所有值。
+
+## SSO（SAML2）配置
+
+如果你使用的是我们的 Cloud dedicated 套餐，请转到[控制台](https://console.openreplay.com)，然后点击实例并在 SSO 部分设置变量。
+
+否则，如果你运行的是我们的 Enterprise Edition，请运行 `openreplay -e`，取消注释并更新 `chalice` 部分中以下的环境变量：
+
+| 变量 | 描述 |
+|----------|-------------|
+| idp_entityId | 你的身份提供商的 `entityId`，也称为 `Issuer URL` |
+| idp_sso_url | 你的身份提供商的 `singleSignOnService`，也称为 `SAML 2.0 Endpoint (HTTP)` |
+| idp_x509cert | `x509cert`，必须是单行字符串，不含换行符。你可以使用<a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">此工具</a>来格式化你的值 |
+| idp_name | 身份提供商的名称（可选） |
+| idp_sls_url | 你的身份提供商的 `singleLogoutService`，也称为 `SLO Endpoint (HTTP)`（可选） |
+| enforce_SSO | 如果设置为 `true`，所有使用用户名和密码的连接都将被阻止（可选，默认值=`false`） |
+| idp_group_prefixes | IdP 组名称前缀（可选，默认值=`OpenReplay-,or-`） |
+
+然后，使用 `:wq` 保存并退出，以使更改生效：
+
+## OpenReplay 证书
+
+这是可选的，你可以添加一个 x509 证书以获得额外的 SSO 安全性：
+
+1. 在你的服务器或安全机器上运行此命令（你可以根据需要更改证书的有效期）：
+```bash
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout openreplay-sso.key -out openreplay-sso.crt
+```
+2. 在你的服务器上，运行 `openreplay -e`
+3. 在 `chalice` 部分下，添加以下环境变量：
+- **sp_crt**：必须是所生成的 'openreplay-sso.crt' 文件的单行字符串，不含换行符（你可以使用<a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">此工具</a>来格式化你的值）
+- **sp_key**：必须是所生成的 'openreplay-sso.key' 文件的单行字符串，不含换行符
+4. 使用 `:wq` 保存并退出，以使更改生效
+5. 将生成的 'openreplay-sso.crt' 文件添加到你的身份提供商的应用配置中
+
+## 使用 Okta 的示例
+
+1. 登录到你的 Okta 管理控制面板，然后转到 'Applications' > 'Applications'
+2. 按下 'Create new app integration'，然后选择 SAML 2.0 并按下 'Next'
+3. 将 'App Name' 设置为 OpenReplay（你可以为你的应用上传此<a href="https://docs.openreplay.com/static/OpenReplay.png" target="_blank">图标</a>），然后按下 'Next'
+4. 设置：
+ - **Single sign on URL** 为 <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/</code>
+ - **Audience URI (SP Entity ID)** 为 <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code>
+ - **Name ID format** 为 `EmailAddress`
+5. 按下 Next，选择 'This is an internal app that we have created'，然后按下 'Finish'
+6. 在 Sign On 选项卡中，向下滚动并按下 'Show legacy configuration'，然后按下 'Edit'
+7. 在 'Profile Attribute Statements' 中定义以下字段：
+ - **tenantKey**：格式为 `Basic`，并将值设置为 <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>，可在 OpenReplay 控制面板的 'Preferences' > 'Account' 中找到（如果你使用的是我们的 Cloud Dedicated 套餐，则不得添加此属性）
+ - **firstName**：格式为 `Basic`，并将值设置为 `user.firstName`
+ - **lastName**：格式为 `Basic`，并将值设置为 `user.lastName`
+ - **internalId**：格式为 `Basic`，并将值设置为 `user.email`
+8. 在 'Group Attribute Statement' 中定义以下字段（此项为可选）：
+ - **groups**：格式为 `Basic`，筛选器为 `Match Regex`，值为 `OpenReplay-*`（或者你可以根据需要指定不同的筛选器和正则表达式）
+9. 按下 'save' 并滚动到右上方，按下 'View Setup Instructions' 以查看你的 SAML2 配置
+
+如果你使用的是我们的 Cloud dedicated 套餐，请转到[控制台](https://console.openreplay.com)，然后点击实例并在 SSO 部分设置变量。
+
+否则，如果你运行的是我们的 Enterprise Edition：
+
+9.  通过 SSH 连接到你的 OpenReplay 安装环境并运行 `openreplay -e`
+10.  在 `chalice` 部分下，取消注释并设置以下环境变量：
+   - **idp_entityId**：Identity Provider Issuer
+   - **idp_sso_url**：Identity Provider Single Sign-On URL
+   - **idp_x509cert**：X.509 证书，必须是单行字符串，不含换行符（你可以使用<a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">此工具</a>来格式化你的值）
+   - **idp_name**：Okta
+11.  最后，使用 `:wq` 保存并退出，以使更改生效
+
+## 使用 Azure Active Directory 的示例
+
+1. 登录到你的 Azure 门户，然后转到 'Azure Active Directory'
+2. 按下 '+ Add'，选择 'Enterprise application'，然后点击 'Create your own application'
+3. 将 'App Name' 设置为 OpenReplay，然后选择 'Integrate any other application you don't find in the gallery (Non-gallery)' 并按下 'Create'
+4. 导航到左侧菜单中的 'Single sign-on'，并在 'Basic SAML Configuration' 区块中设置以下值：
+ - **Identifier (Entity ID)** 为 <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code>
+ - **Reply URL (Assertion Consumer Service URL)** 为 <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/</code>
+ - **Logout URL** 为 <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/sls/</code>
+5. 在 'Attribute & Claims' 区块中添加以下声明（claims），并确保为每一项保持 'Namespace' 字段为空：
+ - **tenantKey**：将值设置为 <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>，可在 OpenReplay 控制面板的 'Preferences' > 'Account' 中找到（如果你使用的是我们的 Cloud Dedicated 套餐，则不得添加此属性/声明）
+ - **firstName**：将值设置为 `user.givenname`
+ - **lastName**：将值设置为 `user.surname`
+ - **internalId**：将值设置为 `user.mail`
+6. 导航到 'Users and groups'，并将你选择的用户分配给该应用
+
+如果你使用的是我们的 Cloud dedicated 套餐，请转到[控制台](https://console.openreplay.com)，然后点击实例并在 SSO 部分设置变量（这些值可在 'Azure Active Directory' > 'OpenReplay' > 'Single sign-on' 中找到）。
+
+否则，如果你运行的是我们的 Enterprise Edition：
+
+7. 通过 SSH 连接到你的 OpenReplay 安装环境并运行 `openreplay -e`
+8. 在 `chalice` 部分下，取消注释并设置以下环境变量（这些值可在 'Azure Active Directory' > 'OpenReplay' > 'Single sign-on' 中找到）：
+- **idp_entityId**：Azure AD Identifier
+- **idp_sso_url**：Login URL
+- **idp_sls_url**：Logout URL
+- **idp_x509cert**：X.509 证书，必须是单行字符串，不含换行符（你可以使用<a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">此工具</a>来格式化你的值）
+- **idp_name**：Active Directory
+9.  最后，使用 `:wq` 保存并退出，以使更改生效
+
+## 使用 Google Workspace（前身为 G Suite）的示例
+
+#### 添加自定义属性：
+
+1. 在 Google 管理控制台中，转到 'Directory' > 'Users' > 'More options' > 'Manage custom attributes'。
+2. 点击 'Add Custom Attribute'。
+3. 设置以下字段：
+ - **Category**：'OpenReplay'
+ - **Custom fields**：
+- **Name**：'role'
+- **Info type**：'Text'
+- **Visibility**：'Visible to user and admin'
+- **No. of values**：'Single-value'
+ - **Custom fields**：
+- **Name**：'adminPrivileges'
+- **Info type**：'Yes or No'
+- **Visibility**：'Visible to user and admin'
+- **No. of values**：'Single-value'
+4. 点击 'Add'
+5. 要为新的自定义属性添加值，请转到 'Users'
+6. 选择所需的用户
+7. 点击 'User information'，然后编辑 'OpenReplay' 部分
+8. 将 **role** 的值更改为 'OpenReplay' 中所需的角色（该角色应与在 OpenReplay 控制面板的 'Preferences' > 'Roles' 中创建的角色相匹配）
+9. 如果允许该用户在 OpenReplay 中拥有管理员权限，则将 **adminPrivileges** 的值更改为 'Yes'
+10. 点击 'Save'
+
+#### 配置：
+
+1. 登录到你的 Google 管理控制台，然后转到 'Apps'
+2. 按下 'Web and mobile apps'，然后点击 'Add app' > 'Add custom SAML app'
+3. 将 'App name' 设置为 OpenReplay（你可以为 'App icon'' 上传此<a href="https://docs.openreplay.com/static/OpenReplay.png" target="_blank">图标</a>），然后按下 'Continue'
+4. 复制 'SSO URL'、'Entity ID' 和 'Certificate'，然后点击 'Continue'（我们将在第 11 步中使用这些值）
+5. 设置：
+ - **ACS URL** 为 <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/>/</code>（<code>{initialValues.tenantKey}</code> 可在 OpenReplay 控制面板的 'Preferences' > 'Account' 中找到，但如果你使用的是我们的 Cloud Dedicated 套餐，请将 tenantKey 的值留空）
+ - **Entity ID** 为 <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code>
+ - **Name ID format** 为 `Email`
+ - **Name ID** 为 `Basic information > Primary Email`
+6. 点击 'Continue'，然后点击 'Add Mapping' 以添加以下属性：
+ - `Basic information > First Name` -> **firstName**
+ - `Basic information > Last Name` -> **lastName**
+ - `Basic information > Primary Email` -> **internalId**
+ - `OpenReplay > groups` -> **groups**
+7. 点击 'Finish'
+8.  在 Google 管理控制台中，转到 'Apps' > 'Web and mobile apps' 并选择 'OpenReplay'
+9.  点击 'User access'，选择 'ON for everyone'，然后点击 'Save'
+
+如果你使用的是我们的 Cloud dedicated 套餐，请转到[控制台](https://console.openreplay.com)，然后点击实例并在 SSO 部分设置变量。
+
+否则，如果你运行的是我们的 Enterprise Edition：
+
+10. 通过 SSH 连接到你的 OpenReplay 安装环境并运行 `openreplay -e`
+11. 在 `chalice > env` 部分下，使用第 4 步中的值取消注释并设置以下属性：
+   - **idp_sso_url**：粘贴 'SSO URL' 的值
+   - **idp_entityId**：粘贴 'Entity ID' 的值
+   - **idp_x509cert**：使用<a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">此工具</a>来格式化复制/下载的证书
+   - **idp_name**：将值设置为 `G-Suite`
+   - **idp_tenantKey**：<code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> 可在 OpenReplay 控制面板的 'Preferences' > 'Account' 中找到
+12. 最后，使用 `:wq` 保存并退出，以使更改生效
+
+## 使用 JumpCloud 的示例
+
+1. 登录到你的 JumpCloud 管理控制面板，并在左侧菜单中转到 'SSO'
+2. 按下 '+ Add New Application'，然后选择 'Custom SAML App'
+3. 将 'Display Label' 设置为 OpenReplay（你可以为你的应用上传此<a href="https://docs.openreplay.com/static/OpenReplay150x150.png" target="_blank">图标</a>），然后转到 'SSO' 选项卡
+4. 设置：
+- **IdP Entity ID** 为 <code>openreplay/<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>（<code>{initialValues.tenantKey}</code> 可在 OpenReplay 控制面板的 'Preferences' > 'Account' 中找到，但如果你使用的是我们的 Cloud Dedicated 套餐，请将 tenantKey 的值留空）
+- **SP Entity ID** 为 <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code>
+- **ACS URL** 为 <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/</code>
+- **SAMLSubject NameID** 为 `email`
+- **SAMLSubject NameID Format:** 为 `urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress`
+- **Signature Algorithm** 为 `RSA-SHA256`
+- 勾选 **Sign Assertion**
+- **IDP URL** 使其以 <code>openreplay-<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> 结尾（此值之后无法更改，如果你使用的是我们的 Cloud Dedicated 套餐，请将 tenantKey 部分留空）
+5. 如果你按照 <a href="#openreplay-certificate">OpenReplay 证书</a> 的说明操作，你可以通过按下 'Upload SP Certificate' 来上传生成的 'openreplay-sso.crt' 文件，否则请忽略此步骤
+6. 通过按下 'add attribute' 按钮，在 'USER ATTRIBUTE MAPPING' 中定义以下字段：
+- **firstName**：将值设置为 `firstname`
+- **lastName**：将值设置为 `lastname`
+- **internalId**：将值设置为 `email`
+- **groups**：可选，表示用户在 OpenReplay 中的角色和管理员权限，如果对所有用户来说它是一个常量值，你应该在下一步中定义它，否则你必须向 JumpCloud 的组添加一个新的字符串属性，将其命名为 `OpenReplay-groups` 并将值设置为角色名称，然后在 SSO 配置中选择 'Custom User or Group Attribute' 并将值设置为 `OpenReplay-groups`。
+7. 通过按下 'add attribute' 按钮，在 'CONSTANT ATTRIBUTES' 中定义以下字段：
+- **tenantKey**：将值设置为 <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>，可在 OpenReplay 控制面板的 'Preferences' > 'Account' 中找到（如果你使用的是我们的 Cloud Dedicated 套餐，则不得添加此属性）
+- **groups**：可选，如果已在上一步中定义则忽略，表示用户在 OpenReplay 中的角色和管理员权限，应与在 OpenReplay 中已定义的角色名称相匹配（默认值 = `member`，无管理员权限）
+8. 此时，你可以转到 'User Groups' 选项卡，并选择将有权访问 OpenReplay 的用户组，或者你可以稍后再做
+9. 在确认弹出窗口中按下 'activate' 和 'continue'
+10. 按下新的 OpenReplay 应用图标，然后在左侧的 'IDP Certificate Valid' 下拉菜单中选择 'Download certificate'
+
+如果你使用的是我们的 Cloud dedicated 套餐，请转到[控制台](https://console.openreplay.com)，然后点击实例并在 SSO 部分设置变量。
+
+否则，如果你运行的是我们的 Enterprise Edition：
+
+11. 通过 SSH 连接到你的 OpenReplay 安装环境并运行 `openreplay -e`
+12. 在 `chalice` 部分下，取消注释并设置以下环境变量：
+- **idp_entityId**：<code>openreplay/<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>
+- **idp_sso_url**：<code>{ignoreValues.jumpcloud}/saml2/openreplay-<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>
+- **idp_x509cert**：下载的证书，必须是单行字符串，不含换行符（你可以使用<a href="https://www.samltool.com/format_x509cert.php" title="FORMAT A X509 CERTIFICATE" target="_blank">此工具</a>来格式化你的值）
+- **idp_name**：JumpCloud
+13.  最后，使用 `:wq` 保存并退出，以使更改生效
+
+## SCIM（System for Cross-domain Identity Management）预置
+
+Openreplay 在 Enterprise Edition 中支持预置用户身份的选项。
+
+要与 Openreplay 的 SCIM 服务集成，只需在你的身份提供商控制面板中启用 SCIM 预置即可。请务必设置以下值以实现顺畅集成：
+
+| 变量 | 描述 |
+|----------|-------------|
+| SCIM connector base URL | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/></code>/api/sso/scim/v2/ |
+| User unique identifier field name | `email` |
+| Support provisioning actions | Push new users, Push profile updates, Push groups |
+| Authentication mode | OAuth2 |
+| Access token endpoint | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/></code>/api/sso/scim/v2/token/ |
+| Authorization endpoint | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/></code>/api/sso/scim/v2/authorize/ |
+| Client id | <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> 其值可在 Dashboard 的 'Preferences' > 'Account' 中找到 |
+| Client secret | 其值可通过在你的 Postgres 数据库中执行此查询找到：<code>SELECT tenant_secret FROM tenants WHERE tenant_key = '<code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>';</code> |
+
+设置这些值后，请按照你的身份提供商控制面板中的提示操作，以测试集成并授权该应用。
+
+{/*
+Openreplay requires custom attributes to be used in order to properly setup users and groups with valid projects and permissions. You will need to add the following attributes in your Identity Provider dashboard:
+- `projectKeys`. This attribute if of type `string array` and added to the user schema, though it will be controlled by the group resource. You will find all of the possible values of this attribute in the 'Projects' page of Openreplay's application.
+- `permissions`. This attribute if of type `string array` and added to the user schema, though it will be controlled by the group resource. The possible values of this attribute are listed below:
+- SESSION_REPLAY
+- DEV_TOOLS
+- METRICS
+- ASSIST_LIVE
+- ASSIST_CALL
+- SPOT
+- SPOT_PUBLIC
+*/}
+
+在此之后，你将能够使用 Openreplay 作为 SCIM 服务提供商来预置用户身份。
+
+> **注意：** 虽然 Openreplay 充当 SCIM 服务提供商，但它不支持将用户划分到多个组（即每个用户只能属于一个组）。如果不遵守这一点，则用户可能会被分配到比预期更少或更多的项目，并且在 Openreplay 应用中可能拥有更少或更多的权限。
+
+### 使用 Okta 的示例
+
+在你的 SAML 2.0 应用中，执行以下操作
+
+#### 添加 SCIM 预置
+
+1. 点击 **General** 选项卡
+2. 在 **App Settings** 部分，点击 **Edit**
+3. 在 **Provisioning** 字段中，选择 **SCIM**，然后点击 **Save**
+
+#### 选择预置选项
+
+1. 点击 **Provisioning** 选项卡。SCIM 连接设置会显示在 **Settings > Integration** 下。
+2. 在 **Settings > Integration** 中，点击 **Edit**。
+3. 指定上面提到的 **SCIM connector base URL** 和用户唯一标识符的字段名称。
+4. 在 **Supported provisioning actions** 下，选择上面提到的预置操作。
+5. 将 **Authentication Mode** 下拉菜单设置为上面提到的值。
+6. 按上面提到的方式设置 **Access token endpoint**、**Authorization endpoint**、**Client id** 和 **Client secret**。
+7. 点击 **Save**。
+8. 点击 **Authenticate application**。
+9. 在 **Provisioning** 选项卡中，点击 **To App**。
+10. 点击 **Edit**，启用 `Create Users`、`Update User Attributes`、`Deactivate Users` 并保存更改（请确保在按下保存后这些选项处于选中状态，否则请刷新页面并重新执行此步骤）。
+- 在开始下一步之前，我们建议在 Okta 中创建名为 `OpenReplay-admin` 的新组，在其中列出在 OpenReplay 中拥有管理员权限的用户，以及名为 `OpenReplay-members` 的组，在其中列出在 OpenReplay 中拥有 `member` 角色的用户，……    
+11. 转到 **Push Groups** 选项卡，点击 **+ Push Groups**（按名称或按规则），选择你想要推送到 OpenReplay 的组，然后按下 **save**
+- 此时，推送的组表示 OpenReplay 中的角色和管理员权限，但不包含为 OpenReplay 预置的用户列表。
+12. 转到 **Assignmets** 选项卡，并以适合你的方式添加用户（使用人员或组）
+
+{/*
+#### Add extra attributes
+
+You will need to add the attributes mentioned above.
+
+1. Click the **Provisioning** tab.
+2. In **Settings > To App**, scroll down and click **Add attribute**.
+
+For `projectKeys`, use the following.
+
+| Variable | Description |
+|----------|-------------|
+| Data type | string array |
+| Variable name | projectKeys |
+| External name | projectKeys |
+| External namespace | urn:ietf:params:scim:schemas:extension:openreplay:2.0:User |
+| Enum | checked |
+| Attribute members | Use the values of the project names for the **Display name** and project keys as the **Value**. You will find these in the 'Projects' page of Openreplay's application |
+| Attribute type | Group |
+| Group priority | Use group priority |
+
+For `permissions`, use the following.
+
+| Variable | Description |
+|----------|-------------|
+| Data type | string array |
+| Variable name | permissions |
+| External name | permissions |
+| External namespace | urn:ietf:params:scim:schemas:extension:openreplay:2.0:User |
+| Enum | checked |
+| Attribute members | Use the values outlined above for the **Display name** and **Value** |
+| Attribute type | Group |
+| Group priority | Use group priority |
+*/}
+## 错误
+
+### 响应是通过 http 而不是 https 接收的
+
+这种情况非常常见，是由于请求中不存在 'X-Forwarded-Proto' 标头所致。为了解决该问题，请确保负载均衡器正确地将该标头转发到 OpenReplay 后端，并运行 `openreplay -e`，在 `ingress-nginx > config` 部分下，取消注释 `use-forwarded-headers: true` 这一行。

@@ -1,0 +1,105 @@
+---
+title: "Événements personnalisés"
+metaTitle: "Événements personnalisés"
+metaDescription: "Comment envoyer des événements spécifiques à votre domaine et ajouter de l'intelligence supplémentaire aux enregistrements de sessions."
+---
+import Aside from '~/components/Aside.astro'
+
+Les événements personnalisés sont parfaits pour ajouter plus d'intelligence en enregistrant des événements spécifiques à votre domaine en parallèle des relectures de sessions. OpenReplay utilise 2 types d'événements : fonctionnels (`event`) et techniques (`issue`). Tous les événements sont indexés pour faciliter la recherche et synchronisés avec les enregistrements de sessions.
+
+<Aside type="tip">
+  Nous avons également un tutoriel détaillé sur la manière d'envoyer des événements personnalisés, vous pouvez le consulter [ici](/tutorials/custom-events).
+</Aside>
+
+## Événements fonctionnels
+
+Les événements fonctionnels sont indexés et facilitent la recherche d'enregistrements de sessions spécifiques. S'ils ont bien été reçus par OpenReplay, ils seront disponibles comme filtres dans la barre omnisearch.
+
+![Événement fonctionnel](/static/custom-events-1.png#center)
+
+### Avec NPM
+
+Utilisez la méthode `event` pour signaler des événements fonctionnels tels que *order completed* ou *product added*. Elle prend 2 paramètres : *name* (string) et *payload* (tout objet JS non récursif).
+
+```js
+tracker.event('product_added', 'shoes'); // after tracker.start()
+// OR
+tracker.event('product_added', { type: 'shoes' });
+```
+
+### Avec le snippet JavaScript
+
+Voici un exemple de la manière d'envoyer un événement fonctionnel à l'aide du snippet.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: ""}; 
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+  ...
+  __OPENREPLAY__.event('product_added', 'shoes'); // send a functional event later in your code
+	// OR
+	__OPENREPLAY__.event('product_added', { type: 'shoes' });
+  ...
+```
+
+## Événements techniques
+
+Les événements techniques sont affichés dans la relecture de session sous l'onglet *Events* des DevTools, et sous forme d'annotations sur la lecture. Ils sont également pris en compte dans les Funnels pour corréler les baisses de conversion avec des problèmes techniques.
+
+![Événement technique](/static/custom-events-2.png#center)
+
+### Avec NPM
+
+`issue` est utilisé pour envoyer des événements techniques, comme des erreurs, qui peuvent survenir dans votre stack ou dans d'autres systèmes en aval. `issue` prend 2 paramètres : *name* (string) et *payload* (objet JS non récursif).
+
+```js
+tracker.issue('payment_error', { code: 500, context: 42 }); // after tracker.start()
+```
+
+### Avec le snippet JavaScript
+
+Voici un exemple de la manière d'envoyer un événement technique à l'aide du snippet.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" }; 
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+  ...
+  __OPENREPLAY__.issue('payment_error', {code: 500, context: 42}); // send a technical event (issue) later in your code
+  ...
+```
+
+### Tirez davantage parti des événements
+
+Notre SDK prend en charge une gestion plus approfondie des événements ; pour en savoir plus, consultez la [section Gestion des données et des événements](product-analytics/data-management).
+
+### Avec l'application iOS
+
+
+```swift
+import ORTracker
+
+ORTracker.shared.event(name: String, payload: Encodable?)
+```
+
+
+## Tutoriel
+Si vous cherchez un exemple pratique d'utilisation des événements personnalisés, consultez [notre tutoriel détaillé ici](/tutorials/custom-events).
+
+## Des questions ?
+
+Vous rencontrez des difficultés avec les événements personnalisés ? Connectez-vous à notre [Slack](https://slack.openreplay.com) ou consultez notre [Forum](https://forum.openreplay.com) et obtenez de l'aide auprès de notre communauté.

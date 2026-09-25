@@ -1,0 +1,99 @@
+---
+title: "Events"
+metaTitle: "Events"
+metaDescription: "How to pull all events for a specific recording."
+---
+
+## Retrieve events
+
+Returns the list of events (clicks, page visits, inputs, custom events, etc.) captured in a specific session. The session scope is enforced by the server — the `sessionID` path parameter is automatically added as an event filter.
+
+### Method
+<p><span class="or-method post">POST</span></p>
+
+### URL
+`/public/:projectKey/sessions/:sessionId/events`
+
+### Parameters
+
+| Name       | Type   | Description                                                |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | The project key (required)                                 |
+| sessionId  | string | The ID of the session (required, max 256)                  |
+
+### Payload
+
+| Name           | Type       | Description                                                          |
+|----------------|------------|----------------------------------------------------------------------|
+| startTimestamp | epoch (ms) | Start of time window (required, min 946684800000)                    |
+| endTimestamp   | epoch (ms) | End of time window (required, > startTimestamp)                      |
+| limit          | integer    | Page size, 1-200 (required)                                          |
+| page           | integer    | Page number, starts at 1 (required)                                  |
+| sortBy         | string     | Event column to sort by (optional)                                   |
+| sortOrder      | string     | `asc` or `desc` (optional)                                           |
+| filters        | array      | Additional event filters (optional) — see filter structure below     |
+| columns        | array      | Event columns to include in the response (optional)                  |
+
+Filter object:
+
+| Name     | Type     | Description                                                   |
+|----------|----------|---------------------------------------------------------------|
+| name     | string   | Filter attribute name (required, max 256)                     |
+| operator | string   | Comparison operator (e.g. `is`, `contains`)                   |
+| value    | string[] | Up to 10 values, each max 256 chars                           |
+| isEvent  | boolean  | Whether the filter targets an event property                  |
+| dataType | string   | One of `string`, `number`, `boolean`, `integer`, `timestamp`  |
+
+### Request Headers
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Status Codes
+
+<p><span class="or-method ok">200</span> Response sent as JSON in body<br/>
+<span class="or-method err">400</span> Invalid body or invalid <code>sessionID</code> (empty or &gt; 256 chars)</p>
+
+### Example Request
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/sessions/4813023023591169/events \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "startTimestamp": 1623440000000,
+    "endTimestamp":   1623441000000,
+    "limit": 100,
+    "page":  1,
+    "sortOrder": "asc"
+  }'
+```
+
+### Example Response
+
+```json
+{
+  "data": {
+    "total": 3,
+    "events": [
+      {
+        "event_id": "01H7Z...",
+        "$event_name": "$pageview",
+        "created_at": 1623440905732,
+        "distinct_id": "mickael@openreplay.com",
+        "session_id": "4813023023591169",
+        "properties": { "path": "/my-account/" }
+      },
+      {
+        "event_id": "01H7Z...",
+        "$event_name": "$click",
+        "created_at": 1623440915126,
+        "distinct_id": "mickael@openreplay.com",
+        "session_id": "4813023023591169",
+        "$properties": { "label": "Shop" },
+        "$auto_captured": true
+      }
+    ]
+  }
+}
+```

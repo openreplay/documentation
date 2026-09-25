@@ -1,0 +1,105 @@
+---
+title: "自定义事件"
+metaTitle: "自定义事件"
+metaDescription: "如何发送特定于业务领域的事件，并为会话录制添加更多信息。"
+---
+import Aside from '~/components/Aside.astro'
+
+自定义事件非常适合通过在会话回放的同时记录特定于业务领域的事件来增加更多信息。OpenReplay 使用两种类型的事件：功能性事件（`event`）和技术性事件（`issue`）。所有事件都会被建立索引以便于搜索，并与会话录制同步。
+
+<Aside type="tip">
+  我们还有一篇关于如何发送自定义事件的详细教程，你可以在[这里](/tutorials/custom-events)查看。
+</Aside>
+
+## 功能性事件
+
+功能性事件会被建立索引，使查找特定会话录制更加容易。如果它们被 OpenReplay 成功接收，就会作为筛选条件出现在 omnisearch 搜索栏中。
+
+![功能性事件](/static/custom-events-1.png#center)
+
+### 使用 NPM
+
+使用 `event` 方法来标记功能性事件，例如 *order completed* 或 *product added*。它接受 2 个参数：*name*（string）和 *payload*（任何非递归的 JS 对象）。
+
+```js
+tracker.event('product_added', 'shoes'); // after tracker.start()
+// OR
+tracker.event('product_added', { type: 'shoes' });
+```
+
+### 使用 JavaScript 代码片段
+
+下面是一个使用代码片段发送功能性事件的示例。
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: ""}; 
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+  ...
+  __OPENREPLAY__.event('product_added', 'shoes'); // send a functional event later in your code
+	// OR
+	__OPENREPLAY__.event('product_added', { type: 'shoes' });
+  ...
+```
+
+## 技术性事件
+
+技术性事件会在会话回放中 DevTools 的 *Events* 标签页下显示，并作为注释出现在播放过程中。它们还会在 Funnels 中被纳入考量，用于将转化率下降与技术问题关联起来。
+
+![技术性事件](/static/custom-events-2.png#center)
+
+### 使用 NPM
+
+`issue` 用于发送技术性事件，例如可能在你的技术栈或其他下游系统中发生的错误。`issue` 接受 2 个参数：*name*（string）和 *payload*（非递归的 JS 对象）。
+
+```js
+tracker.issue('payment_error', { code: 500, context: 42 }); // after tracker.start()
+```
+
+### 使用 JavaScript 代码片段
+
+下面是一个使用代码片段发送技术性事件的示例。
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" }; 
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+  ...
+  __OPENREPLAY__.issue('payment_error', {code: 500, context: 42}); // send a technical event (issue) later in your code
+  ...
+```
+
+### 充分利用事件
+
+我们的 SDK 支持更深入的事件管理，要了解更多内容，请查看[数据与事件管理章节](product-analytics/data-management)。
+
+### 使用 iOS 应用
+
+
+```swift
+import ORTracker
+
+ORTracker.shared.event(name: String, payload: Encodable?)
+```
+
+
+## 教程
+如果你想要一个使用自定义事件的实际示例，请查看[我们这里的详细教程](/tutorials/custom-events)。
+
+## 有疑问？
+
+在使用自定义事件时遇到了问题？请加入我们的 [Slack](https://slack.openreplay.com) 或访问我们的[论坛](https://forum.openreplay.com)，从我们的社区获得帮助。

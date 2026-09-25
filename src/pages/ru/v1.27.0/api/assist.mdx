@@ -1,0 +1,169 @@
+---
+title: "Assist"
+metaTitle: "Assist"
+metaDescription: "Как искать все активные сессии для определённого проекта."
+---
+import Aside from '~/components/Aside.astro'
+
+<Aside type="note">
+Доступно только в Enterprise Edition (EE).
+</Aside>
+
+## Получение активных сессий
+
+Возвращает список активных сессий для определённого проекта. При необходимости можно отфильтровать по `userId` с помощью параметра запроса.
+
+Значения по умолчанию, применяемые на стороне сервера: `sort = timestamp`, `order = desc`, `limit = 10`, `page = 1`.
+
+### Метод
+
+`GET`
+
+### URL
+
+`/public/:projectKey/assist/sessions`
+
+### Параметры
+
+| Name       | Type   | Description                                             |
+|------------|--------|---------------------------------------------------------|
+| projectKey | string | Ключ проекта (обязательно)                              |
+| userId     | string | Необязательное значение `tracker.setUserID` (параметр запроса в URL) |
+
+### Заголовки запроса
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Пример запроса
+
+```shell
+curl -X GET \
+  '{BASE_URL}/public/aYYaFHiagqdXKEmVlmvJ/assist/sessions?userId=mickael@openreplay.com' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Пример ответа
+
+```json
+{
+  "data": {
+    "total": 1,
+    "sessions": [
+      {
+        "pageTitle": "OpenReplay Blog",
+        "sessionID": "6975518573799938",
+        "metadata": {},
+        "userID": "mickael@openreplay.com",
+        "userUUID": "8998545b-553c-4f41-a39d-d7cba7fac2d1",
+        "projectKey": "aYYaFHiagqdXKEmVlmvJ",
+        "timestamp": 1656437966459,
+        "trackerVersion": "3.5.11",
+        "userOs": "Mac OS",
+        "userBrowser": "Chrome",
+        "userBrowserVersion": "103.0.0.0",
+        "userDeviceType": "desktop",
+        "userCountry": "FR",
+        "live": true,
+        "projectId": 3
+      }
+    ],
+    "live": true
+  }
+}
+```
+
+## Поиск активных сессий
+
+Выполняет поиск по списку активных сессий для определённого проекта с использованием тела запроса в формате JSON.
+
+Значения по умолчанию, применяемые на стороне сервера при их отсутствии: `sort = timestamp`, `order = desc`, `limit = 10`, `page = 1`.
+
+### Метод
+
+`POST`
+
+### URL
+
+`/public/:projectKey/assist/sessions`
+
+### Параметры
+
+| Name       | Type   | Description                                             |
+|------------|--------|---------------------------------------------------------|
+| projectKey | string | Ключ проекта (обязательно)                              |
+
+### Тело запроса
+
+| Name    | Type            | Description                                          |
+|---------|-----------------|------------------------------------------------------|
+| sort    | string          | Атрибут сортировки (по умолчанию: `timestamp`)       |
+| order   | string          | `asc` или `desc` (по умолчанию: `desc`)              |
+| page    | integer         | Номер страницы для пагинации (по умолчанию: `1`)     |
+| limit   | integer         | Количество сессий на странице (по умолчанию: `10`)   |
+| filters | array of filter | Список фильтров (по умолчанию: `[]`)                 |
+
+Объект фильтра:
+
+| Name     | Type       | Description                                                                    |
+|----------|------------|--------------------------------------------------------------------------------|
+| name     | string     | Атрибут фильтра (обязательно, напр. `userId`). Используйте `METADATA` с `source` ниже |
+| operator | string     | `contains` или `is` (по умолчанию: `contains`)                                 |
+| value    | string[]   | Список значений (по умолчанию: `[]`)                                           |
+| source   | string     | Имя атрибута метаданных, когда `name = METADATA` (по умолчанию: `""`)          |
+
+Если `value = []`, поиск находит активные сессии, у которых задан указанный атрибут (с любым значением).
+
+### Заголовки запроса
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Пример запроса
+
+В следующем примере выполняется поиск первых 10 активных сессий (отсортированных по timestamp по убыванию), где `userId` содержит `openreplay`, а `metadata.plan` равно `trial` или `free`.
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/aYYaFHiagqdXKEmVlmvJ/assist/sessions \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "filters": [
+      { "value": ["trial", "free"], "name": "METADATA", "source": "plan", "operator": "is" },
+      { "value": ["openreplay"], "name": "userId", "operator": "contains" }
+    ],
+    "sort": "timestamp",
+    "order": "desc",
+    "limit": 10,
+    "page": 1
+  }'
+```
+
+### Пример ответа
+
+```json
+{
+  "data": {
+    "total": 1,
+    "sessions": [
+      {
+        "pageTitle": "OpenReplay Blog",
+        "sessionID": "6975518573799185",
+        "metadata": { "plan": "trial" },
+        "userID": "dev@openreplay.com",
+        "userUUID": "8998545b-553c-4f41-a39d-d7cba7fac2d1",
+        "projectKey": "aYYaFHiagqdXKEmVlmvJ",
+        "timestamp": 1656437966459,
+        "trackerVersion": "3.5.11",
+        "userOs": "Mac OS",
+        "userBrowser": "Chrome",
+        "userBrowserVersion": "103.0.0.0",
+        "userDeviceType": "desktop",
+        "userCountry": "FR",
+        "live": true,
+        "projectId": 3
+      }
+    ],
+    "live": true
+  }
+}
+```

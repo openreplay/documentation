@@ -1,0 +1,152 @@
+---
+title: "Enriqueciendo tus grabaciones de sesión con metadatos"
+metaTitle: "Añadir metadatos a tus repeticiones de sesión para potenciar tus insights"
+metaDescription: "Aprende cómo añadir metadatos a tus repeticiones de sesión y cómo usarlos para mejorar los insights que obtienes de la plataforma"
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="Mira cómo enviar metadatos desde tu aplicación Next.js"
+  description="Si no te gusta leer, puedes seguir este video tutorial que te muestra cómo enviar metadatos desde tu aplicación hacia la plataforma OpenReplay"
+  videoURL="https://www.youtube.com/watch?v=ITcJCeKWQGU"
+  />
+
+Por defecto, nuestro tracker enviará mucha información útil a nuestra plataforma, pero toda esa información es estándar. Mientras un dato forme parte de la Web API, es muy probable que lo estemos rastreando.
+
+Pero ¿qué pasa si también quieres enriquecer tus grabaciones de sesión con datos específicos de tu aplicación?
+
+¿Como entender bajo qué plan de pago está tu usuario cuando estás revisando su repetición? Esta información puede aportar contexto adicional para tus desarrolladores, así que el hecho de que no sea estándar no significa que debamos ignorarla, ¿verdad?
+
+Aquí es donde entran en juego los metadatos.
+
+**Ten en cuenta** que existe una [versión en video de este tutorial](https://www.youtube.com/watch?v=ITcJCeKWQGU) en nuestro canal de YouTube. Así que no dudes en verla si aprendes mejor de forma visual.
+
+## ¿Qué son los metadatos?
+
+En el contexto de una repetición de sesión, los metadatos son toda la información que tu usuario no genera, pero que de alguna manera se relaciona con ese usuario.
+
+En otras palabras, si el usuario hace clic en un enlace específico o realiza una acción en particular, eso no son metadatos, eso es un evento personalizado (consulta [la documentación sobre Eventos Personalizados](/installation/custom-events) si quieres saber más sobre ellos).
+
+Pero si hay un indicador que te dice que un usuario está bajo el plan gratuito o el de pago. O quizás un código de seguimiento que te muestra de dónde vino ese usuario. Todos esos son metadatos y puedes añadirlos fácilmente a tus sesiones.
+
+## ¿Cómo añadir metadatos a una sesión?
+
+Lo primero que hay que hacer es configurar los campos de metadatos directamente en la plataforma.
+
+Si te saltas este paso, no podrás registrar ninguna información, ¡así que no te lo saltes!
+
+Para ello, irás a la página de configuración de tu proyecto haciendo clic en el engranaje de la parte superior derecha del menú superior:
+
+![El icono de configuración del proyecto](/tutorials/metadata/metadata1.png)
+
+Una vez allí, haz clic en la opción de menú Metadata en el extremo izquierdo de tu pantalla:
+
+![La opción Metadata en el menú de la izquierda](/tutorials/metadata/metadata2.png)
+
+Eso te llevará a la pantalla de configuración de metadatos. Asegúrate de seleccionar el proyecto correcto en el desplegable y crea tantos campos como necesites.
+
+![Añadir nuevos metadatos](/tutorials/metadata/metadata3.png)
+
+Para este ejemplo, hemos creado 3 campos para el proyecto “e-commerce test”:
+
+- El “plan” que contendrá el plan actual del usuario.
+- El “utm_source” que contiene un código que identifica de dónde viene el usuario.
+- Y por último, el “items_in_cart” contiene el número total de artículos en el carrito del usuario.
+
+El último es un dato que depende de la acción del usuario, lo cual es diferente de lo que recomendamos. Sin embargo, en este ejemplo verás las limitaciones de los campos de metadatos y por qué este dato en particular debería haber sido un evento personalizado en su lugar.
+
+Con esta configuración lista, el siguiente paso es añadir el código necesario para enviar realmente los datos como parte de tu sesión.
+
+### Añadir el código para enviar metadatos
+
+Para añadir los metadatos a la sesión usaremos el método `setMetadata` del tracker. Puedes usar este método en cualquier momento durante la sesión del usuario, solo ten en cuenta las dos consideraciones siguientes:
+
+1. Si aplicas múltiples valores al mismo campo de metadatos, solo el último se guardará como parte de la sesión.
+2. Todos los valores deben ser cadenas de texto. De lo contrario, no se guardarán. El tracker no convertirá los valores a cadenas de texto, así que ten cuidado con esto.
+
+![Código añadido](/tutorials/metadata/metadata4.png)
+
+Las flechas rojas muestran dónde se realizaron las actualizaciones relevantes. Este proveedor de contexto exporta una función llamada `setMetadata` que, a su vez, llama al método `setMetadata` del tracker.
+
+Si quieres un ejemplo funcional, puedes consultar [este repositorio](https://github.com/deleteman/nextjs-commerce-example/tree/redux_metadata/site).
+
+Ahora todo lo que tenemos que hacer es usar la función exportada cada vez que queramos configurar los campos de metadatos.
+
+### Establecer los metadatos desde nuestro código
+
+Para los fines de este ejemplo, vamos a decidir establecer los campos `utm_source` y `plan` directamente desde la página de inicio, y luego, cada vez que el usuario añada un artículo al carrito, actualizaremos el último campo restante.
+
+En el archivo `pages/index.tsx`, vamos a añadir el siguiente código:
+
+```jsx
+// inside the main component
+const { startTracking, setMetadata } = useContext(TrackerContext)
+//...
+useEffect(() => {
+    async function getProds() {
+      await startTracking()
+      setMetadata('plan', getPlan()) //addition 
+      setMetadata('utm_source', getUTMSource()) //addition
+      dispatch(getMakeUpProducts() as any)
+    }
+
+    getProds()
+  }, [dispatch])
+```
+
+La mayor parte de ese hook ya estaba ahí, pero añadimos la referencia a la función `setMetadata` y luego las dos llamadas a ella. Ambas funciones, `getPlan` y `getUTMSource`, devuelven datos aleatorios para este ejemplo. Para tu caso de uso particular, tendrás que implementarlas en consecuencia.
+
+Este código establecerá estos valores de metadatos cuando se cargue la página de inicio.
+
+Ahora necesitamos añadir el último valor, el número de artículos en el carrito. Para ello, iremos al componente `ProductSidebar`, que es el encargado de controlar lo que sucede cuando hacemos clic en “Add to cart”, y añadiremos otro hook para reaccionar a un cambio en el número de artículos del carrito.
+
+```jsx
+useEffect(() => {
+    setMetadata('items_in_cart', productsInCart)
+  }, [productsInCart])
+```
+
+Por supuesto, también tienes que obtener la función `setMetadata` del proveedor de contexto como antes, pero una vez que hagas eso, habrás terminado.
+
+Ahora los datos se están guardando. También podemos ver esto en la plataforma a través de la lista de sesiones.
+
+## Usar los metadatos
+
+Ahora que tienes los metadatos guardándose dentro de todas las repeticiones de sesión, ¿qué puedes hacer con ellos?
+
+Bueno, para empezar, puedes visualizarlos directamente desde la repetición:
+
+![Revisar los metadatos en el reproductor](/tutorials/metadata/metadata5.png)
+
+Deberías empezar a ver los campos de metadatos en la esquina superior derecha de la pantalla de tu reproductor. En este ejemplo, vemos que el usuario tiene un plan Enterprise Edition, viene de Reddit y solo tiene un artículo añadido al carrito.
+
+### Buscar por campos de metadatos
+
+La otra cosa poderosa que puedes hacer con los metadatos es usarlos como parámetro de búsqueda. Usando la barra omnisearch, puedes seleccionar los campos de metadatos personalizados que creaste como parámetros de búsqueda:
+
+![Buscar usando tus campos de metadatos](/tutorials/metadata/metadata6.png)
+
+Así que si quieres ver solo las repeticiones de Enterprise Edition, simplemente puedes seleccionar el campo Plan y filtrarlo por “ee”, de esta manera:
+
+![Buscar por plan de usuario](/tutorials/metadata/metadata7.png)
+
+También puedes usar la misma barra omnisearch al crear un widget para tu dashboard. Así que para continuar con el ejemplo de EE, si quisieras crear un dashboard solo para clientes Enterprise, podrías filtrar cada widget personalizado usando el atributo “Plan”.
+
+Por ejemplo, el siguiente widget muestra cuántos clientes Enterprise están haciendo clic en el botón “Add to cart”:
+
+![Crear una serie temporal usando metadatos](/tutorials/metadata/metadata8.png)
+
+Dando como resultado un widget que se ve así:
+
+![Los resultados](/tutorials/metadata/metadata9.png)
+
+Con los campos de metadatos puedes personalizar y ampliar los insights que obtienes de tus repeticiones de sesión tanto como quieras.
+
+---
+
+Los metadatos pueden mejorar significativamente los insights que puedes obtener de tus repeticiones de sesión, y configurarlos es relativamente fácil.
+
+Recuerda que cualquier información que quieras guardar, siempre tiene que estar en forma de cadenas de texto, de lo contrario será ignorada.
+
+El código fuente completo del [proyecto de ejemplo que usa metadatos se puede ver aquí](https://github.com/deleteman/nextjs-commerce-example/tree/redux_metadata/site).
+
+Si tienes algún problema con cualquiera de los pasos de este proceso, ¡contáctanos en nuestra [comunidad de Slack](https://slack.openreplay.com/) y pregunta directamente a nuestros desarrolladores!

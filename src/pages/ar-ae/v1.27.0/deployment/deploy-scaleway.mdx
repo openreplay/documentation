@@ -1,0 +1,88 @@
+---
+title: "النشر على Scaleway"
+metaTitle: "النشر على Scaleway"
+metaDescription: "دليل خطوة بخطوة لنشر OpenReplay على Scaleway Elements."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+يمكن تثبيت حزمة OpenReplay على نسخة (instance) واحدة، وتُعد Scaleway Elements مرشحًا مثاليًا لذلك. إليك كيفية القيام بذلك.
+
+## إطلاق نسخة (Instance)
+
+1. انتقل إلى لوحة تحكم Scaleway
+2. انتقل إلى 'Compute > Instances' ثم انقر على 'Create an instance'
+3. اختر منطقة التوافر (Availability Zone) المفضلة لديك
+4. حدد صورة (Image). في هذا الدليل، سنستخدم *Ubuntu Server 24.04 LTS*
+5. اختر نوع النسخة. الحد الأدنى من المواصفات هو `2 vCPUs, 8 GB of RAM, 50 GB of storage`، على بنية x86، وإلا فإن خدمات الواجهة الخلفية لـ OpenReplay لن تبدأ ببساطة. لذلك، نوصي **على الأقل** بـ `DEV1-L` (أو ما يعادلها)، وهو كافٍ لحجم منخفض/متوسط. إذا كنت تتوقع حركة مرور عالية، فيجب عليك التوسع انطلاقًا من هذا الحد.
+6. إضافة وحدات التخزين (Volumes): اضبط الحجم على 50 GB على الأقل (سواء كان تخزينًا محليًا أو تخزينًا كتليًا)
+7. امنح نسختك اسمًا لطيفًا (مثل openreplay)
+8. مفاتيح SSH: تأكد من أن لديك بالفعل مفتاحًا مرتبطًا بمشروعك حتى تتمكن من الاتصال بنسختك
+9. انقر على 'Create a new instance'
+
+> **ملاحظة:** منافذ SMTP (25، 465، 587) محظورة بشكل افتراضي من قِبل Scaleway. لن تتمكن نسخة OpenReplay الخاصة بك من إرسال رسائل البريد الإلكتروني ما لم تُفعّل SMTP من إعدادات مجموعة الأمان (security group) الخاصة بك. للقيام بذلك، اطّلع على هذا [الدرس التعليمي السريع](https://www.scaleway.com/en/faq/why-can-i-not-send-any-email/).
+
+## نشر OpenReplay
+
+1. تأكد من أن نسختك في حالة `Started` ثم اتصل بها:
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem #! wherever you've saved the SSH key
+INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
+chmod 400 $SSH_KEY
+ssh -i $SSH_KEY root@$INSTANCE_IP
+```
+
+2. ثبّت OpenReplay عن طريق توفير النطاق الذي سيعمل عليه (مثل DOMAIN_NAME=openreplay.mycompany.com):
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## تكوين TLS/SSL
+
+يتعامل OpenReplay مع بيانات حساسة للمستخدمين، وبالتالي يتطلب HTTPS للعمل. هذا أمر إلزامي، وإلا فإن المتعقّب (tracker) لن يبدأ التسجيل ببساطة. وينطبق الأمر نفسه على لوحة التحكم؛ فبدون HTTPS لن تتمكن من إعادة تشغيل جلسات المستخدمين.
+
+لذلك يجب عليك إحضار (أو إنشاء) شهادة SSL خاصة بك.
+
+1. أولاً، انتقل إلى 'Network' > 'DNS' (أو مزوّد خدمة DNS الآخر الخاص بك) وأنشئ `A Record`. استخدم النطاق الذي قدّمته سابقًا أثناء خطوة التثبيت ووجّهه إلى النسخة باستخدام عنوان IP العام الخاص بها (يمكن العثور عليه في 'Compute' > 'Instances').
+
+2. إذا كنت تُحضر شهادتك الخاصة، فأنشئ سرًّا (secret) لـ SSL باستخدام الأمر التالي: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
+
+> **ملاحظة:** إذا لم يكن لديك شهادة، فأنشئ واحدة تتجدد تلقائيًا، لنطاقك الفرعي (ذلك الذي قدّمته أثناء التثبيت) باستخدام Let's Encrypt. ما عليك سوى الاتصال بنسخة OpenReplay، وتشغيل `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` واتباع الخطوات.
+
+3. إذا كنت ترغب في تمكين إعادة التوجيه من http إلى https (موصى به)، فألغِ تعليق الكتلة أدناه، ضمن قسم `ingress-nginx`، في `/var/lib/openreplay/vars.yaml`:
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+تجدر الإشارة إلى أن `ingress-nginx` الخاص بنا يعمل بشكل افتراضي على المنفذين `80|443`، ولكن يمكن تغيير ذلك بسهولة، عند الحاجة، في `vars.yaml`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. أخيرًا، أعد تثبيت OpenReplay NGINX:
+
+```bash
+openreplay -R
+```
+
+أصبح كل شيء جاهزًا الآن، ومن المفترض أن يكون OpenReplay متاحًا على نطاقك الفرعي. يمكنك إنشاء حساب من خلال زيارة صفحة `/signup` (مثل openreplay.mycompany.com/signup).
+
+## هل لديك أسئلة؟
+
+إذا واجهت أي مشكلات، انضم إلى [Slack](https://slack.openreplay.com) الخاص بنا أو اطّلع على [المنتدى](https://forum.openreplay.com) الخاص بنا واحصل على المساعدة من مجتمعنا.

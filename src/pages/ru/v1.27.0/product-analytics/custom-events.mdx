@@ -1,0 +1,105 @@
+---
+title: "Пользовательские события"
+metaTitle: "Пользовательские события"
+metaDescription: "Как отправлять события, специфичные для вашей предметной области, и добавлять дополнительную информацию к записям сессий."
+---
+import Aside from '~/components/Aside.astro'
+
+Пользовательские события отлично подходят для добавления дополнительной информации за счёт регистрации событий, специфичных для вашей предметной области, вместе с воспроизведениями сессий. OpenReplay использует 2 типа событий: функциональные (`event`) и технические (`issue`). Все события индексируются для удобного поиска и синхронизируются с записями сессий.
+
+<Aside type="tip">
+  У нас также есть подробное руководство о том, как отправлять пользовательские события, вы можете ознакомиться с ним [здесь](/tutorials/custom-events).
+</Aside>
+
+## Функциональные события
+
+Функциональные события индексируются и упрощают поиск конкретных записей сессий. Если они были успешно получены OpenReplay, они будут доступны в качестве фильтров в строке omnisearch.
+
+![Функциональное событие](/static/custom-events-1.png#center)
+
+### С NPM
+
+Используйте метод `event`, чтобы сигнализировать о функциональных событиях, таких как *order completed* или *product added*. Он принимает 2 параметра: *name* (string) и *payload* (любой нерекурсивный объект JS).
+
+```js
+tracker.event('product_added', 'shoes'); // after tracker.start()
+// OR
+tracker.event('product_added', { type: 'shoes' });
+```
+
+### С JavaScript-сниппетом
+
+Ниже приведён пример того, как отправить функциональное событие с помощью сниппета.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: ""}; 
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+  ...
+  __OPENREPLAY__.event('product_added', 'shoes'); // send a functional event later in your code
+	// OR
+	__OPENREPLAY__.event('product_added', { type: 'shoes' });
+  ...
+```
+
+## Технические события
+
+Технические события отображаются при воспроизведении сессии на вкладке *Events* в DevTools, а также в виде аннотаций при воспроизведении. Они также учитываются в Funnels для сопоставления падений конверсии с техническими проблемами.
+
+![Техническое событие](/static/custom-events-2.png#center)
+
+### С NPM
+
+`issue` используется для отправки технических событий, например ошибок, которые могут возникнуть в вашем стеке или в других нижестоящих системах. `issue` принимает 2 параметра: *name* (string) и *payload* (нерекурсивный объект JS).
+
+```js
+tracker.issue('payment_error', { code: 500, context: 42 }); // after tracker.start()
+```
+
+### С JavaScript-сниппетом
+
+Ниже приведён пример того, как отправить техническое событие с помощью сниппета.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" }; 
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+  ...
+  __OPENREPLAY__.issue('payment_error', {code: 500, context: 42}); // send a technical event (issue) later in your code
+  ...
+```
+
+### Получите больше от событий
+
+Наш SDK поддерживает более глубокое управление событиями; чтобы узнать больше, ознакомьтесь с [разделом «Управление данными и событиями»](product-analytics/data-management).
+
+### С приложением для iOS
+
+
+```swift
+import ORTracker
+
+ORTracker.shared.event(name: String, payload: Encodable?)
+```
+
+
+## Руководство
+Если вы ищете практический пример использования пользовательских событий, ознакомьтесь с [нашим подробным руководством здесь](/tutorials/custom-events).
+
+## Есть вопросы?
+
+Возникли трудности с использованием пользовательских событий? Присоединяйтесь к нашему [Slack](https://slack.openreplay.com) или загляните на наш [Форум](https://forum.openreplay.com) и получите помощь от нашего сообщества.

@@ -1,0 +1,81 @@
+---
+title: "NgRx"
+metaTitle: "NgRx"
+metaDescription: "OpenReplay 的 NgRx 插件。"
+---
+
+此插件可让你捕获 `NgRx` 的 actions/state，并在回放会话录制时进行检查。这对于理解和修复问题非常有用。
+
+## 安装
+
+```bash
+npm i @openreplay/tracker-ngrx --save
+```
+
+## 使用方法
+
+将生成的 meta-reducer 添加到你的 `imports` 中。更多详情请参阅 [NgRx 文档](https://ngrx.io/guide/store/metareducers)。
+
+## 如果你的网站是单页应用 (SPA)
+
+```js
+import { StoreModule } from '@ngrx/store';
+import trackerNgRx from '@openreplay/tracker-ngrx';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+const metaReducers = [tracker.use(trackerNgRx(<options>))]; // check list of available options below
+
+tracker.start();
+
+//...
+@NgModule({
+  imports: [StoreModule.forRoot({}, { metaReducers })]
+})
+export class AppModule {}
+```
+
+### 如果你的 Web 应用是服务端渲染 (SSR)
+
+如果你的应用使用 SSR，请遵循以下示例。确保 `tracker.start()` 在应用启动后调用（在 `useEffect` 或 `componentDidMount` 中）。
+
+```js
+import { StoreModule } from '@ngrx/store';
+import OpenReplay from '@openreplay/tracker/cjs';
+import trackerNgRx from '@openreplay/tracker-ngrx/cjs';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+const metaReducers = [tracker.use(trackerNgRx(<options>))]; // check list of available options below
+//...
+  @NgModule({
+    imports: [StoreModule.forRoot({}, { metaReducers })]
+  })
+  export class AppModule {}
+}
+
+```
+
+## 选项
+
+你可以自定义中间件的行为以清洗你的数据。
+
+```js
+trackerNgRx({
+  actionFilter: action => action.type !== 'DRAW', // only actions which pass this test will be recorded
+  actionTransformer: action => action.type === 'LOGIN' ? null : action,
+  actionType: action => action.type // action type for search, that's the default one
+  stateTransformer: state => {
+    const { jwt, ..._state } = state;
+    return _state;
+  },
+})
+```
+
+## 有疑问？
+
+在设置此插件时遇到问题？请加入我们的 [Slack](https://slack.openreplay.com) 或访问我们的[论坛](https://forum.openreplay.com)，从我们的社区获取帮助。

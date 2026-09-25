@@ -1,0 +1,81 @@
+---
+title: "النشر على OVHcloud"
+metaTitle: "النشر على OVHcloud"
+metaDescription: "دليل خطوة بخطوة لنشر OpenReplay على OVHcloud (خادم مخصص أو VPS أو جهاز افتراضي على Private Cloud أو نسخة على Public Cloud)."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+يمكن تثبيت حزمة OpenReplay على جهاز واحد، ويُعدّ الخادم المخصص أو VPS أو الجهاز الافتراضي على Private Cloud أو النسخة على Public Cloud من OVHcloud مرشحًا مثاليًا لذلك. إليك كيفية القيام بذلك.
+
+## اطلب خادمك أو شغّل نسختك
+
+يمكنك استخدام أيٍّ من منتجات OVHcloud التالية لنشر OpenReplay:
+
+- الخادم المخصص
+- VPS
+- Private Cloud (داخل جهاز افتراضي)
+- نسخة Public Cloud
+
+المتطلبات المسبقة:
+
+- اختر *Ubuntu Server 24.04 LTS* كنظام تشغيل.
+- الحد الأدنى من المواصفات للجهاز الذي يشغّل OpenReplay هو `2 vCPUs, 8 GB of RAM, 50 GB of storage`، على بنية x86، وإلا فلن تبدأ خدمات الواجهة الخلفية لـ OpenReplay على الإطلاق. وينبغي أن يكون ذلك كافيًا لحجم منخفض/متوسط. إذا كنت تتوقع حركة مرور عالية، فعليك التوسّع انطلاقًا من ذلك.
+- عنوان IP عام يشير إلى خادمك/نسختك.
+
+## انشر OpenReplay
+
+1. تأكّد من أن خادمك/نسختك قيد التشغيل، ثم اتصل به عبر SSH كمستخدم root
+
+2. ثبّت OpenReplay من خلال تحديد النطاق الذي سيعمل عليه (على سبيل المثال DOMAIN_NAME=openreplay.mycompany.com):
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## اضبط TLS/SSL
+
+يتعامل OpenReplay مع بيانات حساسة للمستخدمين، ولذلك يتطلب HTTPS للعمل. وهذا أمر إلزامي، وإلا فإن المتعقّب (tracker) لن يبدأ التسجيل ببساطة. وينطبق الأمر نفسه على لوحة التحكم (dashboard)؛ فبدون HTTPS لن تتمكن من إعادة تشغيل جلسات المستخدمين.
+
+لذلك يجب عليك إحضار (أو إنشاء) شهادة SSL خاصة بك.
+
+1. أولًا، انتقل إلى لوحة تحكم OVHcloud في 'Web cloud' > 'Domain names' > نطاقك (أي mycompany.com) > 'DNS zone' (أو مزوّد خدمة DNS الآخر الخاص بك) وأنشئ `A Record`. استخدم النطاق الذي حدّدته سابقًا أثناء خطوة التثبيت ووجّهه إلى الخادم/النسخة باستخدام عنوان IP العام الخاص به.
+
+2. إذا كنت تُحضِر شهادتك الخاصة، فأنشئ سرّ SSL باستخدام الأمر التالي: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
+
+> **ملاحظة:** إذا لم تكن لديك شهادة، فأنشئ شهادة تتجدّد تلقائيًا لنطاقك الفرعي (النطاق الذي حدّدته أثناء التثبيت) باستخدام Let's Encrypt. ما عليك سوى الاتصال بخادم/نسخة OpenReplay، وتشغيل `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` واتباع الخطوات.
+
+3. إذا كنت ترغب في تمكين إعادة التوجيه من http إلى https (موصى به)، فألغِ التعليق عن الكتلة أدناه، ضمن قسم `ingress-nginx`، في `/var/lib/openreplay/vars.yaml`:
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+ومن الجدير بالذكر أن `ingress-nginx` لدينا يعمل افتراضيًا على المنفذين `80|443`، لكن يمكن تغيير ذلك بسهولة، عند الحاجة، في `vars.yaml`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. أخيرًا، أعد تثبيت NGINX الخاص بـ OpenReplay:
+
+```bash
+openreplay -R
+```
+
+كل شيء جاهز الآن، وينبغي أن يكون OpenReplay متاحًا على نطاقك الفرعي. يمكنك إنشاء حساب بزيارة صفحة `/signup` (أي openreplay.mycompany.com/signup).
+
+## لديك أسئلة؟
+
+إذا واجهت أي مشكلات، فانضمّ إلى [مجتمعنا على Slack](https://slack.openreplay.com/) واحصل على المساعدة من مطوّرينا.

@@ -1,0 +1,71 @@
+---
+title: "الجلسات"
+metaTitle: "الجلسات"
+metaDescription: "كيفية استرجاع جميع الجلسات الخاصة بمستخدم معيّن."
+---
+
+## استرجاع جلسات المستخدم
+
+يُعيد قائمة الجلسات الخاصة بمستخدم معيّن، يتم تحديده عبر دالة JavaScript ‏`tracker.setUserID`. تُعرض النتائج على شكل صفحات.
+
+### الطريقة
+`POST`
+
+### عنوان URL
+`/public/:projectKey/users/:userId/sessions`
+
+### المعاملات
+
+| Name       | Type   | Description                                              |
+|------------|--------|----------------------------------------------------------|
+| projectKey | string | مفتاح المشروع (مطلوب)                                     |
+| userId     | string | المعرّف المحدَّد عبر `tracker.setUserID` (مطلوب، بحد أقصى 256) |
+
+### حمولة الطلب
+
+| Name           | Type       | Description                                                |
+|----------------|------------|------------------------------------------------------------|
+| startTimestamp | epoch (ms) | بداية النافذة الزمنية (مطلوب، الحد الأدنى 946684800000)     |
+| endTimestamp   | epoch (ms) | نهاية النافذة الزمنية (مطلوب، > startTimestamp)             |
+| limit          | integer    | حجم الصفحة، 1-200 (اختياري، الافتراضي: 50)                  |
+| page           | integer    | رقم الصفحة، يبدأ من 1 (اختياري، الافتراضي: 1)               |
+| sortOrder      | string     | `asc` أو `desc` (اختياري)                                  |
+
+### ترويسات الطلب
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### رموز الحالة
+
+`200`: تُرسَل الاستجابة بصيغة JSON في جسم الرسالة  
+`400`: جسم غير صالح أو `userId` غير صالح (فارغ أو أكثر من 256 حرفًا)
+
+### مثال على الطلب
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com/sessions \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "startTimestamp": 1623440000000,
+    "endTimestamp":   1623540000000,
+    "limit": 50,
+    "page": 1,
+    "sortOrder": "desc"
+  }'
+```
+
+### مثال على الاستجابة
+
+```json
+{
+  "data": {
+    "total": 2,
+    "sessions": [
+      { "sessionId": "4813018042986240", "eventsCount": 1, "startTs": 1623440822825, "endTs": 1623440835604 },
+      { "sessionId": "4813023023591169", "eventsCount": 6, "startTs": 1623440902620, "endTs": 1623440920846 }
+    ]
+  }
+}
+```

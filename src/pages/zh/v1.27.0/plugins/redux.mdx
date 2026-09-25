@@ -1,0 +1,100 @@
+---
+title: "Redux"
+metaTitle: "Redux"
+metaDescription: "OpenReplay 的 Redux 插件。"
+---
+import Aside from '~/components/Aside.astro'
+
+该插件允许你捕获 `Redux` 的 actions/state，并在回放会话录制时进行检查。这对于理解和修复问题非常有用。
+
+<Aside type="tip">
+  我们还提供了一篇详细的教程，介绍在使用此库时如何使用 Redux 插件捕获应用程序的状态，你可以在[这里](/tutorials/redux)查看。
+</Aside>
+
+
+
+## 安装
+
+```bash
+npm i @openreplay/tracker-redux --save
+```
+
+## 使用方法
+
+初始化 tracker，然后将生成的中间件放入你的 Redux 链中。
+
+### 如果你的网站是单页应用（SPA）
+
+```js
+import { applyMiddleware, createStore } from 'redux';
+import trackerRedux from '@openreplay/tracker-redux';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+tracker.start();
+const openReplayMiddleware = tracker.use(trackerRedux(<options>)); // check list of available options below
+
+//...
+const store = createStore(
+  reducer,
+  applyMiddleware(openReplayMiddleware) 
+);
+```
+
+### 如果你的 Web 应用是服务端渲染（SSR）
+
+如果你的应用是 SSR，请参照以下示例。
+确保 tracker 在应用进入浏览器环境后再运行。
+
+```js
+'use client'
+import { applyMiddleware, createStore } from 'redux';
+import trackerRedux from '@openreplay/tracker-redux/cjs';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+const openReplayMiddleware = tracker.use(trackerRedux(<options>)); // check list of available options below
+
+const store = createStore( // You can define/use it anywhere in response handlers
+  reducer,
+  applyMiddleware(openReplayMiddleware)
+);
+
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, []);
+  //... Use store here
+}
+
+```
+
+## 选项
+
+你可以通过选项自定义中间件的行为，以对数据进行脱敏处理。
+
+```js
+trackerRedux({
+  actionFilter: action => action.type !== 'DRAW', // only actions which pass this test will be recorded
+  actionTransformer: action => action.type === 'LOGIN' ? null : action,
+  actionType: action => action.type // action type for search, that's the default one
+  stateTransformer: state => {
+    const { jwt, ..._state } = state;
+    return _state;
+  },
+})
+```
+## 教程
+如果你想了解如何使用此插件在会话回放中捕获状态变化的实际示例，请查看[我们这里的详细教程](/tutorials/redux)。
+
+## 有疑问？
+
+在设置此插件时遇到问题？请加入我们的 [Slack](https://slack.openreplay.com)，或访问我们的[论坛](https://forum.openreplay.com)，从我们的社区获取帮助。

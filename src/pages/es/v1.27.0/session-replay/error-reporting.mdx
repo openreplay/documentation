@@ -1,0 +1,104 @@
+---
+title: "Seguimiento de errores"
+metaTitle: "Seguimiento de errores"
+metaDescription: "Aprende a rastrear y resolver errores con OpenReplay. Obtén visibilidad detallada de los errores en tus aplicaciones web y soluciona problemas con contexto completo."
+---
+
+Obtén visibilidad de alto nivel y granular sobre los errores dentro de tus aplicaciones web. Con OpenReplay, puedes solucionar problemas con contexto completo, lo que permite una resolución más rápida de los problemas.
+
+## Información sobre el seguimiento de errores en distintas vistas
+
+### Desde la vista de Sesiones
+
+1. Navega a la vista de sesión > pestaña **Errors**
+2. **Usa Omnisearch**: selecciona el evento **“Error Message”** e introduce el mensaje de error específico.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/error-tracking/errors_sessions_view.gif" alt="Errores en sesiones" style={{ width: '600px', height: 'auto' }} />
+</div>
+
+### Dentro de una sola sesión
+
+1. Navega a **Console > pestaña Errors**
+2. Abre el error para ver los sourcemaps completos.
+3. Haz clic en **"Find all sessions with this error"** para ver la lista de sesiones donde ocurrió el error.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/error-tracking/errors_session_view.gif" alt="Error de sesión" style={{ width: '600px', height: 'auto' }} />
+</div>
+
+### Desde la vista de Cards
+
+1. Navega a Cards > Add Card > Monitors
+2. Selecciona la card **Table of Errors**
+
+{/* <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/error-tracking/errors_cards_view.gif" alt="Tabla de errores" style={{ width: '600px', height: 'auto' }} />
+</div> */}
+
+## Registro manual de excepciones
+
+El tracker de OpenReplay admite el registro de tres tipos de errores:
+
+1. **Excepciones capturadas** - [Error](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error)
+2. **Promesas rechazadas** - [PromiseRejectionEvent](https://developer.mozilla.org/en-US/docs/Web/API/PromiseRejectionEvent)
+3. **Eventos de error (onError)** - [ErrorEvent](https://developer.mozilla.org/en-US/docs/Web/API/ErrorEvent)
+
+Todos ellos pueden reportarse mediante un único método:
+
+```javascript
+tracker.handleError(error, metaObject); // metaObject is optional and is a flat object
+```
+
+Veamos ejemplos para cada tipo de error:
+
+### Excepciones capturadas (Error)
+
+De forma predeterminada, las excepciones capturadas no se registran en la pestaña 'Console'. Para reportar un error, utiliza el siguiente patrón:
+
+```javascript
+try {
+    // application code
+} catch (err) {
+    // application code that handles the error
+    tracker.handleError(err, metaObject); // metaObject is optional and is a flat object
+}
+```
+
+### Promesas rechazadas (PromiseRejectionEvent)
+
+Si una promesa es rechazada y necesita reportarse a OpenReplay, usa este enfoque:
+
+```javascript
+function myFunc() {
+    doSomeAsyncStuff()
+        .then((result) => {
+            // application code
+        })
+        .catch(promiseRejectionErr => {
+            // application code to handle the error
+            tracker.handleError(promiseRejectionErr, metaObject); // metaObject is optional and is a flat object
+        });
+}
+```
+
+### onError (ErrorEvent)
+
+Reporta errores activados por eventos, como un elemento `<img>` que no se carga:
+
+```javascript
+<img id="myImg" src="image.gif">
+<p id="demo"></p>
+
+<script>
+document.getElementById("myImg").addEventListener("error", myFunction);
+
+function myFunction(errorEvent) {
+    document.getElementById("demo").innerHTML = "The image could not be loaded.";
+    tracker.handleError(errorEvent, { context: "demo" });
+}
+</script>
+```
+
+## ¿Tienes preguntas?
+Si tienes alguna pregunta sobre este proceso, no dudes en contactarnos en nuestro [Slack](https://slack.openreplay.com) o consulta nuestro [Foro](https://forum.openreplay.com).

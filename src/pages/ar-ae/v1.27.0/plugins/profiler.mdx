@@ -1,0 +1,68 @@
+---
+title: "Profiler"
+metaTitle: "Profiler"
+metaDescription: "إضافة Profiler الخاصة بـ OpenReplay."
+---
+
+تتيح لك إضافة profiler قياس أداء دوال JS الخاصة بك والتقاط كل من الوسائط والنتيجة لكل استدعاء.
+
+## التثبيت
+
+```bash
+npm i @openreplay/tracker-profiler
+```
+
+## الاستخدام
+
+قم بتهيئة المتتبّع (tracker) وحمّل الإضافة داخله. ثم قم بتزيين أي دالة داخل شيفرتك باستخدام الدالة المُولَّدة.
+
+### إذا كان موقع الويب الخاص بك تطبيقًا أحادي الصفحة (SPA)
+
+```js
+import trackerProfiler from '@openreplay/tracker-profiler';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+const profiler = tracker.use(trackerProfiler());
+
+tracker.start();
+
+// ...
+const fn = profiler('MyFunction')(() => {
+  // Inspecting function body
+}, thisArg); // thisArg is optional
+```
+
+### إذا كان تطبيق الويب الخاص بك يتم تصييره من جانب الخادم (SSR)
+
+اتّبع المثال أدناه إذا كان تطبيقك يعتمد على SSR. تأكّد من استدعاء `tracker.start()` بمجرد بدء تشغيل التطبيق (في `useEffect` أو `componentDidMount`).
+
+```js
+import trackerProfiler from '@openreplay/tracker-profiler/cjs';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+const profiler = tracker.use(trackerProfiler());
+
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, [])
+}
+//...
+const fn = profiler('MyFunction')(() => {
+  // Inspecting function body
+}, thisArg); // thisArg is optional
+
+```
+
+## لديك أسئلة؟
+
+هل تواجه صعوبة في إعداد هذه الإضافة؟ يُرجى الانضمام إلى [Slack](https://slack.openreplay.com) الخاص بنا أو الاطّلاع على [المنتدى](https://forum.openreplay.com) للحصول على المساعدة من مجتمعنا.

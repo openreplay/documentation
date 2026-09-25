@@ -1,0 +1,85 @@
+---
+title: "MCP 设置"
+metaTitle: "设置 OpenReplay MCP 应用"
+metaDescription: "在 Claude Desktop、ChatGPT 或 Codex 中安装 OpenReplay MCP 服务器，将其指向你的 OpenReplay 实例，并通过基于浏览器的授权流程登录。"
+---
+
+import Aside from '~/components/Aside.astro';
+
+本页将引导你安装 OpenReplay MCP 应用、将其指向你的实例并登录。
+
+## 1. 安装 MCP 服务器
+
+将 OpenReplay MCP 服务器添加到你客户端的 MCP 配置中。 
+
+### Claude Desktop
+
+Claude Desktop 将 OpenReplay MCP 作为一键式**扩展**（`.mcpb` 包）安装：
+
+1. 从 OpenReplay 的[发布页面](https://github.com/openreplay/openreplay/releases)下载 `openreplay.mcpb`。
+2. 双击该文件——Claude Desktop 会打开并提示你将其作为扩展安装。
+3. 点击 **Install**。
+
+就是这样。无需编辑 JSON 配置，也无需安装 Node 工具链。
+
+## 2. 将 MCP 指向你的 OpenReplay 实例
+
+在 Claude Desktop 中，打开扩展的设置面板，将 **OpenReplay URL** 字段设置为你在浏览器中使用的地址——Cloud 用户填 `https://app.openreplay.com`，自托管用户填你自己的域名。MCP 会自动推导出 API 主机。
+
+<img src="/mcp/config-panel.png" alt="在 MCP 应用设置中配置 OpenReplay URL" style={{ width: '700px', height: 'auto' }} />
+
+对于 ChatGPT 和 Codex，该 URL 来自你在第 1 步中设置的 `OPENREPLAY_BACKEND_URL` 环境变量。
+
+你也可以随时在聊天中切换实例：*"使用 https://openreplay.mycompany.com 上的 OpenReplay"*。
+
+## 3. 通过浏览器登录
+
+MCP 使用基于浏览器的授权流程——你永远不必将密码粘贴到聊天中。
+
+<Aside type="tip" title="流程一览" >
+  1. 让 Claude **登录到 OpenReplay**。
+  2. Claude 返回一个授权链接并尝试在你的浏览器中打开它。
+  3. 你登录到 OpenReplay（如果尚未登录），然后点击 **Authorize**。
+  4. 你告诉 Claude *"我已授权"*。
+  5. Claude 完成登录并确认令牌已签发。
+</Aside>
+
+### 分步说明
+
+**1.** 在聊天中输入：
+
+```
+Log me in to OpenReplay
+```
+
+**2.** Claude 调用 `login_browser` 工具并回复一个 `…/mcp/authorize?state=…` URL。在大多数系统上，它还会自动在你的默认浏览器中打开该链接。
+
+**3.** 在 OpenReplay 标签页中，点击 **Authorize** 确认访问请求。
+
+<img src="/mcp/authorize.png" alt="OpenReplay 授权界面" style={{ width: '700px', height: 'auto' }} />
+
+**4.** 切换回 Claude 并输入：
+
+```
+I authorized it
+```
+
+**5.** Claude 完成登录（通过 `complete_login` 工具）并确认已生成令牌。该令牌会保存在本地，因此你在下一次聊天时无需重复此操作。
+
+<Aside type="caution" title="密码回退方案" >
+  如果你的主机无法打开浏览器窗口，MCP 也支持电子邮件/密码登录——只需说 *"用电子邮件 `you@example.com` 和密码 `...` 登录我"*。只要浏览器流程可用，就会优先采用它。
+</Aside>
+
+## 验证连接
+
+登录后，让 Claude：
+
+```
+List my OpenReplay projects
+```
+
+如果一切都正确连接，你会看到你的项目名称和 ID。从那里，前往[功能](/mcp/capabilities)页面，了解你还可以请求哪些内容。
+
+## 有疑问吗？
+
+如果你遇到问题，请加入我们的 [Slack](https://slack.openreplay.com) 或在[论坛](https://forum.openreplay.com)上发帖。

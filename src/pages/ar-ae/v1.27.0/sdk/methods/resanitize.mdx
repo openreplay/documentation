@@ -1,0 +1,53 @@
+---
+title: "حزمة تطوير JavaScript - طريقة resanitize"
+metaTitle: "حزمة تطوير JavaScript - طريقة resanitize"
+metaDescription: "تفاصيل حول طريقة resanitize في حزمة تطوير OpenReplay"
+---
+import Aside from '~/components/Aside.astro'
+
+تعيد هذه الطريقة تقييم [التنقية](/sdk/sanitize-data) مقابل الـ DOM الحالي وتعيد إرسال كل ما تغيّر، مع تحديث العقد المُسجَّلة بالفعل في منتصف الجلسة.
+
+تُطبَّق التنقية عادةً عند تسجيل العقدة لأول مرة. إذا غيّرت ما ينبغي إخفاؤه أو حجبه *بعد* أن تكون العقدة قد التُقطت بالفعل، فلن ينعكس هذا التغيير من تلقاء نفسه في إعادة التشغيل. استدعِ `resanitize()` لإجبار المُتتبِّع (tracker) على إعادة الفحص وتطبيق قواعد التنقية المُحدَّثة على العقد التي تُعدّ بالفعل جزءًا من التسجيل.
+
+استدعِها بعد:
+
+- تبديل السمتين `data-openreplay-obscured` / `data-openreplay-hidden` على العناصر الموجودة بالفعل في الصفحة، أو
+- تغيير ما يعتمد عليه [`domSanitizer`](/sdk/sanitize-data#using-the-domsanitizer-function) الخاص بك (class أو id وما إلى ذلك).
+
+<Aside type="note">
+تُقنَّع/تُحجَب العناصر المُنقَّاة على مستوى المصدر (المُتتبِّع)، لذا فإن أي شيء مُخفى أو محجوب لا يصل أبدًا إلى نسخة OpenReplay. وكما هو الحال مع كل عمليات التنقية، تؤثر `resanitize()` فقط على البيانات المُلتقَطة من هذه اللحظة فصاعدًا — فهي لا تستطيع أن تُنظِّف بأثر رجعي البيانات التي أُرسلت بالفعل إلى الواجهة الخلفية بصيغة نصية واضحة.
+</Aside>
+
+## التوقيع
+
+```js
+resanitize(el?: Element): void
+```
+
+## المعاملات
+
+- `el?: Element`: أعلى عقدة قمت بتغييرها. يعيد المُتتبِّع فحص هذا العنصر وشجرته الفرعية. احذفها لإعادة فحص المستند بأكمله.
+
+<Aside type="tip">
+مرِّر أكثر العناصر تحديدًا قدر الإمكان. فحص المستند بأكمله يكون بتعقيد O(حجم الـ DOM)، لذا فإن تمرير الشجرة الفرعية التي تغيّرت يُبقي إعادة الفحص قليلة التكلفة في الصفحات الكبيرة.
+</Aside>
+
+## القيمة المُعادة
+
+لا تُعيد هذه الطريقة أي قيمة. تُطبَّق التنقية المُعاد تقييمها مباشرةً على التسجيل الجاري، وتظهر النتائج في منصة OpenReplay.
+
+## مثال
+
+```js
+// Obscure a section after the user opens sensitive content
+const panel = document.getElementById('account-details')
+panel.setAttribute('data-openreplay-obscured', '')
+
+// Tell the tracker to re-apply sanitization to that subtree
+tracker.resanitize(panel)
+```
+
+```js
+// Re-scan the whole document after changing domSanitizer rules
+tracker.resanitize()
+```

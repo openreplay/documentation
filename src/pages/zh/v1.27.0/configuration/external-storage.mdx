@@ -1,0 +1,92 @@
+---
+title: "外部存储"
+metaTitle: "外部存储"
+metaDescription: "如何更改录制内容的默认存储目标。"
+---
+
+OpenReplay [会话录制](/configuration/cleanup-storage#recordingstorage)默认存储在您的实例上，但存储目标可以更改为任何兼容 S3 的对象存储服务，从而实现更高的可扩展性和更低的部署成本。
+
+## 更改录制内容的存储目标
+
+只要兼容 S3，录制内容就可以保存在任何对象存储目标中，这使得 OpenReplay 兼容所有主流公有云服务。以下是为您的录制内容配置不同存储目标的步骤：
+
+### 创建所需的存储桶
+
+您必须在对象存储服务中创建以下存储桶。它们的名称可以不同，但在本节的其余部分我们将使用以下引用名称：
+- `openreplay-recordings`：用于保存录制内容
+- `openreplay-assets`：用于复制资源（例如 css 和字体）
+- `openreplay-sourcemaps`：用于存储 source maps（请参阅[如何上传它们](/installation/upload-sourcemaps)）
+- `openreplay-spots`：用于存储 spot 录制内容
+
+创建存储桶后： 
+
+1. 为上述每个存储桶启用 CORS。如果您使用的是 AWS，则可以在 'Permissions > Cross-origin resource sharing (CORS)' 下使用以下配置：
+
+```json
+[
+    {
+        "AllowedHeaders": [
+            "*"
+        ],
+        "AllowedMethods": [
+            "GET"
+        ],
+        "AllowedOrigins": [
+            "*"
+        ],
+        "ExposeHeaders": []
+    }
+]
+```
+
+2. **仅**为 `openreplay-assets` 存储桶启用公共访问。后者仅包含正确进行会话回放所需的样式表、图标和字体。如果您使用的是 AWS，请先导航到 'Permissions > Block public access (bucket settings)' 并将其关闭，然后转到 'Permissions > Bucket policy' 并使用以下配置：
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AddPerm",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::openreplay-assets/*"
+        }
+    ]
+}
+```
+
+3. 最后，请确保**仅为这 4 个存储桶**生成相应的访问密钥，以便 OpenReplay 后端可以通过编程方式访问它们以上传文件。所需的 S3 权限为：
+
+```json
+"s3:PutObject",
+"s3:GetObjectAcl",
+"s3:GetObject",
+"s3:GetObjectTagging",
+"s3:ListBucket",
+"s3:PutObjectTagging",
+"s3:GetBucketLocation"
+```
+
+### 更新后端服务
+
+1. 登录您的 OpenReplay 实例并执行 `openreplay -e` 以更新 `s3` 部分中的以下环境变量：
+
+| 变量 | 描述 |
+|----------|-------------|
+| accessKey | 您的对象存储访问密钥（如果您使用 AWS，则为您的 [IAM 访问密钥 ID](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey)；在 Google Cloud 上，则为您的[服务账户的 HMAC 密钥](https://cloud.google.com/storage/docs/authentication/managing-hmackeys)） |
+| secretKey | 您的对象存储密钥 |
+| endpoint | 您的对象存储服务的 URL（**以 `https` 开头**）（即，如果您使用 AWS，请查看 [S3 端点](https://docs.aws.amazon.com/general/latest/gr/s3.html)列表；在 Google Cloud Storage 上，则为 `https://storage.googleapis.com`） |
+| region | 您的存储桶的区域（如果适用）（即，如果您使用 AWS S3，则类似于 `us-east-1`） |
+| assetsBucket | 资源存储桶名称（即 `openreplay-assets`）  |
+| recordingsBucket | 录制内容存储桶名称（即 `openreplay-recordings`） |
+| sourcemapsBucket | source maps 存储桶名称（即 `openreplay-sourcemaps`） |
+| spotsBucket | spot 存储桶名称（即 `openreplay-spots`） |
+
+2. 使用 `:wq` 保存并退出，以使更改生效
+
+现在，新录制的会话应该会从您的新存储目标/对象存储服务进行存储和检索（回放时）。
+
+## 有疑问？
+
+如有任何问题，请连接到我们的 [Slack](https://slack.openreplay.com) 或查看我们的[论坛](https://forum.openreplay.com)，并从我们的社区获得帮助。

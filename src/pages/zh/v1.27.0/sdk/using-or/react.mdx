@@ -1,0 +1,81 @@
+---
+title: "在 React 中使用 OpenReplay"
+metaTitle: "将 OpenReplay Tracker 添加到你的 React 应用"
+metaDescription: "了解如何在你的 React 应用中让 tracker 正常运行"
+---
+import Aside from '~/components/Aside.astro'
+
+让 tracker 在 React 应用中运行起来非常简单。 
+
+## 添加追踪代码
+
+假设你正在构建一个 SPA（单页应用），你只需将以下代码添加到入口文件中即可：
+
+```jsx
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: "<your project key>", 
+  ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
+});
+
+function YourMainComponent({props}) {
+    //some code here...
+
+    useEffect(() => {
+        tracker.start();
+    }, [])
+
+    return //....
+}
+```
+
+或者，你也可以直接使用 `Tracker` 类来手动管理其实例：
+
+```jsx
+import Tracker from '@openreplay/tracker';
+
+const tracker = new Tracker({
+  projectKey: "<your project key>",  
+  ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
+});
+
+function YourMainComponent({props}) {
+    //some code here...
+
+    useEffect(() => {
+        tracker.start();
+    }, [])
+
+    return //....
+}
+```
+
+换句话说，你可以在脚本开始时实例化 tracker，待页面加载后，再使用 `useEffect` 钩子启动它。
+
+<Aside type="tip">
+虽然你可以在创建新项目时直接从我们的 CDN 获取 tracker 的 [JS 代码片段版本](/using-or/snippet#getting-the-snippet)，但该代码过于简陋，会使自定义和添加额外插件变得更加困难。
+</Aside>
+
+### 在代码中处理 "projectKey"
+
+出于安全考虑，请避免将 `projectKey` 直接硬编码在应用代码中。相反，应将其存储在配置文件或环境系统中。
+
+根据你的项目设置，有多种可用的方法：
+- **环境变量**：如果使用 Create React App，可以利用其[对环境变量的内置支持](https://create-react-app.dev/docs/adding-custom-environment-variables/)
+- **配置文件**：使用从版本控制中排除的专用配置文件
+- **环境管理**：诸如 `dotenv` 之类的工具可以帮助你管理不同环境中的不同密钥
+
+下面是一个示例：
+```javascript
+// Access the key from environment variables
+const openReplayKey = process.env.REACT_APP_OPENREPLAY_KEY;
+```
+
+## 正在构建更复杂的应用？
+
+如果你正在用 React 构建一个复杂的应用，那么你很可能正在使用 [Next](/using-or/next)、[Remix](/using-or/remix) 或类似的框架。请务必查看我们的 [Tracker 设置](/using-or)部分，找到你正在使用的框架。
+
+## 有疑问？
+
+如果你在 React 项目中设置 tracker 时遇到任何问题，请通过我们的 [Slack 社区](https://slack.openreplay.com/)联系我们，直接向我们的开发者提问！

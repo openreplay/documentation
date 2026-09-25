@@ -1,0 +1,214 @@
+---
+title: "Elastic"
+metaTitle: "将 Elasticsearch 与 OpenReplay 集成"
+metaDescription: "如何将 Elasticsearch 与 OpenReplay 集成，在会话回放旁边查看后端错误。"
+---
+
+了解如何将 [Elastic](https://www.elastic.co/) 的后端日志与 [OpenReplay](https://www.openreplay.com/) 的会话回放集成，以扩展您的监控和调试能力。
+
+## 1. 创建新的 API 密钥
+
+根据您的设置，您可以使用 Kibana 仪表板或通过 cURL 命令创建 API 密钥。
+
+**使用 Kibana 仪表板**
+
+1. 登录到您的 Kibana 仪表板。
+
+2. 访问 **Dev Tools**：导航到 **Dev Tools > Console**。
+
+3. 创建 **API Key**：将以下代码复制到控制台中并运行：
+
+     ```json
+     POST /_security/api_key
+     {
+       "name": "openreplay-api-key",
+       "role_descriptors": {
+         "openreplay-role": {
+           "cluster": ["all"],
+           "index": [
+             {
+               "names": ["*log*"],
+               "privileges": ["read"]
+             }
+           ]
+         }
+       }
+     }
+     ```
+
+#### **使用 cURL 命令**
+
+1. 执行 cURL 命令：在您的终端中运行以下命令：
+
+     ```shell
+     curl -X POST "https://your-elasticsearch-host:port/_security/api_key" \
+     -H 'Content-Type: application/json' \
+     -d'
+     {
+       "name": "openreplay-api-key",
+       "role_descriptors": {
+         "openreplay-role": {
+           "cluster": ["all"],
+           "index": [
+             {
+               "names": ["*log*"],
+               "privileges": ["read"]
+             }
+           ]
+         }
+       }
+     }' \
+     -u 'username:password'
+     ```
+
+     将 `https://your-elasticsearch-host:port` 替换为您的 Elasticsearch 主机和端口，将 `username:password` 替换为您的凭据。
+
+**注意：**
+
+- 默认情况下，此集成将在任何匹配 `*log*` 的索引中搜索日志。如果您有一个不匹配此模式的特定日志索引，请在创建 API 密钥的请求中更改 `names` 字段。
+- 要指定多个索引，请用逗号分隔名称，例如 `"names": ["index1", "index2"]`。
+
+#### **API 密钥结果**
+
+运行命令后，您将收到如下响应：
+
+```json
+{
+  "id": "eQWAIG0Bo0VqB8HXFH9-",
+  "name": "openreplay-api-key",
+  "api_key": "dZ5ycVRJTU-5UW_RYfi1_w"
+}
+```
+
+**重要：** 请务必复制 `id` 和 `api_key`，因为您在集成时需要用到它们。
+
+> **参考：** [Elasticsearch - Create API Key](https://www.elastic.co/guide/en/elasticsearch/reference/master/security-api-create-api-key.html)
+
+## 2. 在 OpenReplay 中配置 Elasticsearch 集成
+在您的 OpenReplay 账户中，按照以下 3 个步骤完成会话回放与 Elasticsearch 后端日志的关联。
+
+#### 启用 Elasticsearch 集成
+1. 在 OpenReplay 中转到 **Preferences > Integrations**。
+2. 选择 **Backend Logging** 选项卡。
+3. 选择您要为其启用 Elasticsearch 集成的项目：找到 Elasticsearch 集成卡片 > 点击它。
+
+#### 输入 Elasticsearch 凭据
+在 Elasticsearch 集成侧边栏中输入：
+   - **API KEY ID**：您生成的 API 密钥中的 `id`。
+   - **API Key**：您生成的 API 密钥中的 `api_key`。
+   - **Indexes**：如果您在生成 API 密钥时更改了索引，请在此处指定名称。
+
+#### 验证连接：
+   - 点击 **Add** 测试连接。
+
+
+## 3. 传播 openReplaySession.id
+
+要将 Elasticsearch 事件与录制的用户会话关联起来，需要在您想要跟踪的每个请求中，将唯一的会话 ID（`openReplaySession.id`）从前端传播到后端。
+
+#### a. 在前端 API 请求中包含 `openReplaySession.id`
+
+**注意：** `tracker.start()` 是异步的，并返回一个 Promise。在调用 `tracker.getSessionID()` 之前，您需要等待它解析完成，以确保会话 ID 可用。
+
+```javascript
+// JavaScript Example for for Single Page Applications (SPA):
+
+// Import OpenReplay
+import { tracker } from '@openreplay/tracker';
+
+// Initialize the tracker
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+// Start the tracker and wait for it to resolve
+tracker.start().then(() => {
+  // Get the session ID after the tracker has started
+  const sessionId = tracker.getSessionID();
+
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+  if (sessionId) {
+    headers['openReplaySession.id'] = sessionId;
+  }
+
+  // Make the API request
+  fetch('https://www.your-backend.com/api/endpoint', {
+    method: 'GET', // or 'POST', 'PUT', etc.
+    headers,
+    // ...other options
+  })
+    .then(response => {
+      // Handle response
+    })
+    .catch(error => {
+      // Handle error
+    });
+});
+```
+
+#### b. 在后端日志中包含 openReplaySession.id
+
+为了让 OpenReplay 将 Elasticsearch 日志条目与录制的用户会话关联起来，必须在您想要跟踪的每个后端错误中包含 `openReplaySession.id`。
+
+
+```python
+import logging
+from flask import Flask, request, g
+
+app = Flask(__name__)
+
+# Configure the root logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
+
+# Create a custom logging filter
+class OpenReplayFilter(logging.Filter):
+    def filter(self, record):
+        session_id = getattr(g, 'openreplay_session_id', None)
+        if session_id:
+            record.msg = f"[openReplaySession.id={session_id}] {record.msg}"
+        return True
+
+# Add the filter to the logger
+logger.addFilter(OpenReplayFilter())
+
+@app.before_request
+def before_request():
+    # Extract the session ID from headers and store it in the Flask `g` object
+    g.openreplay_session_id = request.headers.get('openReplaySession.id')
+
+@app.route('/api/endpoint')
+def api_endpoint():
+    # Your logic here
+
+    # Log an event with the session ID automatically included
+    logger.info("Endpoint accessed")
+
+    return 'Success', 200
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Log the error with the session ID automatically included
+    logger.error(f"Error: {str(e)}")
+    return 'Internal Server Error', 500
+
+if __name__ == '__main__':
+    app.run()
+```
+
+## 4. 特别注意事项
+
+默认情况下，OpenReplay 使用 `message` 和 `utc_time` 属性查找与 OpenReplay 会话关联的每条日志。它专注于错误日志，通过检查 `tags` 属性是否包含值 `error` 来识别这些日志。
+
+**注意：**
+
+- **自定义日志结构**：如果您的日志结构不同，您可能需要调整日志配置，或通知 OpenReplay 支持团队以适配您的设置。
+- **错误识别**：请确保错误日志被正确标记，以便 OpenReplay 能够识别它们。
+
+## 有疑问？
+
+如果您遇到任何问题，请加入我们的 [Slack](https://slack.openreplay.com) 或查看我们的[论坛](https://forum.openreplay.com)，并从我们的社区获得帮助。

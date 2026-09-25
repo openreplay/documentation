@@ -1,0 +1,82 @@
+---
+title: "Paramètres du proxy"
+metaTitle: "Paramètres du proxy"
+metaDescription: "Paramètres pour exécuter OpenReplay derrière un proxy comme NGINX ou Apache2."
+---
+
+## Héberger OpenReplay avec d'autres applications à l'aide d'un proxy inverse
+
+Lorsque OpenReplay s'exécute sur une machine, il utilise le port 80/443 pour exposer l'application. Mais lorsque vous utilisez un proxy inverse, OpenReplay peut être configuré pour utiliser un autre port afin d'accéder à l'application. Voici les étapes à suivre pour le faire :
+
+1. Modifiez le fichier de configuration :
+
+```bash
+openreplay -e
+```
+
+2. Modifiez la section de configuration de nginx :
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+	...
+	...
+    service:
+      externalTrafficPolicy: "Local"
+      ports:
+        http: 880   # Change this port for http
+        https: 8443 # Change this port for https
+```
+3. Enregistrez et quittez la configuration à l'aide de `:wq` afin qu'OpenReplay puisse recharger la configuration.
+
+Vous pouvez ensuite configurer votre proxy inverse. Reportez-vous aux sections ci-dessous pour le faire.
+
+### Paramètres NGINX
+
+Assurez-vous que votre proxy envoie les en-têtes `X-Forwarded-For` et `X-Forwarded-Proto`. SSL doit également être activé pour qu'OpenReplay fonctionne. Le reste de la configuration devrait ressembler à ceci :
+
+```nginx
+location / {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        proxy_pass http://1.2.3.4:880; # replace with OpenReplay instance IP
+    }
+```
+
+### Paramètres Apache2
+
+Assurez-vous que les modules `proxy`, `proxy_http` et `proxy_html` sont activés. SSL doit également être configuré ; le reste des paramètres devrait ressembler à ceci :
+
+```
+<VirtualHost *:443>
+    ProxyPass / http://1.2.3.4:880 <!-- replace with instance IP -->
+    RequestHeader set X-Forwarded-Proto expr=%{REQUEST_SCHEME}
+    # SSL + other config here
+</VirtualHost>
+```
+
+## Points de terminaison publics
+
+Si vous protégez votre instance OpenReplay avec un proxy, assurez-vous que les points de terminaison ci-dessous sont accessibles publiquement pour qu'OpenReplay fonctionne correctement.
+
+| Point de terminaison | Description | Origine |
+|----------|-------------|------------|
+| /ingest | Pour l'ingestion des événements et des enregistrements provenant de votre application | Votre/vos application(s) suivie(s) (si elle est accessible publiquement, ce point de terminaison devrait l'être aussi) |
+| /ws-assist | Pour les relectures de sessions en direct avec les utilisateurs finaux (WebSocket) | Votre/vos application(s) suivie(s) (si elle est accessible publiquement, ce point de terminaison devrait l'être aussi) |
+| /api | Pour l'authentification et la récupération des sessions, des projets, du RBAC et des données de compte | Tableau de bord OpenReplay |
+| /v2/api | Pour la recherche, l'analytique, la relecture de sessions et la co-navigation | Tableau de bord OpenReplay |
+| /spots | Pour récupérer les vidéos de spot depuis le stockage d'objets | Tableau de bord OpenReplay |
+| /mobs | Pour récupérer les relectures de sessions depuis le stockage d'objets | Tableau de bord OpenReplay |
+| /sessions-assets | Pour récupérer les feuilles de style et les polices mises en cache depuis le stockage d'objets | Tableau de bord OpenReplay |
+| /static | Pour récupérer les données liées aux sessions de co-navigation | Tableau de bord OpenReplay |
+| /records | Pour récupérer les enregistrements de co-navigation depuis le stockage d'objets | Tableau de bord OpenReplay |
+| /integrations | Pour récupérer les journaux des intégrations tierces (comme Sentry ou Datadog) | Tableau de bord OpenReplay |
+| /sourcemaps | Pour téléverser les sourcemaps | CLI Sourcemaps |
+| /spot | Pour récupérer les données liées aux enregistrements de spot | Extension Chrome Spot |
+| /script | Utile si vous souhaitez servir les fichiers openreplay-*.js depuis votre propre installation (sinon, le CDN OpenReplay est utilisé par défaut) | Votre/vos application(s) suivie(s) |
+
+## Vous avez des questions ?
+
+Si vous avez des questions concernant ce processus, n'hésitez pas à nous contacter sur notre [Slack](https://slack.openreplay.com) ou à consulter notre [Forum](https://forum.openreplay.com).

@@ -1,0 +1,85 @@
+---
+title: "Configuration de MCP"
+metaTitle: "Configuration de l'application MCP d'OpenReplay"
+metaDescription: "Installez le serveur MCP d'OpenReplay dans Claude Desktop, ChatGPT ou Codex, pointez-le vers votre instance OpenReplay et connectez-vous via le flux d'autorisation basé sur le navigateur."
+---
+
+import Aside from '~/components/Aside.astro';
+
+Cette page vous accompagne dans l'installation de l'application MCP d'OpenReplay, son pointage vers votre instance et la connexion.
+
+## 1. Installer le serveur MCP
+
+Ajoutez le serveur MCP d'OpenReplay à la configuration MCP de votre client. 
+
+### Claude Desktop
+
+Claude Desktop installe le MCP d'OpenReplay sous la forme d'une **extension** en un seul clic (paquet `.mcpb`) :
+
+1. Téléchargez `openreplay.mcpb` depuis la [page des releases](https://github.com/openreplay/openreplay/releases) d'OpenReplay.
+2. Double-cliquez sur le fichier — Claude Desktop s'ouvre et vous invite à l'installer en tant qu'extension.
+3. Cliquez sur **Install**.
+
+C'est tout. Il n'y a aucune configuration JSON à modifier ni aucune chaîne d'outils Node à installer.
+
+## 2. Pointer le MCP vers votre instance OpenReplay
+
+Dans Claude Desktop, ouvrez le panneau de paramètres de l'extension et renseignez le champ **OpenReplay URL** avec l'adresse que vous utilisez dans le navigateur — `https://app.openreplay.com` pour Cloud, ou votre propre domaine pour une installation auto-hébergée. Le MCP déduit automatiquement l'hôte de l'API.
+
+<img src="/mcp/config-panel.png" alt="Configuration de l'URL OpenReplay dans les paramètres de l'application MCP" style={{ width: '700px', height: 'auto' }} />
+
+Pour ChatGPT et Codex, l'URL provient de la variable d'environnement `OPENREPLAY_BACKEND_URL` que vous avez définie à l'étape 1.
+
+Vous pouvez aussi changer d'instance à tout moment depuis le chat : *"utilise OpenReplay à l'adresse https://openreplay.mycompany.com"*.
+
+## 3. Se connecter via le navigateur
+
+Le MCP utilise un flux d'autorisation basé sur le navigateur — vous n'avez jamais à coller votre mot de passe dans le chat.
+
+<Aside type="tip" title="Le flux en un coup d'œil" >
+  1. Demandez à Claude de **se connecter à OpenReplay**.
+  2. Claude renvoie un lien d'autorisation et tente de l'ouvrir dans votre navigateur.
+  3. Vous vous connectez à OpenReplay (si ce n'était pas déjà fait) et cliquez sur **Authorize**.
+  4. Vous dites à Claude *"je l'ai autorisé"*.
+  5. Claude finalise la connexion et confirme que le jeton a été émis.
+</Aside>
+
+### Étape par étape
+
+**1.** Dans le chat, dites :
+
+```
+Log me in to OpenReplay
+```
+
+**2.** Claude appelle l'outil `login_browser` et répond avec une URL `…/mcp/authorize?state=…`. Sur la plupart des systèmes, il ouvre aussi automatiquement le lien dans votre navigateur par défaut.
+
+**3.** Dans l'onglet OpenReplay, confirmez la demande d'accès en cliquant sur **Authorize**.
+
+<img src="/mcp/authorize.png" alt="L'écran d'autorisation d'OpenReplay" style={{ width: '700px', height: 'auto' }} />
+
+**4.** Revenez à Claude et dites :
+
+```
+I authorized it
+```
+
+**5.** Claude finalise la connexion (via l'outil `complete_login`) et confirme qu'un jeton a été généré. Le jeton est conservé localement, vous n'avez donc pas besoin de répéter cette opération lors du prochain chat.
+
+<Aside type="caution" title="Repli sur le mot de passe" >
+  Si votre hôte ne peut pas ouvrir de fenêtres de navigateur, le MCP prend également en charge la connexion par e-mail/mot de passe — dites simplement *"Connecte-moi avec l'e-mail `you@example.com` et le mot de passe `...`"*. Le flux du navigateur est privilégié dès qu'il est disponible.
+</Aside>
+
+## Vérifier la connexion
+
+Une fois connecté, demandez à Claude :
+
+```
+List my OpenReplay projects
+```
+
+Si tout est correctement câblé, vous verrez les noms et les ID de vos projets. À partir de là, rendez-vous sur la page [Capacités](/mcp/capabilities) pour découvrir ce que vous pouvez demander d'autre.
+
+## Des questions ?
+
+Si vous rencontrez des problèmes, rejoignez notre [Slack](https://slack.openreplay.com) ou publiez sur le [Forum](https://forum.openreplay.com).

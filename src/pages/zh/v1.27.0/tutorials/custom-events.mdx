@@ -1,0 +1,223 @@
+---
+title: "使用自定义事件增强你的追踪能力"
+metaTitle: "通过自定义事件和自定义问题增强你的追踪能力"
+metaDescription: "通过自定义事件 API 捕获各种自定义事件"
+---
+自定义事件是我们的 Tracker 提供的一个简单而强大的概念，无需添加任何额外的东西即可使用。
+它们可以用你所需要的任何内容来扩展所追踪的数据，无论是与你的业务逻辑相关的自定义错误，还是简单的事件，以便了解你的用户在做什么。
+
+默认情况下，我们的 tracker 会跟踪许多不同的内容，包括一些[有用的错误](https://docs.openreplay.com/tutorials/issues)，但它们对你来说可能还不够，因此我们提供了自定义事件。
+
+## 添加自定义事件
+
+在本示例中，让我们以一个通用的电商网站为例，添加一些事件来了解我们的用户何时将产品添加到购物车。
+
+默认情况下，OpenReplay 不会追踪这类信息。不过，通过自定义事件，你可以轻松地对此进行追踪。
+
+### 创建 Tracker Provider
+
+你现在只需要知道，这是我们正在创建的一个上下文提供者（context provider），它将允许你通过多个函数与 tracker 进行交互。
+
+特别地，我们将关注 `logIssue` 和 `logEvent`，它们允许你向平台发送自定义问题或事件。
+
+- **事件（Events）** 用于记录用户特定的操作。例如在我们的场景中，我们将记录将产品添加到购物车的操作。
+- **问题（Issues）** 则用于记录我们的 tracker 不会自动捕获的错误。在我们的场景中，我们将模拟一个网络错误，使我们无法访问第三方 API。当这种情况发生时，我们将在平台上记录一个问题。
+
+```jsx
+import { createContext, useCallback } from 'react'
+import Tracker from '@openreplay/tracker'
+import { v4 as uuidV4 } from 'uuid'
+import { useReducer } from 'react'
+
+export const TrackerContext = createContext()
+function defaultGetUserId() {
+  return uuidV4()
+}
+function newTracker(config) {
+  const getUserId =
+    config?.userIdEnabled && config?.getUserId
+      ? config.getUserId
+      : defaultGetUserId
+  let userId = null
+  const trackerConfig = {
+    projectKey:
+      config?.projectKey || process.env.NEXT_PUBLIC_OPENREPLAY_PROJECT_KEY,
+ 
+  }
+  if (config?.ingestPoint || process.env.NEXT_PUBLIC_OPENREPLAY_INGEST_POINT) {
+    trackerConfig.ingestPoint =
+      config?.ingestPoint || process.env.NEXT_PUBLIC_OPENREPLAY_INGEST_POINT
+  }
+
+  console.log('Tracker configuration: ')
+  console.log(trackerConfig)
+  const tracker = new Tracker(trackerConfig)
+  if (config?.userIdEnabled) {
+    userId = getUserId()
+    tracker.setUserID(userId)
+  }
+  return tracker
+}
+function reducer(state, action) {
+  switch (action.type) {
+    case 'init': {
+      if (!state.tracker) {
+        console.log('Instantiaing the tracker for the first time...')
+        let t = newTracker(state.config)
+        let pluginsReturnedValue = {}
+        if (state.config.plugins) {
+          state.config.plugins.forEach((p) => {
+            console.log('Using plugin...')
+            pluginsReturnedValue[p.name] = t.use(p.fn(p.config))
+          })
+        }
+        return {
+          ...state,
+          pluginsReturnedValue: pluginsReturnedValue,
+          tracker: t,
+        }
+      }
+      return state
+    }
+    case 'start': {
+      console.log('Starting tracker...')
+      state.tracker.start()
+      return state
+    }
+    case 'logEvent': {
+      console.log('Logging event')
+      state.tracker?.event(action.payload?.name, action.payload?.data)
+      return state
+    }
+    case 'logIssue': {
+      console.log('Logging issue')
+      state.tracker?.issue(action.payload?.name, action.payload?.data)
+      return state
+    }
+  }
+}
+export default function TrackerProvider({ children, config = {} }) {
+  let [state, dispatch] = useReducer(reducer, {
+    tracker: null,
+    pluginsReturnedValue: {},
+    config,
+  })
+  let value = {
+    startTracking: () => dispatch({ type: 'start' }),
+    initTracker: () => dispatch({ type: 'init' }),
+    logEvent: (evnt) => dispatch({ type: 'logEvent', payload: evnt }),
+    logIssue: (evnt) => dispatch({ type: 'logIssue', payload: evnt }),
+    pluginsReturnedValues: { ...state.pluginsReturnedValue },
+  }
+  return (
+    <TrackerContext.Provider value={value}>{children}</TrackerContext.Provider>
+  )
+}
+```
+
+`logEvent` 和 `logIssue` 函数具有相同的签名，我们将传入一个带有 `name` 和 `data` 属性的对象。`name` 将用于在 OpenReplay 的界面中标识我们的记录，`data` 将包含所记录的信息。
+
+**请记住**：`data` 属性必须包含一个可序列化的对象。 
+
+然后我们可以像这样在 `_app.tsx` 文件中设置这个提供者：
+
+```jsx
+
+//imports here...
+
+export default function MyApp({ Component, pageProps }: AppProps) {
+  const Layout = (Component as any).Layout || Noop
+
+  useEffect(() => {
+    document.body.classList?.remove('loading')
+  }, [])
+
+  return (
+    <TrackerProvider config={{}}>
+      <Head />
+      <ManagedUIContext>
+        <Layout pageProps={pageProps}>
+          <Component {...pageProps} />
+        </Layout>
+      </ManagedUIContext>
+    </TrackerProvider>
+  )
+}
+```
+
+处理完这些之后，我们现在就可以继续触发事件了。 
+
+### 记录自定义问题和事件
+
+为此，我们将利用我们的界面：
+
+![产品页面](/tutorials/product-ui.png)
+
+每当用户将产品添加到我们的购物车时（本质上是当他们点击 “ADD TO CART” 按钮时），我们都会记录一个新事件。
+
+如果他们在未先选择尺码的情况下这样做，我们将记录一个问题。
+
+你可以[在这里](https://github.com/deleteman/nextjs-commerce-example/blob/redux-store/site/components/product/ProductSidebar/ProductSidebar.tsx)查看该组件的完整源代码，不过让我们聚焦于我们要添加的逻辑。
+
+在组件的开头，我们将使用 useContext 钩子：
+
+```jsx
+//outside the component
+import { TrackerContext } from '../../../context/trackerProvider'
+
+//inside the component
+const { logEvent, logIssue } = useContext(TrackerContext)
+```
+
+ 在 `addToCart` 函数内部，我们将添加以下逻辑来检查是否没有选择有效的尺码：
+
+```jsx
+const validSizes = product.options
+      .filter((o) => o.id == 'option-size')
+      .map((o) => o.values)[0]
+
+    let pickedSized = validSizes.find((s) => {
+      return selectedOptions.size == s.label.toLowerCase()
+    })
+
+    if (!pickedSized) {
+      logIssue({
+        name: 'Product added without a size',
+        data: {
+          product_id: product.id,
+          added_date: new Date(),
+          available_options: validSizes,
+        },
+      })
+    }
+```
+
+代码的关键部分是最后的 `IF`：当我们发现没有选择有效的尺码时，就调用 `logIssue` 函数，它是我们从之前的 `useContext` 调用中获取的。
+
+而对于事件，我们将深入到同一个函数中并添加：
+
+```jsx
+logEvent({
+        name: 'product_added',
+        data: {
+          id: product.id,
+          date_added: new Date(),
+        },
+      })
+```
+
+这就是我们所需的全部内容；然后我们可以进入 OpenReplay，找到我们的会话录制，并查看 Events 部分：
+
+![自定义事件面板](/tutorials/product-events-section.png)
+
+如果我们想查看详情，可以点击将鼠标悬停在某一行上时出现的 “DETAILS” 链接：
+
+![自定义事件的详情](/tutorials/event-details.png)
+
+这些就是我们在添加产品时所记录的详情。
+
+如果你想查看本示例的完整源代码，[可以在这里找到它](https://github.com/deleteman/nextjs-commerce-example/tree/redux-store)。
+
+## 有疑问？
+
+如果你在项目中遇到任何与自定义事件相关的问题，请通过我们的 [Slack 社区](https://slack.openreplay.com/)联系我们，直接向我们的开发人员提问！

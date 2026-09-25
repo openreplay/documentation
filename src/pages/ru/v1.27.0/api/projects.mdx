@@ -1,0 +1,166 @@
+---
+title: "Проекты"
+metaTitle: "Проекты"
+metaDescription: "Как создавать и получать проекты."
+---
+
+Все ответы представлены в формате JSON и обёрнуты в `{ "data": ... }`. Ошибки возвращаются в виде `{ "error": "..." }` с соответствующим кодом состояния HTTP.
+
+## Создание проекта
+
+Создайте новый проект, указав его `name` и, при необходимости, его `platform`.
+
+### Метод
+`POST`
+
+### URL
+`/public/projects`
+
+### Тело запроса
+
+| Имя      | Тип    | Описание                                                     |
+|----------|--------|--------------------------------------------------------------|
+| name     | string | Имя проекта (обязательно, максимум 200 символов)             |
+| platform | string | Платформа проекта: `web` (по умолчанию) или `ios`            |
+
+### Заголовки запроса
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Коды состояния
+
+`200`: Проект создан, возвращён в теле ответа  
+`400`: Недопустимое тело, отсутствует/слишком длинное имя, неизвестная платформа или имя уже существует
+
+### Пример запроса
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/projects \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "name": "MyFirstProject",
+    "platform": "web"
+  }'
+```
+
+### Пример ответа
+
+```json
+{
+  "data": {
+    "projectId": 42,
+    "name": "MyFirstProject",
+    "projectKey": "QsLA07Oa5sqTfwnNaFwS",
+    "tenantId": 1,
+    "maxSessionDuration": 7200000,
+    "sampleRate": 100,
+    "saveRequestPayloads": false,
+    "beaconSize": 0,
+    "platform": "web",
+    "metadata1": null,
+    "metadata2": null,
+    "metadata3": null,
+    "metadata4": null,
+    "metadata5": null,
+    "metadata6": null,
+    "metadata7": null,
+    "metadata8": null,
+    "metadata9": null,
+    "metadata10": null
+  }
+}
+```
+
+## Список проектов
+
+Возвращает все проекты текущего тенанта.
+
+### Метод
+`GET`
+
+### URL
+`/public/projects`
+
+### Заголовки запроса
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Пример запроса
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/projects \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Пример ответа
+
+```json
+{
+  "data": [
+    {
+      "projectId": 42,
+      "name": "MyFirstProject",
+      "projectKey": "QsLA07Oa5sqTfwnNaFwS",
+      "tenantId": 1,
+      "platform": "web"
+    },
+    {
+      "projectId": 43,
+      "name": "MobileApp",
+      "projectKey": "9cACFRuQVidq0sqS7Bny",
+      "tenantId": 1,
+      "platform": "ios"
+    }
+  ]
+}
+```
+
+## Получение проекта
+
+Возвращает данные указанного проекта.
+
+### Метод
+`GET`
+
+### URL
+`/public/projects/:projectKey`
+
+### Параметры
+
+| Имя        | Тип    | Описание                     |
+|------------|--------|------------------------------|
+| projectKey | string | Ключ проекта (обязательно)   |
+
+### Заголовки запроса
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Коды состояния
+
+`200`: Возвращён в теле ответа  
+`404`: Проект не найден
+
+### Пример запроса
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/projects/7ePSXFuQVidq9pqS6Xyn \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Пример ответа
+
+```json
+{
+  "data": {
+    "projectId": 42,
+    "name": "MyFirstProject",
+    "projectKey": "7ePSXFuQVidq9pqS6Xyn",
+    "tenantId": 1,
+    "platform": "web"
+  }
+}
+```
