@@ -165,7 +165,7 @@ const nav: NavItem = {
       ]
     },
     {
-      text: 'iOS (beta)',
+      text: 'iOS',
       slug: 'ios-sdk',
       icon: 'ios_app',
       children: [
@@ -185,7 +185,7 @@ const nav: NavItem = {
       ]
     },
     {
-      text: 'Android (beta)',
+      text: 'Android',
       slug: 'android-sdk',
       icon: 'android_app',
       children: [
@@ -204,7 +204,7 @@ const nav: NavItem = {
       ]
     },
     {
-      text: 'React Native (beta)',
+      text: 'React Native',
       slug: 'rn-sdk',
       icon: 'react-native_ios_app',
       children: [
