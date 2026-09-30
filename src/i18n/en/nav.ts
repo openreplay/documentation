@@ -296,11 +296,7 @@ const nav: NavItem = {
           { text: { en: 'Monitors', fr: 'Moniteurs', es: 'Monitores', ru: 'Мониторы', zh: '监控', 'ar-ae': 'أجهزة الرصد' }, slug: 'product-analytics/monitors', children: [] },
         ]
         },
-        { text: { en: 'Advanced Setup', fr: 'Configuration avancée', es: 'Configuración avanzada', ru: 'Расширенная настройка', zh: '高级配置', 'ar-ae': 'الإعداد المتقدم' }, slug: null, children: [
-					{ text: { en: 'Custom Events', fr: 'Événements personnalisés', es: 'Eventos personalizados', ru: 'Пользовательские события', zh: '自定义事件', 'ar-ae': 'الأحداث المخصصة' }, slug: 'product-analytics/custom-events', children: [] },
-          { text: { en: 'Data Management', fr: 'Gestion des données', es: 'Gestión de datos', ru: 'Управление данными', zh: '数据管理', 'ar-ae': 'إدارة البيانات' }, slug: 'product-analytics/data-management', children: [] }
-        ]
-        },
+        { text: { en: 'Data Management', fr: 'Gestion des données', es: 'Gestión de datos', ru: 'Управление данными', zh: '数据管理', 'ar-ae': 'إدارة البيانات' }, slug: 'product-analytics/data-management', children: [] },
       ]
     },
     {
