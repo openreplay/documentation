@@ -1,0 +1,71 @@
+---
+title: "Sessions"
+metaTitle: "Sessions"
+metaDescription: "Como recuperar todas as sessões de um usuário específico."
+---
+
+## Recuperar sessões do usuário
+
+Retorna a lista de sessões de um usuário específico, identificado por meio da função JavaScript `tracker.setUserID`. Os resultados são paginados.
+
+### Método
+`POST`
+
+### URL
+`/public/:projectKey/users/:userId/sessions`
+
+### Parâmetros
+
+| Nome       | Tipo   | Descrição                                              |
+|------------|--------|----------------------------------------------------------|
+| projectKey | string | A chave do projeto (obrigatório)                         |
+| userId     | string | O ID definido via `tracker.setUserID` (obrigatório, máx. 256) |
+
+### Payload
+
+| Nome           | Tipo       | Descrição                                                |
+|----------------|------------|------------------------------------------------------------|
+| startTimestamp | epoch (ms) | Início da janela de tempo (obrigatório, mín. 946684800000)  |
+| endTimestamp   | epoch (ms) | Fim da janela de tempo (obrigatório, > startTimestamp)     |
+| limit          | integer    | Tamanho da página, 1-200 (opcional, padrão: 50)            |
+| page           | integer    | Número da página, começando em 1 (opcional, padrão: 1)     |
+| sortOrder      | string     | `asc` ou `desc` (opcional)                                 |
+
+### Cabeçalhos da requisição
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Códigos de status
+
+`200`: Resposta enviada como JSON no corpo  
+`400`: Corpo inválido ou `userId` inválido (vazio ou > 256 caracteres)
+
+### Exemplo de requisição
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com/sessions \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "startTimestamp": 1623440000000,
+    "endTimestamp":   1623540000000,
+    "limit": 50,
+    "page": 1,
+    "sortOrder": "desc"
+  }'
+```
+
+### Exemplo de resposta
+
+```json
+{
+  "data": {
+    "total": 2,
+    "sessions": [
+      { "sessionId": "4813018042986240", "eventsCount": 1, "startTs": 1623440822825, "endTs": 1623440835604 },
+      { "sessionId": "4813023023591169", "eventsCount": 6, "startTs": 1623440902620, "endTs": 1623440920846 }
+    ]
+  }
+}
+```

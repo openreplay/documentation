@@ -1,0 +1,77 @@
+---
+title: "React Native SDK - ネットワークのインターセプト"
+metaTitle: "React Native SDK - ネットワークのインターセプト"
+metaDescription: "React Native トラッカーによるネットワークインターセプトの詳細"
+---
+
+## ネットワークのインターセプト
+
+ORTracker は、タスクとリクエストの両方を受け付ける `NetworkListener` をエクスポートしています。使用方法は次のとおりです：
+
+```swift
+import ORTracker
+
+func fetchPokemonData(for name: String) {
+    let networkListener = NetworkListener()
+    let url = URL(string: "https://pokeapi.co/api/v2/pokemon/ditto")!
+    var request = URLRequest(url: url)
+    request.httpMethod = "GET" // This is the default, so it's optional in this case.
+
+    // Start the network listener with the request
+    networkListener.start(request: request)
+
+    // Create a data task
+    let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        if let error = error {
+            print("Error: \(error.localizedDescription)")
+            return
+        }
+
+        if let data = data {
+            do {
+                let json = try JSONSerialization.jsonObject(with: data, options: [])
+								print(json)
+            } catch {
+                print("Error deserializing JSON: \(error)")
+            }
+        }
+        networkListener.finish(response: response, data: data)
+    }
+
+    task.resume()
+	}
+```
+
+## リクエストのサニタイズ
+
+リクエストとレスポンスのデータを自動的にトリミングするために、2 つのキーがエクスポートされています。本文用の `ignoredKeys` とヘッダー用の `ignoredHeaders` です。リクエストとレスポンスの両方がサニタイズされますが、本文は有効な JSON の場合にのみ影響を受けます。
+
+サニタイズしたい文字列のリストを割り当てるだけです：
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+リスナーに渡す前にレスポンスデータを変更することもできます：
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```
+
+## ご質問はありますか？
+このプロセスについてご不明な点がございましたら、お気軽に [Slack](https://slack.openreplay.com) までお問い合わせください。

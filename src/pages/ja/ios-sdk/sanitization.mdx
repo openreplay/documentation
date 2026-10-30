@@ -1,0 +1,63 @@
+---
+title: "iOS SDK - 機密データのサニタイズ"
+metaTitle: "iOS SDK - 機密データのサニタイズ"
+metaDescription: "iOS トラッカーにおける録画とネットワークデータのサニタイズの詳細"
+---
+
+## UI コンポーネント
+
+サニタイズされたビューは、生成されるリプレイ上でぼかされます。任意の UI コンポーネントを追加でき、画面に表示されなくなった時点で（メモリを節約するため）自動的に削除されます。
+
+### SwiftUI
+
+目的のコンポーネントに `.sensitive()` モディファイアを追加するだけです。
+
+```swift
+import ORTracker
+
+Text("Very important sensitive text")
+.sensitive()
+
+```
+
+### UIKit
+
+```swift
+import ORTracker
+
+ORTracker.shared.addIgnoredView(view)
+```
+
+## ネットワークリクエスト
+
+リクエストとレスポンスのデータを自動的に削除するために、ボディ用の `ignoredKeys` とヘッダー用の `ignoredHeaders` の 2 つのキーがエクスポートされています。リクエストとレスポンスの両方がサニタイズされますが、ボディは有効な JSON の場合にのみ影響を受けます。
+
+サニタイズしたい文字列のリストを割り当てるだけです。
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+リスナーに渡す前に、レスポンスデータを変更することもできます。
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```
+
+## ご質問はありますか？
+この手順についてご不明な点がございましたら、お気軽に [Slack](https://slack.openreplay.com) までお問い合わせください。

@@ -1,0 +1,47 @@
+---
+title: "外部データベース（Postgres）"
+metaTitle: "外部データベース（Postgres）"
+metaDescription: "OpenReplay のデフォルトのデータベース保存先を変更し、外部データベースを使用する方法を説明します。"
+---
+
+データベースサービスである Postgres は、デフォルトで OpenReplay にインストールされており、デプロイコストを抑えるために、お使いのインスタンス上の専用コンテナーで動作します。より高いスケーラビリティや運用の容易さが必要な場合は、外部の Postgres（例: AWS RDS や GCP Cloud SQL）を使用することもできます。
+
+## 既存のスキーマとデータのエクスポート
+
+> **注記**：新規に始める場合で、まだ OpenReplay をインストールしていないときは、そのままセットアップを進め、以下の手順は無視してください。
+
+ローカルのスキーマと録画データを、外部の Postgres にエクスポートする必要があります。
+
+1. まず、ローカルのデータベースをバックアップします。
+
+```bash
+kubectl exec -n db postgresql-0 -- bash -c 'PGPASSWORD=<postgresPassword from vars.yaml> pg_dumpall -U postgres '  > ~/path/to/dump.sql
+```
+
+2. OpenReplay インスタンスに Postgres クライアントをインストールし、外部データベースにアクセスできることを確認します。
+
+```bash
+sudo apt install postgresql-client
+```
+   
+3. バックアップを新しい外部 Postgres にリストアします。
+
+```bash
+PGPASSWORD=PG_PASSWORD psql -U PG_USERNAME -h {RDS_URL} -d postgres < /path/to/dump.sql
+```
+
+4. 最後に、`openreplay -e` 内のすべての `postgres` 変数を更新し、外部データベースを指すようにします。
+
+```yaml
+  postgresqlPassword: "changeMePassword"
+  postgresqlHost: "postgresql.db.svc.cluster.local"
+  postgresqlPort: "5432"
+  postgresqlUser: "postgres"
+  postgresqlDatabase: "postgres"
+```
+
+5. `:wq` で保存して終了すると、変更が反映されます
+
+## ご質問はありますか？
+
+問題が発生した場合は、[Slack](https://slack.openreplay.com) に参加して、コミュニティのサポートを受けてください。

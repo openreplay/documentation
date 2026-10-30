@@ -1,0 +1,64 @@
+---
+title: "OpenReplay を Electron で使用する"
+metaTitle: "OpenReplay で Electron アプリを記録する"
+metaDescription: "OpenReplay で Electron アプリを記録する方法を説明します。"
+---
+import Aside from '~/components/Aside.astro'
+
+<Aside type="caution">
+	コブラウジングをサポートするには、Tracker@11.0.0 および Tracker-assist@7.0.0 以降が必要です。
+</Aside>
+
+OpenReplay を Electron アプリに統合する方法は 2 通りあります。
+
+どちらの方法を選ぶ場合も、次の API を許可するように CSP 設定を確認する必要があります。
+- WebWorkers（メッセージのバッチの保存、エンコード、送信に使用）
+- Websockets（Assist プラグインでセッションをリアルタイムに転送するために使用）
+- Peers（Assist プラグインで通話に使用）
+
+## スニペットコードの追加
+
+OpenReplay のスニペットコードを、アプリの HTML ファイルのルートに直接追加できます。
+これは最も簡単な方法ですが、JS スニペットのすべての制約も伴います。
+
+## NPM ライブラリの使用
+
+React、Angular、Vue を使用している場合は、まったく同じ方法で、
+アプリ内のレンダリングプロセスでトラッカーのインスタンスを作成できます。これにより、すべてのプラグインを含む OpenReplay のすべての機能を利用できます。
+
+レンダリングコンテキストの外でトラッカー API を使用するには、IPC を使用して、
+メインプロセスから送信するイベントによってアクションをトリガーする必要があります。
+
+## Assist プラグインとの併用
+
+
+Tracker-Assist プラグインの場合は、デフォルトの WS ルーティングを正しく動作させるために、`socketHost` プロパティを追加し、
+`/ingest` サフィックスを付けないインジェストポイントを指定する必要があります。
+
+NPM ライブラリの場合:
+```js
+new Tracker({ ingestPoint: 'https://mywebsite.com/ingest' })
+
+// ...
+
+// or https://app.openreplay.com if you're using SaaS version
+tracker.use(trackerAssist({ socketHost: 'https://mywebsite.com' }))
+```
+
+コードスニペットの場合:
+```js
+  var initOpts = {
+    projectKey: "...",
+		ingestPoint: "https://mywebsite.com/ingest",
+    assistSocketHost: "https://mywebsite.com"
+  };
+```
+
+そうしないと、WS は `ws://file/ingest` への接続を試み、失敗します。
+
+<Aside type="tip">
+	この記事は、Electron@26.2.1 と React@16.13.1 を使用し、ESM バンドルを処理するように構成した、社内のプルーフオブコンセプトアプリに基づいています。
+	ご使用の構成が異なる場合や、ご提案・ご質問がある場合は、
+	お気軽に
+	[Slack コミュニティ](https://slack.openreplay.com/) までご連絡ください。
+</Aside>

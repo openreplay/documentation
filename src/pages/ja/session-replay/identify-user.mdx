@@ -1,0 +1,87 @@
+---
+title: "ユーザーを識別する"
+metaTitle: "ユーザーを識別する"
+metaDescription: "内部ユーザー ID をセッション録画に関連付ける方法を説明します。"
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="リプレイ内のユーザーを識別する方法を動画で確認"
+  description="文章を読むのが苦手な方は、リプレイをユーザーに関連付ける方法を紹介した動画チュートリアルをご覧ください。"
+  videoURL="https://youtu.be/xfotXkeyXZM"
+/>
+
+以下の手順に従って、内部ユーザー ID を録画中のセッションに関連付けます。
+
+### NPM を使用する場合
+
+トラッカーの開始時に userID を指定します。
+
+```js
+tracker.configure({
+  projectKey: PROJECT_KEY
+});
+
+tracker.start({
+  userID: "john@doe.com",
+  metadata: {
+    balance: "10M",
+    plan: "free"
+  }
+});
+```
+
+それが難しい場合（userID がナビゲーションフローの後半、つまりトラッカーの開始よりかなり後になってから判明する場合）は、`setUserID` メソッドを呼び出してユーザーを識別します。ユーザーの ID は、セッション中であればいつでも `setUserID` を呼び出して変更できます。ただし、OpenReplay が保持するのは最後に指定されたユーザー ID のみです。
+
+```js
+tracker.setUserID('john@doe.com'); // after tracker.start()
+```
+
+### JavaScript スニペットを使用する場合
+
+以下は、スニペットを使用して userID を指定する例です。userID を指定するための `startOpts` 変数（行）に注目してください。
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: getUserID() }; // use startOpts variable to inject userID
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+```
+
+それが難しい場合（userID がナビゲーションフローの後半、つまりトラッカーの開始よりかなり後になってから判明する場合）は、代わりに `setUserID` メソッドを呼び出してユーザーを識別します。ユーザーの ID は、セッション中であればいつでも `setUserID` を呼び出して変更できます。ただし、OpenReplay が保持するのは最後に指定されたユーザー ID のみです。
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" };
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+  ...
+  OpenReplay.setUserID("john@doe.com"); // set the userID later in your code
+  ...
+```
+
+### iOS アプリの場合
+
+リプレイ中のどの時点でも、`setUserID(String)` を呼び出すだけです。
+
+```swift
+import ORTracker
+
+// ... your code
+
+ORTracker.shared.setUserID(_ userID: String)
+```
+
+## ご質問はありますか？
+このプロセスについてご不明な点がありましたら、お気軽に [Slack](https://slack.openreplay.com) までお問い合わせください。

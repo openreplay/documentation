@@ -1,0 +1,37 @@
+---
+title: "React Native SDK - patchNetwork メソッド"
+metaTitle: "React Native SDK - patchNetwork メソッド"
+metaDescription: "OpenReplay の React Native SDK の patchNetwork メソッドの詳細"
+---
+
+このメソッドは、XHR と Fetch の API にパッチを適用して、ネットワークリクエストをインターセプトします。
+
+## シグネチャ
+
+```js
+import OR from '@openreplay/react-native'
+
+OR.patchNetwork(
+    global,
+		(url) => url.includes('openreplaydomain'),
+    { mode: 'fetch' }
+)
+```
+
+## パラメーター
+
+- `context: globalThis`：アプリの現在のコンテキスト（fetch/xhr の取得元）
+- `isServiceURL: (url: string) => boolean`：現在のリクエストをトラッキングする（false）かスキップする（true）かを判定する関数
+- `options: Partial<Options>`：オプションオブジェクト
+
+## オプション
+
+- `ignoreHeaders: Array<string> | boolean`：無視するヘッダー（デフォルト：`['cookie', 'set-cookie', 'authorization']`）
+- `capturePayload: boolean`：リクエストペイロードをキャプチャするかどうか（デフォルト：`false`）
+- `sanitizer: data: RequestResponseData) => RequestResponseData`：リクエストとレスポンスをサニタイズする関数（デフォルト：`undefined`）
+- `mode: 'fetch' | 'xhr' | 'all'`：パッチを適用する API（デフォルト：`'fetch'`）
+
+> 注記：React-Native の fetch は（執筆時点では）内部的に XHR を使用しているため、"all" を使用すると、録画内でリクエストが重複する可能性があります。
+
+## ご質問はありますか？
+このプロセスについてご不明な点がございましたら、お気軽に [Slack](https://slack.openreplay.com) までお問い合わせください。

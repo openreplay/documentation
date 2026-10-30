@@ -1,0 +1,77 @@
+---
+title: "Usando o OpenReplay com Gatsby"
+metaTitle: "Adicionando o tracker do OpenReplay ao seu aplicativo Gatsby"
+metaDescription: "Saiba como fazer o tracker funcionar no seu aplicativo Gatsby"
+---
+Instalar o tracker do OpenReplay em um projeto baseado em Gatsby é relativamente simples. Considerando que o Gatsby usa React por baixo dos panos, tudo o que precisamos fazer é adicionar o código do tracker dentro da página principal e chamar o método `start` usando o hook `useEffect`. 
+
+Vamos dar uma olhada.
+
+## Por que configurar o tracker em um site estático?
+
+A ausência de conteúdo dinâmico no seu aplicativo não significa que você não queira aproveitar alguns dos outros recursos do OpenReplay.
+
+Embora você não vá usar os session replays para encontrar bugs, poderá capturar métricas interessantes e criar [seus próprios dashboards personalizados](https://docs.openreplay.com/tutorials/custom-dashboard) em torno dessas métricas.
+
+Você pode usar métricas de desempenho, web vitals e até métricas relacionadas a recursos para ter uma ideia geral de como é a experiência dos seus usuários no seu site.
+
+## Configurando o tracker dentro do Gatsby
+
+Dado um site Gatsby estático cujo ponto de entrada é o arquivo `index.tsx` dentro da pasta `pages`, você vai querer adicionar o seguinte código a ele.
+
+Você pode usar o tracker como uma instância singleton, que é a forma recomendada de usá-lo. 
+Dessa forma, você pode acessar o tracker de qualquer lugar do seu aplicativo:
+
+```js
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+const Index = ({data, location }) => {
+
+	React.useEffect(() => {
+		tracker.start();
+	}, [])
+
+	 //the rest of your code here...
+}
+```
+
+Ou você pode usar a classe `Tracker` diretamente para gerenciar a instância manualmente:
+
+```jsx
+import Tracker from '@openreplay/tracker';
+const tracker = new Tracker({
+  projectKey: process.env.GATSBY_OPENREPLAY_PROJECT_KEY
+});
+
+const Index = ({data, location }) => {
+
+  React.useEffect(() => {
+    tracker.start();
+  }, [])
+
+   //the rest of your code here...
+}
+```
+
+O tracker é instanciado quando a página é compilada (seja em SSR ou em renderização no lado do cliente), mas o método start só pode ser chamado a partir do navegador, então precisamos garantir que ele seja chamado depois que o componente for montado (por isso o hook `useEffect` aqui). O array vazio como segundo argumento do hook `useEffect` garante que o callback seja executado apenas uma vez.
+
+💡**Uma observação para usuários auto-hospedados:** se você usa a versão auto-hospedada do OpenReplay, também terá que especificar a propriedade de configuração `ingestPoint` ao instanciar o tracker. Essa propriedade define o endpoint de ingestão dos dados do tracker. Usuários da nuvem não precisam disso, porque, por padrão, o tracker sabe onde fica o endpoint da versão SaaS, mas, se você hospeda por conta própria, precisará especificá-lo (algo como `https://openreplay.mydomain.com/ingest`)
+
+## Lidando com a variável ENV no Gatsby
+
+Como medida de segurança, recomendamos não deixar a chave do projeto fixa (hardcoded) no seu código. Isso significa que você terá que exportá-la como uma variável ENV para que o Gatsby a leia.
+
+A chave do projeto do OpenReplay ficará então em uma variável chamada `GATSBY_OPENREPLAY_PROJECT_KEY`
+
+Repare que o nome tem o prefixo `GATSBY_`, o que indica ao Gatsby que a variável deve estar disponível também no código do front-end. Caso contrário, você não conseguirá ler o valor, a menos que esteja executando código Node.js.
+
+## Tem dúvidas?
+
+Você pode [conferir este repositório](https://github.com/deleteman/openreplay-gatsby-example) para ver o **código-fonte completo** de um aplicativo baseado em Gatsby funcionando com o Tracker.
+
+Se você tiver algum problema ao configurar o Tracker no seu projeto Gatsby, entre em contato conosco na nossa [comunidade no Slack](https://slack.openreplay.com/) e fale diretamente com os nossos devs!

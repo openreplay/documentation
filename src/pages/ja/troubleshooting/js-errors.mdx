@@ -1,0 +1,76 @@
+---
+title: "JS エラー"
+metaTitle: "JS エラー"
+metaDescription: "さまざまな JavaScript エラー。"
+---
+
+このセクションでは、コミュニティから報告された、よく発生する JavaScript エラーを紹介します。
+
+## Require() of ES module
+
+このエラー（および下記のエラー）は、サーバーサイドのコンテキスト（SSR、Nuxt、Next、Remix アプリなど）内でトラッカーをインポートしようとすると、一般的に発生します。
+
+修正するには、動的インポートやクライアントコンポーネントなどを使用して、トラッカーがブラウザーのコンテキスト内でインポートおよび実行されるようにする必要があります。
+
+## ReferenceError: Navigator is not defined
+
+`tracker-assist` や `tracker-fetch` プラグインをインポートしようとすると、このエラーが発生することがあります。これは、node が環境に `window` API がない状態でページをビルドしようとするために起こります。
+
+修正は非常にシンプルです。問題の原因となっているプラグインの通常のインポートを、次のように変更するだけです。
+
+```js
+import trackerAssist from '@openreplay/tracker-assist/cjs';
+```
+
+`componendDidMount` または `useEffect` の代替処理の内部で動的にインポートするには、次のようにします。
+
+```js
+import Tracker, { Options } from "@openreplay/tracker";
+const tracker = new Tracker({ /* your options */ });
+
+class TrackerComponent extends React.Component {
+
+  componentDidMount = () => {
+    import(‘@openreplay/tracker-assist/cjs’).then(({ default: trackerAssist }) => {
+      tracker.start(/* your options */)
+      tracker.use(trackerAssist(/* your assist options */))
+    })
+   }
+
+ /* Other code */
+```
+
+このようにすると、window API に依存するすべてのプラグインが、コンポーネントのレンダリング時にインポートされます。
+
+## Critical dependency: the request of a dependency is an expression
+
+古いバージョンの `tracker-assist` プラグインで発生することがあります。コンパイル時に次のエラーが発生した場合は、この[回避策](https://github.com/peers/peerjs/issues/630#issuecomment-910028230)を適用してください。
+
+```log
+Failed to compile.
+
+./node_modules/peerjs/dist/peerjs.min.js
+Critical dependency: the request of a dependency is an expression
+```
+
+## Uncaught DOMException: Blocked a frame with origin "X" from accessing a cross-origin frame
+
+OpenReplay トラッカーは、デフォルトで **同一ドメイン** の iFrame をキャプチャします。ただし、Web サイトと同一ドメインではない iFrame をキャプチャしようとすると、エラーをスローします。次のいずれかの方法で対処できます。
+
+- 以下の例のように、`captureIFrames` プロパティを使用して、この機能全体を無効にします。 
+
+```js
+tracker.configure({
+      projectKey: PROJECT_KEY,
+      captureIFrames: false
+});
+```
+
+- 同一ドメインの `<iframe>` タグ **だけ** に `data-openreplay-capture` HTML 属性を追加して、iFrame のキャプチャを継続します（デフォルトの動作）。こうすると、クロスオリジンの iFrame は OpenReplay によってトラッキングされません。
+
+## 該当する問題が記載されていない
+
+このページに記載されていないエラーが発生した場合は、お気軽に[Issue を作成](https://github.com/openreplay/openreplay/issues/new/choose)するか、[Slack](https://slack.openreplay.com) までお問い合わせのうえ、コミュニティのサポートを受けてください。
+
+## ご質問はありますか？
+このプロセスについてご不明な点がありましたら、お気軽に [Slack](https://slack.openreplay.com) までお問い合わせください。

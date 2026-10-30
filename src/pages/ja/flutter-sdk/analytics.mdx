@@ -1,0 +1,53 @@
+---
+title: "Flutter SDK - 画面とビューのトラッキング"
+metaTitle: "Flutter SDK - 画面とビューのトラッキング"
+metaDescription: "Flutter トラッカーによる画面とビューのトラッキングの詳細"
+---
+import Aside from '~/components/Aside.astro'
+
+`analytics` を有効にしている場合（デフォルト）、トラッカーはタップ、スワイプ、ビューポートの変更、入力イベントを自動的に取得します。画面と個々のビューは、エクスポートされている 2 つのウィジェットによって報告されます。
+
+## 画面
+
+アプリのナビゲーターに `ORNavigatorObserver` を追加して、ルートの遷移を記録します。
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+MaterialApp(
+  navigatorObservers: [ORNavigatorObserver()],
+  // ...
+)
+```
+
+プッシュ、ポップ、置換、削除のすべてが報告されます。ルート名は `route.settings.name` で決まります。名前のないルートはスタック内の位置（`route/2`）で代用されるため、名前付きルートを使用すると、タイムラインがはるかに読みやすくなります。
+
+## トラッキング対象のビュー
+
+任意のウィジェットを `ORTrackedView` でラップすると、名前付きの監視可能なビューとして報告されます。ビューがマウントされたときとアンマウントされたときに可視性イベントが発行され、ビュー内で発生したタッチのラベルにはその名前が使用されます。
+
+- `screenName: String` — 画面または機能のタイトル
+- `viewName: String` — トラッキング対象ビューの名前
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+ORTrackedView(
+  screenName: 'Checkout',
+  viewName: 'Pay button',
+  child: ElevatedButton(onPressed: _pay, child: const Text('Pay')),
+)
+```
+
+## タッチ
+
+タップとスワイプは、ポインタールーターのグローバルルートを通じて取得されます。そのため、トラッカーはジェスチャーアリーナで競合することなくすべてのポインターイベントを検知でき、アプリが必要とするタップを横取りすることはありません。10 論理ピクセルを超えて移動したポインターは主な方向を持つスワイプとして、それより短いものはクリックとして記録されます。
+
+タッチのラベルは、ポインター下のテキストのヒットテスト、または外側の `ORTrackedView` から取得されます。
+
+<Aside type="note">
+	ラベルがウィジェットやレンダーオブジェクトの型名から取得されることはありません。`flutter build --obfuscate` を使用すると、型名は意味のない文字列になるためです。
+</Aside>
+
+## ご質問はありますか？
+このプロセスについてご不明な点がございましたら、お気軽に [Slack](https://slack.openreplay.com) までお問い合わせください。

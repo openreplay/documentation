@@ -1,0 +1,82 @@
+---
+title: "プロキシ設定"
+metaTitle: "プロキシ設定"
+metaDescription: "NGINX や Apache2 などのプロキシの背後で OpenReplay を実行するための設定です。"
+---
+
+## リバースプロキシを使用して OpenReplay を他のアプリケーションと共存させる
+
+OpenReplay がマシン上で動作している場合、アプリケーションの公開にはポート 80/443 が使用されます。ただし、リバースプロキシを使用している場合は、OpenReplay が別のポートでアプリケーションにアクセスできるように設定できます。手順は次のとおりです。
+
+1. 設定ファイルを編集します。
+
+```bash
+openreplay -e
+```
+
+2. nginx の設定セクションを変更します。
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+	...
+	...
+    service:
+      externalTrafficPolicy: "Local"
+      ports:
+        http: 880   # Change this port for http
+        https: 8443 # Change this port for https
+```
+3. `:wq` で設定を保存して終了すると、OpenReplay が設定を再読み込みします。
+
+その後、リバースプロキシを設定できます。設定方法については、以下のセクションを参照してください。
+
+### NGINX の設定
+
+プロキシが `X-Forwarded-For` ヘッダーと `X-Forwarded-Proto` ヘッダーを送信していることを確認してください。また、OpenReplay を動作させるには SSL を有効にする必要があります。残りの設定は次のようになります。
+
+```nginx
+location / {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        proxy_pass http://1.2.3.4:880; # replace with OpenReplay instance IP
+    }
+```
+
+### Apache2 の設定
+
+`proxy`、`proxy_http`、`proxy_html` の各モジュールが有効になっていることを確認してください。SSL も設定する必要があります。残りの設定は次のようになります。
+
+```
+<VirtualHost *:443>
+    ProxyPass / http://1.2.3.4:880 <!-- replace with instance IP -->
+    RequestHeader set X-Forwarded-Proto expr=%{REQUEST_SCHEME}
+    # SSL + other config here
+</VirtualHost>
+```
+
+## パブリックエンドポイント
+
+プロキシで OpenReplay インスタンスを保護している場合は、OpenReplay が正しく動作するように、以下のエンドポイントが公開アクセス可能であることを確認してください。
+
+| エンドポイント | 説明 | 発信元 |
+|----------|-------------|------------|
+| /ingest | アプリから送信されるイベントと録画データの取り込み用 | トラッキング対象のアプリ（公開アクセス可能な場合は、このエンドポイントも公開する必要があります） |
+| /ws-assist | エンドユーザーとのライブセッションリプレイ用（WebSocket） | トラッキング対象のアプリ（公開アクセス可能な場合は、このエンドポイントも公開する必要があります） |
+| /api | 認証、およびセッション、プロジェクト、RBAC、アカウントデータの取得用 | OpenReplay ダッシュボード |
+| /v2/api | 検索、分析、セッションリプレイ、コブラウジング用 | OpenReplay ダッシュボード |
+| /spots | オブジェクトストレージからの Spot 動画の取得用 | OpenReplay ダッシュボード |
+| /mobs | オブジェクトストレージからのセッションリプレイの取得用 | OpenReplay ダッシュボード |
+| /sessions-assets | オブジェクトストレージからのキャッシュ済みスタイルシートとフォントの取得用 | OpenReplay ダッシュボード |
+| /static | コブラウジングセッションに関連するデータの取得用 | OpenReplay ダッシュボード |
+| /records | オブジェクトストレージからのコブラウジング録画の取得用 | OpenReplay ダッシュボード |
+| /integrations | サードパーティのインテグレーション（Sentry や Datadog など）からのログの取得用 | OpenReplay ダッシュボード |
+| /sourcemaps | ソースマップのアップロード用 | Sourcemaps CLI |
+| /spot | Spot の録画に関連するデータの取得用 | Spot Chrome 拡張機能 |
+| /script | openreplay-*.js ファイルをご自身の環境から配信したい場合に使用します（それ以外の場合は、デフォルトで OpenReplay の CDN が使用されます） | トラッキング対象のアプリ |
+
+## ご質問はありますか？
+
+この手順についてご不明な点がございましたら、お気軽に [Slack](https://slack.openreplay.com) までお問い合わせください。

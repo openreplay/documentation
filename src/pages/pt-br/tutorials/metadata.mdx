@@ -1,0 +1,152 @@
+---
+title: "Enriquecendo as gravações das suas sessões com metadados"
+metaTitle: "Adicionando metadados aos seus session replays para enriquecer seus insights"
+metaDescription: "Saiba como adicionar metadados aos seus session replays e como usá-los para melhorar os insights que você obtém da plataforma"
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="Veja como enviar metadados da sua aplicação Next.js"
+  description="Se você não gosta de ler, pode seguir este tutorial em vídeo que mostra como enviar metadados da sua aplicação para a plataforma OpenReplay"
+  videoURL="https://www.youtube.com/watch?v=ITcJCeKWQGU"
+  />
+
+Por padrão, o nosso tracker envia muitas informações úteis para a nossa plataforma, mas todas essas informações são padrão. Desde que um dado faça parte da Web API, é bem provável que já estejamos rastreando.
+
+Mas o que acontece se você também quiser enriquecer as gravações das suas sessões com dados específicos da sua aplicação?
+
+Por exemplo, saber em qual plano pago o seu usuário está ao revisar o replay dele? Essa informação pode fornecer contexto adicional para os seus desenvolvedores, então o fato de não ser padrão não significa que devemos ignorá-la, certo?
+
+É aqui que os metadados entram em cena.
+
+**Observe** que existe uma [versão em vídeo deste tutorial](https://www.youtube.com/watch?v=ITcJCeKWQGU) no nosso canal do YouTube. Fique à vontade para conferi-la se você aprende melhor de forma visual.
+
+## O que são metadados?
+
+No contexto de um session replay, metadados são todas as informações que o seu usuário não gera, mas que de alguma forma se relacionam com ele.
+
+Em outras palavras, se o usuário clica em um link específico ou realiza uma ação em particular, isso não são metadados, e sim um custom event (confira [a documentação sobre Custom Events](/product-analytics/data-management) se quiser saber mais).
+
+Mas e se houver uma flag que indica se o usuário está no plano gratuito ou no pago? Ou talvez um código de rastreamento mostrando de onde esse usuário veio? Tudo isso são metadados, e você pode adicioná-los facilmente às suas sessões.
+
+## Como adicionar metadados a uma sessão?
+
+A primeira coisa a fazer é configurar os campos de metadados diretamente na plataforma.
+
+Se você pular esta etapa, não conseguirá gravar nenhuma informação, então não a pule!
+
+Para isso, vá até a página de configurações do seu projeto clicando na engrenagem no canto superior direito do menu superior:
+
+![O ícone de configurações do projeto](/tutorials/metadata/metadata1.png)
+
+Lá dentro, clique no item de menu Metadata, no extremo esquerdo da tela:
+
+![A opção Metadata no menu da esquerda](/tutorials/metadata/metadata2.png)
+
+Isso levará você à tela de configuração de metadados. Certifique-se de selecionar o projeto correto no dropdown e crie quantos campos você precisar.
+
+![Adicionando novos metadados](/tutorials/metadata/metadata3.png)
+
+Neste exemplo, criamos 3 campos para o projeto "e-commerce test":
+
+- O campo "plan", que conterá o plano atual do usuário.
+- O campo "utm_source", contendo um código que identifica de onde o usuário está vindo.
+- E, por fim, o campo "items_in_cart", que contém o número total de itens no carrinho do usuário.
+
+O último é um dado que depende de uma ação do usuário, o que é diferente do que recomendamos. No entanto, neste exemplo, você verá as limitações dos campos de metadados e por que essa informação em particular deveria ter sido um custom event.
+
+Com essa configuração pronta, o próximo passo é adicionar o código necessário para realmente enviar os dados como parte da sua sessão.
+
+### Adicionando o código para enviar metadados
+
+Para adicionar os metadados à sessão, usaremos o método `setMetadata` do tracker. Você pode usar esse método a qualquer momento durante a sessão do usuário, apenas tenha em mente as duas considerações a seguir:
+
+1. Se você aplicar vários valores ao mesmo campo de metadados, apenas o último será salvo como parte da sessão.
+2. Todos os valores devem ser strings. Caso contrário, não serão salvos. O tracker não converte os valores para strings, então tome cuidado com isso.
+
+![Código adicionado](/tutorials/metadata/metadata4.png)
+
+As setas vermelhas mostram onde as atualizações relevantes foram feitas. Esse context provider exporta uma função chamada `setMetadata` que, por sua vez, chama o método `setMetadata` do tracker.
+
+Se quiser um exemplo funcional, você pode conferir [este repositório](https://github.com/deleteman/nextjs-commerce-example/tree/redux_metadata/site).
+
+Agora, tudo o que precisamos fazer é usar a função exportada sempre que quisermos configurar os campos de metadados.
+
+### Definindo os metadados a partir do nosso código
+
+Para o propósito deste exemplo, vamos definir os campos `utm_source` e `plan` diretamente na página inicial e, depois, sempre que o usuário adicionar um item ao carrinho, atualizaremos o último campo restante.
+
+No arquivo `pages/index.tsx`, vamos adicionar o seguinte código:
+
+```jsx
+// inside the main component
+const { startTracking, setMetadata } = useContext(TrackerContext)
+//...
+useEffect(() => {
+    async function getProds() {
+      await startTracking()
+      setMetadata('plan', getPlan()) //addition 
+      setMetadata('utm_source', getUTMSource()) //addition
+      dispatch(getMakeUpProducts() as any)
+    }
+
+    getProds()
+  }, [dispatch])
+```
+
+A maior parte desse hook já existia, mas adicionamos a referência à função `setMetadata` e, em seguida, as duas chamadas a ela. Ambas as funções, `getPlan` e `getUTMSource`, retornam dados aleatórios neste exemplo. No seu caso de uso, você precisará implementá-las de acordo.
+
+Este código define esses valores de metadados quando a página inicial é carregada.
+
+Agora precisamos adicionar o último valor, o número de itens no carrinho. Para isso, vamos até o componente `ProductSidebar`, que é o responsável por controlar o que acontece quando clicamos em "Add to cart", e adicionaremos outro hook para reagir a uma mudança no número de itens do carrinho.
+
+```jsx
+useEffect(() => {
+    setMetadata('items_in_cart', productsInCart)
+  }, [productsInCart])
+```
+
+É claro que você também precisa obter a função `setMetadata` do context provider, como antes, mas, depois disso, está tudo pronto.
+
+Agora os dados estão sendo salvos. Também podemos vê-los na plataforma, na lista de sessões.
+
+## Usando os metadados
+
+Agora que os metadados estão sendo salvos em todos os session replays, o que você pode fazer com eles?
+
+Bem, para começar, você pode visualizá-los diretamente no replay:
+
+![Revisando os metadados no player](/tutorials/metadata/metadata5.png)
+
+Você deve começar a ver os campos de metadados no canto superior direito da tela do player. Neste exemplo, vemos que o usuário tem um plano Enterprise Edition, está vindo do Reddit e tem apenas um item adicionado ao carrinho.
+
+### Pesquisando por campos de metadados
+
+A outra coisa poderosa que você pode fazer com os metadados é usá-los como parâmetro de busca. Usando a barra do omnisearch, você pode selecionar os campos de metadados personalizados que criou como parâmetros de busca:
+
+![Busca usando os seus campos de metadados](/tutorials/metadata/metadata6.png)
+
+Assim, se você quiser ver apenas os replays do Enterprise Edition, basta selecionar o campo Plan e filtrá-lo por "ee", assim:
+
+![Busca por plano do usuário](/tutorials/metadata/metadata7.png)
+
+Você também pode usar a mesma barra do omnisearch ao criar um widget para o seu dashboard. Então, continuando com o exemplo do EE, se você quisesse criar um dashboard apenas para clientes Enterprise, poderia filtrar cada widget personalizado usando o atributo "Plan".
+
+Por exemplo, o widget a seguir mostra quantos clientes Enterprise estão clicando no botão "Add to cart":
+
+![Criando uma série temporal usando metadados](/tutorials/metadata/metadata8.png)
+
+Resultando em um widget parecido com este:
+
+![Os resultados](/tutorials/metadata/metadata9.png)
+
+Com os campos de metadados, você pode personalizar e ampliar os insights que obtém dos seus session replays o quanto quiser.
+
+---
+
+Os metadados podem melhorar significativamente os insights que você obtém dos seus session replays, e configurá-los é relativamente fácil.
+
+Lembre-se de que qualquer informação que você queira salvar deve sempre estar na forma de strings; caso contrário, será ignorada.
+
+O código-fonte completo do [projeto de exemplo usando metadados pode ser visto aqui](https://github.com/deleteman/nextjs-commerce-example/tree/redux_metadata/site).
+
+Se você tiver algum problema com qualquer uma das etapas deste processo, entre em contato conosco na nossa [comunidade do Slack](https://slack.openreplay.com/) e pergunte diretamente aos nossos devs!

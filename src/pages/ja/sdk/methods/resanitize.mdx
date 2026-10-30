@@ -1,0 +1,53 @@
+---
+title: "JavaScript SDK - resanitize メソッド"
+metaTitle: "JavaScript SDK - resanitize メソッド"
+metaDescription: "OpenReplay の SDK の resanitize メソッドの詳細"
+---
+import Aside from '~/components/Aside.astro'
+
+このメソッドは、現在の DOM に対して[サニタイズ](/sdk/sanitize-data)を再評価し、変更があった内容を再送信して、セッションの途中で録画済みのノードを更新します。
+
+サニタイズは通常、ノードが最初に記録されるときに適用されます。ノードがすでにキャプチャされた*後*に、マスクまたは非表示にすべき対象を変更しても、その変更はリプレイには自動的に反映されません。`resanitize()` を呼び出すと、トラッカーが再スキャンを行い、更新されたサニタイズルールを、すでに録画の一部となっているノードに適用します。
+
+次のような場合に呼び出してください：
+
+- ページ上にすでにある要素の `data-openreplay-obscured` / `data-openreplay-hidden` 属性を切り替えた場合、または
+- [`domSanitizer`](/sdk/sanitize-data#using-the-domsanitizer-function) が判定の基準とするもの（クラス、ID など）を変更した場合。
+
+<Aside type="note">
+サニタイズされた要素は、ソース（トラッカー）レベルでマスク/編集されるため、マスクまたは非表示にされたものは OpenReplay インスタンスに一切送信されません。すべてのサニタイズと同様に、`resanitize()` が影響するのは、この時点以降にキャプチャされたデータのみです。すでにバックエンドにプレーンな形で送信されたデータを、さかのぼって消去することはできません。
+</Aside>
+
+## シグネチャ
+
+```js
+resanitize(el?: Element): void
+```
+
+## パラメーター
+
+- `el?: Element`: 変更した最上位のノード。トラッカーはこの要素とそのサブツリーを再スキャンします。省略すると、ドキュメント全体を再スキャンします。
+
+<Aside type="tip">
+変更した、できるだけ限定的な要素を渡してください。ドキュメント全体のスキャンは O(DOM のサイズ) のコストがかかるため、変更されたサブツリーを渡すことで、大きなページでも再スキャンの負荷を低く抑えられます。
+</Aside>
+
+## 戻り値
+
+このメソッドは値を返しません。再評価されたサニタイズは進行中の録画に直接適用され、その結果は OpenReplay プラットフォームで確認できます。
+
+## 例
+
+```js
+// Obscure a section after the user opens sensitive content
+const panel = document.getElementById('account-details')
+panel.setAttribute('data-openreplay-obscured', '')
+
+// Tell the tracker to re-apply sanitization to that subtree
+tracker.resanitize(panel)
+```
+
+```js
+// Re-scan the whole document after changing domSanitizer rules
+tracker.resanitize()
+```

@@ -1,0 +1,193 @@
+---
+title: "Assist を有効にする"
+metaTitle: "ライブセッションリプレイでユーザーをサポートする方法"
+metaDescription: "OpenReplay Assist をセットアップし、ライブ画面と WebRTC を通じてエンドユーザーをサポートする方法。"
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="Next.js で Assist を使用する方法を見る"
+  description="読むのが苦手な方は、アプリケーションで Assist プラグインを使用する方法を紹介するこのビデオチュートリアルをご覧ください"
+  videoURL="https://www.youtube.com/watch?v=8hpolw2_mMs"
+  />
+
+セッションリプレイは、アプリケーションが本番環境に移行した後、すべてのプロダクトチームと開発チームが必要とするツールです。
+これらのツールを使えば、管理されたユーザーテストグループにありがちなバイアスなしに、エンドユーザーがプロダクトとどのようにやり取りしているかを把握できます。その情報から、ユーザーエクスペリエンス上のギャップ、ユーザーの誤った操作によるビジネスロジックの問題、トリガーに複雑な一連の操作が必要なエッジケースなど、さまざまなことを理解できます。
+
+しかし、従来のセッションリプレイツールでは対応しきれないユースケースが 1 つあります。それがライブセッションサポートです。
+
+ユーザーが何をしているかを _ライブ_ で確認し、それに直接対応できること、さらにはユーザーのマウスを操作したり、簡単な通話で問題を _見せたり_ できることは、何物にも代えがたい価値があります。そして、それこそが OpenReplay が [Assist 機能](https://openreplay.com/feature-assist.html)を実装した理由です。
+
+## OpenReplay Assist でできること
+
+アプリケーションでユーザーセッションを録画するよう設定した通常のシナリオでは、タブを閉じてから数分後（アプリは、誤って閉じたのではないことを確認する必要があるためです）に、通常のイベント、エラー、アプリの問題が OpenReplay のインスタンス（または SaaS 版）に届きます。ユーザーの行動をステップごとに分析できますが、問題を _実際に_ 見つけたとしても、そのユーザーと直接確認することはできません。
+
+しかし、Assist のおかげで、次のことができるようになります。
+
++ **ページを開いた瞬間から**、ユーザーが何をしているかをライブで直接確認できます。
++ WebRTC を使用しているため、クライアントとオペレーターの間に 1 対 1 のチャネルが作成されます。これにより、関係する双方のコンピューターにサードパーティの通信ソフトウェアをインストールしなくても、**アプリケーションから直接通話を開始**できます。
++ （もちろんユーザーの許可を得た上で）**ユーザーのマウスを操作**し、どこをクリックすればよいかを正確に示せます。
+
+オペレーターが、ユーザーがその時点で行っている操作を確認する際の Assist 機能の UI を見てみましょう。
+
+![](https://i.imgur.com/4vxXpHn.png)
+
+これはライブで更新を表示する機能であるため、注目すべきポイントは「email」と「mobile number」のフィールドです。前者はユーザーのプライバシーを守るために難読化されており、後者は個人データが収集されないよう、トラッカーによって文字どおり無視されています。
+また、データの変換はクライアント側で行われるため、オペレーターであるあなたがこれらの値を見る方法はありません。
+
+これにより、ユーザーの個人データがいっさい処理されないことをユーザーに保証しながら、あらゆる種類のシステムに対して完璧なサポートを提供できます。
+
+## セットアップに Assist プラグインを追加する
+
+この機能は OpenReplay の最新バージョンすべてですでに利用可能なので、有効にするだけです。
+OpenReplay のパッケージ版を使用している場合は、コマンドラインから次のプラグインをインストールするだけです。
+
+```bash 
+npm install @openreplay/tracker-assist
+```
+
+次に、以下のコードを使って有効にします。
+
+```javascript 
+//...
+import { tracker } from '@openreplay/tracker';
+import trackerAssist from '@openreplay/tracker-assist';
+//...
+tracker.configure({
+  projectKey: "your project key"
+});
+tracker.use(trackerAssist({})); //add this line
+tracker.start();
+```
+
+一方、初めてセットアップしたときにプラットフォームから取得した JS スニペットを使用している場合は、パスを 1 か所更新するだけです。
+元のスニペットは、次のようなものだったはずです。
+
+```javascript 
+<!-- OpenReplay Tracking Code for HOST -->
+<script>
+  var initOpts = {
+    projectKey: "your project key",
+    defaultInputMode: 0,
+    obscureTextNumbers: false,
+    obscureTextEmails: true,
+  };
+  var startOpts = { userID: "" };
+  (function(A,s,a,y,e,r){
+    r=window.OpenReplay=[e,r,y,[s-1, e]];
+    s=document.createElement('script');s.src=A;s.async=!a;
+    document.getElementsByTagName('head')[0].appendChild(s);
+    r.start=function(v){r.push([0])};
+    r.stop=function(v){r.push([1])};
+    r.setUserID=function(id){r.push([2,id])};
+    r.setUserAnonymousID=function(id){r.push([3,id])};
+    r.setMetadata=function(k,v){r.push([4,k,v])};
+    r.event=function(k,p,i){r.push([5,k,p,i])};
+    r.issue=function(k,p){r.push([6,k,p])};
+    r.isActive=function(){return false};
+    r.getSessionToken=function(){};
+  })("//static.openreplay.com/latest/openreplay.js",1,0,initOpts,startOpts);
+</script>
+```
+
+一番下にある `openreplay.js` ファイルへのパスに注目してください。これを `openreplay-assist.js` に変更する必要があるため、次のようにします。
+
+```javascript 
+<!-- OpenReplay Tracking Code for HOST -->
+<script>
+  var initOpts = {
+    projectKey: "your project key",
+    defaultInputMode: 0,
+    obscureTextNumbers: false,
+    obscureTextEmails: true,
+  };
+  var startOpts = { userID: "" };
+  (function(A,s,a,y,e,r){
+    r=window.OpenReplay=[e,r,y,[s-1, e]];
+    s=document.createElement('script');s.src=A;s.async=!a;
+    document.getElementsByTagName('head')[0].appendChild(s);
+    r.start=function(v){r.push([0])};
+    r.stop=function(v){r.push([1])};
+    r.setUserID=function(id){r.push([2,id])};
+    r.setUserAnonymousID=function(id){r.push([3,id])};
+    r.setMetadata=function(k,v){r.push([4,k,v])};
+    r.event=function(k,p,i){r.push([5,k,p,i])};
+    r.issue=function(k,p){r.push([6,k,p])};
+    r.isActive=function(){return false};
+    r.getSessionToken=function(){};
+  })("//static.openreplay.com/latest/openreplay-assist.js",1,0,initOpts,startOpts);
+</script>
+```
+
+基本的なセットアップで変更が必要なのはこれだけで、Assist の機能を利用できるようになります。
+
+素晴らしいと思いませんか？
+
+次のエラーメッセージが表示された場合（私も遭遇しました）は、[これらの手順](https://github.com/peers/peerjs/issues/630#issuecomment-910028230)に従って修正してください。
+
+**"Critical dependency: the request of a dependency is an expression"**
+
+この issue の修正方法で、問題なく先に進めるはずです。
+
+これで OpenReplay の Assist を存分に活用できるようになったので、実際に見ていきましょう。
+
+## セッションをライブで視聴する
+
+ここからはクライアント側で何もする必要がないので、オペレーター側を見ていきましょう。
+
+プラットフォームで、以下のようにナビゲーションメニューの Assist オプションをクリックします。
+
+![](https://i.imgur.com/3LG9hcc.png)
+
+クリックすると、アクティブな Assist セッションの一覧が表示されます。ユーザーがアプリケーションを開くと、セッションが自動的にここに表示され、次のように一覧に追加されます。
+
+![](https://i.imgur.com/pp86irQ.png)
+
+ここには、次の情報が表示されます。
+
+- ユーザー ID。そこに表示されているメールアドレスは、トラッカーの `setUserID` メソッドを使用して設定したものです。
+- 各セッションの開始日時。
+- セッションの継続時間（スクリーンショットでは「14 seconds」と表示されています）。
+- 最後に、ユーザーの位置情報。私がスペインにいること、さらに macOS デスクトップで Firefox を使用していることがわかります。
+
+ここだけでもかなり多くの情報があり、ライブで視聴したいセッションを特定するうえで重要です。この例では 1 つのセッションしか表示していませんが、実際には同時に何百（またはそれ以上）ものセッションがアクティブになっている可能性があります。
+さらに、検索バーを使用して複雑なクエリを実行し、目的のセッションを見つけることもできます。
+
+### 特定のセッションに入る
+
+探していたセッションが見つかったら、そのセッションの「Play」アイコンをクリックします。クライアントアプリケーションのライブビューに移動します。
+
+下の並べて比較した画像では、Assist 画面に、観察中の現在のユーザーのセッションがどのように表示されるかがわかります。
+
+![](https://i.imgur.com/G7xAxTZ.png)
+
+お気づきのとおり、ユーザーが見ているものとオペレーターが見ているものにはいくつかの違いがあります。それには十分な理由があります。
+個人情報は自動的に難読化されるか、完全に無視されます。これは観察対象のユーザーを保護するためです。そもそも、オペレーターが電話番号やメールアドレスを必ず見る必要はありません。
+これはデフォルトの動作であることに注意してください。クライアントアプリケーションにインストールされたトラッカーが、入力されているデータの種類とその形式（メールフィールドなど）を検出し、その場で保護するかどうかを判断しています。
+
+ただし、この動作を変更して、トラッカーに他のフィールドを無視または難読化させたい場合は、さまざまな粒度でデータをサニタイズできます。必要な情報はすべて公式ドキュメントに記載されていますので、[こちらをご確認ください。](https://docs.openreplay.com/sdk/sanitize-data)
+
+### ユーザーのマウスを操作する
+
+追加機能として（非常に興味深い機能と言えます）、クライアントのマウスポインターを操作できます。この機能を使えば、マウスを操作してアプリケーションのさまざまな場所をクリックできます。
+他の種類の入力信号は送信できませんが、ユーザーをサポートするにはそれで十分です。
+
+この機能にアクセスするには、画面右上にある「Remote Control」リンクをクリックするだけです。
+そうすると、クライアント側に許可を求めるモーダルウィンドウが表示されます。
+
+![](https://i.imgur.com/5HtwYtb.png)
+
+確認されると、ユーザーのマウスを操作できるようになります。正確には、あなたのポインターがユーザーの画面に表示され、ユーザーのマウスを直接使っているかのようにアプリケーションをクリックして操作できます。
+次のスクリーンショットでは、赤い点が Assist のマウス、黒いポインターがユーザーのものです。
+
+![](https://i.imgur.com/L9K20q2.png)
+
+これは、ユーザーがアプリの操作方法や、どこを正確にクリックすればよいかわからないときに、非常に便利な機能です。
+ユーザーとライブ通話を開始し、赤いポインターを使ってクリックする場所を示すことで、サポートすることもできます。
+次のスクリーンショットは、異なる OS を搭載した 2 台のコンピューターから、ライブ通話をしている私自身（つまり、私と私）です。音声とビデオはどちらも WebRTC 経由で送信されます。
+
+![](https://i.imgur.com/Ob7QTzH.png)
+
+
+## ご質問はありますか？
+
+Assist プラグインをプロジェクトにセットアップする際に問題がある場合は、[Slack コミュニティ](https://slack.openreplay.com/)までご連絡いただき、開発者に直接お問い合わせください！

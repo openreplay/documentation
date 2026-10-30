@@ -1,0 +1,183 @@
+---
+title: "Zustand プラグインで状態の変化を追跡する"
+metaTitle: "Zustand"
+metaDescription: "Zustand プラグインによる状態変化の追跡"
+---
+Zustand は、Redux のような状態管理ソリューションに代わる、非常に高速でミニマルなライブラリです。[Zustand プラグイン](https://www.npmjs.com/package/@openreplay/tracker-zustand)を使用すると、アプリケーションのライフサイクル全体を通して状態の変化を追跡できます。
+
+## プラグインをインストールする
+
+プラグインは、次のコマンドで簡単にインストールできます。
+
+```jsx
+npm i @openreplay/tracker-zustand
+```
+
+## Next.js アプリでプラグインを使用する
+
+**注記**：この例の完全なソースコードは、この [GitHub リポジトリ](https://github.com/deleteman/nextjs-commerce-example/tree/zustand-store)にあります。詳細が必要な場合はご確認ください。
+
+私が使用している Context provider ではトラッカープラグインを設定できるため、プラグインをインストールしたら、次の import 文を追加して _app.tsx ファイルを変更します。
+
+```jsx
+import trackerZustand from '@openreplay/tracker-zustand'
+```
+
+続いて、メインの App 関数は次のようになります。
+
+```jsx
+export default function MyApp({ Component, pageProps }: AppProps) {
+  const Layout = (Component as any).Layout || Noop
+
+  useEffect(() => {
+    document.body.classList?.remove('loading')
+  }, [])
+
+  let plugins = [
+    {
+      fn: trackerZustand,
+      name: 'zustand',
+    },
+  ]
+
+  return (
+    <TrackerProvider
+      config={{
+        plugins
+      }}
+    >
+      <Head />
+      <ManagedUIContext>
+        <Layout pageProps={pageProps}>
+          <Component {...pageProps} />
+        </Layout>
+      </ManagedUIContext>
+    </TrackerProvider>
+  )
+}
+```
+
+これにより、トラッカーでプラグインが自動的に初期化され、プラグインのメイン関数を実行して返されたデータも利用可能になります。
+
+次に、ストアを作成します。このストアに、この後すぐ EC サイトの商品を追加していきます。
+
+### Zustand プラグインでストアを作成する
+
+プラグインを使用するには、通常の Zustand ストアのインスタンス化方法を変更する必要があります。次のコードをテンプレートとしてコピー&ペーストしてください。
+
+```jsx
+import create from 'zustand'
+
+const productStore = null
+export const useProductsStore = (logger) => {
+  if (!productStore) {
+    //use a singleton pattern to make sure we only create the store the first time around
+    productStore = createProductStore(logger)
+  }
+  return productStore
+}
+
+function createProductStore(logger) {
+  return create(
+    logger((set) => ({
+      products: [],
+      addProduct: (p) =>
+        set((state) => {
+          const prodFound = state.products.find((prod) => {
+            return p.id == prod.id
+          })
+          if (prodFound) {
+            p.amount = prodFound.amount + 1
+          } else {
+            p.amount = 1
+          }
+
+          return {
+            products: [...state.products.filter((prod) => p.id != prod.id), p],
+          }
+        }),
+    }))
+  )
+}
+```
+
+エクスポートされた関数は、初めて使用されたときにストアを作成し、それ以降は既存のストアを返すだけです。
+
+一方、createProductStore 関数はストアを作成し、addProduct メソッドのロジックを設定して、渡された logger 関数を使用します。この logger は、お察しのとおり、Zustand プラグインを使用して受け取ったものです。
+
+ストアの準備ができたので、商品を追加できます。
+
+## ストアに商品を追加する
+
+ストアは addProduct メソッドをエクスポートしており、カート内の商品の管理を担当します。
+
+この関数をコードにインポートするには、次の手順を行います。
+
+1. Tracker のコンテキストプロバイダーをインポートして使用します。
+2. コンテキストから pluginsReturnedValue 属性を取得します。
+3. それを使って zustand メソッドを呼び出し（このメソッド名は、上記でプラグインを設定したときの name 属性にちなんでいます）、文字列の属性を渡してストアに名前を付けます（この名前はリプレイ中に使用されます）。
+4. zustand メソッドは logger を返します。これを、zustand（ストア用に作成したもの）の useProductStore フックを呼び出すときに使用します。
+
+一見複雑に思えますが、要するに次のようになります。
+
+```jsx
+const { pluginsReturnedValues } = useContext(TrackerContext)
+
+const useProductStoreTracked = useProductsStore(
+  pluginsReturnedValues.zustand('products_store')
+)
+const { addProduct } = useProductStoreTracked()
+```
+
+これで addProduct メソッドを呼び出すだけで、カートの商品がストアに追加されます。
+
+## ストアからデータを読み取る
+
+お察しのとおり、Zustand ストアからデータを読み取りたい場合も、同じ手順を踏みます。ただし、addProduct メソッドを取得する代わりに、products 配列を分割代入します。
+
+次のようになります。
+
+```jsx
+const { pluginsReturnedValues } = useContext(TrackerContext)
+
+const useProductStoreTracked = useProductsStore(
+  pluginsReturnedValues.zustand('products_store')
+)
+const { products } = useProductStoreTracked()
+```
+
+その後、通常どおり商品を反復処理できます。
+
+```jsx
+<div>
+  {products.map((p: Product, idx: Number) => {
+    return (
+      <div key={+idx}>
+        {p.name}({p.amount})
+      </div>
+    )
+  })}
+</div>
+```
+
+上記のコードは商品のリストを反復処理して画面に表示します。ストアに別の商品を追加すると、ここも更新されます。
+
+## 状態をセッションリプレイと同期する
+
+リプレイ中に状態の変化を確認するには、右下にある新しい Zustand タブをクリックするだけです。
+
+![Zustand で追跡したデータ用の新しいタブ](/tutorials/zustand/zustand-tab.png)
+
+クリックすると、ストアの内容が表示され、その変化や、そこに保存されたデータを把握できます。
+
+![リプレイ中に表示される状態データ](/tutorials/zustand/state-replay.png)
+
+ストアの名前に注目してください。これは実際には、最初に zustand メソッドを呼び出したときに使用した名前です。
+
+## ご質問はありますか？
+
+Next.js ではなく別のフレームワークを使用している場合でも、使い方は似ています。重要なのはストアの作成方法です。ストアを作成するときに logger 関数を使用する方法が見つかれば、リプレイ中に状態を追跡できます。
+
+Zustand プラグインを組み込んだ、動作する Next.js アプリケーションの**完全なソースコード**については、[こちらのリポジトリ](https://github.com/deleteman/nextjs-commerce-example/tree/zustand-store)をご確認ください。
+
+プロジェクトでの Zustand プラグインのセットアップで問題が発生した場合は、[Slack コミュニティ](https://slack.openreplay.com/)で、開発者に直接ご質問ください。

@@ -1,0 +1,71 @@
+---
+title: "Android SDK - 機密データのサニタイズ"
+metaTitle: "Android SDK - 機密データのサニタイズ"
+metaDescription: "Android トラッカーでの録画データとネットワークデータのサニタイズの詳細"
+---
+
+## UI コンポーネント
+
+サニタイズされたビューは、生成されるリプレイ上でぼかされます。任意の UI コンポーネントを追加でき、画面に表示されなくなると（メモリを節約するために）自動的に削除されます。
+
+### View
+
+```kotlin
+import com.openreplay.tracker.OpenReplay
+
+OpenReplay.addIgnoredView(view)
+```
+
+#### Jetpack Compose
+```kotlin
+import com.openreplay.tracker.Sanitize
+
+Sanitize {
+		Button(
+				modifier = Modifier
+						.fillMaxWidth()
+						.padding(top = 28.dp, bottom = 3.dp)
+						.trackTouchEvents("Continue Button"),
+				onClick = onSubmit,
+		) {
+				Text(
+						text = "Submit",
+						style = MaterialTheme.typography.titleSmall
+				)
+		}
+}
+```
+
+## ネットワークリクエスト
+
+リクエスト／レスポンスのデータを自動的に除外するために、2 つのキーが用意されています。ボディ用の `ignoredKeys` と、ヘッダー用の `ignoredHeaders` です。リクエストとレスポンスの両方がサニタイズされますが、ボディが対象になるのは有効な JSON の場合のみです。
+
+サニタイズしたい文字列のリストを代入するだけです。
+
+```kotlin
+val networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+リスナーに渡す前に、レスポンスデータを変更することもできます。
+
+```kotlin
+// ... request
+
+var sanitizedData: Any? = null
+data?.let {
+    try {
+        val json = JSONTokener(it).nextValue()
+        sanitizedData = customSanitizeFunction(it)
+        println(json)
+    } catch (error: JSONException) {
+        println("Error deserializing JSON: $error")
+    }
+}
+
+networkListener.finish(response, sanitizedData)
+```
+
+## ご質問はありますか？
+この手順についてご不明な点がございましたら、[Slack](https://slack.openreplay.com) までお気軽にお問い合わせください。

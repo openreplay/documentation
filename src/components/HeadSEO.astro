@@ -1,9 +1,9 @@
 ---
 import { OPEN_GRAPH } from '../config';
 import { normalizeLangTag } from '../i18n/bcp-normalize';
-import languages from '../i18n/languages';
+import languages, { latestOnlyLanguages } from '../i18n/languages';
 import { useTranslations } from '../i18n/util';
-import { getLanguageFromURL } from '../util';
+import { getLanguageFromURL, getVersionFromURL } from '../util';
 import { getOgImageUrl } from '../util/getOgImageUrl';
 
 export interface Props {
@@ -21,6 +21,17 @@ const imageAlt = content?.image?.alt ?? imageSrc === ogImageUrl ? '' : t('site.o
 const lang = getLanguageFromURL(canonicalURL?.pathname || '/');
 const bcpLang = normalizeLangTag(lang);
 const ogLocale = bcpLang.replace(/-/g, '_');
+// Versioned pages have no translation in latest-only languages, so don't advertise one.
+const isVersioned = !!getVersionFromURL(canonicalURL?.pathname || '/');
+const alternateLangs = Object.keys(languages).filter(
+	(altLang) => !(isVersioned && latestOnlyLanguages.has(altLang))
+);
+/** Swap the leading `/<lang>/` path segment (not the first match anywhere in the URL). */
+const alternateHref = (altLang: string) => {
+	const url = new URL(canonicalURL);
+	url.pathname = url.pathname.replace(`/${lang}/`, `/${altLang}/`);
+	return url.href;
+};
 ---
 
 <!-- Page Metadata -->
@@ -30,12 +41,8 @@ const ogLocale = bcpLang.replace(/-/g, '_');
 	/* Language alternates. See https://developers.google.com/search/docs/advanced/crawling/localized-versions#html */
 }
 {
-	Object.keys(languages).map((altLang) => (
-		<link
-			rel="alternate"
-			href={canonicalURL.href.replace(lang, altLang) || '/'}
-			hreflang={normalizeLangTag(altLang)}
-		/>
+	alternateLangs.map((altLang) => (
+		<link rel="alternate" href={alternateHref(altLang)} hreflang={normalizeLangTag(altLang)} />
 	))
 }
 

@@ -1,0 +1,50 @@
+---
+title: "クロスドメイン iFrame トラッキング"
+metaTitle: "クロスドメイン iFrame トラッキング"
+metaDescription: "OpenReplay でクロスドメイン iFrame 内のユーザーインタラクションをトラッキングします。"
+---
+
+クロスドメイン iFrame トラッキングを有効にするには、次のように、トラッカーのコンストラクターに `crossdomain.enabled` オプションを追加する必要があります。
+
+```html
+<iframe
+	title="test"
+	src="http://iframe1.website.com/iframe-path"
+	width="300"
+	height="300"
+></iframe>
+``` 
+
+トラッカーのコンストラクターに、次のように `crossdomain` オプションを追加します。
+
+```js
+tracker.configure({
+	projectKey: PROJECT_KEY,
+	crossdomain: {
+		enabled: true
+	},
+	captureIFrames: true
+});
+```
+
+次に、対象の iFrame 内でトラッカーインスタンスを初期化し、そのコンストラクターに `crossdomain.parentDomain` を追加します。
+
+```js
+tracker.configure({
+	projectKey: PROJECT_KEY,
+	crossdomain: {
+	  // Specifies the domain of the parent window
+	  // If not specified, it will be set to '*'
+	  // Which means that child window will send messages to all domains inside the browser window
+	  // Consult your CSP settings to ensure that '*' is allowed or specify the parent domain
+		parentDomain: '*',
+	  enabled: true
+	}
+});
+```
+
+トラッカースニペットを使用している場合は、子 iframe には `openreplay-assist.js` ではなく、通常の（openreplay.js）インスタンスを使用することをお勧めします（Assist セッションは親インスタンスにのみ接続する必要があるためです）。
+
+## ご質問はありますか？
+
+問題が発生した場合は、[Slack](https://slack.openreplay.com) に参加して、コミュニティのサポートを受けてください。

@@ -1,0 +1,157 @@
+---
+title: "Sanitizar dados (Web)"
+metaTitle: "Sanitizar dados (Web)"
+metaDescription: "Como sanitizar dados e garantir a privacidade dos seus usuários."
+---
+import Aside from '~/components/Aside.astro'
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+
+## Sanitizar dados do replay
+
+Você pode sanitizar o que o OpenReplay captura tanto em nível global quanto em nível granular (ou em ambos). Quaisquer dados ofuscados ou ignorados não são capturados na origem. Em outras palavras, esses dados nunca saem do navegador do usuário.
+
+<YoutubeVideo title="Veja como sanitizar dados sensíveis nos seus replays"
+  description="Se você não gosta de ler, pode acompanhar este tutorial em vídeo que mostra como sanitizar dados nas suas gravações."
+  videoURL="https://youtu.be/22-UCoocy6s"
+/>
+
+### Nível global
+
+Os dados podem ser sanitizados no nível do tracker, ao configurar o OpenReplay.
+
+#### Estou usando o script do OpenReplay
+
+![Configuração do projeto no OpenReplay](/static/gdpr-1.png#center)
+
+1) Clique em *Tracking Code* do seu projeto em 'Preferences > Projects'.
+2) As opções de gravação de dados devem aparecer logo antes do trecho de código:
+- **Inputs**: Para ignorar, ofuscar ou gravar todos os valores de entrada dos seus usuários.
+- **Do not record any numeric text**: Para ignorar valores numéricos contidos em elementos de texto.
+- **Do not record email addresses**: Por padrão, todos os e-mails contidos em elementos de texto são ofuscados e não aparecerão nos replays. Você pode desativar isso desmarcando a caixa.
+3) Alterar as opções de gravação de dados impacta o trecho de código. Certifique-se de copiar/colar o script atualizado no seu aplicativo web.
+
+#### Estou usando o OpenReplay NPM
+
+Há um conjunto de opções relacionadas à privacidade que você pode passar ao construtor:
+- `obscureTextEmails?: boolean` Ofusca e-mails em elementos de texto. Os e-mails serão convertidos em uma sequência aleatória de asteriscos. Padrão: true.
+- `obscureTextNumbers?: boolean` Ofusca números em elementos de texto. Os números serão convertidos em uma sequência aleatória de asteriscos. Padrão: false.
+- `obscureInputEmails?: boolean` Ofusca e-mails em campos de entrada. Os valores de e-mail serão convertidos em uma sequência aleatória de asteriscos. Padrão: true.
+- `obscureInputNumbers?: boolean` Ofusca números em campos de entrada. Os valores numéricos serão convertidos em uma sequência aleatória de asteriscos. Padrão: false.
+- `obscureInputDates?: boolean` Ofusca datas em campos de entrada. Os valores de data serão convertidos em uma sequência aleatória de asteriscos. Padrão: false.
+- `defaultInputMode?: 0 | 1 | 2` Modo de captura padrão para valores de entrada. Respectivamente: texto simples, ofuscado ou ignorado. Padrão: 1 (ofuscado).
+
+O texto, os e-mails e os números sanitizados são ofuscados ou suprimidos antes de os dados serem enviados aos servidores do OpenReplay. Portanto, as alterações aplicadas às opções acima não são retroativas e só valem para os dados coletados a partir de então.
+
+### Nível granular
+
+Você também pode sanitizar seus dados no nível do código, para maior granularidade. Isso é útil para ofuscar ou ignorar elementos do DOM e campos de entrada.
+
+#### Usando atributos HTML
+
+- `data-openreplay-obscured` para mascarar o conteúdo de texto de tags `<input>`, `<img>` e outros elementos HTML (por exemplo, `<div>`), com exceção de `<svg>` e `<canvas>`.
+
+```html
+<!--Obscuring input fields-->
+<form action="/action_page.php">
+  Name: <input type="text" name="fname" data-openreplay-obscured><br>
+  <input type="submit" value="Submit">
+</form>
+<!--Obscuring a div element-->
+<div style="background-color:lightblue" data-openreplay-obscured>
+  <h3>This is a sensitive information</h3>
+  <p>This is an important paragraph</p>
+  <img src="important_image.jpg">
+</div>
+```
+
+- `data-openreplay-hidden` para ocultar o conteúdo de tags `<input>`, `<img>`, `<svg>` e outros elementos HTML (por exemplo, `<div>`), com exceção de `<canvas>`. O conteúdo do elemento (incluindo seus componentes filhos) é removido, mas as props e os argumentos são mantidos, como neste exemplo:
+
+```html
+<div style="background-color:lightblue" data-openreplay-hidden>
+  <div>This is a sensitive information</div>
+  <svg>An important chart</svg>
+</div>
+```
+
+Isso resultará no seguinte DOM sendo gravado pelo tracker:
+
+```html
+<div style="background-color:lightblue" data-openreplay-hidden>
+</div>
+```
+
+#### Usando a função domSanitizer
+
+- `domSanitizer: (node: Element) => SanitizeLevel` função para evitar a necessidade de instrumentar cada componente HTML que precisa ser sanitizado. `SanitizeLevel` pode ser `Plain` (0), `Obscured` (1) ou `Hidden` (2). Essa função é passada ao construtor do tracker. Abaixo está um exemplo de como ocultar todos os elementos HTML que têm um nome de classe CSS específico:
+
+```js
+// Import SanitizeLevel enum
+import Tracker, { SanitizeLevel } from "@openreplay/tracker";
+
+const tracker = new Tracker({
+  projectKey: PROJECT_KEY,
+  domSanitizer: (node: Element) => {
+    const elementClassNames = node.classList
+
+    if (elementClassNames.contains('to_be_redacted_class')) {
+      return SanitizeLevel.Hidden
+    }
+
+    if (node.id === 'sensitiveData') {
+      return SanitizeLevel.Obscured
+    }
+
+    return SanitizeLevel.Plain
+  }
+})
+tracker.start()
+```
+
+> **Nota:** Todos os elementos sanitizados são mascarados/ocultados na origem (tracker), para que dados sensíveis nunca cheguem à instância do OpenReplay.
+
+## Sanitizar dados do DevTools
+
+Você pode usar o SDK do OpenReplay para sanitizar os dados de rede e o estado do aplicativo.
+
+### Rede
+
+A captura de requisições/respostas pode registrar informações altamente sensíveis ou privadas que o seu aplicativo envia/recebe. Certifique-se de ocultar adequadamente os seus dados de rede.
+
+#### Fetch/XHR
+
+Use a opção `sanitizer` para ocultar dados sensíveis de requisições/respostas Fetch/XHR. Consulte as [opções de rede](/sdk/network-options#options) para mais detalhes.
+
+Confira também este tutorial passo a passo sobre como [capturar e sanitizar requisições de rede](/tutorials/capture-request).
+
+#### GraphQL
+
+Para sanitizar dados do GraphQL, você precisa clonar as variáveis-chave e os resultados da operação antes de chamar o tracker. Veja como [sanitizar dados gravados no GraphQL](/tutorials/graphql/#sanitizing-the-recorded-data) para mais detalhes.
+
+### Gerenciamento de estado
+
+Remova dados sensíveis do store de estado do seu frontend usando o SDK do OpenReplay.
+
+#### Redux
+
+Use as opções `actionFilter`, `actionTransformer` e `stateTransformer` para ocultar ações sensíveis e subárvores do seu store. Consulte a [documentação do plugin do redux](/plugins/redux/#options) para mais detalhes.
+
+#### VueX
+
+Use as opções `filter`, `transformer` e `mutationTransformer` para ocultar mutações sensíveis e subárvores do seu store. Consulte a [documentação do plugin do vuex](/plugins/vuex/#options) para mais detalhes.
+
+#### Zustand
+
+Use as opções `filter`, `transformer` e `mutationTransformer` para ocultar mutações sensíveis e subárvores do seu store. Consulte a [documentação do plugin do zustand](/plugins/zustand/#options) para mais detalhes.
+
+#### Pinia
+
+Use as opções `filter`, `transformer` e `mutationTransformer` para ocultar mutações sensíveis e subárvores do seu store. Consulte a [documentação do plugin do pinia](/plugins/pinia/#options) para mais detalhes.
+
+#### NgRx
+
+Use as opções `actionFilter`, `actionTransformer` e `stateTransformer` para ocultar ações sensíveis e subárvores do seu store. Consulte a [documentação do plugin do ngrx](/plugins/ngrx/#options) para mais detalhes.
+
+## Tem dúvidas?
+
+Estamos constantemente melhorando nossos recursos relacionados à privacidade, então nos avise se você precisar de algo que ainda não oferecemos. Se estiver tendo dificuldade para sanitizar seus dados, entre em contato conosco pelo nosso [Slack](https://slack.openreplay.com) e peça ajuda à nossa comunidade.

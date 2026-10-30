@@ -1,0 +1,43 @@
+---
+title: "Android SDK - 入力のトラッキング"
+metaTitle: "Android SDK - 入力のトラッキング"
+metaDescription: "Android トラッカーによる入力のトラッキングの詳細"
+---
+
+トラッカーは値の変更イベント（デバウンス処理済み）をリッスンし、その結果の値を OpenReplay バックエンドに送信します。
+
+## トラッキング対象の入力の追加
+
+### EditText
+
+`.trackTextInput(label:masked)` を使用して、入力イベントを監視します。
+- `label: String` - 記録される入力のラベル
+- `masked: Bool` - `true` の場合、トラッカーは入力イベント自体のみを記録し、値は記録しません。
+
+```kotlin
+import com.opnereplay.tracker.OpenReplay
+
+val passwordEditText = binding.password
+passwordEditText.trackTextInput(label = "password", masked = true)
+```
+
+### View
+
+```kotlin
+import com.opnereplay.listeners.Analytics
+
+Analytics.addObservedInput(inputEl)
+```
+
+### Jetpack Compose
+
+```kotlin
+import com.openreplay.tracker.listeners.trackTextInputChanges
+
+OutlinedTextField(
+        modifier = Modifier
+            .fillMaxWidth()
+            .trackTextInputChanges("Email Field", emailState.text),
+        ...,
+    )
+```

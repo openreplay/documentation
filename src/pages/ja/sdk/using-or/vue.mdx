@@ -1,0 +1,52 @@
+---
+title: "OpenReplay を Vue で使用する"
+metaTitle: "Vue アプリケーションへの OpenReplay トラッカーの追加"
+metaDescription: "Vue アプリケーションでトラッカーを動作させる方法を説明します。"
+---
+import Aside from '~/components/Aside.astro'
+
+Vue アプリケーションでトラッカーを動作させるのは非常に簡単です。
+
+## トラッキングコードの追加
+
+SPA（シングルページアプリケーション）を構築している場合は、メインファイルのセットアップスクリプトに次のコードを追加するだけです。
+
+```html
+<script setup>
+// note that you can manually import Tracker class if you want to handle the instance manually
+import { tracker } from '@openreplay/tracker'
+//... your code here
+tracker.configure({
+  projectKey: "<your project key>",
+  ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
+});
+
+tracker.start();
+//... more code here
+</script>
+```
+
+<Aside type="tip">
+新しいプロジェクトを作成するときに、CDN からトラッカーの [JS スニペット版](/sdk/using-or/snippet#getting-the-snippet)を直接取得することもできますが、そのコードは最小限すぎるため、カスタマイズや追加プラグインの導入が難しくなります。
+</Aside>
+
+### コード内での "projectKey" の扱い
+
+セキュリティ上の理由から、`projectKey` をアプリケーションコードに直接ハードコーディングするのは避けてください。代わりに、設定ファイルや環境管理の仕組みに保存してください。
+
+1 つの方法は、プロジェクトのルートにある `.env` ファイルに環境変数を追加し、その変数に `VITE_` というプレフィックスを付けることです。これにより、Vue のコード内でその変数を利用できるようになります。あとから `import.meta.env.<your variable name>` で参照できます。
+
+例を次に示します。
+```javascript
+tracker.configure({
+  projectKey: import.meta.env.VITE_VUE_APP_PROJECT_KEY,
+});
+```
+
+## より複雑なものを構築していますか？
+
+Vue で複雑なアプリケーションを構築している場合は、[Nuxt](/sdk/using-or/nuxt) などを使用している可能性が高いでしょう。お使いのフレームワークを見つけるには、[トラッカーのセットアップ](/sdk/using-or)セクションをご確認ください。
+
+## ご質問はありますか？
+
+Vue プロジェクトでトラッカーをセットアップする際に問題が発生した場合は、[Slack コミュニティ](https://slack.openreplay.com/)までお気軽にご連絡ください。開発者に直接質問できます。

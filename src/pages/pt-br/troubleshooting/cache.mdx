@@ -1,0 +1,21 @@
+---
+title: "Limpar o cache"
+metaTitle: "Limpar o cache"
+metaDescription: "Como limpar e redefinir o cache (CSS, fontes e ícones) no OpenReplay."
+---
+
+O OpenReplay precisa acessar recursos, como suas folhas de estilo, ícones e fontes, para que os replays funcionem. Na verdade, esses arquivos são copiados e depois armazenados em cache pelo nosso backend para que você possa ver gravações antigas mesmo que seu app web tenha mudado. Siga os passos abaixo para limpar o cache:
+
+1. Execute `k9s -n db`
+2. Use as setas do teclado para navegar pela lista e chegar ao contêiner `minio-*`
+3. Pressione s para ter acesso de shell ao contêiner do Minio (armazenamento de objetos)
+4. Execute `export MINIO_ACCESS_KEY=<accessKey from vars.yaml>`
+5. Execute `export MINIO_SECRET_KEY=<secretKey from vars.yaml>`
+6. Execute `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
+7. Execute `mc rm --recursive --dangerous --force minio/sessions-assets` para remover todos os arquivos em cache (CSS, fontes e ícones)
+8. Use `exit` para sair do contêiner do Minio
+9. Execute `:quit` para sair da CLI do Kubernetes
+10. Reinicie o serviço `assets` executando `openreplay -R`
+
+## Tem dúvidas?
+Se você tiver alguma dúvida sobre este processo, fique à vontade para falar conosco no nosso [Slack](https://slack.openreplay.com) .

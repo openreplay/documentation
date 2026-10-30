@@ -1,0 +1,71 @@
+---
+title: "Android SDK - Sanitizar dados sensíveis"
+metaTitle: "Android SDK - Sanitizar dados sensíveis"
+metaDescription: "Detalhes sobre a sanitização de gravações e dados de rede no tracker Android"
+---
+
+## Componentes de UI
+
+As views sanitizadas ficarão desfocadas no replay resultante. Você pode adicionar qualquer componente de UI e ele será removido automaticamente (para preservar memória) assim que sair da tela.
+
+### View
+
+```kotlin
+import com.openreplay.tracker.OpenReplay
+
+OpenReplay.addIgnoredView(view)
+```
+
+#### Jetpack Compose
+```kotlin
+import com.openreplay.tracker.Sanitize
+
+Sanitize {
+		Button(
+				modifier = Modifier
+						.fillMaxWidth()
+						.padding(top = 28.dp, bottom = 3.dp)
+						.trackTouchEvents("Continue Button"),
+				onClick = onSubmit,
+		) {
+				Text(
+						text = "Submit",
+						style = MaterialTheme.typography.titleSmall
+				)
+		}
+}
+```
+
+## Requisições de rede
+
+Duas chaves são exportadas para remover automaticamente os dados de requisição/resposta: `ignoredKeys` para o body e `ignoredHeaders` para os headers. Tanto a requisição quanto a resposta serão sanitizadas, mas o body só será afetado se for um JSON válido.
+
+Basta atribuir uma lista de strings que você deseja sanitizar:
+
+```kotlin
+val networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+Também é possível alterar os dados da resposta antes de passá-los ao listener:
+
+```kotlin
+// ... request
+
+var sanitizedData: Any? = null
+data?.let {
+    try {
+        val json = JSONTokener(it).nextValue()
+        sanitizedData = customSanitizeFunction(it)
+        println(json)
+    } catch (error: JSONException) {
+        println("Error deserializing JSON: $error")
+    }
+}
+
+networkListener.finish(response, sanitizedData)
+```
+
+## Tem dúvidas?
+Se você tiver qualquer dúvida sobre este processo, fique à vontade para entrar em contato conosco no nosso [Slack](https://slack.openreplay.com) .

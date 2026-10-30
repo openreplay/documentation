@@ -1,0 +1,227 @@
+---
+title: "カスタムヒューリスティック"
+metaTitle: "カスタムヒューリスティック"
+metaDescription: "独自のアルゴリズムでヒューリスティックサービスを拡張する方法"
+---
+ここでは、CPU 使用率の高さやクリックレージなどの問題を検出するための、シンプルで堅牢なアルゴリズムを「ヒューリスティック」と呼びます。1 つの例を使って、ヒューリスティックがどのように動作するか、そして独自の検出器を作成して DevTools でその結果を確認する方法を説明します。
+
+## テンプレート
+
+ヒューリスティックのテンプレートは、パス `openreplay/backend/pkg/handlers/custom` にあります。
+
+```tsx
+package custom
+
+import . "openreplay/backend/pkg/messages"
+
+type CustomHandler struct {
+	lastTimestamp uint64
+}
+
+func (h *CustomHandler) Handle(message Message, messageID uint64, timestamp uint64) Message {
+	h.lastTimestamp = timestamp
+	return nil
+}
+
+func (h *CustomHandler) Build() Message {
+	return nil
+}
+```
+
+ヒューリスティックのメソッドを作成したら、`main.go` ファイルを変更することで追加できます。変更するファイルのパスは
+`openreplay/backend/cmd/heuristics` です。ここでカスタムモジュールをインポートし、カスタム関数をメッセージプロセッサーハンドラーに追加します。
+```tsx
+package main
+
+import (
+        "log"
+        "openreplay/backend/internal/config/heuristics"
+        "openreplay/backend/pkg/handlers"
+        web2 "openreplay/backend/pkg/handlers/web"
+        "openreplay/backend/pkg/intervals"
+        logger "openreplay/backend/pkg/log"
+        "openreplay/backend/pkg/messages"
+        "openreplay/backend/pkg/queue"
+        "openreplay/backend/pkg/queue/types"
+        "openreplay/backend/pkg/sessions"
+        "os"
+        "os/signal"
+        "syscall"
+        "time"
+        // Import custom modules here
+)
+
+func main() {
+        log.SetFlags(log.LstdFlags | log.LUTC | log.Llongfile)
+
+        // Load service configuration
+        cfg := heuristics.New()
+
+        // HandlersFabric returns the list of message handlers we want to be applied to each incoming message.
+        handlersFabric := func() []handlers.MessageProcessor {
+                return []handlers.MessageProcessor{
+                        // web handlers
+                        &web2.ClickRageDetector{},
+                        &web2.CpuIssueDetector{},
+                        &web2.DeadClickDetector{},
+                        &web2.MemoryIssueDetector{},
+                        &web2.NetworkIssueDetector{},
+                        &web2.PerformanceAggregator{},
+                        // Add custom handlers here
+                }
+        }
+        ...
+}
+```
+
+## Quick Return の例
+
+この例では、5 秒以内に同じ URL へ戻るたびにシグナルを送信する **Quick Return** ヒューリスティックを作成します。このイベントを検出するために実装するメソッドは、`SetPageLocation` イベントと `MouseClick` イベントを利用します。マウスクリックが発生するたびに現在のタイムスタンプを更新し、その後 5 秒以内に現在のウェブページを指す `SetPageEvent` メッセージを受信した場合、QuickReturn イベントを返します。
+
+まず、以下のコードを含む `quickreturn.go` ファイルを、パス `openreplay/backend/pkg/handlers/custom` に作成します。
+
+```go
+package custom
+import (
+    "log"
+    "encoding/json"
+    . "openreplay/backend/pkg/messages"
+)
+type QuickReturnDetector struct {
+    timestamp   uint64
+    currentPage string
+    lastPage    string
+}
+
+type CustomPayload struct {
+        Timestamp   uint64 `json:"timestamp"`
+        CurrentPage string `json:"current_page"`
+}
+
+// If received SetPageLocation on same 
+func (h *QuickReturnDetector) HandleSetPageLocation(msg *SetPageLocation, messageID uint64, timestamp uint64) Message {
+    if (h.timestamp + 5000 >= msg.NavigationStart && h.lastPage == msg.URL) {
+        h.timestamp = msg.NavigationStart
+        return h.Build()
+    }
+    h.lastPage = h.currentPage
+    h.currentPage = msg.URL
+    h.timestamp = msg.NavigationStart
+    return nil
+}
+// detect when a button is clicked (selector must have string 'button' in it)
+func (h *QuickReturnDetector) HandleMouseClick(msg *MouseClick, messageID uint64, timestamp uint64) {
+    h.timestamp = timestamp
+}
+func (h *QuickReturnDetector) Handle(message Message, messageID uint64, timestamp uint64) Message {
+    switch msg := message.(type) {
+    case *SetPageLocation:
+        if msg.NavigationStart != 0 {
+            return h.HandleSetPageLocation(msg, messageID, timestamp)
+        }
+    case *MouseClick:
+        h.HandleMouseClick(msg, messageID, timestamp)
+    }
+    return nil
+}
+func (h *QuickReturnDetector) Build() Message {
+    payload := &CustomPayload{
+        CurrentPage: h.currentPage,
+        Timestamp: h.timestamp,
+    }
+    payloadData, err := json.Marshal(payload)
+    if err != nil {
+            log.Println("JSON encoding error", err)
+            return nil
+    }
+    payloadString := string(payloadData)
+    event := &CustomEvent {
+        MessageID: 122,
+        Timestamp: h.timestamp,
+        Name:      "quickreturn",
+        Payload:   payloadString,
+    }
+    return event
+}
+```
+
+ヒューリスティックが作成できたので、あとは有効化するだけです。そのためには、次のように、パス `openreplay/backend/cmd/heuristics` にある `main.go` ファイルにヒューリスティックを追加します。
+
+```tsx
+package main
+
+import (
+        "log"
+        "openreplay/backend/internal/config/heuristics"
+        "openreplay/backend/pkg/handlers"
+        web2 "openreplay/backend/pkg/handlers/web"
+        "openreplay/backend/pkg/intervals"
+        logger "openreplay/backend/pkg/log"
+        "openreplay/backend/pkg/messages"
+        "openreplay/backend/pkg/queue"
+        "openreplay/backend/pkg/queue/types"
+        "openreplay/backend/pkg/sessions"
+        "os"
+        "os/signal"
+        "syscall"
+        "time"
+        // Add custom module
+        custom "openreplay/backend/pkg/custom"
+)
+
+func main() {
+        log.SetFlags(log.LstdFlags | log.LUTC | log.Llongfile)
+
+        // Load service configuration
+        cfg := heuristics.New()
+
+        // HandlersFabric returns the list of message handlers we want to be applied to each incoming message.
+        handlersFabric := func() []handlers.MessageProcessor {
+                return []handlers.MessageProcessor{
+                        // web handlers
+                        &web2.ClickRageDetector{},
+                        &web2.CpuIssueDetector{},
+                        &web2.DeadClickDetector{},
+                        &web2.MemoryIssueDetector{},
+                        &web2.NetworkIssueDetector{},
+
+                        // The new handler
+                        &custom.QuickReturnDetector{},
+                }
+        }
+        ...
+}
+```
+
+これでヒューリスティックが利用可能になり、メッセージは **Custom Event** として送信されます。
+新しいヒューリスティックを利用するには、バックエンドを再デプロイする必要があります。そのためには、[**ソースからのデプロイ**](https://docs.openreplay.com/deployment/deploy-source)ページの *ビルドとデプロイ* セクションの手順に従ってください。
+
+## カスタムイベントを活用する
+カスタムヒューリスティックが新しいカスタムイベントを送信するようになったので、次はそのイベントを何らかの形で活用します。
+先ほどの例では、次の 2 つの方法があります。
+
+1. カスタムイベントでセッションをフィルターし、その「問題」（この例では Quick Return の問題）が発生したセッションだけを一覧表示できます。
+2. プレイヤーの DevTools セクションにある「Events」タブでイベントを確認できます。これにより、イベントがトリガーされた正確な瞬間を特定できます。
+
+### カスタムイベントでセッションをフィルターする
+
+新しいカスタムイベントでセッションをフィルターするには、[Omnisearch](/session-replay/omnisearch) 機能を使用します。検索バーをクリックし、フィルタータイプとして「Custom Events」を選択するだけです。
+選択したらイベント名を入力します。入力を始めると名前が自動補完されます。以下の画像のとおりです。
+
+![カスタムイベントのフィルター](/tutorials/heuristics/custom-events.png)
+
+**注記**：オートコンプリートが機能しない場合や、探しているイベント名が表示されない場合は、そのような名前のイベントがデータベースに存在しないということです。その場合は、カスタムイベントが正しく送信されるようにロジックを再確認してください。
+
+### DevTools でカスタムイベントを見つける
+
+カスタムイベントがいつトリガーされるのかを正確に把握したい場合は、セッションをリプレイし、DevTools の「Events」タブをクリックします。
+画面の右下にあります。
+クリックすると展開され、カスタムイベントを含むイベントの一覧が表示されます。以下の画像のとおりです。
+
+![DevTools に表示されたイベント一覧](/tutorials/heuristics/devtools.png)
+
+この簡単な手順で、新しい検出器を作成できました。もちろん、アルゴリズムをより高度にして、さまざまな種類のイベントを組み合わせることもできます。
+
+## ご質問はありますか？
+
+問題が発生した場合は、[Slack](https://slack.openreplay.com) に参加して、コミュニティのサポートを受けてください。

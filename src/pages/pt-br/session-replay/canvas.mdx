@@ -1,0 +1,60 @@
+---
+title: "Canvas and WebGL"
+metaTitle: "Canvas and WebGL"
+metaDescription: "Como gravar elementos canvas e WebGL no session replay."
+---
+> Nota: A gravação de canvas está habilitada apenas na nossa oferta [Dedicated Cloud](https://console.openreplay.com/signup).
+
+O OpenReplay pode gravar o conteúdo de elementos `<canvas>` com suporte a WebGL.
+
+> Nota: se você estiver usando um contexto WebGL, certifique-se de adicionar `{ preserveDrawingBuffer: true }` às opções de .getContext para evitar frames em branco, já que a extração de dados de imagem do canvas normalmente depende da camada de desenho, que é omitida por padrão.
+
+## Habilitar a gravação de canvas
+
+Isso precisa ser feito no nível do back-end. Para habilitar a gravação de canvas, basta executar `openreplay -e` e depois adicionar o bloco abaixo para atualizar o serviço `http`.
+
+```yaml
+http:
+  env:
+    RECORD_CANVAS: true
+    CANVAS_QUALITY: low
+    CANVAS_FPS: 1
+```
+
+Feito isso, salve e saia da configuração usando `:wq` para que o OpenReplay cuide de aplicar as alterações.
+
+Você pode ajustar as opções abaixo conforme a sua necessidade. Na verdade, alguns aplicativos podem exigir uma taxa de quadros maior. Embora a captura e a codificação dos snapshots sejam feitas em segundo plano (web-worker) e não afetem o desempenho do seu aplicativo, usar valores altos consumiria mais largura de banda no lado do usuário final e exigiria mais espaço em disco na sua instância do OpenReplay (back-end). As imagens/snapshots capturados pelo tracker são enviados ao back-end e depois processados para fins de session replay.
+
+- `CANVAS_QUALITY: 'low' | 'medium' | 'high'`: Define a qualidade dos snapshots gravados. O padrão é `low`.
+- `CANVAS_FPS: number`: Define o número de quadros por segundo em que os elementos canvas são gravados. O padrão é `1`.
+
+## Opções de canvas (SDK)
+
+O namespace `canvas` das [opções](/sdk/constructor) do SDK JavaScript traz as seguintes opções:
+
+```js
+canvas?: {
+  disableCanvas?: boolean
+  fixedCanvasScaling?: boolean
+  useAnimationFrame?: boolean
+  fileExt?: 'webp' | 'png' | 'jpeg' | 'avif'
+}
+```
+
+- `disableCanvas`: Desabilita a gravação de canvas para a sessão iniciada. Padrão: `true`.
+- `fixedCanvasScaling`: Força a captura do canvas em uma resolução nativa de 600x600 em monitores de alto DPI. Padrão: `false`.
+- `useAnimationFrame`: Habilita a gravação síncrona para uma renderização mais estável de elementos WebGL. Isso pode introduzir sobrecarga/atraso, portanto é adequado apenas para aplicativos com FPS baixo. Padrão: `false`.
+- `fileExt`: Escolha o formato `(webp|png|jpeg|avif)` das imagens gravadas. Padrão: `webp` (para suporte a canal alfa no WebGL).
+
+### Sanitização de dados
+
+Em termos de privacidade, o conteúdo dos elementos canvas não pode ser sanitizado.
+
+### Sessões de co-browsing
+
+Para sessões ao vivo (também conhecidas como Assist), nenhuma configuração específica é necessária. O canvas será habilitado e capturado por padrão, e os dados serão transmitidos via protocolo P2P. Para garantir o uso ideal da rede, os dados só são transmitidos quando um agente está assistindo à sessão ao vivo e o conteúdo do canvas está mudando.
+
+## Tem dúvidas?
+
+Se você tiver qualquer dúvida sobre este processo, fale com a gente no nosso [Slack](https://slack.openreplay.com) .
+

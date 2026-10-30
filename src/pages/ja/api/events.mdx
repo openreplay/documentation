@@ -1,0 +1,99 @@
+---
+title: "Events"
+metaTitle: "Events"
+metaDescription: "特定の録画のすべてのイベントを取得する方法。"
+---
+
+## イベントの取得
+
+特定のセッションでキャプチャされたイベント（クリック、ページ訪問、入力、カスタムイベントなど）の一覧を返します。セッションの範囲はサーバーによって強制され、`sessionID` パスパラメーターがイベントフィルターとして自動的に追加されます。
+
+### メソッド
+<p><span class="or-method post">POST</span></p>
+
+### URL
+`/public/:projectKey/sessions/:sessionId/events`
+
+### パラメーター
+
+| 名前       | 型     | 説明                                                       |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | プロジェクトキー（必須）                                   |
+| sessionId  | string | セッションの ID（必須、最大 256）                          |
+
+### ペイロード
+
+| 名前           | 型         | 説明                                                                 |
+|----------------|------------|----------------------------------------------------------------------|
+| startTimestamp | epoch (ms) | 時間枠の開始（必須、最小値 946684800000）                            |
+| endTimestamp   | epoch (ms) | 時間枠の終了（必須、startTimestamp より後の値）                      |
+| limit          | integer    | ページサイズ、1〜200（必須）                                         |
+| page           | integer    | ページ番号、1 から開始（必須）                                       |
+| sortBy         | string     | ソートに使用するイベントのカラム（任意）                             |
+| sortOrder      | string     | `asc` または `desc`（任意）                                          |
+| filters        | array      | 追加のイベントフィルター（任意）。フィルターの構造は下記を参照       |
+| columns        | array      | レスポンスに含めるイベントのカラム（任意）                           |
+
+フィルターオブジェクト:
+
+| 名前     | 型       | 説明                                                          |
+|----------|----------|---------------------------------------------------------------|
+| name     | string   | フィルター属性名（必須、最大 256）                            |
+| operator | string   | 比較演算子（例: `is`、`contains`）                            |
+| value    | string[] | 最大 10 個の値。各値は最大 256 文字                           |
+| isEvent  | boolean  | フィルターがイベントプロパティを対象とするかどうか            |
+| dataType | string   | `string`、`number`、`boolean`、`integer`、`timestamp` のいずれか |
+
+### リクエストヘッダー
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### ステータスコード
+
+<p><span class="or-method ok">200</span> レスポンスは JSON としてボディで送信されます<br/>
+<span class="or-method err">400</span> 無効なボディ、または無効な <code>sessionID</code>（空、または 256 文字を超える）</p>
+
+### リクエスト例
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/sessions/4813023023591169/events \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "startTimestamp": 1623440000000,
+    "endTimestamp":   1623441000000,
+    "limit": 100,
+    "page":  1,
+    "sortOrder": "asc"
+  }'
+```
+
+### レスポンス例
+
+```json
+{
+  "data": {
+    "total": 3,
+    "events": [
+      {
+        "event_id": "01H7Z...",
+        "$event_name": "$pageview",
+        "created_at": 1623440905732,
+        "distinct_id": "mickael@openreplay.com",
+        "session_id": "4813023023591169",
+        "properties": { "path": "/my-account/" }
+      },
+      {
+        "event_id": "01H7Z...",
+        "$event_name": "$click",
+        "created_at": 1623440915126,
+        "distinct_id": "mickael@openreplay.com",
+        "session_id": "4813023023591169",
+        "$properties": { "label": "Shop" },
+        "$auto_captured": true
+      }
+    ]
+  }
+}
+```

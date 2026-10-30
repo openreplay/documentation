@@ -1,0 +1,113 @@
+---
+title: "Convert Session Events to E2E Test"
+metaTitle: "セッションレコーディングを自動 E2E テストコードに変換する"
+metaDescription: "OpenReplay のセッションレコーディングを、Cypress、Playwright、Puppeteer 向けの自動 E2E テストコードに変換する方法を説明します"
+---
+
+Convert Session Events to E2E Test 機能を使用すると、録画されたユーザーセッションを自動化されたエンドツーエンドのテストコードに変換できます。この強力な機能は、実際のユーザー行動とテスト自動化の橋渡しとなり、お好みのテストフレームワークでユーザージャーニーをすばやく再現できます。
+
+## 仕組み：セッションを E2E テストコードに変換する
+
+1. ダッシュボードの **Sessions** ビューに移動します
+2. 録画されたセッションを選択して、**Session Replay** ビューを開きます
+3. **Activity** タブをクリックして、イベントのタイムラインを表示します
+4. 検索バーの横にある **Copy Events** アイコンを探します
+5. アイコンをクリックして、エクスポートオプションのドロップダウンを開きます
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/images/products/session-replay/generate-e2e-test.gif" alt="セッションイベントを E2E テストに変換" style={{ width: '700px', height: 'auto' }} />
+</div>
+
+## Convert Session Events to E2E Test の使い方
+
+### 基本的な使い方
+
+1. Activity ビューで **Copy Events** アイコンをクリックします
+2. ドロップダウンから、使用するテストフレームワーク（Cypress、Playwright、Puppeteer）を選択します
+3. **Events Only** または **Complete Test** のいずれかを選択します
+4. 「Select events on the timeline」を使用して、含めるイベントを選択します
+5. **Copy** をクリックして、生成されたコードをクリップボードにコピーします
+6. テストファイルに直接貼り付けます
+
+### エクスポートオプション
+
+#### テストフレームワーク
+
+この機能は、次の 3 つの人気テストフレームワークへのエクスポートに対応しています。
+
+- **Cypress** - 開発者体験と信頼性に重点を置いた Web テストフレームワーク
+- **Playwright** - クロスブラウザーに対応したモダンなテストライブラリ
+- **Puppeteer** - ヘッドレスブラウザー自動化ライブラリ
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/images/products/session-replay/test-framework.png" alt="テストフレームワーク" style={{ width: '700px', height: 'auto' }} />
+</div>
+
+#### エクスポートの種類
+
+エクスポートの種類は次の 2 つから選択できます。
+
+- **Events Only** - テスト構造を含めず、アクションコマンドのみを生成します
+- **Complete Test** - 適切なボイラープレートを含む、完全な構造のテストを作成します
+
+#### イベントの選択
+
+タイムライン選択ツールでは、次の操作ができます。
+
+- エクスポートに含めるイベントの範囲を指定して選択する
+- ハンドルをドラッグして、開始位置と終了位置を調整する
+
+## 出力例
+
+### Cypress の例
+
+**Events Only:**
+```javascript
+cy.visit('/en/deployment/')
+cy.get('a:nth-of-type(9)').click()
+cy.visit('/en/deployment/deploy-docker/')
+cy.get('.active li:nth-of-type(13) > a').click()
+cy.visit('/en/deployment/upgrade/')
+cy.get('.active > .justify-between').click()
+cy.get('.left-nav-parent > li:nth-of-type(4) > .flex').click()
+cy.get('.active li:nth-of-type(5) > a').click()
+cy.visit('/en/using-or/next/')
+cy.get('.left-nav-parent > li:nth-of-type(5) > .flex').click()
+cy.get('.left-nav-parent > li:nth-of-type(6) > .flex').click()
+cy.visit('/en/installation/')
+cy.get('.active li:nth-of-type(2) > a').click()
+cy.visit('/en/installation/identify-user/')
+cy.get('li:nth-of-type(7) > .flex').click()
+cy.get('.logo-clickarea').click()
+```
+
+**Complete Test:**
+```javascript
+// cypress/e2e/session_replay_test.cy.js
+
+describe('Deployment - OpenReplay Documentation', () => {
+  it('Navigates through /en/deployment/', () => {
+    cy.visit('/en/deployment/')
+    cy.get('a:nth-of-type(9)').click()
+    cy.visit('/en/deployment/deploy-docker/')
+    cy.get('.active li:nth-of-type(13) > a').click()
+    cy.visit('/en/deployment/upgrade/')
+    cy.get('.active > .justify-between').click()
+    cy.get('.left-nav-parent > li:nth-of-type(4) > .flex').click()
+    cy.get('.active li:nth-of-type(5) > a').click()
+    cy.visit('/en/using-or/next/')
+    cy.get('.left-nav-parent > li:nth-of-type(5) > .flex').click()
+    cy.get('.left-nav-parent > li:nth-of-type(6) > .flex').click()
+    cy.visit('/en/installation/')
+    cy.get('.active li:nth-of-type(2) > a').click()
+    cy.visit('/en/installation/identify-user/')
+    cy.get('li:nth-of-type(7) > .flex').click()
+    cy.get('.logo-clickarea').click()
+  })
+})
+```
+
+
+## ご質問はありますか？
+
+セッションからの E2E テスト作成で問題が発生した場合は、[Slack コミュニティ](https://slack.openreplay.com/)でお問い合わせください。開発者に直接質問できます！

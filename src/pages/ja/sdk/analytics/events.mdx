@@ -1,0 +1,194 @@
+---
+title: "Events"
+metaTitle: "OpenReplay Analytics SDK — Events"
+metaDescription: "OpenReplay トラッカーのアナリティクスイベントで使用するスーパープロパティを定義・管理します。"
+---
+import Aside from '~/components/Aside.astro'
+
+## Events
+
+このモジュールでは、**イベント**と**プロパティ**（すべてのトラッキング対象イベントに自動的に付加される、永続的なキーと値のペア）を管理できます。
+
+スーパープロパティはローカルに保存され、イベントをトラッキングするときに各イベントのペイロードにマージされます。
+
+OpenReplay の UI でのイベント管理について詳しくは、[データ管理](/product-analytics/data-management)をご覧ください。
+
+利用可能な場所：
+
+`tracker.analytics.events`
+
+## コンセプト
+
+### スーパープロパティ
+
+スーパープロパティは SDK 内に保存され、すべてのイベントの `properties` にマージされます。
+
+### イベントプロパティ
+
+イベントプロパティは、`track/sendEvent` の 1 回の呼び出しにのみ渡され、スーパープロパティとして**保存されません**。
+
+## 予約済みキー
+
+ヘルパーに応じて、2 種類の異なるキーのセットが拒否されます：
+
+**デフォルトプロパティ**：SDK 自身が収集し、すべてのイベントとともに送信されるプロパティです。`setProperty` はこれらを無言でスキップするため、スーパープロパティでこれらを上書きすることはできません：
+
+`os`, `os_version`, `browser`, `browser_version`, `platform`, `screen_height`, `screen_width`, `initial_referrer`, `utm_source`, `utm_medium`, `utm_campaign`, `user_id`, `distinct_id`, `sdk_edition`, `sdk_version`, `timezone`, `search_engine`
+
+**ペイロードキー**：`properties`、`token`、`timestamp` です。これらはイベントエンベロープの一部であるため、`setPropertiesOnce` と `unsetProperties` はこれらをスキップします。
+
+<Aside type="note">
+	この 2 つのリストは、異なるメソッドによって適用されます。`setProperty` はデフォルトプロパティを保護し、`setPropertiesOnce` と `unsetProperties` はペイロードキーを保護します。People モジュールにも同様の区別があり、`setProperties`、`setPropertiesOnce`、`appendValues` はすべてデフォルトプロパティを保護します。
+</Aside>
+
+## トップレベルのシグネチャ
+
+```ts
+// Track an event.
+// The `properties` argument is per-event only (not persisted).
+tracker.analytics.events.sendEvent(eventName: string, properties?: Record<string, any>, options?: { send_immediately: boolean })
+
+// Create/update super properties (persisted)
+tracker.analytics.events.setProperty(name: string, value: any): void
+tracker.analytics.events.setProperty(properties: Record<string, any>): void
+
+// Create super properties only if they don't exist yet (persisted)
+tracker.analytics.events.setPropertiesOnce(name: string, value: any): void
+tracker.analytics.events.setPropertiesOnce(properties: Record<string, any>): void
+
+// Remove super properties (persisted)
+tracker.analytics.events.unsetProperties(name: string): void
+tracker.analytics.events.unsetProperties(names: string[]): void
+
+// Clear all super properties
+tracker.analytics.events.reset(): void
+```
+
+## プロパティ付きでイベントをトラッキングする
+
+### イベント単位のプロパティ（永続化されない）
+
+```ts
+tracker.analytics.events.sendEvent("Button Clicked", {
+  button_text: "Start",
+  page: "home",
+})
+```
+
+これらのプロパティは、このイベントにのみ適用されます。
+
+### スーパープロパティ + イベント単位のプロパティ（マージ）
+
+スーパープロパティを設定すると、それらは各イベントに自動的に含まれ、その後イベント単位のプロパティとマージされます：
+
+```ts
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  env: "prod",
+})
+
+tracker.analytics.events.sendEvent("Signup Started", {
+	// per-event, can override a super property with the same key
+  plan: "pro", 
+})
+```
+
+マージ順序：
+
+- スーパープロパティが最初に追加されます
+- イベント単位のプロパティがその上にマージされます
+
+そのため、キーが衝突した場合は、イベント単位のプロパティが優先されます。
+
+## setProperty
+
+スーパープロパティを作成または上書きします。
+
+```ts
+// object form
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  region: "eu",
+})
+
+// key/value form
+tracker.analytics.events.setProperty("build_sha", "3f2c9a1")
+```
+
+### 注意事項：
+
+- SDK が収集する[デフォルトプロパティ](#reserved-keys)は無視され、スーパープロパティとして追加されません。
+- キーと値の形式は、`value` が `undefined` の場合は無視されます。空の値を保存するには `null` を渡します。
+- 変更は、実際に何かが変更された場合にのみローカルに保存されます。
+
+## setPropertiesOnce
+
+スーパープロパティを、まだ存在しない場合にのみ作成します。
+
+```ts
+tracker.analytics.events.setPropertiesOnce({
+  first_seen_at: Date.now(),
+  signup_source: "docs",
+})
+
+// key/value form
+tracker.analytics.events.setPropertiesOnce("initial_referrer", document.referrer)
+```
+
+### 注意事項：
+
+- プロパティは、キーが存在しない場合にのみ設定されます。
+- 予約済みキー（`properties`、`token`、`timestamp`）は無視されます。
+
+## unsetProperties
+
+1 つ以上のスーパープロパティを削除します。
+
+```ts
+// single
+tracker.analytics.events.unsetProperties("region")
+
+// multiple
+tracker.analytics.events.unsetProperties(["app_version", "build_sha"])
+```
+
+### 注意事項：
+
+- 予約済みキーは削除できません。
+- 削除は永続化されます。
+
+## reset
+
+すべてのスーパープロパティをクリアします。
+
+```ts
+tracker.analytics.events.reset()
+```
+
+## 即時送信
+
+デフォルトでは、イベントはキューに入れられ、バッチ処理されます。イベントの即時送信をリクエストすることもできます：
+
+```ts
+tracker.analytics.events.sendEvent(
+  "Checkout Completed",
+  { value: 199, currency: "EUR" },
+  { send_immediately: true },
+)
+```
+
+## Mixpanel 互換のエイリアス
+
+すべてのメソッドで、使い慣れた形で利用できるよう互換レイヤーが提供されています：
+
+```ts
+tracker.analytics.events.register       // setProperty
+tracker.analytics.events.register_once  // setPropertiesOnce
+tracker.analytics.events.unregister     // unsetProperties
+tracker.analytics.events.track          // sendEvent
+```
+
+
+## ご質問はありますか？
+
+問題が発生した場合は、[Slack](https://slack.openreplay.com) に参加して、コミュニティのサポートを受けてください。

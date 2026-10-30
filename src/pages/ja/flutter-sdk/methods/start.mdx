@@ -1,0 +1,64 @@
+---
+title: "Flutter SDK - start メソッド"
+metaTitle: "Flutter SDK - start メソッド"
+metaDescription: "OpenReplay の Flutter SDK の 'start' メソッドの詳細"
+---
+import Aside from '~/components/Aside.astro'
+
+このメソッドはトラッカーを開始するために使用します。トラッカーを開始すると、セッションの録画が始まります。
+
+## シグネチャ
+
+```dart
+Future<void> OpenReplay.instance.start({
+  required String projectKey,
+  OROptions options = OROptions.defaults,
+  String? serverUrl,
+})
+```
+
+## パラメーター
+
+- `projectKey: String`: OpenReplay ダッシュボードの 'Preferences > Projects' にあります。
+- `options: OROptions`: トラッカーが取得する内容。後述します。
+- `serverUrl: String?`: セルフホストのデプロイ用のインジェストエンドポイント。OpenReplay Cloud では省略してください。
+
+<Aside type="note">
+	画面を記録するには、アプリを `OpenReplayWidget` でラップする必要があります。`start()` は最初のフレームより前に呼び出しても安全です。キャプチャはウィジェットのレイアウトが完了してから開始されます。
+</Aside>
+
+### 初期化オプション
+
+利用可能なオプション:
+
+- `crashes: bool` Dart のエラーを取得します。
+- `analytics: bool` タッチ、スワイプ、画面、入力を取得します。
+- `performances: bool` CPU、メモリ、バッテリー、サーマル状態を取得します。
+- `logs: bool` `debugPrint` の出力を取得します。
+- `screen: bool` フレームのキャプチャを有効にします。
+- `screenshotBatchSize: ScreenshotBatchSize` 1 回のアップロードあたりのフレーム数。`low`（10）、`normal`（20）、`high`（30）。デフォルト: `normal`。
+- `targetLongEdge: int` キャプチャされるフレームの長辺の長さ（ピクセル単位）。デフォルト: `720`。
+- `dedupeFrames: bool` 直前のフレームと同一のフレームをスキップします。
+- `maskPlatformViews: bool` WebView、マップ、カメラプレビューをプレースホルダーで覆います。
+- `wifiOnly: bool` 予約済み。まだ適用されません。
+- `debugLogs: bool` / `debugImages: bool` SDK 自体のデバッグ出力。デフォルト: `false`。
+
+デフォルト: `debugLogs` と `debugImages` を除くすべてのブール値が `true` です。各オプションの詳細な説明については、[初期化](/flutter-sdk/init#initialization-options)をご覧ください。
+
+フレームレートと画像品質は、これらのオプションではなく、プロジェクト設定から取得されます。
+
+## バッファリング開始
+
+セッションを作成せずにローリングバッファへ記録し、後のトリガーで直前の数秒分を送信できるようにするには、`coldStart()` で開始し、`triggerRecording()` で昇格させます。
+
+```dart
+await OpenReplay.instance.coldStart(projectKey: 'YOUR_PROJECT_KEY');
+
+// later, when something worth recording happens
+await OpenReplay.instance.triggerRecording(condition: 'checkout_error');
+```
+
+サーバー側での条件評価は、Flutter SDK ではまだ利用できません。ご自身のコードから `triggerRecording()` を呼び出してください。
+
+## ご質問はありますか？
+このプロセスについてご不明な点がございましたら、お気軽に [Slack](https://slack.openreplay.com) までお問い合わせください。

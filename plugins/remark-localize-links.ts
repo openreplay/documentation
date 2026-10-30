@@ -24,7 +24,7 @@ import fs from 'fs';
 const pageSourceDir = path.resolve('./src/pages');
 const LANG_DIR = /^[a-z]{2}(-[a-z]{2})?$/i;
 
-// The actual language directories under src/pages (en, es, fr, ru, zh, ar-ae).
+// The actual language directories under src/pages (en, es, fr, ru, zh, ar-ae, ja, pt-br).
 // Derived from the filesystem so that non-language path segments that happen to
 // be two letters (e.g. `/ai`) are NOT mistaken for a language prefix.
 const KNOWN_LANGS = new Set(

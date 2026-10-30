@@ -1,0 +1,114 @@
+---
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+title: "Deploy to AWS"
+metaTitle: "AWS へのデプロイ"
+metaDescription: "OpenReplay を Amazon AWS にデプロイするためのステップバイステップガイドです。"
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="AWS インフラストラクチャに OpenReplay をデプロイする方法を動画で見る"
+  description="文章を読むのが苦手な方は、AWS に OpenReplay をデプロイする手順を紹介するこのビデオチュートリアルをご覧ください"
+  videoURL="https://www.youtube.com/watch?v=0-02jJyL4_A"
+  />
+
+
+OpenReplay スタックは 1 台のマシンにインストールでき、AWS EC2 はその最適な選択肢です。 
+
+
+## EC2 インスタンスの起動
+
+1. AWS EC2 ダッシュボードに移動します
+2. 'Launch a new instance' をクリックします（x86 ベースのアーキテクチャ）
+3. AMI を選択します。このガイドでは、*Ubuntu Server 24.04 LTS* を使用します
+4. インスタンスタイプを選択します。最小スペックは `2 vCPUs, 8 GB of RAM, 50 GB of storage` です。これを下回ると、OpenReplay のバックエンドサービスは起動しません。そのため、**少なくとも** `t3.large`（または同等のもの）を推奨します。これは、低〜中程度のボリュームには十分です。高トラフィックが見込まれる場合は、ここからスケールアップしてください。
+5. Configure Instance Details: 必要に応じて Network/Subnet のパラメーターを調整するか、デフォルトのままにします
+6. Add Storage: サイズを 50 GB（General Purpose SSD (gp2)）に設定します
+7. Add Tags: パラメーターを調整するか、デフォルトのままにします
+8. Security Groups: 既存の SSH ルールを残し、HTTP (80) と HTTPS (443) 用のルールを 2 つ追加します（ソース: 0.0.0.0/0）。アウトバウンドのセキュリティグループで、DNS (TCP/UDP) ポートが開放されていることを確認してください
+9. 'Review and Launch' をクリックします
+10. SSH キーを作成／ダウンロードし、'Launch instances' を押します
+
+## OpenReplay のデプロイ
+
+1. インスタンスが `Running` になっていることを確認し、接続します。
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem #! wherever you've saved the SSH key
+INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
+chmod 400 $SSH_KEY
+ssh -i $SSH_KEY ubuntu@$INSTANCE_IP
+```
+
+2. OpenReplay を実行するドメインを指定して、インストールします（例: DOMAIN_NAME=openreplay.mycompany.com）。
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## TLS/SSL の設定
+
+OpenReplay は機密性の高いユーザーデータを扱うため、実行には HTTPS が必要です。これは必須であり、HTTPS がないとトラッカーは録画を開始しません。ダッシュボードも同様で、HTTPS がないとユーザーセッションを再生できません。
+
+AWS で SSL を扱う最も簡単な方法は、ロードバランサー（ELB）をセットアップし、その背後で OpenReplay を実行することです。もう 1 つの方法は、独自の SSL 証明書を生成または使用して、サブドメイン（例: openreplay.mycompany.com）を OpenReplay インスタンスに向けることです。どちらのオプションについても、以下で詳しく説明します。
+
+### AWS ロードバランサーのセットアップ（オプション 1）
+
+1. 'EC2' > 'Load Balancers' に移動します
+2. 'Create Load Balancer' をクリックし、*Application Load Balancer* を選択します
+3. HTTPS 用のリスナーを追加し（これだけを残します）、OpenReplay インスタンスが動作しているものと同じサブネットを選択してください。
+4. 既存の証明書（例: *.mycompany.com）を選択するか、AWS Certificate Manager（ACM）で新しい証明書を生成します。独自の証明書をインポートすることもできます。
+5. Configure Security Groups: OpenReplay インスタンス用に以前作成したセキュリティグループを選択します（'EC2 Dashboard' の 'Security' タブで確認できます）
+6. Configure Listener and routing: デフォルトのプロトコルとポート（`HTTP:80`）のままにします。次に、新しいターゲットグループを作成します。名前を付け、*Target Type* で `IP addresses` を選択します。*Health check path* が `/healthz` に設定されていることを確認し、その他のパラメーターはデフォルトのままにします。'Next' をクリックしてターゲットを登録し、OpenReplay インスタンスのプライベート IPv4（ポート `80`）を追加して、ターゲットをリストに追加します（プライベート IP は EC2 ダッシュボードで確認できます）。確認後、'Create target group' をクリックします。
+7. 次に、LB の作成ページに戻り、この新しいターゲットグループを LB のリスナーに転送します。
+8. 確認後、'Create load balancer' をクリックします
+
+作成したら、Route 53（または利用中の DNS サービスプロバイダー）に移動し、ロードバランサーの DNS 名（ELB ダッシュボードで確認できます）を使用して、ロードバランサーを指す `A Record` を作成します。
+
+これで準備完了です。設定したサブドメインで、OpenReplay に安全にアクセスできるはずです。`/signup` ページ（例: openreplay.mycompany.com/signup）にアクセスして、アカウントを作成できます。
+
+### SSL 証明書の持ち込み／生成（オプション 2）
+
+ロードバランサーを作成する代わりに、独自の SSL 証明書を持ち込む（または生成する）こともできます。
+
+1. まず、Route 53（または他の DNS サービスプロバイダー）に移動し、`A Record` を作成します。インストール手順で先ほど指定したドメインを使用し、インスタンスのパブリック IP（EC2 ダッシュボードで確認できます）を指すようにします。
+
+2. 独自の証明書を使用する場合は、次のコマンドで SSL シークレットを作成します: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`。
+
+> **注記**：証明書をお持ちでない場合は、Let's Encrypt を使用して、サブドメイン（インストール時に指定したもの）用の自動更新される証明書を生成してください。OpenReplay EC2 インスタンスに接続し、`cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` を実行して、手順に従います。
+
+3. http から https へのリダイレクトを有効にする場合（推奨）は、`/var/lib/openreplay/vars.yaml` の `ingress-nginx` セクションの下にある以下のブロックのコメントを解除します。
+  
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+なお、`ingress-nginx` はデフォルトでポート `80|443` で動作しますが、必要に応じて `vars.yaml` で簡単に変更できます。
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. 最後に、OpenReplay の NGINX を再インストールします。
+
+```bash
+openreplay -R
+```
+
+これで準備完了です。サブドメインで OpenReplay にアクセスできるはずです。`/signup` ページ（例: openreplay.mycompany.com/signup）にアクセスして、アカウントを作成できます。
+
+## ご質問はありますか？
+
+問題が発生した場合は、[Slack](https://slack.openreplay.com) に参加して、コミュニティのサポートを受けてください。

@@ -1,0 +1,183 @@
+---
+title: "Rastreando mudanças de estado com o plugin Zustand"
+metaTitle: "Zustand"
+metaDescription: "Rastreando mudanças de estado com o plugin Zustand"
+---
+O Zustand é uma alternativa muito rápida e minimalista a soluções de gerenciamento de estado como o Redux. Com o nosso [plugin Zustand](https://www.npmjs.com/package/@openreplay/tracker-zustand), você pode acompanhar as mudanças de estado ao longo de todo o ciclo de vida da sua aplicação.
+
+## Instalando o plugin
+
+O plugin pode ser instalado facilmente com o seguinte comando:
+
+```jsx
+npm i @openreplay/tracker-zustand
+```
+
+## Usando o plugin em um app Next.js
+
+**Nota**: o código-fonte completo deste exemplo está neste [repositório do Github](https://github.com/deleteman/nextjs-commerce-example/tree/zustand-store); confira-o se precisar de mais detalhes.
+
+O Context provider que estou usando permite configurar plugins do Tracker, então, depois de instalar o plugin, vamos modificar o arquivo _app.tsx adicionando a instrução de import abaixo:
+
+```jsx
+import trackerZustand from '@openreplay/tracker-zustand'
+```
+
+E então, a função principal App deve ficar assim:
+
+```jsx
+export default function MyApp({ Component, pageProps }: AppProps) {
+  const Layout = (Component as any).Layout || Noop
+
+  useEffect(() => {
+    document.body.classList?.remove('loading')
+  }, [])
+
+  let plugins = [
+    {
+      fn: trackerZustand,
+      name: 'zustand',
+    },
+  ]
+
+  return (
+    <TrackerProvider
+      config={{
+        plugins
+      }}
+    >
+      <Head />
+      <ManagedUIContext>
+        <Layout pageProps={pageProps}>
+          <Component {...pageProps} />
+        </Layout>
+      </ManagedUIContext>
+    </TrackerProvider>
+  )
+}
+```
+
+Isso inicializará automaticamente o plugin com o tracker e também disponibilizará os dados retornados pela execução da função principal do plugin.
+
+O próximo passo é criar uma store; em instantes, vamos adicionar a ela os produtos do site de e-commerce.
+
+### Criando uma store com o plugin Zustand
+
+O uso do plugin exige que você altere a forma como normalmente instancia uma store do Zustand, então fique à vontade para copiar e colar o código a seguir como modelo:
+
+```jsx
+import create from 'zustand'
+
+const productStore = null
+export const useProductsStore = (logger) => {
+  if (!productStore) {
+    //use a singleton pattern to make sure we only create the store the first time around
+    productStore = createProductStore(logger)
+  }
+  return productStore
+}
+
+function createProductStore(logger) {
+  return create(
+    logger((set) => ({
+      products: [],
+      addProduct: (p) =>
+        set((state) => {
+          const prodFound = state.products.find((prod) => {
+            return p.id == prod.id
+          })
+          if (prodFound) {
+            p.amount = prodFound.amount + 1
+          } else {
+            p.amount = 1
+          }
+
+          return {
+            products: [...state.products.filter((prod) => p.id != prod.id), p],
+          }
+        }),
+    }))
+  )
+}
+```
+
+A função exportada criará a store na primeira vez que for usada, mas, depois disso, simplesmente retornará a existente.
+
+Por outro lado, a função createProductStore criará a store, definirá a lógica do método addProduct e usará a função logger que fornecemos a ela. Esse logger, como você provavelmente imaginou, é o que recebemos ao usar o plugin Zustand.
+
+Com a store pronta, podemos começar a adicionar produtos a ela.
+
+## Adicionando produtos à nossa store
+
+A store exporta o método addProduct, que se encarrega de manter o controle dos produtos no nosso carrinho.
+
+Para importar a função no seu código, você precisa:
+
+1. Importar e usar o context provider do Tracker.
+2. Obter o atributo pluginsReturnedValue do contexto.
+3. Usá-lo para chamar o método zustand (observe que o método tem o nome definido no atributo name quando configuramos o plugin acima) e passar um atributo string para dar um nome à store (esse nome será usado durante o replay).
+4. O método zustand retornará o logger, que usaremos ao chamar o hook useProductStore do zustand (o que criamos para a store).
+
+Tudo isso parece demais, mas, essencialmente, se resume a:
+
+```jsx
+const { pluginsReturnedValues } = useContext(TrackerContext)
+
+const useProductStoreTracked = useProductsStore(
+  pluginsReturnedValues.zustand('products_store')
+)
+const { addProduct } = useProductStoreTracked()
+```
+
+Agora, você pode simplesmente chamar o método addProduct, e ele adicionará os produtos do carrinho à store.
+
+## Lendo dados da store
+
+Como você provavelmente imagina, se quiser ler dados da store do Zustand, você precisa seguir o mesmo conjunto de passos. Mas, em vez de pegar o método addProduct, vamos desestruturar o array products.
+
+Assim:
+
+```jsx
+const { pluginsReturnedValues } = useContext(TrackerContext)
+
+const useProductStoreTracked = useProductsStore(
+  pluginsReturnedValues.zustand('products_store')
+)
+const { products } = useProductStoreTracked()
+```
+
+Você pode então iterar sobre os produtos normalmente:
+
+```jsx
+<div>
+  {products.map((p: Product, idx: Number) => {
+    return (
+      <div key={+idx}>
+        {p.name}({p.amount})
+      </div>
+    )
+  })}
+</div>
+```
+
+O código acima itera sobre a lista de produtos e os renderiza na tela. Sempre que você adicionar outro produto à store, a exibição aqui também será atualizada.
+
+## Sincronizando o estado com o session replay
+
+Para revisar as mudanças de estado durante o replay, basta clicar na nova aba Zustand no canto inferior direito:
+
+![Nova aba para os dados rastreados do Zustand](/tutorials/zustand/zustand-tab.png)
+
+Ao clicar nela, você verá o conteúdo da store e poderá entender como ele muda e quais dados estão salvos nela:
+
+![Dados de estado exibidos durante o replay](/tutorials/zustand/state-replay.png)
+
+Observe o nome da store: na verdade, é o nome que usamos ao chamar o método zustand pela primeira vez.
+
+## Tem dúvidas?
+
+Se você não usa Next.js, mas outro framework, a forma de usá-lo deve ser parecida; o ponto principal é a maneira como você cria a store. Desde que encontre uma forma de usar a função logger ao criá-la, você conseguirá rastrear o estado durante o replay.
+
+Você pode [conferir este repositório](https://github.com/deleteman/nextjs-commerce-example/tree/zustand-store) para ver o **código-fonte completo** de uma aplicação Next.js funcional com o plugin Zustand.
+
+Se você tiver algum problema ao configurar o plugin Zustand no seu projeto, entre em contato conosco na nossa [comunidade do Slack](https://slack.openreplay.com/) e pergunte diretamente aos nossos devs!

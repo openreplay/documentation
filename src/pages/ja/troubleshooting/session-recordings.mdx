@@ -1,0 +1,128 @@
+---
+title: "セッション録画の問題"
+metaTitle: "セッション録画の問題"
+metaDescription: "リプレイのキャプチャーを妨げたり、正しく表示されなくなったりするさまざまな問題。"
+---
+
+録画は、セッションの終了から数分後（約 4 分）にダッシュボードに表示されます。セッションは、ユーザーがタブまたはブラウザーを閉じたとき、接続が切断されたとき（2 分以上）、または 2 時間を超えたとき（この場合は新しいセッションが開始されます）に終了したと見なされます。タブごとに新しい録画が作成されますが、既存のタブを再読み込みしても新しい録画は作成されません。
+
+このセクションでは、セッションリプレイで発生しがちな問題のトラブルシューティングをサポートします。
+
+## リプレイが一覧に表示されない
+
+セッション録画のデバッグを始める前に、すべてのトラフィックをキャプチャーしていることを確認してください。Sessions セクションの横にある *Manage* ボタンをクリックし、*Capture All* を有効にします。
+
+もう 1 つよくある間違いは、トラッカーを 2 回開始してしまうことで、これによりセッションが録画されなくなります。これは通常、開発者がスクリプトベースのセットアップから npm パッケージの使用に移行する際に発生するため、どちらか一方のみを使用していることを確認してください。
+
+### インストールの確認
+
+セットアップに不安がある場合は、ブラウザーのインスペクターを開き、Network タブで、お使いの IP／ドメイン（OpenReplay Cloud をご利用の場合は *.openreplay.com）へ XHR リクエスト（"ingest" を探してください）が送信されているかを確認します。
+
+別の方法として、トラッカーの start コールバックを使用して、開始時にメッセージをログ出力することもできます。
+
+```js
+const tracker = new OpenReplay({
+	projectKey: PROJECT_KEY,
+});
+
+tracker.start().then(({sessionID}) => console.log("OpenReplay tracker started with session: ", sessionID))
+// OR you can use startCallback method
+tracker.start({
+	startCallback: ({ sessionID }) => console.log("OpenReplay tracker started with session: ", sessionID)
+});
+// for snippet, just add startCallback to initOpts
+```
+
+### localhost でのテスト
+
+OpenReplay では、録画を正しくレンダリングするために、アプリのリソース（CSS、フォント、アイコン）の一部をコピーするための公開アクセスが必要です。また、サイトは SSL/HTTPS を使用している必要があり、そうでない場合はトラッカーが起動しません。これらの理由から、[トラッカーのコンストラクター](/sdk/constructor/#stylesheets)に `inlineCss: 3` オプションを追加して、スタイルシートが（サーバーによる集中キャッシュではなく）各リプレイの一部としてキャプチャーされるようにしない限り、localhost ではセッションはキャプチャーされません。
+
+### サイトが HTTPS ではない
+
+セキュリティ上の理由から、トラッカーは SSL（HTTPS）を使用する Web アプリでのみ動作します。サイトが HTTP の場合、トラッカーは起動しません。
+
+### CSP の不足
+
+次のようなエラーが表示される場合、Content Security Policy（CSP）が不足しているために OpenReplay を起動できませんでした。追加するポリシーについては[こちら](/troubleshooting/csp)を参照してください。
+
+![CSP の問題](/static/csp-issue.jpg#center)
+
+### OpenReplay がブロックされている
+
+録画スクリプトが、広告ブロッカーなどのブラウザー拡張機能によってブロックされている可能性があります。ブラウザーのインスペクターを使用して、リクエストが失敗していないか確認してください。失敗している場合は、OpenReplay バックエンドがインストールされているドメイン（クラウド版をご利用の場合は openreplay.com）を例外に追加してください。
+
+### サポートされていないブラウザー
+
+OpenReplay は、サポートされていないブラウザーで実行されると例外をスローします。サポートされているブラウザーの一覧については、[こちら](/troubleshooting/supported-browsers)を参照してください。
+
+## リプレイが正しくレンダリングされない
+
+### スタイルが欠落している
+
+OpenReplay では、リプレイを機能させるために CSS などのリソースにアクセスする必要があります。実際には、これらのファイルはバックエンドによってコピーされキャッシュされるため、Web アプリが変更された後でも過去の録画を表示できます。そのため、スタイル（およびアイコンとフォント）が公開アクセス可能であることを確認する必要があります。公開されていても、一部の CDN（CloudFlare など）は、当社のキャッシュリクエストをボットからのものと見なしてブロックすることがあります。その場合は、VM のソース IP（オープンソース版をご利用の場合）、専用インスタンス（専用クラウドプランをご利用の場合）、または次の IP（サーバーレスクラウドプランをご利用の場合）をホワイトリストに追加してください: `18.197.95.153` および `18.197.221.118`。
+
+アセットが制限されたドメイン（プライベートまたは保護されたドメイン）でホストされている場合、OpenReplay はそれらをコピーしてリプレイで使用できません。次の 2 つの選択肢があります。
+- （推奨）[トラッカーのコンストラクター](/sdk/constructor/#stylesheets)に `inlineCss: 3` オプションを追加すると、スタイルシートが（サーバーによる集中キャッシュではなく）各リプレイの一部としてキャプチャーされます
+- または、アセットを公開アクセス可能なドメインにコピーし、`resourceBaseHref` オプションを使用して[トラッカーのコンストラクター](/sdk/constructor)でそのドメインを指定します。
+
+同一オリジンの iframe にネストされたフレームがある場合は、埋め込まれたすべてのフレームで（CSS ファイルを指す `<link>` 要素に）絶対パスを使用するか、`resourceBaseHref` オプションを使用して[トラッカーのコンストラクター](/sdk/constructor)でドメインを指定してください。
+
+localhost でテストしている場合、スタイルはお使いのマシン上にあり OpenReplay がアクセスできないため、レンダリングされません。状況を解消するには、[こちらのガイド](/troubleshooting/localhost)に従ってください。
+
+### 白い画面
+
+まれに、リプレイが空（または白）で表示されることがあります。ページはレンダリングされませんが、ユーザーのマウスの動きは確認できます。`disableStringDict` オプションを `true` に設定して、新しい録画で改善するかどうかを試してください。通常、これで問題は解決します。
+
+### 黒い画面
+
+フロントエンドレイヤーの上（より高い zIndex）に canvas を配置している場合、録画されたセッションのリプレイ中に黒い画面が表示されることがあります。これは、Web API がまだアルファチャンネルのキャプチャーを許可していないためです。Web アプリケーションでこの現象が発生する場合は、問題のある canvas 要素に `data-openreplay-hidden` HTML 属性を追加して、セッション録画から完全に非表示にしてください。
+
+### 画像が表示されない
+
+スタイルとは異なり、画像は OpenReplay によってキャッシュされず、セッションリプレイ中に取得されます。そのため、公開アクセス可能である必要があります。CDN 上にある場合は、過去のセッション録画を正しくリプレイできるように、画像の古いバージョンを保持してください。
+
+### iframe
+
+Web アプリに iframe が含まれている場合、その内容を録画の一部として再生することはできません。`tracker.start()` を記述することで iframe 内で OpenReplay を開始することはできますが、別のタブとして扱われるため、別の録画としてキャプチャーされます。
+
+## サブドメイン間でリプレイが分断される
+
+多数のサブドメインにまたがるサイトでは、同じ訪問に対して複数のセッションが生成されます。トラッカーの `start()` メソッドに `sessionHash` を渡すことで、それらを 1 つの録画にまとめられます。`sessionHash` は、クロスドメインのストレージ（Cookie など）に保存し、そこから取得できます。
+
+```js
+// Initialize the tracker as you would normally do
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+  projectKey: PROJECT_KEY
+})
+
+// or with class instance:
+import OpenReplay from '@openreplay/tracker'
+
+const tracker = new OpenReplay({
+	projectKey: PROJECT_KEY
+})
+...
+// Make sure the tracker is stopped when passing subdomains and collect the sessionHash
+const sessionHash = tracker.stop(); // This can be saved in cookies or passed through URL (if needed)
+...
+// Initialize another tracker on the new subdomain with the same projectKey
+// then Pass the sessionHash to the newly started session
+trackerNewDomain.start({ 
+  sessionHash, // This can be retrieved from cookies or URL (if needed)
+})
+```
+セッションを継続できない場合（存在しない、または終了している場合）、トラッカーは自動的に新しいセッションを開始します。
+
+## リプレイが不完全
+
+これは、訪問したページが 1 つだけで、ユーザーが別のページに移動した時点で終了するリプレイで確認できます。通常、シングルページアプリケーション（SPA）ではない Web サイトで発生します。これを修正するには、すべてのページで `tracker.start()` を呼び出す必要があります。
+
+## リプレイが存在しない
+
+OpenReplay をセルフホストではなくホスト型ソリューションでご利用の場合、当社のサーバーへのリクエストがブロックされることで、一部のセッションが録画されない可能性があります。これは通常、広告ブロッカー、VPN、またはブラウザー拡張機能が原因です。
+
+## ご質問はありますか？
+
+このプロセスについてご不明な点がございましたら、[Slack](https://slack.openreplay.com) までお気軽にお問い合わせください。

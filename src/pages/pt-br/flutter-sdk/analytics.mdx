@@ -1,0 +1,53 @@
+---
+title: "Flutter SDK - Rastreando telas e views"
+metaTitle: "Flutter SDK - Rastreando telas e views"
+metaDescription: "Detalhes sobre o rastreamento de telas e views com o tracker do Flutter"
+---
+import Aside from '~/components/Aside.astro'
+
+Com `analytics` habilitado (o padrão), o tracker captura toques, deslizes, mudanças de viewport e eventos de input por conta própria. As telas e as views individuais são reportadas por dois widgets exportados.
+
+## Telas
+
+Adicione `ORNavigatorObserver` ao navigator do seu app para registrar as transições de rota:
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+MaterialApp(
+  navigatorObservers: [ORNavigatorObserver()],
+  // ...
+)
+```
+
+Pushes, pops, substituições e remoções são todos reportados. Uma rota é nomeada por `route.settings.name`; uma rota sem nome usa como alternativa a sua posição na pilha (`route/2`), então rotas nomeadas geram timelines muito mais legíveis.
+
+## Views rastreadas
+
+Envolva qualquer widget em `ORTrackedView` para reportá-lo como uma view nomeada e observável. Um evento de visibilidade é emitido quando ele é montado e quando é desmontado, e o seu nome é usado como rótulo para os toques que acontecem dentro dele.
+
+- `screenName: String` — título da tela ou da funcionalidade
+- `viewName: String` — nome da view rastreada
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+ORTrackedView(
+  screenName: 'Checkout',
+  viewName: 'Pay button',
+  child: ElevatedButton(onPressed: _pay, child: const Text('Pay')),
+)
+```
+
+## Toques
+
+Toques e deslizes são capturados por meio da rota global do pointer router, então o tracker enxerga todos os eventos de ponteiro sem nunca competir na gesture arena — ele não consegue "engolir" um toque de que o seu app precisava. Um ponteiro que percorre mais de 10 pixels lógicos é registrado como um deslize, com a sua direção dominante; qualquer movimento menor é registrado como um clique.
+
+Os rótulos dos toques vêm do hit-testing do texto sob o ponteiro, ou do `ORTrackedView` que o envolve.
+
+<Aside type="note">
+	Os rótulos nunca são derivados dos nomes de tipo de widget ou de render object: `flutter build --obfuscate` os reduz a ruído.
+</Aside>
+
+## Tem dúvidas?
+Se você tiver qualquer dúvida sobre este processo, fale com a gente no nosso [Slack](https://slack.openreplay.com).

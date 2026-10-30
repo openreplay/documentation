@@ -1,0 +1,53 @@
+---
+title: "SDK de JavaScript - método resanitize"
+metaTitle: "SDK de JavaScript - método resanitize"
+metaDescription: "Detalhes sobre o método resanitize do SDK do OpenReplay"
+---
+import Aside from '~/components/Aside.astro'
+
+Este método reavalia a [sanitização](/sdk/sanitize-data) em relação ao DOM atual e reemite o que mudou, atualizando nós já gravados no meio da sessão.
+
+A sanitização normalmente é aplicada quando um nó é gravado pela primeira vez. Se você alterar o que deve ser ofuscado ou oculto *depois* de um nó já ter sido capturado, essa alteração não será refletida no replay por si só. Chame `resanitize()` para forçar o tracker a varrer novamente e aplicar as regras de sanitização atualizadas aos nós que já fazem parte da gravação.
+
+Chame-o depois de:
+
+- alternar os atributos `data-openreplay-obscured` / `data-openreplay-hidden` em elementos que já estão na página, ou
+- alterar aquilo em que o seu [`domSanitizer`](/sdk/sanitize-data#using-the-domsanitizer-function) se baseia (classe, id etc.).
+
+<Aside type="note">
+Os elementos sanitizados são mascarados/ocultados na origem (tracker), então tudo o que for ofuscado ou oculto nunca chega à instância do OpenReplay. Como toda sanitização, `resanitize()` afeta apenas os dados capturados a partir deste momento — ele não pode limpar retroativamente dados que já foram enviados ao backend em texto simples.
+</Aside>
+
+## Assinatura
+
+```js
+resanitize(el?: Element): void
+```
+
+## Parâmetros
+
+- `el?: Element`: O nó mais alto que você alterou. O tracker varre novamente esse elemento e sua subárvore. Omita-o para varrer novamente o documento inteiro.
+
+<Aside type="tip">
+Passe o elemento mais específico possível. Varrer o documento inteiro é O(tamanho do DOM), então passar a subárvore alterada mantém a nova varredura barata em páginas grandes.
+</Aside>
+
+## Valor de retorno
+
+Este método não retorna nenhum valor. A sanitização reavaliada é aplicada diretamente à gravação em andamento, e os resultados ficam visíveis na plataforma OpenReplay.
+
+## Exemplo
+
+```js
+// Obscure a section after the user opens sensitive content
+const panel = document.getElementById('account-details')
+panel.setAttribute('data-openreplay-obscured', '')
+
+// Tell the tracker to re-apply sanitization to that subtree
+tracker.resanitize(panel)
+```
+
+```js
+// Re-scan the whole document after changing domSanitizer rules
+tracker.resanitize()
+```

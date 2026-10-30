@@ -1,0 +1,49 @@
+---
+title: "ソースマップのアップロード"
+metaTitle: "ソースマップのアップロード"
+metaDescription: "OpenReplay にソースマップをアップロードします。"
+---
+
+OpenReplay は、ソースマップを使用した JavaScript の難読化解除（un-minify）に対応しています。ソースマップを OpenReplay にアップロードすると、スタックトレースから取得したソースコードのコンテキストを元の形式で確認できるため、minify されたコード（UglifyJS）やトランスパイルされたコード（TypeScript、ES6）のデバッグに非常に役立ちます。
+
+## セットアップ
+
+sourcemap-uploader の NPM モジュールをインストールします。
+
+```bash
+npm i -g @openreplay/sourcemap-uploader
+```
+
+## 前提条件
+
+ビルドで個別のソースマップファイル（.map）が生成されるようにしてください。たとえば webpack を使用している場合は、設定に以下の `devtool` オプションを含める必要があります。
+
+```js
+{ devtool: ‘source-map’ }
+```
+
+## OpenReplay へのソースマップのアップロード
+
+次に、各種ソースファイルを生成するようにビルドプロセスを設定する必要があります。ソースマップは **単一のファイル** としてアップロードできます。
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY file -m ./dist/index.js.map -u https://myapp.com/index.js
+```
+
+または、多数のファイルを含む **ディレクトリ** としてアップロードすることもできます。その場合、URL はディレクトリから JS ファイルをアップロードするルートと（パスまで正確に）一致している必要があります。つまり、`./build` フォルダーに `app-42.js` と `app-42.js.map` があり、これを OpenReplay インスタンスにアップロードして `https://myapp.com/static/app-42.js` というリンクで参照できるようにしたい場合、コマンドは次のようになります。
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY dir -m ./build -u https://myapp.com/static
+```
+
+## パラメーター
+
+- `-s`: OpenReplay インスタンスの URL。末尾に /api を付けてください。OpenReplay Cloud を使用している場合は、このパラメーターを指定しないでください。
+- `-k`: API キー（'Preferences' > 'Account' > 'Organization API Key' にあります）。
+- `-p`: プロジェクトキー（'Preferences' > 'Projects' にあります）。
+- `-m`: ソースマップファイルのパス（ディレクトリも指定可能）。
+- `-u`: JavaScript アセットの URL（単一ファイルの場合）またはベース URL（ディレクトリの場合）。
+- `-l`: アップロードログを表示します。
+
+## ご質問はありますか？
+このプロセスについてご不明な点がございましたら、お気軽に [Slack](https://slack.openreplay.com) までお問い合わせください。

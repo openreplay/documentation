@@ -1,0 +1,38 @@
+---
+title: "iOS SDK - rastreamento de inputs"
+metaTitle: "iOS SDK - rastreamento de inputs"
+metaDescription: "Detalhes sobre o rastreamento de inputs com o tracker do iOS"
+---
+
+O tracker escutará o evento de alteração de valor (com debounce) e enviará o valor resultante para o backend do OpenReplay.
+
+## Adicionando inputs rastreados
+
+### SwiftUI
+
+use `.observeInput(text:label:masked)` para observar eventos de input,
+
+- `text: String` - valor de texto do input
+- `label: String` - rótulo do input gravado
+- `masked: Bool` - se for `true`, o tracker registrará apenas o evento de input em si, e não o valor; não se esqueça de adicionar `.sensitive` para desfocar o input na gravação.
+
+```swift
+import ORTracker
+
+TextField("Input", text: $text)
+.observeInput(text: $text, label: "tracker input #1", masked: Bool)
+
+```
+
+### UIKit
+
+O UIKit usará o placeholder como rótulo e o sender.isSecureTextEntry para mascarar o input
+
+```swift
+import ORTracker
+
+Analytics.shared.addObservedInput(inputEl)
+```
+
+## Tem dúvidas?
+Se você tiver alguma dúvida sobre este processo, fale conosco no nosso [Slack](https://slack.openreplay.com) .

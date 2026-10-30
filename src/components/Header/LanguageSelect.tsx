@@ -1,6 +1,6 @@
 import type { FunctionalComponent } from 'preact';
 import { h } from 'preact';
-import languages from '../../i18n/languages';
+import languages, { latestOnlyLanguages } from '../../i18n/languages';
 import './LanguageSelect.css';
 
 const LanguageSelect: FunctionalComponent<{ lang: string }> = ({ lang }) => {
@@ -22,6 +22,8 @@ const LanguageSelect: FunctionalComponent<{ lang: string }> = ({ lang }) => {
 				onChange={(e) => {
 					const newLang = (e.target as HTMLSelectElement).value;
 					const [_leadingSlash, _oldLang, ...rest] = window.location.pathname.split('/');
+					// Latest-only languages have no versioned pages: land on the latest version instead.
+					if (latestOnlyLanguages.has(newLang) && /^v\d+\.\d+\.\d+$/.test(rest[0] ?? '')) rest.shift();
 					const slug = rest.join('/');
 					window.location.pathname = `/${newLang}/${slug}`;
 				}}
