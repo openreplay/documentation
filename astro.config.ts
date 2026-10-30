@@ -12,6 +12,7 @@ import { escape } from 'html-escaper';
 import { astroSpoilers } from './integrations/astro-spoilers';
 import { sitemap } from './integrations/sitemap';
 import { rehypeTasklistEnhancer } from './plugins/rehype-tasklist-enhancer';
+import { rehypeEnglishHeadingIds } from './plugins/rehype-english-heading-ids';
 import { remarkFallbackLang } from './plugins/remark-fallback-lang';
 import { remarkLocalizeLinks } from './plugins/remark-localize-links';
 import { remarkCodeSnippets } from './integrations/astro-code-snippets';
@@ -89,7 +90,9 @@ export default defineConfig({
     // These are here because setting custom plugins disables the default plugins
     ],
 
-    rehypePlugins: [rehypeSlug, [rehypeAutoLink, {
+    // rehypeEnglishHeadingIds must run before rehypeSlug: translated headings get the
+    // English page's ids so `#anchor` links work in every language.
+    rehypePlugins: [rehypeEnglishHeadingIds(), rehypeSlug, [rehypeAutoLink, {
       properties: {
         class: 'anchor-link'
       },
