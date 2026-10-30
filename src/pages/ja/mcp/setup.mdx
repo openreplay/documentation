@@ -1,0 +1,85 @@
+---
+title: "MCP のセットアップ"
+metaTitle: "OpenReplay MCP アプリのセットアップ"
+metaDescription: "OpenReplay MCP サーバーを Claude Desktop、ChatGPT、または Codex にインストールし、OpenReplay インスタンスを指定して、ブラウザーベースの認可フローでログインします。"
+---
+
+import Aside from '~/components/Aside.astro';
+
+このページでは、OpenReplay MCP アプリのインストール、インスタンスの指定、サインインの手順を説明します。
+
+## 1. MCP サーバーをインストールする
+
+OpenReplay MCP サーバーを、使用しているクライアントの MCP 設定に追加します。
+
+### Claude Desktop
+
+Claude Desktop では、OpenReplay MCP をワンクリックの **拡張機能**（`.mcpb` バンドル）としてインストールします。
+
+1. OpenReplay の [リリースページ](https://github.com/openreplay/openreplay/releases) から `openreplay.mcpb` をダウンロードします。
+2. ファイルをダブルクリックします。Claude Desktop が開き、拡張機能としてインストールするかどうかを確認するメッセージが表示されます。
+3. **Install** をクリックします。
+
+これで完了です。編集が必要な JSON 設定も、インストールが必要な Node ツールチェーンもありません。
+
+## 2. OpenReplay インスタンスを MCP に指定する
+
+Claude Desktop で、拡張機能の設定パネルを開き、**OpenReplay URL** フィールドに、ブラウザーで使用しているアドレスを設定します。Cloud の場合は `https://app.openreplay.com`、セルフホストの場合はご自身のドメインです。MCP は API ホストを自動的に導出します。
+
+<img src="/mcp/config-panel.png" alt="MCP アプリの設定で OpenReplay URL を設定する様子" style={{ width: '700px', height: 'auto' }} />
+
+ChatGPT と Codex の場合、URL はステップ 1 で設定した `OPENREPLAY_BACKEND_URL` 環境変数から取得されます。
+
+チャット内からいつでもインスタンスを切り替えることもできます（例：*"https://openreplay.mycompany.com の OpenReplay を使用して"*）。
+
+## 3. ブラウザーでログインする
+
+MCP はブラウザーベースの認可フローを使用するため、チャットにパスワードを貼り付ける必要はありません。
+
+<Aside type="tip" title="フローの概要" >
+  1. Claude に **OpenReplay へのログイン** を依頼します。
+  2. Claude が認可リンクを返し、ブラウザーで開こうとします。
+  3. OpenReplay にサインインし（まだの場合）、**Authorize** をクリックします。
+  4. Claude に *"I authorized it"* と伝えます。
+  5. Claude がログインを完了し、トークンが発行されたことを確認します。
+</Aside>
+
+### 手順
+
+**1.** チャットで次のように入力します。
+
+```
+Log me in to OpenReplay
+```
+
+**2.** Claude が `login_browser` ツールを呼び出し、`…/mcp/authorize?state=…` という URL を返します。ほとんどのシステムでは、このリンクがデフォルトのブラウザーで自動的に開きます。
+
+**3.** OpenReplay のタブで、**Authorize** をクリックしてアクセスリクエストを承認します。
+
+<img src="/mcp/authorize.png" alt="OpenReplay の認可画面" style={{ width: '700px', height: 'auto' }} />
+
+**4.** Claude に戻り、次のように入力します。
+
+```
+I authorized it
+```
+
+**5.** Claude が（`complete_login` ツールを使用して）ログインを完了し、トークンが生成されたことを確認します。トークンはローカルに保存されるため、次回のチャットでこの手順を繰り返す必要はありません。
+
+<Aside type="caution" title="パスワードによるフォールバック" >
+  ホストがブラウザーウィンドウを開けない場合、MCP はメールアドレスとパスワードによるログインにも対応しています。次のように伝えてください：*"メールアドレス `you@example.com` とパスワード `...` で OpenReplay にログインして"*。ブラウザーフローが利用できる場合は、そちらを推奨します。
+</Aside>
+
+## 接続の確認
+
+ログインしたら、Claude に次のように尋ねます。
+
+```
+List my OpenReplay projects
+```
+
+すべて正しく設定されていれば、プロジェクト名と ID が表示されます。そこから、[機能](/mcp/capabilities) ページで、他に何を依頼できるかを確認してください。
+
+## ご質問はありますか？
+
+問題が発生した場合は、[Slack](https://slack.openreplay.com) にご参加ください。

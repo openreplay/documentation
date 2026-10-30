@@ -1,0 +1,258 @@
+---
+title: "JavaScript SDK - SDK の初期化"
+metaTitle: "JavaScript SDK - SDK の初期化"
+metaDescription: "トラッカーのコンストラクターメソッドの設定オプション"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+## インストール
+
+次のコマンドを実行すると、トラッカーとその SDK がインストールされ、トラッカーのすべての機能を利用できるようになります。
+
+```bash
+npm i @openreplay/tracker
+```
+
+## 初期化
+OpenReplay のトラッカーをインスタンス化する際に、録画や録画体験のさまざまな側面をカスタマイズするための設定オプションを複数指定できます。
+
+コンストラクターでは、`projectKey` オプションを必ず設定する必要があります。この値は、OpenReplay のダッシュボードの 'Preferences > Projects' から取得できます。
+
+<Aside type="tip">
+  複数のプロジェクトがある場合は、どのプロジェクトキーを選択するかに注意してください。
+</Aside>
+
+
+### シングルページアプリケーション（SPA）
+ウェブサイトが **シングルページアプリケーション（SPA）** の場合は、トラッカーをシングルトンとして使用できます：
+
+```js
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+	projectKey: PROJECT_KEY,
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+})
+
+tracker.start() // returns a promise with session info (sessionID, sessionHash, userUUID)
+```
+
+または、新しいクラスインスタンスを作成することもできます：
+
+```js
+import OpenReplay from '@openreplay/tracker';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+tracker.start(); // returns a promise with session info (sessionID, sessionHash, userUUID)
+```
+
+### サーバーサイドレンダリング（SSR）
+一方、ウェブアプリが **サーバーサイドレンダリング（SSR）** の場合（NextJS、NuxtJS など）は、以下のスニペットを使用してください。
+アプリの起動後に `tracker.start()` が呼び出されるようにしてください（`useEffect` または `componentDidMount` 内）。
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+//...
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY,
+      ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start(); // returns a promise with session info (sessionID, sessionHash, userUUID)
+  }, [])
+}
+```
+
+<Aside type="tip">
+特定のウェブフレームワークを使用している場合は、[トラッカーのセットアップ](/sdk/using-or)セクションで始め方を確認してください。
+</Aside>
+
+## 例
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+//...
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY,
+      ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+      capturePerformance: true,
+      __DISABLE_SECURE_MODE: true // for local testing
+});
+```
+
+## 初期化オプション
+
+コンストラクターに渡せるオプションがいくつかあります。必須なのは `projectKey` のみです。
+
+### 一般
+
+- `projectKey: string` トラッキング対象のプロジェクトの ID。
+- `sessionHash?: string` 初期セッションのハッシュ。ウェブアプリ内でセッションが異なるサブドメインをまたぐものの、それらを 1 つの録画としてつなぎ合わせたい場合に便利です。セッションを継続できない場合（存在しない、または終了している場合）、トラッカーは自動的に新しいセッションを開始します。この値は `stop()` でも返されます。詳細は[こちら](/troubleshooting/session-recordings#replays-are-broken-across-subdomains)をご覧ください。
+- `ingestPoint?: string` 例えば https://openreplay.mydomain.com/ingest のような、トラッカーがイベントの送信先とする OpenReplay のドメイン。OpenReplay Cloud ユーザーの場合は省略可能です。デフォルト：`https://api.openreplay.com/ingest`（OpenReplay Cloud を指します）。
+- `revID?: string` ウェブアプリのリビジョン ID。特定のリリースバージョンで発生している問題を検索する際に便利です。
+- `resourceBaseHref?: string` OpenReplay がアセット（スタイル、フォント、アイコン）を取得できる、公開アクセス可能なドメインを指します。これらはセッションリプレイを正しく再生するために必要なため、サイト（およびアセット）がプライベートドメインでホストされているという制限を回避するのに役立つオプションです。例：`https://mypublicsite.com/assets/`。
+- `captureIFrames?: boolean` ウェブアプリ内の同一ドメインの iFrame をすべてキャプチャします。特定の iFrame のみをトラッキングしたい場合は、代わりに `<iframe>` タグに `data-openreplay-capture` HTML 属性を追加するだけです。デフォルト：`true`。
+- `disableClickmaps?: boolean` CSS セレクターの計算（クリックマップで使用）を無効にします。デフォルト：`false`。
+- `__debug__: number` デバッグログを有効にします。デフォルト：`0`（無効）。
+    - `2`: エラー。
+    - `3`: エラーと警告。
+    - `4`: エラー、警告、ログ。
+    - `5`: 詳細出力。
+- `autoResetOnWindowOpen?: boolean` このオプションを有効にすると、アプリケーションから新しいタブを開いたときに sessionID がリセットされます。ブラウザーのタブ間でセッションストレージが共有されることによる sessionID の重複を避けるため、`window.open` メソッドを上書きします。デフォルト：`false`。
+- `forceSingleTab: boolean` 複数のタブにまたがって行われたユーザーセッションを 1 つのリプレイにつなぎ合わせる、マルチタブ録画機能を無効にします。このオプションを有効にすると、代わりに、異なるブラウザータブでキャプチャされたセッションは別々の録画として記録されます。デフォルト：`false`。
+- `disableStringDict: boolean` 録画における文字列ディクショナリのロジック（ストレージの最適化用）を無効にします。デフォルト：`false`。
+- `fixedCanvasScaling: boolean` キャンバス画像を、devicePixelRatio ではなくピクセル密度 1 でレンダリングするよう強制します（画質が低下する可能性がある代わりに、最終的なサイズが小さくなります）。デフォルト：`false`。
+- `disableCanvas?: boolean` canvas 要素の録画を無効にします。デフォルト：`false`。
+- `assistSocketHost?: string` Assist プラグインの接続先として特定のホストを設定するために使用できます。デフォルトは `ingestPoint` の値です。
+- `analytics?: { active: boolean, ingestPoint?: string }` [Analytics SDK](/sdk/analytics) を有効にします。これにより、`tracker.analytics`（イベント、スーパープロパティ、ユーザープロファイル）と、トップレベルの `tracker.track()` ショートハンドが利用できるようになります。`active` が `true` でない限り、SDK は**インスタンス化されません**。それまで `tracker.analytics` は `null` のままです。`ingestPoint` を使用すると、セルフホストのデプロイで、リプレイのインジェスト先とは別のエンドポイントにアナリティクスを送信できます。OpenReplay Cloud では無視されます。デフォルト：`{ active: false }`。
+- `nodes?: { maintainer: MaintainerOptions }` 新しい `nodes.maintainer` オプションは、メモリの管理と、使用されなくなった DOM ノードのクリーンアップに役立ちます。次のパラメーターがあります：
+    - `interval: number`: クリーンアップの実行間隔（ミリ秒）。デフォルト：`30 * 1000`（30 秒）。
+    - `batchSize: number`: 各クリーンアップ実行時にチェックするノード数。デフォルト：`2500`。
+    - `enabled: boolean`: ノードメンテナーの有効/無効を切り替えます。デフォルト：`true`。
+
+### スタイルシート
+
+- `inlineCss: number`: リモートスタイルシートをバックエンドにキャッシュするのではなく、通常のメッセージとして記録して送信するようトラッカーに強制します。CSS ファイルがプライベートで、OpenReplay のバックエンドでキャッシュできない場合に便利です。指定できる値は次のとおりです：
+    - `0`: CSS ファイルはバックエンドにキャッシュされます。デフォルトの動作です。
+    - `1`: リンクされた CSS ファイルを AdoptedStyleSheet オブジェクトとして記録しようとします。
+    - `2`: ファイルを取得し、リプレイ用に AdoptedStyleSheets の動作をシミュレートします。
+    - `3`: ファイルを取得し、`<style>` ノード内にプレーンな CSS として保存します。CSS ファイルにショートハンドプロパティが多数ある場合に使用してください（CSSOM 仕様のバグに対応）。
+- `css: CssRulesOptions`: emotion-js ライブラリで構築されたアプリケーション（MUI コンポーネントなど）へのサポートを強化します。次のパラメーターがあります：
+    - `scanInMemoryCSS: boolean`: emotionjs で作成されたスタイルに問題がある場合は、これを有効にしてください。デフォルト：`false`。
+    - `checkCssInterval: number`: ルールが空のトラッキング対象スタイルシートを、どのくらいの頻度でスキャンするか。デフォルト：`200`（ms）。
+    - `checkLimit: number`: ミューテーションの数が限られている場合や、初回レンダリング後にクライアント側でスタイルシートがハイドレートされる場合に便利です。各スタイルシートに個別に適用されます。値は X/checkCssInterval とし、X は監視期間（ミリ秒）です。デフォルト：`0`（無効）。
+
+### プライバシー
+
+- `respectDoNotTrack?: boolean` ユーザーのブラウザーで do-not-track フラグが有効になっている場合、トラッカーを開始しません。デフォルト：`false`。
+- `obscureTextEmails?: boolean` テキスト要素内のメールアドレスをマスクします。メールアドレスは、ランダムな長さのアスタリスクの文字列に変換されます。デフォルト：`true`。
+- `obscureTextNumbers?: boolean` テキスト要素内の数値をマスクします。数値は、ランダムな長さのアスタリスクの文字列に変換されます。デフォルト：`false`。
+- `obscureInputEmails?: boolean` 入力フィールド内のメールアドレスをマスクします。メールアドレスの値は、ランダムな長さのアスタリスクの文字列に変換されます。デフォルト：`true`。
+- `obscureInputNumbers?: boolean` 入力フィールド内の数値をマスクします。数値は、ランダムな長さのアスタリスクの文字列に変換されます。無効にする場合は、郵便番号やクレジットカード情報などの機密データを含む可能性がある[入力フィールドをサニタイズ](/sdk/sanitize-data#granular-level)してください。デフォルト：`true`。
+- `obscureInputDates?: boolean` 入力フィールド内の日付をマスクします。日付の値は、ランダムな長さのアスタリスクの文字列に変換されます。デフォルト：`false`。
+- `defaultInputMode?: 0 | 1 | 2` 入力値のデフォルトのキャプチャモード。それぞれ、プレーン、マスク、無視を表します。デフォルト：`2`（無視）。
+- `urls`: 次のオプションで、ページのロケーションイベントの記録方法をカスタマイズできます：
+	- `urlSanitizer?: (url: string) => string` ページの URL をサニタイズできます（たとえば、使用トークンの除去など）。
+	- `titleSanitizer?: (title: string) => string` ページのタイトルをサニタイズできます。
+- `resourceNameSanitizer?: (url: string) => string` 記録されるネットワークリソースの URL をサニタイズできます。
+
+除外されたデータは、OpenReplay のサーバーに送信される前にマスクまたは抑制されることに注意してください。上記のオプションに加えた変更はさかのぼって適用できず、新たに収集されたデータにのみ適用されます。詳細については、[データのサニタイズ](/sdk/sanitize-data)を参照してください。
+
+### コンソール
+
+- `consoleMethods?: Array<'log' | 'info' | 'warn' | 'error'  'debug' | 'assert'> | null` キャプチャするコンソールメソッドのリストを指定します。デフォルト：`['log', 'info', 'warn', 'error', 'debug', 'assert']`
+- `consoleThrottling?: number` 1 秒あたりにキャプチャされるコンソールエントリーの最大数。デフォルト：`30`。
+
+### 例外
+
+- `captureExceptions?: boolean` JavaScript の例外とスタックトレースをキャプチャします。デフォルト：`true`。
+
+### タイミング
+
+- `captureResourceTimings?: boolean` リソースタイミングを記録します。デフォルト：`true`。
+- `capturePageLoadTimings?: boolean` ページ読み込みタイミングを記録します。デフォルト：`true`。
+- `capturePageRenderTimings?: boolean` Speed Index、Visually Complete、Time To Interactive などのページレンダリングメトリクスを計算します。`captureResourceTimings = true` が必要です。デフォルト：`true`。
+
+### パフォーマンス
+
+- `capturePerformance?: boolean` フレームレート、CPU 使用率、メモリ消費量などのパフォーマンスメトリクスをキャプチャします。デフォルト：`true`。
+- `longTasks?: boolean` long-animation-frame イベントをキャプチャします。デフォルト：`false`。
+
+### ネットワーク
+
+`network` オプションは、`fetch` と `XHR` のネットワークリクエストとペイロードのキャプチャに関するものです。
+
+```js
+network?: {
+    failuresOnly: boolean;
+    sessionTokenHeader: string;
+    ignoreHeaders: Array<string> | boolean;
+    capturePayload: boolean; // make sure you sanitize your data before enabling it
+    sanitizer: (RequestResponseData) => RequestResponseData | null;
+		captureInIframes: boolean;
+  	axiosInstances: AxiosInstance[];
+    useProxy?: boolean;
+		tokenUrlMatcher?: (url: string) => boolean;
+  }
+```
+
+機密データを編集（リダクト）する方法の例や詳細については、[ネットワークオプション](/sdk/network-options)を参照してください。
+
+### Canvas
+
+`canvas` オプションは、canvas/WebGL 要素のキャプチャに関するものです：
+
+```js
+canvas?: {
+  disableCanvas?: boolean
+  fixedCanvasScaling?: boolean
+  useAnimationFrame?: boolean
+  fileExt?: 'webp' | 'png' | 'jpeg' | 'avif'
+}
+```
+
+この機能を有効にする方法と、利用可能なオプションの詳細については、[Canvas と WebGL](/session-replay/canvas) を参照してください。
+
+### クロスドメイン iFrame
+
+`crossdomain` オプションは、異なるドメインの iFrame のキャプチャに関するものです。`captureIFrames` オプションと組み合わせて使用し、そちらを `true` に設定する必要があります。
+
+```ts 
+	crossdomain?: {
+		/**
+		 * Enable cross-domain tracking
+		 * @default false
+		 * */
+		enabled?: boolean
+		/**
+		 * Used to specify the parent domain, will be '*' by default
+		 * (Check your CSP settings)
+		 * @default '*'
+		 * */
+		parentDomain?: string
+	}
+```
+トラッカーのバージョン [14.0.10](https://github.com/openreplay/openreplay/blob/dev/tracker/tracker/CHANGELOG.md) 以降、クロスドメイン iFrame を扱う場合、HTML 要素に **`data-domain` 属性は不要になりました**。
+
+異なるドメインの iFrame をキャプチャする方法の詳細については、[クロスドメイン iFrame トラッキング](/session-replay/crossdomain-iframe)を参照してください。
+
+### マウスポインター
+
+`mouse` オプションは、クリックマップを作成するために、クリックのセレクターをキャプチャすることに関するものです。
+
+```js
+mouse?: 
+  {
+  disableClickmaps?: boolean
+  minSelectorDepth?: number
+  nthThreshold?: number
+  maxOptimiseTries?: number
+  }
+```
+
+- `disableClickmaps?: boolean` セレクターの計算を完全に無効にします。デフォルト：`false`。
+- `minSelectorDepth?: number` 最適化されたセレクターの最小の長さ（デフォルトは 2）。例：`body > div > div > p => body > p`
+- `nthThreshold?: number` nth-child セレクターにフォールバックするまでのセレクターの試行回数。これは**負荷の高い処理**であり、大きなオーバーヘッドが発生する可能性があるため、2000 より大きい値に設定しないでください。デフォルト：`1000`。
+- `maxOptimiseTries?: number` セレクターを最適化して短縮する試行回数。デフォルト：`10 000`。
+
+### 再接続
+
+- `connAttemptCount?: number` トラッカーの HTTP リクエストがバックエンドに到達できない場合の最大リトライ回数。デフォルト：`10`。
+- `connAttemptGap?: number` 各リトライ間の間隔（ミリ秒）。デフォルト：`8000`。
+
+### セキュリティ
+
+- `__DISABLE_SECURE_MODE?: boolean` SSL を使用していないサイトで、トラッカーとバックエンド間の安全でない接続を許可します。**開発目的でのみ**使用してください。デフォルト：`false`。
+
+<Aside type="caution">
+    ローカルのワークステーションから `__DISABLE_SECURE_MODE` を使用すると、リプレイの再生時に CSS スタイルが正しく読み込まれないなど、表示上の違いが**生じる場合があります**。[こちらのガイド](/troubleshooting/localhost)に従って対処してください。
+</Aside>
+
+## メソッド
+
+<a class="or-card2 or-card-wide" href="/sdk/methods"><span class="or-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m8 8-4 4 4 4M16 8l4 4-4 4M14 5l-4 14"/></svg></span><div><h4>メソッドについて知る</h4></div></a>

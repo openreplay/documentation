@@ -1,9 +1,10 @@
 ---
 import { VERSIONS } from '~/config';
+import { latestOnlyLanguages } from '~/i18n/languages';
 const latest = VERSIONS[0];
 ---
 
-<div class="dh-ver">
+<div class="dh-ver" data-latest-only={[...latestOnlyLanguages].join(',')}>
 	<button class="dh-ver-btn" aria-haspopup="listbox" aria-expanded="false">
 		<span class="dh-ver-dot"></span>
 		<span class="dh-ver-lbl">v{latest.title}</span>
@@ -79,6 +80,9 @@ const latest = VERSIONS[0];
 						const selectedVersion = it.getAttribute('data-url') || '';
 						let pathname = window.location.pathname.replace(/\/$/, '');
 						let pathParts = pathname.split('/');
+						// Languages translated for the latest version only fall back to English for older versions.
+						const latestOnly = (root.dataset.latestOnly || '').split(',');
+						if (selectedVersion && latestOnly.includes(pathParts[1])) pathParts[1] = 'en';
 						if (pathname.match(versionRegExp)) {
 							pathParts[2] = selectedVersion.replace('/', '');
 						} else {

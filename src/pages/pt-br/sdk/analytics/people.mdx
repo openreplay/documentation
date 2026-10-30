@@ -1,0 +1,223 @@
+---
+title: "People"
+metaTitle: "SDK de Analytics do OpenReplay — People"
+metaDescription: "Identifique usuários e gerencie propriedades de usuário com o módulo People do analytics do tracker do OpenReplay."
+---
+
+## People
+
+Este módulo é usado para identificar usuários e alterar as propriedades do perfil do usuário (definir, definir uma vez, anexar, incrementar, excluir).
+
+Para saber mais sobre como gerenciar dados de usuários na interface do OpenReplay, acesse [Data Management](/product-analytics/data-management).
+
+Disponível em:
+
+`tracker.analytics.people`
+
+Alias de nível superior: `tracker.analytics.identify(...)` → equivalente a `tracker.analytics.people.identify(...)`
+
+## Assinaturas
+
+```ts
+// Identify a user (required before other operations except reset)
+tracker.analytics.people.identify(user_id: string, options?: { fromTracker: boolean }): void
+
+// Reset local user context & properties (optionally, destroy device id)
+// should be called on logout and session end
+tracker.analytics.people.reset(hard?: boolean): void
+
+// Delete user on backend, then reset local properties
+tracker.analytics.people.deleteUser(): void
+
+// Set properties (overwrite existing values)
+tracker.analytics.people.setProperties(properties: Record<string, string | number>): void
+tracker.analytics.people.setProperties(key: string, value: string | number): void
+
+// Set properties only if they don't exist yet
+tracker.analytics.people.setPropertiesOnce(properties: Record<string, string | number>): void
+
+// Append values to an existing property (string becomes array)
+tracker.analytics.people.appendValues(key: string, value: string | number): void
+
+// Append value only if it’s not already present (requires property to exist locally)
+tracker.analytics.people.appendUniqueValues(key: string, value: string | number): void
+
+// Increment (or decrement) a numeric property
+tracker.analytics.people.increment(key: string, value: number): void
+
+// Read current user id
+tracker.analytics.people.user_id: string | null | undefined
+```
+
+## identify
+
+Identifica o usuário atual por um id em string (e-mail, nome de usuário, id interno etc.) e enfileira um evento de identidade.
+
+```ts
+tracker.analytics.people.identify("nikita@openreplay.com")
+```
+
+### Observações:
+
+Se um usuário diferente já tiver sido identificado, o SDK redefine as propriedades locais de people antes de mudar para o novo id.
+
+`user_id` deve ser uma string não vazia — qualquer outro valor lança um erro.
+
+`options.fromTracker` é usado internamente para evitar a chamada dupla do hook de id no nível do tracker; normalmente você não precisa dele. `tracker.setUserID()` já chama `identify` para você.
+
+## reset
+
+Redefine o id do usuário atual e todas as propriedades locais de people.
+
+```ts
+// soft reset
+tracker.analytics.people.reset()
+
+// hard reset (also clears persistent device id)
+tracker.analytics.people.reset(true)
+```
+
+## deleteUser
+
+Exclui o usuário identificado no momento no backend (enviando uma mutação de exclusão) e depois limpa o estado local.
+
+```ts
+tracker.analytics.people.deleteUser()
+```
+
+### Observações:
+
+Se nenhum usuário estiver identificado, a chamada não faz nada (no-op).
+
+Depois de chamar este método, `user_id` será limpo e as propriedades locais serão apagadas.
+
+## setProperties
+
+Define propriedades do usuário, sobrescrevendo os valores existentes.
+
+```ts
+tracker.analytics.people.setProperties({
+	plan: "pro",
+	seats: 5,
+})
+
+// or key/value
+tracker.analytics.people.setProperties("plan", "enterprise")
+```
+
+### Observações:
+
+As [propriedades padrão](/sdk/analytics/events#reserved-keys) coletadas pelo SDK são ignoradas no cache local do SDK.
+
+A forma chave/valor exige que ambos os argumentos sejam truthy — `setProperties("plan", "")` ou `setProperties("seats", 0)` lança `invalid user properties provided to set`. Use a forma de objeto para valores falsy.
+
+Um evento é enfileirado com o payload completo de `properties` que você passar.
+
+## setPropertiesOnce
+
+Define propriedades somente se elas ainda não existirem (do ponto de vista local do SDK).
+
+```ts
+tracker.analytics.people.setPropertiesOnce({
+	signup_source: "docs",
+	first_seen_at: Date.now(),
+})
+```
+
+### Observações:
+
+Somente as propriedades que ainda não estão presentes no cache local de people serão gravadas localmente.
+
+Um evento de mutação `setPropertyOnce` ainda é enfileirado com as propriedades que você passar.
+
+## appendValues
+
+Anexa um valor a uma propriedade existente. Se a propriedade for atualmente uma string/número, ela se torna um array.
+
+```ts
+// start with something
+tracker.analytics.people.setProperties({ tags: "new" })
+
+// append
+tracker.analytics.people.appendValues("tags", "beta-user")
+```
+
+### Observações:
+
+O SDK só atualiza o cache local se essa propriedade já existir localmente.
+
+Um evento de mutação de append é sempre enfileirado.
+
+## appendUniqueValues
+
+Anexa um valor somente se ele ainda não estiver presente.
+
+```ts
+tracker.analytics.people.setProperties({ tags: ["new"] })
+tracker.analytics.people.appendUniqueValues("tags", "new") // no change
+tracker.analytics.people.appendUniqueValues("tags", "beta-user") // appended
+```
+
+### Observações:
+
+Se a propriedade ainda não existir localmente, esta chamada não faz nada (retorna antecipadamente). Defina-a primeiro por meio de `setProperties` / `setPropertiesOnce`.
+
+## increment
+
+Adiciona um número (incluindo valores negativos) a uma propriedade numérica.
+
+```ts
+tracker.analytics.people.increment("logins", 1)
+tracker.analytics.people.increment("credits", -10)
+```
+
+### Observações:
+
+Se a propriedade não existir localmente, ela é inicializada com `0` antes de ser incrementada.
+
+Se a propriedade existir, mas não for numérica, o SDK lança um erro.
+
+## Aliases compatíveis com o Mixpanel
+
+Todos os métodos oferecem suporte a uma camada de compatibilidade, fornecida por familiaridade:
+
+```ts
+tracker.analytics.people.set // setProperties
+tracker.analytics.people.set_once // setPropertiesOnce
+tracker.analytics.people.append // appendValues
+tracker.analytics.people.union // appendUniqueValues
+tracker.analytics.people.incrementBy // increment
+```
+
+## Exemplos
+Fluxo típico
+
+```ts
+tracker.analytics.people.identify("user_123")
+
+tracker.analytics.people.setProperties({
+	email: "user@example.com",
+	plan: "pro",
+})
+
+tracker.analytics.people.increment("sessions", 1)
+tracker.analytics.people.appendUniqueValues("features_used", "analytics")
+```
+
+### Trocando de usuário
+
+Tenha em mente que, desde a versão 1.24.0, as sessões do OpenReplay oferecem suporte a apenas um usuário, o que significa que um novo usuário sobrescreve o anterior na sessão.
+Ao trocar de usuário, reinicie também o tracker com a opção `forceNew`.
+
+```ts
+tracker.analytics.people.identify("user_a")
+tracker.analytics.people.setProperties({ plan: "free" })
+
+// switching user resets local people properties automatically
+tracker.analytics.people.identify("user_b")
+```
+
+
+## Tem dúvidas?
+
+Se você encontrar algum problema, conecte-se ao nosso [Slack](https://slack.openreplay.com) e peça ajuda à nossa comunidade.

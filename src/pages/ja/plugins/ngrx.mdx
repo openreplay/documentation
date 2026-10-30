@@ -1,0 +1,81 @@
+---
+title: "NgRx"
+metaTitle: "NgRx"
+metaDescription: "OpenReplay 用の NgRx プラグイン。"
+---
+
+このプラグインを使用すると、`NgRx` のアクションとステートをキャプチャし、セッション録画の再生中に後から確認できます。問題の把握と修正に非常に役立ちます。
+
+## インストール
+
+```bash
+npm i @openreplay/tracker-ngrx --save
+```
+
+## 使い方
+
+生成されたメタリデューサーを `imports` に追加します。詳細については、[NgRx のドキュメント](https://ngrx.io/guide/store/metareducers)を参照してください。
+
+## Web サイトがシングルページアプリケーション（SPA）の場合
+
+```js
+import { StoreModule } from '@ngrx/store';
+import trackerNgRx from '@openreplay/tracker-ngrx';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+const metaReducers = [tracker.use(trackerNgRx(<options>))]; // check list of available options below
+
+tracker.start();
+
+//...
+@NgModule({
+  imports: [StoreModule.forRoot({}, { metaReducers })]
+})
+export class AppModule {}
+```
+
+### Web アプリがサーバーサイドレンダリング（SSR）の場合
+
+アプリが SSR の場合は、以下の例に従ってください。アプリの起動後（`useEffect` または `componentDidMount` 内）に `tracker.start()` が一度だけ呼び出されるようにしてください。
+
+```js
+import { StoreModule } from '@ngrx/store';
+import OpenReplay from '@openreplay/tracker/cjs';
+import trackerNgRx from '@openreplay/tracker-ngrx/cjs';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+const metaReducers = [tracker.use(trackerNgRx(<options>))]; // check list of available options below
+//...
+  @NgModule({
+    imports: [StoreModule.forRoot({}, { metaReducers })]
+  })
+  export class AppModule {}
+}
+
+```
+
+## オプション
+
+ミドルウェアの動作をカスタマイズして、データをサニタイズできます。
+
+```js
+trackerNgRx({
+  actionFilter: action => action.type !== 'DRAW', // only actions which pass this test will be recorded
+  actionTransformer: action => action.type === 'LOGIN' ? null : action,
+  actionType: action => action.type // action type for search, that's the default one
+  stateTransformer: state => {
+    const { jwt, ..._state } = state;
+    return _state;
+  },
+})
+```
+
+## ご質問はありますか？
+
+このプラグインのセットアップで問題が発生した場合は、[Slack](https://slack.openreplay.com) に参加して、コミュニティのサポートを受けてください。

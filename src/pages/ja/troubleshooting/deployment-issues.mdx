@@ -1,0 +1,118 @@
+---
+title: "デプロイの問題"
+metaTitle: "デプロイの問題"
+metaDescription: "デプロイに関する問題とよくある質問"
+---
+
+## インストール
+
+### Error: release openreplay failed, and has been uninstalled due to atomic being set
+
+これは、helm のインストールの失敗が原因である可能性があります。デバッグするには、次の手順に従います。
+
+```bash
+openreplay -s
+
+# If you see any failed pods, check the log. it should shed some light.
+openreplay -l <pod name>
+
+# If there is no pods in running/error/crashloop status, then check the status of pod using following command
+kubectl describe po -n app -n db <pod name>
+```
+
+## サインアップが機能しない
+
+### ヘルスチェックで SSL チェックが失敗と表示される
+  
+自己署名証明書を使用している場合は、次のコマンドで修正できます。
+
+```bash
+openreplay -e
+
+# Add following line to skip the SSL health check
+chalice:
+  env:
+    ...
+    # append the following line under env section
+    SKIP_H_SSL: true
+```
+
+`:wq` を使用して、設定ファイルを保存して終了します
+
+## インストールが突然動作しなくなった
+   
+原因は複数考えられます。状況をデバッグする方法は次のとおりです。
+
+### `openreplay -s` を使用して、インストールの状態を確認する
+
+ディスク使用量のセクションを確認してください。80% を超えている場合、サービスは実行されません。
+
+## 特に目立ったエラーなしにアップグレードが失敗した
+   
+### "helm or another operation (install/upgrade/rollback) is in progress" と表示される
+
+これは通常、インストールまたはアップグレードの操作を複数回再試行したことを意味します。次のコマンドを実行して、状況を解決します。
+
+```bash
+helm rollback -n app openreplay
+```
+
+### エラーは表示されず、"installation failed" とだけ表示される
+
+```bash
+# Check for failed pods
+kubectl get pods -n app --field-selector="status.phase!=Succeeded,status.phase!=Running" -o custom-columns="POD:metadata.name"
+        
+# Check for the err logs
+openreplay -l `pod name from above`
+ ```
+
+## セルフホスト環境のエラー
+
+### Error: You must be logged in to the server (Unauthorized)
+
+`openreplay -s` または `kubectl get po` を実行すると、エラー `error: You must be logged in to the server (Unauthorized)` が発生します。k3s がクラスターにログインするためのクライアント証明書を再生成したものの、kubectl がそれを認識していない可能性があります。`cp /etc/rancher/k3s/k3s.yaml ~/.kube/config` で新しい設定をコピーすれば、問題なく使用できます。
+
+## データベース
+
+### pg-cleanup の後でも Postgres のデータがクリーンアップされない
+
+Postgres のクリーンアップは PG によって処理されます。つまり、指定した日付より前のデータは削除されますが、PG はそのデータを削除対象としてマークするだけです。PG は AutoVacuum と呼ばれるプロセスでデータを削除し、そのトリガーロジックは内部的に管理されています。そのため、ディスクからのデータクリーンアップがいつ完了するかはお伝えできません。どのテーブルにデータがあるかを確認し、データが失われても問題ない場合は、そのテーブルを truncate（切り詰め）することもできます。たとえば、ネットワークリクエストに関するデータを保持している `requests` テーブルを truncate した場合、そこにデータがなくなるため、リクエスト URL でセッションを検索できなくなります。
+
+テーブルサイズを確認するには
+
+```sql
+SELECT nspname AS "name_space",
+       relname AS "relation",
+       pg_size_pretty(
+               pg_total_relation_size(C.oid)
+           )   AS "total_size"
+FROM pg_class C
+         LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+WHERE nspname NOT IN ('pg_catalog','information_schema')
+  AND C.relkind <> 'i'
+  AND nspname !~ '^pg_toast'
+ORDER BY pg_total_relation_size(C.oid) DESC
+LIMIT 20;
+```
+
+## SSL
+
+### SSL を外部プロキシ／ロードバランサーにオフロードする
+
+```bash
+openreplay -e
+
+# Under ingress-nginx block disable ssl redirection
+ingress-nginx: &ingress-nginx
+  ...
+  controller:
+    ...
+    config:
+      ...
+      ssl-redirect: false
+      force-ssl-redirect: false
+```
+## ご質問はありますか？
+
+このプロセスについてご不明な点がありましたら、お気軽に [Slack](https://slack.openreplay.com) までお問い合わせください。

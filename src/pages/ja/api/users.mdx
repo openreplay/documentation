@@ -1,0 +1,215 @@
+---
+title: "Users"
+metaTitle: "Users"
+metaDescription: "ユーザーデータを管理および制御する方法。"
+---
+import Aside from '~/components/Aside.astro'
+
+## ユーザーの検索
+
+プロジェクト内のユーザーを検索します。属性（ユーザー ID、メールアドレス、国など）でフィルターし、必要に応じて自由テキストの `query` で絞り込み、結果をページネーションできます。
+
+### メソッド
+`POST`
+
+### URL
+`/public/:projectKey/users`
+
+### パラメーター
+
+| 名前       | 型     | 説明                                                   |
+|------------|--------|--------------------------------------------------------|
+| projectKey | string | プロジェクトキー（必須）                               |
+| q          | string | オプションの自由テキストクエリ（URL クエリパラメーター）。`q` と `query`（ボディ）の両方が指定された場合は、`q` が優先されます。 |
+
+### ペイロード
+
+| 名前           | 型         | 説明                                                        |
+|----------------|------------|-------------------------------------------------------------|
+| filters        | array      | フィルターのリスト（任意）                                  |
+| query          | string     | ユーザー ID／メールアドレス／名前に対する自由テキストクエリ（最大 100） |
+| startTimestamp | epoch (ms) | 時間枠の開始（任意、最小値 946684800000）                   |
+| endTimestamp   | epoch (ms) | 時間枠の終了（任意、startTimestamp より後の値）             |
+| limit          | integer    | ページサイズ、1〜200（任意、デフォルト: 50）                |
+| page           | integer    | ページ番号、1 から開始（任意、デフォルト: 1）               |
+| sortBy         | string     | ソートに使用するユーザーのカラム（任意）                    |
+| sortOrder      | string     | `asc` または `desc`（任意）                                 |
+| columns        | array      | レスポンスに含める追加のユーザーカラム                      |
+
+### リクエストヘッダー
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### リクエスト例
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "query": "mickael",
+    "limit": 50,
+    "page":  1,
+    "sortOrder": "desc"
+  }'
+```
+
+### レスポンス例
+
+```json
+{
+  "data": {
+    "total": 1,
+    "users": [
+      {
+        "$user_id": "mickael@openreplay.com",
+        "$email": "mickael@openreplay.com",
+        "$name": "Mickael",
+        "$first_name": "Mickael",
+        "$last_name": "",
+        "$created_at": 1623440822825,
+        "$last_seen": 1623689478617
+      }
+    ]
+  }
+}
+```
+
+## ユーザーの取得
+
+特定のユーザーの識別属性と概要の統計情報を取得します。
+
+### メソッド
+`GET`
+
+### URL
+`/public/:projectKey/users/:userId`
+
+### パラメーター
+
+| 名前       | 型     | 説明                                                       |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | プロジェクトキー（必須）                                   |
+| userId     | string | `tracker.setUserID` で設定された ID（必須、最大 256）      |
+
+### リクエストヘッダー
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### ステータスコード
+
+`200`: レスポンスは JSON としてボディで送信されます  
+`400`: 無効な `userId`（空、または 256 文字を超える）  
+`404`: ユーザーが見つかりません
+
+### リクエスト例
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### レスポンス例
+
+```json
+{
+  "data": {
+    "$user_id": "mickael@openreplay.com",
+    "$email": "mickael@openreplay.com",
+    "$name": "Mickael",
+    "$first_name": "Mickael",
+    "$last_name": "",
+    "$phone": "",
+    "$avatar": "",
+    "$created_at": 1623440822825,
+    "distinct_ids": ["15bd70f6-aedf-4544-8ae6-57eb66398e94"],
+    "$country": "FR",
+    "$state": "",
+    "$city": "",
+    "$first_event_at": 1623440822825,
+    "$last_seen": 1623689478617
+  }
+}
+```
+
+## ユーザーの削除
+
+ユーザーと、関連するすべてのデータを削除します。バックグラウンドジョブをスケジュールし、レスポンスには [Jobs](/api/jobs) API でポーリングできる `jobId` が含まれます。
+
+<Aside type="note">
+削除ジョブは、指定したユーザーに関連付けられた最大 1000 件のセッションを削除します。
+</Aside>
+
+### メソッド
+`DELETE`
+
+### URL
+`/public/:projectKey/users/:userId`
+
+### パラメーター
+
+| 名前       | 型     | 説明                                                       |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | プロジェクトキー（必須）                                   |
+| userId     | string | `tracker.setUserID` で設定された ID（必須、最大 256）      |
+
+### リクエストヘッダー
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### ステータスコード
+
+`200`: ジョブがスケジュールされ、ボディで返されます  
+`400`: 無効な `userId`（空、または 256 文字を超える）  
+`409`: このユーザーの削除ジョブがすでにスケジュール済み、または実行中です
+
+### リクエスト例
+
+```shell
+curl -X DELETE \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users/mickael@example.com \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### レスポンス例
+
+```json
+{
+  "data": {
+    "jobId": 22345,
+    "description": "Delete user sessions of userId = mickael@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mickael@example.com",
+    "createdAt": 1623912962910,
+    "updatedAt": null,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+### リプレイファイルの削除時期を変更するには？
+
+削除ジョブは 2 つのステップで処理されます。まず、セッションとそれに紐づくイベントが、夜間にデータベースから削除されます。次に、リプレイファイルがオブジェクトストレージで（30 日後に）期限切れとなるようスケジュールされます。
+
+minio（標準インストール）を使用していて、デフォルトの有効期限／ライフサイクルポリシーを変更したい場合は、以下の手順に従ってください。
+1. サーバー上で `openreplay -e` を実行します
+2. `chalice` セクションに、**SCH_DELETE_DAYS** という新しい環境変数を定義し、リプレイファイルを削除するまでに保持する日数（0 以上）を値として設定します
+3. `:wq` を使用して保存し、終了します
+4. `k9s -n db` を実行します
+5. キーボードの矢印キーでリスト内を移動し、`minio-*` コンテナーを選択します
+6. `s` を押して、Minio（オブジェクトストレージ）コンテナーのシェルにアクセスします
+7. `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY` を実行します
+8. 削除ジョブの実行から 14 日後にリプレイファイルを削除するには、次のようにします
+
+```bash
+export EXPIRATION_DAYS=14
+mc ilm add --expiry-days $EXPIRATION_DAYS --tags "to_delete_in_days=${EXPIRATION_DAYS}" minio/mobs
+```
+
+9. `exit` を使用して Minio コンテナーを終了します
+10. `:quit` を実行して Kubernetes CLI を終了します

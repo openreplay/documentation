@@ -1,0 +1,115 @@
+---
+title: "OpenReplay のセットアップ"
+metaTitle: "OpenReplay のセットアップ"
+metaDescription: "OpenReplay を素早くセットアップして、セッションとメトリクスの記録を開始する方法を説明します。"
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+import LinkRow from '~/components/LinkRow.astro'
+
+<YoutubeVideo title="OpenReplay を使い始める手順を動画で見る"
+  description="文章を読むのが苦手な方は、3 分以内で OpenReplay を使い始める方法を解説したこの動画チュートリアルをご覧ください"
+  videoURL="https://www.youtube.com/watch?v=EWbtMK3qK30"
+  />
+
+
+OpenReplay を使い始めるのは簡単です。 
+
+簡単なチュートリアルをご覧になりたい場合は、[こちらの YouTube 動画](https://www.youtube.com/watch?v=EWbtMK3qK30)をご利用ください。詳細については、このまま読み進めてください。
+
+OpenReplay を立ち上げて実行する方法は 2 つあります。スクリプトを使用する方法と、npm パッケージを使用する方法です。
+
+## スクリプトを使用する
+
+コードスニペットを、Web アプリの `</head>` 内に直接コピー＆ペーストします。スクリプトは OpenReplay ダッシュボードの 'Preferences > Projects' にあり、プロジェクトごとに固有です。
+
+Web サイトが Google Tag Manager をサポートしている場合は、[GTM のステップバイステップガイド](/integrations/google-tag-manager)に従うこともできます。
+
+## NPM を使用する
+
+まず、npm パッケージをインストールします。
+
+```bash
+npm i @openreplay/tracker
+```
+
+次に、コードベースのエントリーポイントからパッケージを初期化し、トラッカーを開始します。コンストラクターで `projectKey` オプションを設定する必要があります。その値は、OpenReplay ダッシュボードの 'Preferences > Projects' で確認できます。
+
+### Web サイトがシングルページアプリケーション（SPA）の場合
+
+トラッカーをシングルトンインスタンスとして使用できます。これが推奨される使用方法です。 
+この方法なら、アプリ内のどこからでもトラッカーにアクセスできます。
+
+```js
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+	projectKey: PROJECT_KEY,
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+})
+
+tracker.start() // returns a promise with session info (sessionID, sessionHash, userUUID)
+```
+
+または、`Tracker` クラスを直接使用して、インスタンスを手動で管理することもできます。
+
+```js
+import OpenReplay from '@openreplay/tracker';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY,
+  ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
+});
+
+tracker.start();
+```
+
+### Web アプリがサーバーサイドレンダリング（SSR）の場合
+
+Web アプリがサーバーサイドレンダリング（SSR）の場合（例: NextJS、NuxtJS）は、以下のスニペットに従ってください。 
+トラッカーがブラウザ環境で実行され、アプリがクライアントに配信された後に `tracker.start()` が呼び出されるようにしてください（例: `useEffect` や `componentDidMount` 内）。
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+//...
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY
+});
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, []);
+}
+```
+
+トラッカーの設定をさらに進めたい場合は、利用可能なオプションの一覧について [JavaScript SDK](/sdk/constructor#initialization-options) を参照してください。
+
+## 他のフレームワークとの統合
+OpenReplay を素のアプリケーション（フレームワークなし）で使用していない場合は、Next.js や Nuxt などの Web 開発フレームワークを使用していることでしょう。
+サポートされている各フレームワーク向けの専用チュートリアルをご覧ください。
+
+<div class="or-feature">
+  <div class="or-chips" style="margin:0;">
+    <a class="or-chip" href="/sdk/using-or/react"><img src="/redesign/frameworks/react.svg" alt="" />React</a>
+    <a class="or-chip" href="/sdk/using-or/vue"><img src="/redesign/frameworks/vue.svg" alt="" />Vue</a>
+    <a class="or-chip" href="/sdk/using-or/angular"><img src="/redesign/frameworks/angular.svg" alt="" />Angular</a>
+    <a class="or-chip" href="/sdk/using-or/next"><img src="/redesign/frameworks/nextjs.svg" alt="" />NextJS</a>
+    <a class="or-chip" href="/sdk/using-or/nuxt"><img src="/redesign/frameworks/nuxt.svg" alt="" />Nuxt</a>
+  </div>
+</div>
+
+## 次のステップ
+
+トラッカーをインストールして Web アプリをデプロイしたら、数分以内にセッションの録画が表示されるはずです。お疲れさまでした！
+
+その間に、セットアップをさらに進めて OpenReplay を最大限に活用できます。取得する情報が多いほど、問題を素早く再現して修正しやすくなります。
+
+<div class="or-rowlist">
+  <LinkRow href="/session-replay/identify-user" title="Identify a User" icon="user" desc="社内のユーザー ID を、録画中のセッションに関連付けます。" />
+  <LinkRow href="/session-replay/metadata" title="Metadata" icon="metadata" desc="トレイトやユーザー変数とも呼ばれるメタデータは、セッションの録画中にユーザーに関する追加情報を提供します。" />
+  <LinkRow href="/product-analytics/data-management" title="Custom Events" icon="api" desc="セッションリプレイと併せてドメイン固有のイベントを記録することで、より深いインサイトを得られます。" />
+  <LinkRow href="/session-replay/error-reporting" title="Error Reporting" icon="error" desc="エラーと例外を報告し、ERRORS タブで確認できます。" />
+  <LinkRow href="/deployment/upload-sourcemaps" title="Upload Source-Maps" icon="highlight" desc="スタックトレースから得られるソースコードのコンテキストを、元の形式で確認できます。" />
+  <LinkRow href="/plugins" title="Plugins" icon="settings" desc="アプリケーションのストアをキャプチャし、HTTP や GraphQL のクエリを監視することで、内部で何が起きているかを把握できます。" />
+  <LinkRow href="/integrations" title="Integrations" icon="data" desc="OpenReplay をロギングツールと接続し、バックエンドのエラーをセッションリプレイと同期させます。" />
+</div>

@@ -1,0 +1,128 @@
+---
+title: "Problemas com gravações de sessões"
+metaTitle: "Problemas com gravações de sessões"
+metaDescription: "Todo tipo de problema que impede que os replays sejam capturados ou exibidos corretamente."
+---
+
+As gravações aparecem no dashboard alguns minutos (~4 min) depois que uma sessão é concluída. Uma sessão é considerada finalizada quando o usuário fecha a aba ou o navegador, é desconectado (por mais de 2 min) ou ultrapassa 2 horas (caso em que uma nova sessão é iniciada). Cada aba gera uma nova gravação, enquanto recarregar uma aba existente não dispara uma nova.
+
+Esta seção tem como objetivo ajudar você a solucionar problemas comuns em session replays.
+
+## Os replays não aparecem na lista
+
+Antes de começar a depurar as gravações de sessões, verifique se você está capturando todo o tráfego. Clique no botão *Manage* na seção Sessions e ative *Capture All*.
+
+Outro erro comum é iniciar o tracker duas vezes, o que impede que as sessões sejam gravadas. Isso costuma acontecer quando os desenvolvedores migram da configuração baseada em script para o pacote npm, então certifique-se de usar apenas um dos dois.
+
+### Verificar a instalação
+
+Se você não tem certeza sobre a configuração, abra o inspetor do navegador e verifique a aba Network para ver se há requisições XHR (procure por "ingest") feitas para o seu IP/domínio (ou *.openreplay.com, se você estiver no OpenReplay Cloud).
+
+Outra opção é usar o callback de início do tracker e registrar uma mensagem quando ele iniciar.
+
+```js
+const tracker = new OpenReplay({
+	projectKey: PROJECT_KEY,
+});
+
+tracker.start().then(({sessionID}) => console.log("OpenReplay tracker started with session: ", sessionID))
+// OR you can use startCallback method
+tracker.start({
+	startCallback: ({ sessionID }) => console.log("OpenReplay tracker started with session: ", sessionID)
+});
+// for snippet, just add startCallback to initOpts
+```
+
+### Testando em localhost
+
+O OpenReplay precisa de acesso público para copiar alguns dos recursos do seu app (CSS, fontes e ícones) e renderizar as gravações corretamente. Seu site também deve usar SSL/HTTPS; caso contrário, o tracker não será iniciado. Por esses motivos, as sessões não serão capturadas em localhost, a menos que você adicione a opção `inlineCss: 3` ao seu [construtor do tracker](/sdk/constructor/#stylesheets), para que as folhas de estilo sejam capturadas como parte de cada replay (em vez de serem armazenadas em cache centralmente pelo servidor).
+
+### O site não está em HTTPS
+
+Por motivos de segurança, o tracker só é executado em aplicações web que usam SSL (HTTPS). Se o seu site estiver em HTTP, o tracker não será iniciado.
+
+### CSP ausente
+
+Se você vir um erro semelhante ao abaixo, o OpenReplay não conseguiu iniciar devido à falta de uma política de segurança de conteúdo (CSP). Veja [aqui](/troubleshooting/csp) a política que deve ser adicionada.
+
+![Problema de CSP](/static/csp-issue.jpg#center)
+
+### O OpenReplay está bloqueado
+
+O script de gravação pode estar sendo bloqueado por uma extensão do navegador, como um bloqueador de anúncios. Use o inspetor do navegador para verificar se as requisições estão falhando. Se estiverem, adicione uma exceção para o domínio em que o backend do OpenReplay está instalado (ou openreplay.com, se você estiver usando a oferta em nuvem).
+
+### Devido a um navegador não compatível
+
+O OpenReplay lança uma exceção quando é executado em um navegador não compatível. Veja [aqui](/troubleshooting/supported-browsers) a lista de navegadores compatíveis.
+
+## Os replays não estão sendo renderizados corretamente
+
+### Estilos ausentes
+
+O OpenReplay precisa de acesso a recursos, como o seu CSS, para que os replays funcionem. Na verdade, esses arquivos são copiados e armazenados em cache pelo nosso backend, para que você possa ver gravações antigas mesmo que a sua aplicação web tenha mudado. É por isso que você deve garantir que seus estilos (assim como ícones e fontes) estejam acessíveis publicamente. Mesmo quando estão, algumas CDNs (como a CloudFlare) consideram nossas requisições de cache como vindas de um bot e, por isso, as bloqueiam. Se esse for o caso, adicione à lista de permissões o IP de origem da sua VM (se você usa a nossa edição de código aberto), da sua instância dedicada (se você está no nosso plano de nuvem dedicada) ou os seguintes IPs (se você está no nosso plano de nuvem serverless): `18.197.95.153` e `18.197.221.118`.
+
+Se os seus assets estiverem hospedados em um domínio restrito (privado ou protegido), o OpenReplay não conseguirá copiá-los e usá-los nos replays. Você tem 2 opções:
+- (Recomendado) Adicione a opção `inlineCss: 3` ao seu [construtor do tracker](/sdk/constructor/#stylesheets) para que as folhas de estilo sejam capturadas como parte de cada replay (em vez de serem armazenadas em cache centralmente pelo servidor)
+- Ou copie seus assets para um domínio acessível publicamente e use a opção `resourceBaseHref` para especificar o domínio no [construtor do tracker](/sdk/constructor).
+
+Se os seus iFrames de mesma origem tiverem frames aninhados, use um caminho absoluto (nos elementos `<link>` que apontam para os seus arquivos CSS) em cada frame incorporado, ou use a opção `resourceBaseHref` para especificar o domínio no [construtor do tracker](/sdk/constructor).
+
+Se você estiver testando em localhost, os estilos não serão renderizados, pois o OpenReplay não consegue acessá-los por estarem na sua máquina. Siga [este guia](/troubleshooting/localhost) para resolver a situação.
+
+### Tela branca
+
+Em raras ocasiões, o replay pode aparecer vazio (ou branco). Embora as páginas não sejam renderizadas, você ainda consegue ver o mouse do usuário se movendo. Tente definir a opção `disableStringDict` como `true` e veja se isso ajuda com as novas gravações. Isso geralmente resolve o problema.
+
+### Tela preta
+
+Se você estiver usando um canvas acima da camada de frontend (com zIndex maior), pode notar uma tela preta durante a reprodução das sessões gravadas. Isso acontece porque a API web ainda não nos permite capturar o canal alfa. Se esse for o caso da sua aplicação web, adicione o atributo HTML `data-openreplay-hidden` ao elemento canvas problemático para ocultá-lo completamente da gravação da sessão.
+
+### As imagens não aparecem
+
+Ao contrário dos estilos, as imagens não são armazenadas em cache pelo OpenReplay, mas obtidas durante o session replay. Portanto, elas devem estar acessíveis publicamente. Se estiverem em uma CDN, mantenha as versões antigas das suas imagens para que seja possível reproduzir corretamente as gravações de sessões antigas.
+
+### Iframes
+
+Se a sua aplicação web inclui iframes, você não conseguirá reproduzir o conteúdo deles como parte das suas gravações. Você ainda pode iniciar o OpenReplay dentro de um iframe incluindo `tracker.start()`, mas ele será considerado uma aba separada, o que significa que será capturado em uma gravação separada.
+
+## Os replays estão quebrados entre subdomínios
+
+Sites que se estendem por vários subdomínios geram várias sessões para a mesma visita. Você pode uni-las em uma única gravação passando `sessionHash` para o método `start()` do tracker. O `sessionHash` pode ser mantido e depois recuperado do seu armazenamento entre domínios (por exemplo, cookies).
+
+```js
+// Initialize the tracker as you would normally do
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+  projectKey: PROJECT_KEY
+})
+
+// or with class instance:
+import OpenReplay from '@openreplay/tracker'
+
+const tracker = new OpenReplay({
+	projectKey: PROJECT_KEY
+})
+...
+// Make sure the tracker is stopped when passing subdomains and collect the sessionHash
+const sessionHash = tracker.stop(); // This can be saved in cookies or passed through URL (if needed)
+...
+// Initialize another tracker on the new subdomain with the same projectKey
+// then Pass the sessionHash to the newly started session
+trackerNewDomain.start({ 
+  sessionHash, // This can be retrieved from cookies or URL (if needed)
+})
+```
+Caso não seja possível continuar a sessão (ela não existe ou já foi finalizada), o tracker iniciará automaticamente uma nova.
+
+## Os replays estão incompletos
+
+Isso pode ser percebido em replays que têm uma única página visitada e terminam assim que o usuário navega para outra página. Isso geralmente acontece em sites que não são single page applications (SPAs). Para corrigir isso, `tracker.start()` deve ser chamado em todas as páginas.
+
+## Os replays estão ausentes
+
+Se você não está usando o OpenReplay auto-hospedado, mas sim a nossa solução hospedada, é provável que algumas sessões não sejam gravadas porque as requisições aos nossos servidores podem estar sendo bloqueadas. Isso geralmente é causado por bloqueadores de anúncios, VPN ou extensões do navegador.
+
+## Tem dúvidas?
+
+Se você tiver alguma dúvida sobre este processo, fale conosco no nosso [Slack](https://slack.openreplay.com) .

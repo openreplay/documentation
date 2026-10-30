@@ -1,0 +1,96 @@
+---
+title: "Flutter SDK - ネットワークのインターセプト"
+metaTitle: "Flutter SDK - ネットワークのインターセプト"
+metaDescription: "Flutter トラッカーのネットワークインターセプトの詳細"
+---
+import Aside from '~/components/Aside.astro'
+
+## ネットワークのインターセプト
+
+トラッカーを開始した後に、`patchNetwork()` を一度呼び出します。
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+OpenReplay.instance.patchNetwork();
+```
+
+これは `HttpOverrides` をインストールし、以前にインストールされていたものにチェーンして、`dart:io` の `HttpClient` 呼び出しをすべて取得します。これには `package:http` の `IOClient` や Dio のデフォルトアダプターも含まれます。このメソッドは冪等であり、`unpatchNetwork()` で以前のオーバーライドが復元されます。
+
+トラッカー自身のインジェストトラフィックは取得されません。その `HttpClient` は直接構築されるため、オーバーライドをバイパスします。
+
+## ネットワークオプション
+
+`ORNetworkOptions` は、Web トラッカーのネットワークオプションに対応しています。
+
+- `capturePayload: bool` リクエストとレスポンスのボディを記録します。デフォルト: `false` — オプトインしない限り、ボディは破棄されます。
+- `ignoreHeaders: List<String>` 破棄するヘッダー名。大文字と小文字を区別せずに比較されます。デフォルト: `['cookie', 'set-cookie', 'authorization']`。
+- `ignoreAllHeaders: bool` すべてのヘッダーを破棄します。（Web トラッカーでは `ignoreHeaders: true` として表現しますが、Dart にはそのようなユニオン型がないため、別のフラグになっています。）デフォルト: `false`。
+- `failuresOnly: bool` 2xx の範囲外のレスポンスのみを記録します。デフォルト: `false`。
+- `sessionTokenHeader: String?` 設定すると、この名前のヘッダーにセッショントークンを載せて送信リクエストに追加されるため、バックエンドのログをリプレイと突き合わせられます。デフォルト: `null`。
+- `sanitizer: ORRequestResponse? Function(ORRequestResponse)?` 記録される内容に対する最終的な決定権を持ちます。デフォルト: `null`。
+
+```dart
+OpenReplay.instance.patchNetwork(const ORNetworkOptions(
+  capturePayload: true,
+  failuresOnly: true,
+  sessionTokenHeader: 'X-OpenReplay-Session',
+));
+```
+
+## リクエストのサニタイズ
+
+サニタイザーは、キャプチャされた呼び出しごとに 1 つの `ORRequestResponse` を受け取り、それを（必要に応じて変更して）返します。`null` を返すと、その呼び出しは完全に破棄されます。
+
+```dart
+OpenReplay.instance.patchNetwork(ORNetworkOptions(
+  capturePayload: true,
+  sanitizer: (record) {
+    if (record.url.contains('/internal/')) return null; // drop it
+
+    record.url = record.url.replaceAll(RegExp(r'token=[^&]+'), 'token=***');
+    record.requestHeaders.remove('x-api-key');
+
+    final body = record.requestBody;
+    if (body is Map) body.remove('password');
+
+    return record;
+  },
+));
+```
+
+`ORRequestResponse` には `url`、`method`、`status`、`duration`、`requestHeaders`、`responseHeaders`、`requestBody`、`responseBody` が含まれます。ボディは JSON としてパースできる場合にデコードされるため、サニタイザーは文字列ではなくオブジェクトを受け取ります。これは Web トラッカーの動作に合わせたものです。
+
+## 呼び出しの手動記録
+
+カスタムの Dio アダプター（または `HttpOverrides` をバイパスするクライアント）には、独自のインターセプターが必要です。
+
+```dart
+OpenReplay.instance.networkRequest(
+  url: 'https://api.example.com/cart',
+  method: 'POST',
+  requestJson: '{"sku":"A1"}',
+  responseJson: '{"ok":true}',
+  status: 200,
+  duration: 132, // ms
+);
+```
+
+GraphQL オペレーションには専用のメッセージがあり、OpenReplay の gql プラグインと併せて使用します。
+
+```dart
+OpenReplay.instance.graphQL(
+  operationKind: 'query',
+  operationName: 'GetCart',
+  variables: '{"id":"42"}',
+  response: '{"data":{...}}',
+  duration: 87,
+);
+```
+
+<Aside type="note">
+	画面自体をマスクするには、[データのサニタイズ](/flutter-sdk/sanitization)をご覧ください。
+</Aside>
+
+## ご質問はありますか？
+このプロセスについてご不明な点がございましたら、お気軽に [Slack](https://slack.openreplay.com) までお問い合わせください。

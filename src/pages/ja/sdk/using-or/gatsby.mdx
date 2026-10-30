@@ -1,0 +1,77 @@
+---
+title: "OpenReplay を Gatsby で使用する"
+metaTitle: "Gatsby アプリケーションへの OpenReplay トラッカーの追加"
+metaDescription: "Gatsby アプリケーションでトラッカーを動作させる方法を説明します。"
+---
+OpenReplay トラッカーを Gatsby ベースのプロジェクトに導入するのは比較的簡単です。Gatsby は内部で React を使用しているため、メインページ内にトラッカーのコードを追加し、`useEffect` フックで `start` メソッドを呼び出すだけです。
+
+それでは見ていきましょう。
+
+## 静的サイトでトラッカーをセットアップする理由
+
+アプリ内に動的なコンテンツがないからといって、OpenReplay の他の機能を活用したくないわけではありません。
+
+セッションリプレイでバグを見つけることはないかもしれませんが、興味深いメトリクスを取得し、それらのメトリクスに基づいて[独自のカスタムダッシュボード](https://docs.openreplay.com/tutorials/custom-dashboard)を作成できます。
+
+パフォーマンス、Web バイタル、さらにはリソース関連のメトリクスを使って、サイトにおけるユーザー体験の全体像を把握できます。
+
+## Gatsby でのトラッカーのセットアップ
+
+静的な Gatsby サイトで、そのエントリーポイントが `pages` フォルダー内の `index.tsx` ファイルである場合、そこに次のコードを追加します。
+
+トラッカーはシングルトンインスタンスとして使用できます。これが推奨される使用方法です。
+この方法なら、アプリ内のどこからでもトラッカーにアクセスできます。
+
+```js
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+const Index = ({data, location }) => {
+
+	React.useEffect(() => {
+		tracker.start();
+	}, [])
+
+	 //the rest of your code here...
+}
+```
+
+または、`Tracker` クラスを直接使用して、インスタンスを手動で管理することもできます。
+
+```jsx
+import Tracker from '@openreplay/tracker';
+const tracker = new Tracker({
+  projectKey: process.env.GATSBY_OPENREPLAY_PROJECT_KEY
+});
+
+const Index = ({data, location }) => {
+
+  React.useEffect(() => {
+    tracker.start();
+  }, [])
+
+   //the rest of your code here...
+}
+```
+
+トラッカーはページのコンパイル時（SSR でもクライアントサイドレンダリングでも）にインスタンス化されますが、start メソッドはブラウザーからのみ呼び出せるため、コンポーネントがマウントされた後に呼び出されるようにする必要があります（そのため、ここでは `useEffect` フックを使用しています）。`useEffect` フックの第 2 引数に空の配列を渡すと、コールバックが 1 回だけ実行されます。
+
+💡**セルフホストユーザーへの注意：** OpenReplay のセルフホスト版を使用している場合は、トラッカーのインスタンス化時に `ingestPoint` 設定プロパティも指定する必要があります。このプロパティは、トラッカーのデータの送信先となるインジェストエンドポイントを指定します。クラウドユーザーは、デフォルトでトラッカーが SaaS 版のエンドポイントの場所を認識しているため、この指定は不要ですが、セルフホストする場合は指定が必要です（`https://openreplay.mydomain.com/ingest` のような値になります）。
+
+## Gatsby での環境変数の扱い
+
+セキュリティ対策として、プロジェクトキーをコード内にハードコーディングしないことをお勧めします。つまり、Gatsby が読み取れるように、環境変数としてエクスポートする必要があります。
+
+OpenReplay のプロジェクトキーは、`GATSBY_OPENREPLAY_PROJECT_KEY` という名前の変数に格納されます。
+
+名前に `GATSBY_` というプレフィックスが付いていることに注目してください。これにより、Gatsby はその変数をフロントエンドのコードでも利用できるようにします。このプレフィックスがないと、Node.js のコードを実行している場合を除き、値を読み取ることができません。
+
+## ご質問はありますか？
+
+トラッカーを組み込んで動作する Gatsby ベースのアプリケーションの**完全なソースコード**については、[こちらのリポジトリ](https://github.com/deleteman/openreplay-gatsby-example)をご覧ください。
+
+Gatsby プロジェクトでトラッカーをセットアップする際に問題が発生した場合は、[Slack コミュニティ](https://slack.openreplay.com/)までご連絡ください。開発者に直接質問できます。

@@ -1,0 +1,110 @@
+---
+title: "iOS SDK - SDK の初期化"
+metaTitle: "iOS SDK - SDK の初期化"
+metaDescription: "iOS トラッカーのコンストラクターメソッドの設定オプション"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	iOS SDK はベータ版です。ご意見や、発生した問題は [Slack](https://slack.openreplay.com) までお寄せください。
+</Aside>
+
+## インストール
+
+次の行でトラッカーと SDK がインストールされ、トラッカーのすべての機能を利用できるようになります。
+
+### Cocoapods
+
+```ruby
+  pod 'OpenReplay', '~> 1.0.17'
+```
+
+### Swift Package Manager
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/openreplay/ios-tracker.git", from: "1.0.17"),
+]
+```
+
+## 初期化
+
+OpenReplay のトラッカーをインスタンス化する際に、録画の多くの側面や録画体験をカスタマイズするための設定オプションを複数指定できます。コンストラクターでは `projectKey` オプションを必ず設定する必要があります。この値は、OpenReplay ダッシュボードの「Preferences > Projects」から取得できます。
+
+<Aside type="tip">
+	複数のプロジェクトがある場合は、どのプロジェクトキーを選択するかに注意してください。
+</Aside>
+
+
+### トラッキングコードを追加する
+
+次のコードを `AppDelegate.swift` ファイルに追加します。
+
+```swift
+// AppDelegate.swift
+import OpenReplay
+
+//...
+
+class AppDelegate: UIResponder, UIApplicationDelegate {
+
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+
+			  // not required if you're using our SaaS version
+        OpenReplay.shared.serverURL = "https://your.instance.com/ingest"
+				// check out our SDK docs to see available options
+        OpenReplay.shared.start(projectKey: "projectkey", options: .defaults)
+
+        // ...
+        return true
+			}
+```
+
+### タッチリスナーを設定する
+
+```swift
+// SceneDelegate.Swift
+import OpenReplay
+
+// ...
+func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+	let contentView = ContentView()
+	.environmentObject(TodoStore())
+
+	if let windowScene = scene as? UIWindowScene {
+		let window = TouchTrackingWindow(windowScene: windowScene) // <<<< here
+		window.rootViewController = UIHostingController(rootView: contentView)
+		self.window = window
+		window.makeKeyAndVisible()
+	}
+}
+```
+
+### データをサニタイズする
+
+詳細については、[iOS リプレイでデータをサニタイズする方法](/ios-sdk/sanitization) を参照してください。
+
+## 初期化オプション
+
+- `crashes: Bool` クラッシュ解析（crashlytics）を有効にします。
+- `analytics: Bool` マークされたビューの分析トラッキングを有効にします。
+- `performances: Bool` パフォーマンスリスナーを有効にします。
+- `logs: Bool` ログリスナーを有効にします。
+- `screen: Bool` スクリーンレコーダーを有効にします。
+- `wifiOnly: Bool` ユーザーが Wi-Fi に接続している場合にのみ、トラッカーを開始します。
+- `isBlur: Bool` 機密性の高いビューをぼかす（`true` の場合）か、単色のボックスで覆います（`false` の場合）。デフォルトは `true` です。
+
+## モジュール
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="iOS SDK のモジュールを知る" url="/ios-sdk/modules" hideIcon={true} width="100"/>
+</div>
+
+## メソッド
+
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="iOS SDK のメソッドを知る" url="/ios-sdk/methods" hideIcon={true} width="100"/>
+</div>
+
+## ご質問はありますか？
+この手順についてご不明な点がございましたら、お気軽に [Slack](https://slack.openreplay.com) までお問い合わせください。

@@ -1,0 +1,189 @@
+---
+title: "Data Management"
+metaTitle: "データ管理 - OpenReplay"
+metaDescription: "OpenReplay でカスタムイベントとユーザープロパティを追跡し、プロダクト分析を強化します。"
+---
+
+OpenReplay のデータ管理（Data Management）を使用すると、カスタムイベントとユーザープロパティを追跡して、プロダクト分析を強化できます。このページでは、データを送信するための SDK インテグレーションと、データを管理するための UI の両方について説明します。
+
+SDK の完全なドキュメントについては、[Analytics SDK リファレンス](/sdk/analytics)を参照してください。
+
+## イベントの概要
+
+OpenReplay は 2 種類のイベントをキャプチャします。
+
+- **自動キャプチャされるイベント**：ページビュー、クリック、フォーム送信など、自動的に追跡されるインタラクション
+- **カスタムイベント**：「purchase completed」や「feature enabled」など、ユーザーが独自に定義するドメイン固有のイベント
+
+カスタムイベントを使用すると、ビジネスにとって重要な特定のユーザーアクションを追跡し、[トレンド](/product-analytics/trends)、[ファネル](/product-analytics/funnels)、[ジャーニー](/product-analytics/journeys)などのアナリティクス機能で活用できます。
+
+## イベントのキャプチャ
+
+カスタムイベントを追跡するには、SDK のアナリティクスイベントモジュールを使用します。API の完全なドキュメントについては、[Events SDK リファレンス](/sdk/analytics/events)を参照してください。
+
+### 基本的な例
+
+```ts
+// Track a simple event
+tracker.analytics.events.sendEvent("Button Clicked", {
+  button_text: "Start",
+  page: "home",
+})
+```
+
+### スーパープロパティ
+
+スーパープロパティは、追跡されるすべてのイベントに自動的に付加される、永続的なキーと値のペアです。
+
+```ts
+// Set super properties that apply to all events
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  env: "prod",
+})
+
+// This event will include app_version and env automatically
+tracker.analytics.events.sendEvent("Signup Started", {
+  plan: "pro",
+})
+```
+
+## ユーザー情報の拡充
+
+ユーザープロパティを使用すると、セグメンテーションや分析のためにユーザーの属性を保存できます。API の完全なドキュメントについては、[People SDK リファレンス](/sdk/analytics/people)を参照してください。
+
+### ユーザーの識別
+
+```ts
+// Identify the current user
+tracker.analytics.people.identify("user_123")
+
+// Set user properties
+tracker.analytics.people.setProperties({
+  email: "user@example.com",
+  plan: "pro",
+})
+```
+
+### プロパティのタイプ
+
+OpenReplay は複数のプロパティタイプをサポートしています。
+
+| タイプ | 説明 | 例 |
+|------|-------------|----------|
+| **Auto-tracked** | SDK によって自動的にキャプチャされる | デバイス、ブラウザー、OS、UTM パラメーター、リファラー |
+| **Special** | 定義済みの動作を持つ特別なプロパティ | `$user_id`, `$email`, `$name` |
+| **Custom** | ユーザー定義のプロパティ | `plan type`, `company`, `signup date` |
+
+## UI でのデータ管理
+
+OpenReplay には、ユーザー、イベント、およびそれぞれのプロパティを閲覧、フィルタリング、整理するためのデータ管理インターフェースが用意されています。
+
+### People
+
+<img src="/data-management/people-page.png" alt="イベントページ" style={{ width: '700px', height: 'auto' }} />
+
+People タブでは、識別済みのユーザーを一覧で確認できます。
+
+- ユーザーとそのプロパティを閲覧
+- ユーザー ID またはプロパティ値で検索
+- ユーザーのアクティビティとセッション履歴を表示
+- 個々のユーザープロフィールにアクセス
+
+### Events
+
+<img src="/data-management/events-page.png" alt="イベントページ" style={{ width: '700px', height: 'auto' }} />
+
+Events タブには、プロジェクトで追跡されているすべてのイベント種別が表示されます。
+
+- イベントを名前で閲覧・検索
+- イベントタイプ（自動キャプチャ / カスタム）でフィルタリング
+- イベントのメタデータ（表示名、説明）を編集
+- ダッシュボードとフィルターでのイベントの表示を制御
+
+### Properties
+
+<img src="/data-management/props-page.png" alt="イベントページ" style={{ width: '700px', height: 'auto' }} />
+
+Properties タブでは、ユーザープロパティとイベントプロパティの両方を管理できます。
+
+- ユーザープロパティとイベントプロパティを切り替え
+- プロパティのタイプと値の分布を表示
+- プロパティの表示名を編集
+- ダッシュボードとフィルターでのプロパティの表示を制御
+
+### Activity
+
+<img src="/data-management/activity-page.png" alt="イベントページ" style={{ width: '700px', height: 'auto' }} />
+
+Activity タブには、イベントのリアルタイムストリームが表示されます。
+
+- 取り込まれたイベントをリアルタイムで監視
+- イベントタイプまたはユーザーでフィルタリング
+- イベントが正しくキャプチャされていることを確認
+
+### Segments
+
+セグメント（Segments）を使用すると、複数のイベントを、カスタムの名前と説明を持つ再利用可能な 1 つのコレクションにまとめることができます。毎回個別のイベントを選択する代わりに、セグメントを一度定義すれば、OpenReplay 全体で使用できます。
+
+<img src="/data-management/segments-list.png" alt="セグメント一覧" style={{ width: '700px', height: 'auto' }} />
+
+セグメントを作成するには、次の手順を実行します。
+
+1. データ管理の **Segments** タブに移動します
+2. **Create** をクリックします
+3. 名前を変更し、公開範囲を設定します
+4. コレクションに含めるイベントとフィルターを選択します
+5. セグメントを作成します
+
+作成したセグメントは、次の場所で使用できます。
+
+- **Sessions** — 保存済みの検索と同様にセグメントでセッションをフィルタリングして、関連するユーザーアクティビティをすばやく見つけられます
+- **Cards** — カードのフィルターとしてセグメントを使用できます
+
+<img src="/data-management/segments-search.png" alt="セッション検索でのセグメントの使用" style={{ width: '700px', height: 'auto' }} />
+
+### Features
+
+フィーチャー（Features）を使用すると、セッション録画内の要素を視覚的に調べてタグ付けできます。タグ付けした要素は、アプリケーションの他のさまざまな部分で再利用して、クリックを簡単に追跡できます。
+
+<img src="/data-management/features-create.png" alt="フィーチャーの作成" style={{ width: '700px', height: 'auto' }} />
+
+フィーチャーを作成するには、次の手順を実行します。
+
+1. 録画を再生し、右上にある **Tag** タブをクリックします
+2. マウスを使用して、リプレイ内の視覚的な要素を選択（タグ付け）します。要素を選択すると、その CSS セレクターが自動的に入力されます。必要に応じて変更できます。
+3. デッドクリックやレイジクリックが発生した場合は無視します
+4. スコープを選択します（アプリケーション全体でクリックを追跡するか、リプレイに表示されているページのみで追跡するか）
+5. フィーチャーを保存します
+
+作成したフィーチャーは、専用のセクションで管理できます。
+
+<img src="/data-management/features-list.png" alt="フィーチャー一覧" style={{ width: '700px', height: 'auto' }} />
+
+作成したフィーチャーは、次の場所で使用できます。
+
+- **Sessions** — 保存済みの検索と同様にフィーチャーでセッションをフィルタリングして、関連するユーザーアクティビティをすばやく見つけられます
+- **Cards** — カードのフィルターとしてフィーチャーを使用できます
+
+<img src="/data-management/features-search.png" alt="セッション検索でのフィーチャーの使用" style={{ width: '700px', height: 'auto' }} />
+
+### Mixpanel 互換のエイリアス
+
+すべてのメソッドで、使い慣れた形で利用できる互換レイヤーがサポートされています。
+
+```ts
+tracker.analytics.people.set            // setProperties
+tracker.analytics.people.set_once       // setPropertiesOnce
+tracker.analytics.people.append         // appendValues
+tracker.analytics.people.union          // appendUniqueValues
+tracker.analytics.people.incrementBy    // increment
+tracker.analytics.events.register       // setProperty
+tracker.analytics.events.register_once  // setPropertiesOnce
+tracker.analytics.events.unregister     // unsetProperties
+tracker.analytics.events.track          // sendEvent
+```
+
+## ご質問はありますか？
+
+問題が発生した場合は、[Slack](https://slack.openreplay.com) に参加して、コミュニティのサポートを受けてください。

@@ -1,0 +1,223 @@
+---
+title: "カスタムイベントでトラッキングを強化する"
+metaTitle: "カスタムイベントとカスタムイシューでトラッキング能力を強化する"
+metaDescription: "カスタムイベント API を通じて、あらゆる種類のカスタムイベントをキャプチャーします"
+---
+カスタムイベントは、トラッカーが追加の設定なしで提供する、シンプルながら強力な概念です。
+ビジネスロジックに関連するカスタムエラーや、ユーザーの行動を把握するためのシンプルなイベントなど、必要なデータで追跡データを拡張できます。
+
+トラッカーはデフォルトで、[便利なエラー](https://docs.openreplay.com/tutorials/issues)を含むさまざまな項目を追跡しますが、それだけでは十分でない場合があります。そのためにカスタムイベントが用意されています。
+
+## カスタムイベントを追加する
+
+この例では、一般的な e コマースサイトを取り上げ、ユーザーが商品をショッピングカートに追加するタイミングを把握するためのイベントを追加します。
+
+デフォルトでは、OpenReplay はその情報を追跡しません。しかし、カスタムイベントを使えば、簡単に追跡できます。
+
+### Tracker Provider の作成
+
+ここで知っておく必要があるのは、これは複数の関数を通じてトラッカーを操作できるようにするコンテキストプロバイダーを作成するということだけです。
+
+特に、プラットフォームにカスタムイシューまたはイベントを送信できる `logIssue` と `logEvent` に注目します。
+
+- **イベント**は、ユーザー固有のアクションを記録するためのものです。たとえば今回は、商品のカートへの追加を記録します。
+- **イシュー**は、トラッカーが自動的に検出しないエラーを記録するためのものです。今回は、サードパーティ API へのアクセスを妨げるネットワークエラーをシミュレートします。その際、プラットフォームにイシューを記録します。
+
+```jsx
+import { createContext, useCallback } from 'react'
+import Tracker from '@openreplay/tracker'
+import { v4 as uuidV4 } from 'uuid'
+import { useReducer } from 'react'
+
+export const TrackerContext = createContext()
+function defaultGetUserId() {
+  return uuidV4()
+}
+function newTracker(config) {
+  const getUserId =
+    config?.userIdEnabled && config?.getUserId
+      ? config.getUserId
+      : defaultGetUserId
+  let userId = null
+  const trackerConfig = {
+    projectKey:
+      config?.projectKey || process.env.NEXT_PUBLIC_OPENREPLAY_PROJECT_KEY,
+ 
+  }
+  if (config?.ingestPoint || process.env.NEXT_PUBLIC_OPENREPLAY_INGEST_POINT) {
+    trackerConfig.ingestPoint =
+      config?.ingestPoint || process.env.NEXT_PUBLIC_OPENREPLAY_INGEST_POINT
+  }
+
+  console.log('Tracker configuration: ')
+  console.log(trackerConfig)
+  const tracker = new Tracker(trackerConfig)
+  if (config?.userIdEnabled) {
+    userId = getUserId()
+    tracker.setUserID(userId)
+  }
+  return tracker
+}
+function reducer(state, action) {
+  switch (action.type) {
+    case 'init': {
+      if (!state.tracker) {
+        console.log('Instantiaing the tracker for the first time...')
+        let t = newTracker(state.config)
+        let pluginsReturnedValue = {}
+        if (state.config.plugins) {
+          state.config.plugins.forEach((p) => {
+            console.log('Using plugin...')
+            pluginsReturnedValue[p.name] = t.use(p.fn(p.config))
+          })
+        }
+        return {
+          ...state,
+          pluginsReturnedValue: pluginsReturnedValue,
+          tracker: t,
+        }
+      }
+      return state
+    }
+    case 'start': {
+      console.log('Starting tracker...')
+      state.tracker.start()
+      return state
+    }
+    case 'logEvent': {
+      console.log('Logging event')
+      state.tracker?.event(action.payload?.name, action.payload?.data)
+      return state
+    }
+    case 'logIssue': {
+      console.log('Logging issue')
+      state.tracker?.issue(action.payload?.name, action.payload?.data)
+      return state
+    }
+  }
+}
+export default function TrackerProvider({ children, config = {} }) {
+  let [state, dispatch] = useReducer(reducer, {
+    tracker: null,
+    pluginsReturnedValue: {},
+    config,
+  })
+  let value = {
+    startTracking: () => dispatch({ type: 'start' }),
+    initTracker: () => dispatch({ type: 'init' }),
+    logEvent: (evnt) => dispatch({ type: 'logEvent', payload: evnt }),
+    logIssue: (evnt) => dispatch({ type: 'logIssue', payload: evnt }),
+    pluginsReturnedValues: { ...state.pluginsReturnedValue },
+  }
+  return (
+    <TrackerContext.Provider value={value}>{children}</TrackerContext.Provider>
+  )
+}
+```
+
+`logEvent` 関数と `logIssue` 関数のシグネチャは同じで、`name` と `data` プロパティを持つオブジェクトを渡します。`name` は OpenReplay の UI でレコードを識別するために使用され、`data` には記録される情報が含まれます。
+
+**注意:** `data` プロパティには、シリアライズ可能なオブジェクトを指定する必要があります。
+
+次のように、`_app.tsx` ファイルでこのプロバイダーを設定できます。
+
+```jsx
+
+//imports here...
+
+export default function MyApp({ Component, pageProps }: AppProps) {
+  const Layout = (Component as any).Layout || Noop
+
+  useEffect(() => {
+    document.body.classList?.remove('loading')
+  }, [])
+
+  return (
+    <TrackerProvider config={{}}>
+      <Head />
+      <ManagedUIContext>
+        <Layout pageProps={pageProps}>
+          <Component {...pageProps} />
+        </Layout>
+      </ManagedUIContext>
+    </TrackerProvider>
+  )
+}
+```
+
+これで準備が整ったので、イベントのトリガーに進みましょう。
+
+### カスタムイシューとイベントを記録する
+
+そのために、UI を活用します。
+
+![商品ページ](/tutorials/product-ui.png)
+
+ユーザーが商品をカートに追加するたびに（基本的には「ADD TO CART」ボタンを押したときに）、新しいイベントを記録します。
+
+また、ユーザーが先にサイズを選択せずに追加した場合は、イシューを記録します。
+
+このコンポーネントの完全なソースコードは[こちら](https://github.com/deleteman/nextjs-commerce-example/blob/redux-store/site/components/product/ProductSidebar/ProductSidebar.tsx)で確認できますが、ここでは追加するロジックに焦点を当てましょう。
+
+コンポーネントの冒頭で useContext フックを使用します。
+
+```jsx
+//outside the component
+import { TrackerContext } from '../../../context/trackerProvider'
+
+//inside the component
+const { logEvent, logIssue } = useContext(TrackerContext)
+```
+
+`addToCart` 関数の内部で、有効なサイズが選択されていないかどうかを確認する次のロジックを追加します。
+
+```jsx
+const validSizes = product.options
+      .filter((o) => o.id == 'option-size')
+      .map((o) => o.values)[0]
+
+    let pickedSized = validSizes.find((s) => {
+      return selectedOptions.size == s.label.toLowerCase()
+    })
+
+    if (!pickedSized) {
+      logIssue({
+        name: 'Product added without a size',
+        data: {
+          product_id: product.id,
+          added_date: new Date(),
+          available_options: validSizes,
+        },
+      })
+    }
+```
+
+コードの重要な部分は、最後の `IF` です。有効なサイズが選択されていないことがわかった場合に、先ほどの `useContext` 呼び出しで取得した `logIssue` 関数を呼び出します。
+
+そしてイベントについては、同じ関数のさらに奥に進んで、次のように追加します。
+
+```jsx
+logEvent({
+        name: 'product_added',
+        data: {
+          id: product.id,
+          date_added: new Date(),
+        },
+      })
+```
+
+必要なのはこれだけです。あとは OpenReplay にアクセスして、セッション録画を見つけ、Events セクションを確認できます。
+
+![カスタムイベントパネル](/tutorials/product-events-section.png)
+
+詳細を確認したい場合は、行の上にカーソルを合わせると表示される「DETAILS」リンクをクリックします。
+
+![カスタムイベントの詳細](/tutorials/event-details.png)
+
+これらが、商品を追加したときに記録した詳細です。
+
+この例の完全なソースコードを確認したい場合は、[こちらで確認できます](https://github.com/deleteman/nextjs-commerce-example/tree/redux-store)。
+
+## ご質問はありますか？
+
+プロジェクトでのカスタムイベントに関して問題がある場合は、[Slack コミュニティ](https://slack.openreplay.com/)までご連絡いただき、開発者に直接お問い合わせください！

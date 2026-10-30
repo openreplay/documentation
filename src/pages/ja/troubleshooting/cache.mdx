@@ -1,0 +1,21 @@
+---
+title: "キャッシュのクリア"
+metaTitle: "キャッシュのクリア"
+metaDescription: "OpenReplay のキャッシュ（CSS、フォント、アイコン）をクリアしてリセットする方法を説明します。"
+---
+
+OpenReplay がリプレイを再現するには、スタイルシート、アイコン、フォントなどのリソースにアクセスする必要があります。実際には、これらのファイルはバックエンドによってコピーされ、キャッシュされるため、Web アプリが変更された後でも、過去の録画を表示できます。次の手順でキャッシュをクリアします。
+
+1. `k9s -n db` を実行します
+2. キーボードの矢印キーでリストを移動し、`minio-*` コンテナーを選択します
+3. s を押して、Minio（オブジェクトストレージ）コンテナーのシェルにアクセスします
+4. `export MINIO_ACCESS_KEY=<accessKey from vars.yaml>` を実行します
+5. `export MINIO_SECRET_KEY=<secretKey from vars.yaml>` を実行します
+6. `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY` を実行します
+7. `mc rm --recursive --dangerous --force minio/sessions-assets` を実行して、キャッシュされているすべてのファイル（CSS、フォント、アイコン）を削除します
+8. `exit` を使用して、Minio コンテナーを終了します
+9. `:quit` を実行して、Kubernetes CLI を終了します
+10. `openreplay -R` を実行して、`assets` サービスを再起動します
+
+## ご質問はありますか？
+このプロセスについてご不明な点がありましたら、お気軽に [Slack](https://slack.openreplay.com) までお問い合わせください。

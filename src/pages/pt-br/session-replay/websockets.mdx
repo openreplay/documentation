@@ -1,0 +1,36 @@
+---
+title: "Capturar WebSockets"
+metaTitle: "Capturar WebSockets"
+metaDescription: "Como gravar WebSockets no session replay."
+---
+
+O OpenReplay pode gravar canais WebSocket selecionados e exibi-los no session replay. Isso é útil na solução de problemas em certas situações, pois fornece contexto adicional.
+
+## Ative a gravação de WebSockets
+
+Para ativar a gravação de WebSockets, você precisará criar um hook que escute as mensagens:
+
+```ts
+const wsHook = tracker.trackWs('my_ws_channel')
+
+myWsChannel.on('important_message', (data) => {
+  wsHook('important_message', data, 'down')
+  /** your code */
+})
+myWsChannel.onAnyOutgoing((event, data) => {
+  wsHook(event, data, 'up')
+})
+```
+
+Exemplo criado com a [documentação do socket-io](https://socket.io/docs/v4/listening-to-events/)
+
+> Nota: Este é apenas um exemplo básico. Leia como escutar eventos de mensagem e planeje o que você realmente precisa capturar. Tráfego grande/pesado resultará em replays maiores.
+
+### Sanitização de dados
+
+Você pode sanitizar os dados antes de eles serem enviados pelo hook.
+
+## Tem dúvidas?
+
+Se você tiver alguma dúvida sobre este processo, fique à vontade para falar conosco no nosso [Slack](https://slack.openreplay.com) .
+

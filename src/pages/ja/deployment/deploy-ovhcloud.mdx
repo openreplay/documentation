@@ -1,0 +1,81 @@
+---
+title: "Deploy to OVHcloud"
+metaTitle: "Deploy to OVHcloud"
+metaDescription: "OVHcloud（専用サーバー、VPS、Private Cloud の仮想マシン、または Public Cloud インスタンス）に OpenReplay をデプロイするためのステップバイステップガイドです。"
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+OpenReplay スタックは 1 台のマシンにインストールでき、OVHcloud の専用サーバー、VPS、Private Cloud の仮想マシン、または Public Cloud インスタンスはその最適な選択肢です。手順は次のとおりです。
+
+## サーバーを注文する、またはインスタンスを起動する
+
+OpenReplay のデプロイには、次の OVHcloud 製品のいずれかを使用できます。
+
+- 専用サーバー
+- VPS
+- Private Cloud（仮想マシン内）
+- Public Cloud インスタンス
+
+前提条件:
+
+- オペレーティングシステムとして *Ubuntu Server 24.04 LTS* を選択します。
+- OpenReplay を実行するマシンの最小スペックは、x86 アーキテクチャで `2 vCPUs, 8 GB of RAM, 50 GB of storage` です。これを下回ると OpenReplay のバックエンドサービスは起動しません。低～中程度のボリュームであれば十分です。高トラフィックが見込まれる場合は、ここからスケールアップしてください。
+- サーバー／インスタンスを指すパブリック IP アドレス。
+
+## OpenReplay をデプロイする
+
+1. サーバー／インスタンスが起動していることを確認してから、root として SSH で接続します
+
+2. OpenReplay を実行するドメインを指定してインストールします（例: DOMAIN_NAME=openreplay.mycompany.com）。
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## TLS/SSL を設定する
+
+OpenReplay は機密性の高いユーザーデータを扱うため、動作には HTTPS が必須です。HTTPS がないと、トラッカーは録画を開始できません。ダッシュボードも同様で、HTTPS がなければユーザーセッションをリプレイできません。
+
+そのため、SSL 証明書を持ち込む（または生成する）必要があります。
+
+1. まず OVHcloud コントロールパネルの 'Web cloud' > 'Domain names' > ご利用のドメイン（例: mycompany.com） > 'DNS zone'（または他の DNS サービスプロバイダー）に移動し、`A Record` を作成します。インストール手順で指定したドメインを使用し、サーバー／インスタンスのパブリック IP を指すように設定します。
+
+2. 独自の証明書を持ち込む場合は、次のコマンドで SSL シークレットを作成します: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`。
+
+> **注記**：証明書をお持ちでない場合は、Let's Encrypt を使用して、サブドメイン（インストール時に指定したもの）用に自動更新される証明書を生成できます。OpenReplay のサーバー／インスタンスに接続し、`cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` を実行して、手順に従ってください。
+
+3. http から https へのリダイレクトを有効にする場合（推奨）は、`/var/lib/openreplay/vars.yaml` の `ingress-nginx` セクションにある以下のブロックのコメントを解除します。
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+なお、`ingress-nginx` はデフォルトでポート `80|443` で動作しますが、必要に応じて `vars.yaml` で簡単に変更できます。
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. 最後に、OpenReplay の NGINX を再インストールします。
+
+```bash
+openreplay -R
+```
+
+これで設定は完了です。OpenReplay にはサブドメインからアクセスできるようになります。`/signup` ページ（例: openreplay.mycompany.com/signup）にアクセスしてアカウントを作成できます。
+
+## ご質問はありますか？
+
+問題が発生した場合は、[Slack コミュニティ](https://slack.openreplay.com/)に参加して、開発者からサポートを受けてください。

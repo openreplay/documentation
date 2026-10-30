@@ -1,0 +1,92 @@
+---
+title: "外部ストレージ"
+metaTitle: "外部ストレージ"
+metaDescription: "録画データのデフォルトの保存先を変更する方法を説明します。"
+---
+
+OpenReplay の[セッションの録画](/configuration/cleanup-storage#recordings-cleanup)は、デフォルトではお使いのインスタンスに保存されますが、保存先は S3 互換のオブジェクトストレージサービスに変更できます。これにより、スケーラビリティが向上し、デプロイコストも抑えられます。
+
+## 録画の保存先の変更
+
+録画は、S3 互換であればどのオブジェクトストレージにも保存できます。そのため、OpenReplay は主要なパブリッククラウドサービスのすべてと互換性があります。録画の保存先を変更する手順は次のとおりです。
+
+### 必要なバケットの作成
+
+オブジェクトストレージサービスに、以下のバケットを作成する必要があります。名前は変更しても構いませんが、このセクションの以降の説明では、以下の名前を使用します。
+- `openreplay-recordings`: 録画が保存されるバケット
+- `openreplay-assets`: アセット（css やフォントなど）がコピーされるバケット
+- `openreplay-sourcemaps`: ソースマップを保存するバケット（[アップロード方法](/deployment/upload-sourcemaps)を参照）
+- `openreplay-spots`: Spot の録画を保存するバケット
+
+バケットを作成したら、次の手順を実行します。 
+
+1. 上記の各バケットで CORS を有効にします。AWS の場合は、'Permissions > Cross-origin resource sharing (CORS)' で、次の設定を使用します。
+
+```json
+[
+    {
+        "AllowedHeaders": [
+            "*"
+        ],
+        "AllowedMethods": [
+            "GET"
+        ],
+        "AllowedOrigins": [
+            "*"
+        ],
+        "ExposeHeaders": []
+    }
+]
+```
+
+2. パブリックアクセスを有効にするのは、`openreplay-assets` バケット**のみ**にします。このバケットには、セッションリプレイを正しく再生するために必要なスタイルシート、アイコン、フォントのみが含まれています。AWS の場合は、まず 'Permissions > Block public access (bucket settings)' に移動してこれをオフにし、次に 'Permissions > Bucket policy' に移動して、次の設定を使用します。
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AddPerm",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::openreplay-assets/*"
+        }
+    ]
+}
+```
+
+3. 最後に、**これら 4 つのバケットのみ**に対する適切なアクセスキーを生成してください。これにより、OpenReplay のバックエンドがプログラムからバケットにアクセスしてファイルをアップロードできるようになります。必要な S3 の権限は次のとおりです。
+
+```json
+"s3:PutObject",
+"s3:GetObjectAcl",
+"s3:GetObject",
+"s3:GetObjectTagging",
+"s3:ListBucket",
+"s3:PutObjectTagging",
+"s3:GetBucketLocation"
+```
+
+### バックエンドサービスの更新
+
+1. OpenReplay インスタンスにログインし、`openreplay -e` を実行して、`s3` セクションにある以下の環境変数を更新します。
+
+| 変数 | 説明 |
+|----------|-------------|
+| accessKey | オブジェクトストレージのアクセスキー（AWS の場合は [IAM アクセスキー ID](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey)、Google Cloud の場合は[サービスアカウントの HMAC キー](https://cloud.google.com/storage/docs/authentication/managing-hmackeys)） |
+| secretKey | オブジェクトストレージのシークレット |
+| endpoint | オブジェクトストレージサービスの URL（**`https` で始まるもの**）（例: AWS の場合は [S3 エンドポイント](https://docs.aws.amazon.com/general/latest/gr/s3.html)の一覧を確認してください。Google Cloud Storage の場合は `https://storage.googleapis.com` になります） |
+| region | バケットのリージョン（該当する場合）（例: AWS S3 を使用している場合は `us-east-1` のような値になります） |
+| assetsBucket | アセット用バケットの名前（例: `openreplay-assets`）  |
+| recordingsBucket | 録画用バケットの名前（例: `openreplay-recordings`） |
+| sourcemapsBucket | ソースマップ用バケットの名前（例: `openreplay-sourcemaps`） |
+| spotsBucket | Spot 用バケットの名前（例: `openreplay-spots`） |
+
+2. `:wq` で保存して終了すると、変更が反映されます
+
+新たに録画されたセッションは、新しい保存先のオブジェクトストレージサービスに保存され、（再生時には）そこから取得されるようになります。
+
+## ご質問はありますか？
+
+問題が発生した場合は、[Slack](https://slack.openreplay.com) に参加して、コミュニティのサポートを受けてください。

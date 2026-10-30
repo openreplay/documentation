@@ -1,0 +1,35 @@
+---
+title: "SDK de JavaScript - método 'startOfflineRecording'"
+metaTitle: "SDK de JavaScript - método 'startOfflineRecording'"
+metaDescription: "Detalhes sobre o método 'startOfflineRecording' do SDK do OpenReplay"
+---
+
+Inicia a gravação de sessão em modo offline (nada é enviado, a menos que o upload seja acionado) e retorna métodos para controlar o estado da gravação.
+
+> Observação: os timestamps da sessão e dos eventos serão extraídos do dispositivo do usuário e não estarão sincronizados com o nosso backend.
+
+## Assinatura
+
+```ts
+startOfflineRecording(
+	startOpts?: Partial<StartOptions>, 
+	onSessionSent: () => void
+): { saveBuffer, getBuffer, setBuffer }
+```
+
+### Parâmetros
+
+Com `startOpts`, você pode personalizar diferentes aspectos da gravação:
+- `userID: string`: Usado para definir manualmente o `userID` e rastreá-lo entre sessões. É um valor do tipo string e pode ser o que você quiser.
+- `metadata: Record<string, string>`: Define manualmente os valores de metadados. Consulte a [seção de Metadados](/session-replay/metadata) para saber mais sobre este recurso.
+- `forceNew: boolean`: Usado para forçar uma nova sessão após a atualização da página. Por padrão, é definido como `false`, portanto, após uma atualização, a sessão é mantida.
+- `sessionHash: string`: Usado para sessões persistentes (sticky sessions). Útil se você tem uma aplicação com vários sites ou se precisa redirecionar o usuário para fora e depois de volta ao seu site (por exemplo, para um gateway de pagamento).
+- `onSessionSent`: Callback que será chamado quando a sessão for totalmente enviada.
+
+
+### Valor de retorno
+
+- `saveBuffer(): void` - Salva o buffer atual no objeto `localStorage` (personalizável no construtor); o buffer será carregado automaticamente quando `startOfflineRecording` for chamado.
+- `getBuffer(): Messages[]` - Retorna o buffer de mensagens atual.
+- `setBuffer(buffer: Messages[])` - Substitui o buffer atual pelo fornecido (se você estiver usando métodos alternativos de armazenamento temporário).
+

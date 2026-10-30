@@ -1,0 +1,94 @@
+---
+title: "Deploy to Azure"
+metaTitle: "Deploy to Azure"
+metaDescription: "Azure に OpenReplay をデプロイするためのステップバイステップガイドです。"
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="Azure インフラストラクチャに OpenReplay をデプロイする手順を動画で見る"
+  description="文章を読むのが苦手な方は、Azure に OpenReplay をデプロイする方法を解説したこの動画チュートリアルをご覧ください"
+  videoURL="https://www.youtube.com/watch?v=bkVw32UKf7Q"
+  />
+
+
+
+OpenReplay スタックは 1 台のマシンにインストールでき、Microsoft Azure はその最適な選択肢の 1 つです。手順は次のとおりです。
+
+## VM を起動する
+
+1. ポータルにサインインします
+2. メイン画面に 'Virtual Machine' が表示されている場合はクリックします。表示されていない場合は、'Create a Resource' > 'Compute' > 'Virtual Machine' の順にクリックします
+3. 'Virtual Machine' ページで、作成ページに自動的に移動しない場合は 'Add' をクリックします
+4. 'Image' で *Ubuntu Server 24.04 LTS* を選択します
+4. VM のスペックを選択します。**最小**リソースは、x86 アーキテクチャで `2 vCPUs, 8 GB of RAM, 50 GB of storage` です。これを下回ると OpenReplay のバックエンドサービスは起動しません。最小スペックは、低～中程度のボリュームであれば十分です。高トラフィックが見込まれる場合は、ここからスケールアップしてください。
+5. HTTP (80)、HTTPS (443)、SSH (22) ポートを有効にし、`username` を控えておきます
+6. 'Review + create' をクリックします
+
+## OpenReplay をデプロイする
+
+1. VM が `Running` であることを確認してから、接続します。
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem ## only if you've previously created an SSH key
+chmod 400 $SSH_KEY
+INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
+ssh <username>@$INSTANCE_IP ## or ssh -i $SSH_KEY <username>@$INSTANCE_IP if you have a key
+```
+
+2. OpenReplay を実行するドメインを指定してインストールします（例: DOMAIN_NAME=openreplay.mycompany.com）。
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## TLS/SSL を設定する
+
+OpenReplay は機密性の高いユーザーデータを扱うため、動作には HTTPS が必須です。HTTPS がないと、トラッカーは録画を開始できません。ダッシュボードも同様で、HTTPS がなければユーザーセッションをリプレイできません。
+
+そのため、SSL 証明書を生成する（または持ち込む）必要があります。
+
+1. まず Azure DNS（または他の DNS サービスプロバイダー）に移動し、`A Record` を作成します。インストール手順で指定したドメインを使用し、VM のパブリック IP を指すように設定します。
+
+2. 独自の証明書を持ち込む場合は、次のコマンドで SSL シークレットを作成します: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`。
+
+> **注記**：証明書をお持ちでない場合は、Let's Encrypt を使用して、サブドメイン（インストール時に指定したもの）用に自動更新される証明書を生成できます。OpenReplay の VM に接続し、`cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` を実行して、手順に従ってください。
+
+3. http から https へのリダイレクトを有効にする場合（推奨）は、`/var/lib/openreplay/vars.yaml` の `ingress-nginx` セクションにある以下のブロックのコメントを解除します。
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+なお、`ingress-nginx` はデフォルトでポート `80|443` で動作しますが、必要に応じて `vars.yaml` で簡単に変更できます。
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. 最後に、OpenReplay の NGINX を再インストールします。
+
+```bash
+openreplay -R
+```
+
+これで設定は完了です。OpenReplay にはサブドメインからアクセスできるようになります。`/signup` ページ（例: openreplay.mycompany.com/signup）にアクセスしてアカウントを作成できます。
+
+> **注記**：セキュリティをさらに強化するために、OpenReplay インスタンスを Azure Load Balancer の背後で実行することもできます。詳細は [Azure LB のドキュメント](https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-overview)を参照してください。
+
+## ご質問はありますか？
+
+問題が発生した場合は、[Slack](https://slack.openreplay.com) に参加して、コミュニティからサポートを受けてください。

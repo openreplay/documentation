@@ -1,0 +1,38 @@
+---
+title: "iOS SDK - 入力のトラッキング"
+metaTitle: "iOS SDK - 入力のトラッキング"
+metaDescription: "iOS トラッカーによる入力のトラッキングの詳細。"
+---
+
+トラッカーは値の変更イベントを（デバウンス付きで）リッスンし、結果の値を OpenReplay バックエンドに送信します。
+
+## トラッキング対象の入力を追加する
+
+### SwiftUI
+
+`.observeInput(text:label:masked)` を使用して、入力イベントを監視します。
+
+- `text: String` - 入力のテキスト値
+- `label: String` - 記録される入力のラベル
+- `masked: Bool` - `true` の場合、トラッカーは値ではなく入力イベントそのものだけを記録します。録画から入力をぼかすために `.sensitive` を追加することも忘れないでください。
+
+```swift
+import ORTracker
+
+TextField("Input", text: $text)
+.observeInput(text: $text, label: "tracker input #1", masked: Bool)
+
+```
+
+### UIKit
+
+UIKit は、プレースホルダーをラベルとして使用し、sender.isSecureTextEntry を使って入力をマスクします。
+
+```swift
+import ORTracker
+
+Analytics.shared.addObservedInput(inputEl)
+```
+
+## ご質問はありますか？
+この手順についてご不明な点がございましたら、お気軽に [Slack](https://slack.openreplay.com) までお問い合わせください。

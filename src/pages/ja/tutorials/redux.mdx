@@ -1,0 +1,359 @@
+---
+title: "Redux プラグインを使用して状態の変化をキャプチャする"
+metaTitle: "Redux プラグインを使用して状態の変化をキャプチャする"
+metaDescription: "Redux プラグインを使用して状態の変化をキャプチャし、セッションリプレイで可視化する方法を学びます"
+---
+import Aside from '~/components/Aside.astro'
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="Redux で状態を追跡する方法を動画で見る"
+  description="文章を読むのが苦手な方は、Redux を使用する React アプリの状態を追跡する方法を解説したこの動画チュートリアルをご覧ください"
+  videoURL="https://www.youtube.com/watch?v=vSg4_i-jCj0"
+  />
+
+ユーザーのセッションをリプレイする際に追加の可視性が必要な場合、アプリケーションの状態を確認できると非常に役立ちます。
+
+Redux の場合、OpenReplay はストアの内部動作に統合できる[プラグインを提供](https://docs.openreplay.com/plugins/redux)しています。このプラグインを使用すると、記録されたセッション全体を通して、Redux ストアの状態（ステート）やディスパッチされたアクションを確認できます。
+
+セットアップが完了すると、次のスクリーンショットのように、ストアの変化を確認できるようになります。
+
+![期待される結果](/using-or/redux-outcome.png)
+
+## Next.js プロジェクトで Redux をセットアップする
+
+このチュートリアルでは、Next.js で構築された一般的な EC サイトの[このリポジトリ](https://github.com/deleteman/nextjs-commerce-example/tree/redux-store)（ブランチ **redux-store**）を使用します。
+
+このプロジェクトでは、ハイライトされている商品群を、外部 API から取得した新しい商品群に置き換えます。
+
+そのために、Axios を使用して商品をリクエストする関数を追加し、それを Redux アクション内から実行します。
+
+**注記**：これは複雑な Next.js アプリケーションなので、従来の ToDo アプリに見られる標準的な構造に従っていないかもしれませんが、このチュートリアルに従えば変更点を追えるはずです。
+
+**覚えておいてください**：リポジトリはいつでもクローンして、コードを自分で確認できます。
+
+まず、次のコマンドですべての主要な依存関係をインストールします。
+
+```bash
+npm i next-redux-wrapper redux react-redux redux-thunk redux-devtools-extension
+```
+
+それが終わったら、プロジェクトのルートディレクトリに `store` というフォルダーを作成し、次の構造を再現します。
+
+![フォルダー構造](/using-or/folder-structure.png)
+
+`types.js` ファイルには、これから定義する 2 つのアクションの型定義を記述します。
+
+```bash
+export const GET_PRODUCTS = 'GET_PRODUCTS'
+export const PRODUCTS_ERROR = 'PRODUCTS_ERROR'
+```
+
+`store.js` ファイルは、呼び出されたときに新しい Redux ストアを作成する関数をエクスポートします。これは、Redux プラグインが返す新しい Redux ミドルウェアを追加する必要があるためです（詳細はこの後すぐ説明します）。
+
+```jsx
+import { createStore, applyMiddleware } from 'redux'
+import thunk from 'redux-thunk'
+import { composeWithDevTools } from 'redux-devtools-extension'
+
+import rootReducer from './reducers'
+
+const initalState = {}
+
+export default function createReduxStore(extraMiddleware = []) {
+  const middleware = [thunk, ...extraMiddleware]
+
+  const store = createStore(
+    rootReducer,
+    initalState,
+    composeWithDevTools(applyMiddleware(...middleware))
+  )
+  return store
+}
+```
+
+リデューサーファイル（`makeUpReducer.js`）は、商品のリストか、問題発生時に返されるエラーメッセージのいずれかで状態を更新します。
+
+```jsx
+import { GET_PRODUCTS, PRODUCTS_ERROR } from '../types'
+
+const initialState = {
+  makeUpProducts: [],
+  loading: true,
+}
+
+export default function (state = initialState, action) {
+  switch (action.type) {
+    case GET_PRODUCTS:
+      return {
+        ...state,
+        makeUpProducts: action.payload,
+        loading: false,
+      }
+    case PRODUCTS_ERROR:
+      return {
+        loading: false,
+        error: action.payload,
+      }
+    default:
+      return state
+  }
+}
+```
+
+最後に、アクションファイルでは、外部 API から商品リストを取得し、適切なアクションとペイロードをディスパッチする単一の関数を定義します。
+
+```jsx
+import { GET_PRODUCTS, PRODUCTS_ERROR } from '../types'
+import axios from 'axios'
+import slugify from 'slugify'
+
+export const getMakeUpProducts = () => async (dispatch: any) => {
+  console.log('Getting the makeup products')
+
+  try {
+    let { data } = await axios.get(
+      'https://makeup-api.herokuapp.com/api/v1/products.json?brand=maybelline&apiKey=123fff132'
+    )
+    const products = data
+
+    let newProds = products.map((p: any) => {
+      return {
+        id: '' + p.id,
+        slug: slugify(p.name),
+        name: p.name,
+        description: '',
+        images: [{ url: p.image_link }],
+        variants: [],
+        price: {
+          value: +p.price,
+        },
+        options: [],
+      }
+    })
+
+    dispatch({
+      type: GET_PRODUCTS,
+      payload: newProds,
+    })
+  } catch (e) {
+    dispatch({
+      type: PRODUCTS_ERROR,
+      payload: e,
+    })
+  }
+}
+```
+
+## トラッカープロバイダーをセットアップする
+
+このプロバイダーを使用すると一連のプラグインを設定できます。ここでは、次のように Redux プラグインを使用します（`_app.tsx` ファイル内）。
+
+```jsx
+//...more imports here....
+import TrackerProvider from '../context/trackerProvider'
+import trackerRedux from '@openreplay/tracker-redux'
+
+// ... more code here....
+
+export default function MyApp({ Component, pageProps }: AppProps) {
+  const Layout = (Component as any).Layout || Noop
+
+  useEffect(() => {
+    document.body.classList?.remove('loading')
+  }, [])
+
+  let plugins = [
+    {
+      fn: trackerRedux,
+      name: 'redux',
+      config: {},
+    },
+  ]
+
+  return (
+    <TrackerProvider config={{ plugins }}>
+      <Head />
+      <ManagedUIContext>
+        <Layout pageProps={pageProps}>
+          <Component {...pageProps} />
+        </Layout>
+      </ManagedUIContext>
+    </TrackerProvider>
+  )
+}
+```
+
+このコードで適切なプラグインを使ってトラッカーをセットアップできますが、プラグインを機能させるには、プラグインの呼び出し時に返されるミドルウェアにアクセスする必要があります。つまり、プラグインの戻り値を保持し、他の場所で使用できるようにする必要があります。ここでは、上記の `createReduxStore` 関数を呼び出す際に使用します。
+
+そのために、戻り値を state 内に保持するよう `TrackerProvider` を拡張する必要があります（このファイルの完全版は[こちら](https://github.com/deleteman/nextjs-commerce-example/blob/redux-store/site/context/trackerProvider.js)で確認できます）。
+
+```jsx
+import { createContext, useCallback } from 'react'
+import Tracker from '@openreplay/tracker'
+import { v4 as uuidV4 } from 'uuid'
+import { useReducer } from 'react'
+
+export const TrackerContext = createContext()
+function defaultGetUserId() {
+  return uuidV4()
+}
+function newTracker(config) {
+  ///code here
+}
+function reducer(state, action) {
+  switch (action.type) {
+    case 'init': {
+      if (!state.tracker) {
+        console.log('Instantiaing the tracker for the first time...')
+        let t = newTracker(state.config)
+        let pluginsReturnedValue = {}
+        if (state.config.plugins) {
+          state.config.plugins.forEach((p) => {
+            console.log('Using plugin...')
+            pluginsReturnedValue[p.name] = t.use(p.fn(p.config)) //keep track
+          })
+        }
+        return {
+          ...state,
+          pluginsReturnedValue: pluginsReturnedValue, //update the state
+          tracker: t,
+        }
+      }
+      return state
+    }
+    case 'start': {
+      console.log('Starting tracker...')
+      state.tracker.start()
+      return state
+    }
+  }
+}
+export default function TrackerProvider({ children, config = {} }) {
+  let [state, dispatch] = useReducer(reducer, {
+    tracker: null,
+    pluginsReturnedValue: {},
+    config,
+  })
+  let value = {
+    startTracking: () => dispatch({ type: 'start' }),
+    initTracker: () => dispatch({ type: 'init' }),
+    pluginsReturnedValues: { ...state.pluginsReturnedValue }, //inject the state
+  }
+  return (
+    <TrackerContext.Provider value={value}>{children}</TrackerContext.Provider>
+  )
+}
+```
+
+`init` アクション内では、プラグインを指定して `use` メソッドを呼び出したときの戻り値も保持しています。そして、その辞書を `state.pluginsReturnedValue` プロパティ内に保持し、`pluginsReturnedValues` 変数を通じてすべての子コンポーネントから利用できるようにしています。
+
+このロジックにより、トラッカーを初期化する際にプラグインを使用し、後からミドルウェアにアクセスして使用できます。
+
+## 新しいミドルウェアで Redux ストアを作成する
+
+プラグインが動作するようになったので、Redux ストアを初期化する必要があります。これは、トラッカーが初期化された後、`start` メソッドが呼び出される前に行う必要があります。
+
+そのために、`_app.tsx` ファイルで直接使用されている `ManagedUI` コンポーネントを選びました。このコンポーネントは Tracker Provider でラップされているため、共有しているコンテキストにアクセスできます。
+
+コンポーネントは次のようになります。
+
+```jsx
+export const ManagedUIContext: FC = ({ children }) => {
+  const { initTracker, pluginsReturnedValues } = useContext(TrackerContext)
+  const [store, setStore] = useState<Store>()
+
+  useEffect(() => {
+    initTracker()
+  }, [])
+
+  useEffect(() => {
+    if (!pluginsReturnedValues['redux']) return
+    let middleWares = pluginsReturnedValues['redux']
+      ? [pluginsReturnedValues['redux']]
+      : []
+    setStore(createReduxStore(middleWares))
+  }, [pluginsReturnedValues])
+
+  return (
+    <div>
+      {store && (
+        <Provider store={store}>
+          <UIProvider>
+            <ThemeProvider>{children}</ThemeProvider>
+          </UIProvider>
+        </Provider>
+      )}
+    </div>
+  )
+}
+```
+
+このファイルの重要なポイントは次のとおりです。
+
+1. コンテキストから `initTracker` 関数と `pluginsReturnedValues` 属性を取得しています。
+2. 1 つ目の関数は、コンポーネントがマウントされたときに 1 回だけ呼び出します（最初の `useEffect` を通じて）。
+3. `pluginsReturnedValues` 変数に返された値が入ってから初めて、Redux ストアを作成します。2 つ目の `useEffect` は、ページの読み込み時と、`initTracker` メソッドが state 変数を変更したときの 2 回呼び出されます。2 回目に、`pluginsReturnedValues` に保存されているミドルウェアを使用してストアを作成します。
+
+## トラッカーを開始する
+
+プラグインのセットアップが完了し、Redux ストアが正しく作成されたら、あとはトラッカーの `start` メソッドを呼び出すだけです。
+
+このロジックは index.tsx ファイルに追加します。[このファイル](https://github.com/deleteman/nextjs-commerce-example/blob/redux-store/site/pages/index.tsx)の完全なソースコードを確認できます。
+
+確認が必要なコードの関連部分は次のとおりです。
+
+```jsx
+// imports and more logic goes here...
+
+export default function Home({
+  products,
+}: InferGetStaticPropsType<typeof getStaticProps>) {
+
+  const { startTracking } = useContext(TrackerContext)
+  const dispatch = useDispatch()
+  const makeUpProductsList = useSelector((state: any) => state.makeUpProducts)
+  const { makeUpProducts } = makeUpProductsList
+
+  useEffect(() => {
+    async function getProds() {
+      await startTracking()
+      dispatch(getMakeUpProducts() as any)
+    }
+    getProds()
+  }, [dispatch])
+
+  return (
+    <>
+      <Grid variant="filled">
+        {products.slice(0, 3).map((product: any, i: number) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            imgProps={{
+              width: i === 0 ? 1080 : 540,
+              height: i === 0 ? 1080 : 540,
+              priority: true,
+            }}
+          />
+        ))}
+      </Grid>
+      <Marquee variant="secondary">
+        {makeUpProducts.slice(0, 3).map((product: any, i: number) => (
+          <ProductCard key={product.id} product={product} variant="slim" />
+        ))}
+      </Marquee>
+      <!-- more code here -->
+    </>
+  )
+}
+```
+
+ここでは、Tracker のコンテキストプロバイダーの `startTracking` 関数と、Redux の `useSelector` フックだけを使用して、返された商品のリストを取得します。
+
+`useEffect` フックが `startTracking` の呼び出しをトリガーし、`getMakeUpProducts` 関数呼び出しをディスパッチすることで、新しいメイクアップ商品リストを取得します。
+
+## ご質問はありますか？
+
+Redux ストアを使用した、動作する Next.js ベースのアプリケーションの**完全なソースコード**については、[こちらのリポジトリ](https://github.com/deleteman/nextjs-commerce-example/tree/redux-store)をご確認ください。
+
+Redux プラグインのセットアップで問題が発生した場合は、[Slack コミュニティ](https://slack.openreplay.com/)で、開発者に直接ご質問ください。

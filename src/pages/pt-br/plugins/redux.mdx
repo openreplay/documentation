@@ -1,0 +1,100 @@
+---
+title: "Redux"
+metaTitle: "Redux"
+metaDescription: "Plugin do Redux para o OpenReplay."
+---
+import Aside from '~/components/Aside.astro'
+
+Este plugin permite capturar as ações e o estado do `Redux` e inspecioná-los depois ao reproduzir as gravações de sessões. Isso é muito útil para entender e corrigir problemas.
+
+<Aside type="tip">
+  Também temos um tutorial detalhado sobre como usar o plugin Redux para capturar o estado da sua aplicação ao usar esta biblioteca; você pode conferi-lo [aqui](/tutorials/redux).
+</Aside>
+
+
+
+## Instalação
+
+```bash
+npm i @openreplay/tracker-redux --save
+```
+
+## Uso
+
+Inicialize o tracker e coloque o middleware gerado na sua cadeia do Redux.
+
+### Se o seu site é uma Single Page Application (SPA)
+
+```js
+import { applyMiddleware, createStore } from 'redux';
+import trackerRedux from '@openreplay/tracker-redux';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+tracker.start();
+const openReplayMiddleware = tracker.use(trackerRedux(<options>)); // check list of available options below
+
+//...
+const store = createStore(
+  reducer,
+  applyMiddleware(openReplayMiddleware) 
+);
+```
+
+### Se o seu web app usa Server-Side Rendering (SSR)
+
+Siga o exemplo abaixo se o seu app usa SSR. 
+Garanta que o tracker seja executado assim que o app estiver no ambiente do navegador.
+
+```js
+'use client'
+import { applyMiddleware, createStore } from 'redux';
+import trackerRedux from '@openreplay/tracker-redux/cjs';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+const openReplayMiddleware = tracker.use(trackerRedux(<options>)); // check list of available options below
+
+const store = createStore( // You can define/use it anywhere in response handlers
+  reducer,
+  applyMiddleware(openReplayMiddleware)
+);
+
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, []);
+  //... Use store here
+}
+
+```
+
+## Opções
+
+Você pode personalizar o comportamento do middleware com opções para sanitizar seus dados.
+
+```js
+trackerRedux({
+  actionFilter: action => action.type !== 'DRAW', // only actions which pass this test will be recorded
+  actionTransformer: action => action.type === 'LOGIN' ? null : action,
+  actionType: action => action.type // action type for search, that's the default one
+  stateTransformer: state => {
+    const { jwt, ..._state } = state;
+    return _state;
+  },
+})
+```
+## Tutorial
+Se você procura um exemplo prático de como usar este plugin para capturar mudanças de estado nos seus session replays, confira [nosso tutorial detalhado aqui](/tutorials/redux).
+
+## Tem dúvidas?
+
+Está com dificuldade para configurar este plugin? Conecte-se ao nosso [Slack](https://slack.openreplay.com) e receba ajuda da nossa comunidade.

@@ -1,0 +1,193 @@
+---
+title: "Ativando o Assist"
+metaTitle: "Como ajudar seus usuários com session replay ao vivo"
+metaDescription: "Como configurar o OpenReplay Assist e dar suporte aos seus usuários finais por meio de compartilhamento de tela ao vivo e WebRTC."
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="Veja como usar o Assist com Next.js"
+  description="Se você não gosta de ler, pode acompanhar este tutorial em vídeo que mostra como usar o plugin Assist na sua aplicação"
+  videoURL="https://www.youtube.com/watch?v=8hpolw2_mMs"
+  />
+
+O session replay é uma ferramenta de que toda equipe de produto e de desenvolvimento precisa quando sua aplicação está em produção. 
+Essas ferramentas permitem entender como os usuários finais interagem com o produto, sem o possível viés de um grupo de teste controlado. Com essas informações, é possível entender coisas como lacunas na experiência do usuário, problemas na lógica de negócio causados por interações incorretas, casos extremos que exigem sequências complexas de ações para serem acionados e muitas outras possibilidades.
+
+No entanto, há um caso de uso que as ferramentas tradicionais de session replay não conseguem atender de fato: o suporte a sessões ao vivo.
+
+Poder ver _ao vivo_ o que seus usuários estão fazendo e responder diretamente, até mesmo assumindo o controle do mouse deles ou iniciando uma chamada rápida para _mostrar_ o problema, não tem preço. E é por isso que o OpenReplay implementou o [recurso Assist](https://openreplay.com/feature-assist.html).
+
+## O que o OpenReplay Assist pode fazer por você?
+
+Em um cenário normal, em que você configura sua aplicação para gravar a sessão de um usuário, os eventos, erros e problemas habituais do seu app chegam à sua instância do OpenReplay (ou à versão SaaS) alguns minutos depois que a aba é fechada (afinal, o app precisa ter certeza de que você não a fechou por engano). Você poderá analisar passo a passo o que o usuário fez, mas, se _encontrar_ um problema, não poderá revisá-lo diretamente com esse usuário.
+
+No entanto, graças ao Assist, agora você poderá:
+
++ Inspecionar diretamente, ao vivo, o que o usuário está fazendo, **desde o momento em que ele abre a página**. 
++ Graças ao uso do WebRTC, é criado um canal 1 para 1 entre o cliente e o operador. Isso permite **abrir uma chamada diretamente pela aplicação**, sem a necessidade de ter um software de comunicação de terceiros instalado em nenhum dos computadores envolvidos.
++ **Assumir o controle do mouse do usuário** (com a permissão dele, é claro) e mostrar exatamente onde clicar. 
+
+Dê uma olhada na interface do recurso Assist, vista pelo operador que acompanha o que o usuário está fazendo a cada momento:
+
+![](https://i.imgur.com/4vxXpHn.png)
+
+Como este é um recurso que mostra atualizações ao vivo, os destaques principais são os campos "email" e "mobile number". O primeiro está sendo ofuscado para manter a privacidade do usuário, e o segundo é literalmente ignorado pelo tracker para evitar a coleta de dados pessoais.
+E, considerando que a transformação dos dados é feita no lado do cliente, não há como você, como operador, ver esses valores.
+
+Isso, por sua vez, permite oferecer suporte perfeito a qualquer tipo de sistema, com a garantia aos seus usuários de que seus dados pessoais não receberão nenhum tipo de tratamento.
+
+## Adicionando o plugin Assist à sua configuração
+
+Este recurso já está disponível em todas as versões mais recentes do OpenReplay, então tudo o que precisamos fazer é ativá-lo.
+Se você trabalha com a versão em pacote do OpenReplay, basta instalar o seguinte plugin diretamente pela linha de comando:
+
+```bash 
+npm install @openreplay/tracker-assist
+```
+
+E depois use o seguinte código para ativá-lo:
+
+```javascript 
+//...
+import { tracker } from '@openreplay/tracker';
+import trackerAssist from '@openreplay/tracker-assist';
+//...
+tracker.configure({
+  projectKey: "your project key"
+});
+tracker.use(trackerAssist({})); //add this line
+tracker.start();
+```
+
+Se, por outro lado, você usa o snippet JS que recebeu da plataforma quando a configurou pela primeira vez, basta atualizar um caminho.
+Seu snippet original deve ter sido parecido com este:
+
+```javascript 
+<!-- OpenReplay Tracking Code for HOST -->
+<script>
+  var initOpts = {
+    projectKey: "your project key",
+    defaultInputMode: 0,
+    obscureTextNumbers: false,
+    obscureTextEmails: true,
+  };
+  var startOpts = { userID: "" };
+  (function(A,s,a,y,e,r){
+    r=window.OpenReplay=[e,r,y,[s-1, e]];
+    s=document.createElement('script');s.src=A;s.async=!a;
+    document.getElementsByTagName('head')[0].appendChild(s);
+    r.start=function(v){r.push([0])};
+    r.stop=function(v){r.push([1])};
+    r.setUserID=function(id){r.push([2,id])};
+    r.setUserAnonymousID=function(id){r.push([3,id])};
+    r.setMetadata=function(k,v){r.push([4,k,v])};
+    r.event=function(k,p,i){r.push([5,k,p,i])};
+    r.issue=function(k,p){r.push([6,k,p])};
+    r.isActive=function(){return false};
+    r.getSessionToken=function(){};
+  })("//static.openreplay.com/latest/openreplay.js",1,0,initOpts,startOpts);
+</script>
+```
+
+Observe o caminho do arquivo `openreplay.js` na parte inferior. Precisamos alterá-lo e colocar `openreplay-assist.js` no lugar, de modo que fique mais ou menos assim:
+
+```javascript 
+<!-- OpenReplay Tracking Code for HOST -->
+<script>
+  var initOpts = {
+    projectKey: "your project key",
+    defaultInputMode: 0,
+    obscureTextNumbers: false,
+    obscureTextEmails: true,
+  };
+  var startOpts = { userID: "" };
+  (function(A,s,a,y,e,r){
+    r=window.OpenReplay=[e,r,y,[s-1, e]];
+    s=document.createElement('script');s.src=A;s.async=!a;
+    document.getElementsByTagName('head')[0].appendChild(s);
+    r.start=function(v){r.push([0])};
+    r.stop=function(v){r.push([1])};
+    r.setUserID=function(id){r.push([2,id])};
+    r.setUserAnonymousID=function(id){r.push([3,id])};
+    r.setMetadata=function(k,v){r.push([4,k,v])};
+    r.event=function(k,p,i){r.push([5,k,p,i])};
+    r.issue=function(k,p){r.push([6,k,p])};
+    r.isActive=function(){return false};
+    r.getSessionToken=function(){};
+  })("//static.openreplay.com/latest/openreplay-assist.js",1,0,initOpts,startOpts);
+</script>
+```
+
+E isso é tudo o que você precisa alterar na sua configuração básica para ter acesso aos recursos do Assist. 
+
+Que legal, não é?!
+
+Observe que, se você se deparar com a seguinte mensagem de erro (como aconteceu comigo), siga [estes passos](https://github.com/peers/peerjs/issues/630#issuecomment-910028230) para resolvê-lo.
+
+**"Critical dependency: the request of a dependency is an expression"**
+
+A correção descrita na issue deve ser suficiente para você seguir em frente.
+
+Agora você já pode começar a aproveitar ao máximo o Assist do OpenReplay, então vamos dar uma olhada nele.
+
+## Assistindo a uma sessão ao vivo
+
+Como o cliente não precisa fazer mais nada a partir de agora, é hora de você olhar para o lado do operador.
+
+Diretamente na plataforma, clique na opção Assist no menu de navegação, como mostrado abaixo:
+
+![](https://i.imgur.com/3LG9hcc.png)
+
+Ao clicar ali, você verá uma lista de sessões ativas do Assist. Assim que o seu usuário abrir a aplicação, a sessão aparecerá aqui automaticamente e será listada assim:
+
+![](https://i.imgur.com/pp86irQ.png)
+
+Ali, você vê as seguintes informações:
+
+- O ID do usuário, aquele email ali? Você o definiu usando o método `setUserID` no tracker. 
+- A data e a hora de início de cada sessão.
+- A duração da sessão (exibida como "14 seconds" na captura de tela).
+- Por fim, as informações de geolocalização do usuário. Você pode ver ali que estou na Espanha e, além disso, que estou usando o Firefox no meu desktop macOS. 
+
+Há muita informação logo aqui, e isso é importante para você identificar a sessão que quer assistir ao vivo. Afinal, neste exemplo estou mostrando apenas uma sessão, mas poderia haver centenas (ou mais) ativas ao mesmo tempo.
+Além disso, você pode usar a barra de busca para fazer consultas complexas e encontrar a sessão certa. 
+
+### Entrando em uma sessão específica
+
+Depois de localizar a sessão que procurava, clique no ícone "Play" da sessão. Isso levará você à visualização ao vivo da aplicação do cliente.
+
+Na comparação lado a lado abaixo, você pode ver como a tela do Assist mostra a sessão do usuário que está sendo observado.
+
+![](https://i.imgur.com/G7xAxTZ.png)
+
+Agora, como você pode perceber, há algumas diferenças entre o que o usuário vê e o que o operador vê. E por um bom motivo.
+As informações privadas são ofuscadas automaticamente ou completamente ignoradas. Isso serve para proteger o usuário que está sendo observado; afinal, como operador, você não precisa necessariamente ver um número de telefone ou um endereço de email. 
+É importante observar que esse é o comportamento padrão: o tracker instalado na aplicação do cliente detecta o tipo de dado que está sendo digitado e o seu formato (como no campo de email) e decide na hora protegê-lo.
+
+No entanto, se você quiser alterar esse comportamento e fazer o tracker ignorar ou ofuscar outros campos, é possível sanitizar os dados em diferentes níveis de granularidade. A documentação oficial tem todas as informações de que você precisa, se for isso que está procurando, então [dê uma olhada.](https://docs.openreplay.com/sdk/sanitize-data)
+
+### Assumindo o controle do mouse do seu usuário
+
+Um recurso extra (e muito interessante, devo acrescentar) é a possibilidade de assumir o controle do ponteiro do mouse do seu cliente. Com essa funcionalidade, você poderá controlar o mouse e clicar em diferentes lugares da aplicação.
+Você não poderá enviar nenhum outro tipo de sinal de entrada, mas isso deve ser suficiente para ajudar você a ajudar seus usuários.
+
+E, para acessar esse recurso, basta clicar no link "Remote Control" na parte superior direita da tela.
+Quando você fizer isso, seu cliente verá uma janela modal solicitando permissão.
+
+![](https://i.imgur.com/5HtwYtb.png)
+
+Depois de confirmado, você ganhará o controle do mouse dele ou, melhor dizendo, o seu ponteiro aparecerá na tela dele e você poderá clicar e interagir com a aplicação como se estivesse usando o mouse dele diretamente.
+Você pode ver isso na captura de tela a seguir: o ponto vermelho é o seu mouse do Assist, enquanto o ponteiro preto é o do usuário.
+
+![](https://i.imgur.com/L9K20q2.png)
+
+Esse é um recurso fantástico quando seus usuários não conseguem descobrir como interagir com o seu app ou onde exatamente clicar.
+Você pode até apoiá-los iniciando uma chamada ao vivo com o seu usuário e usando o seu ponteiro vermelho para mostrar onde clicar.
+A captura de tela a seguir mostra uma chamada ao vivo comigo... bem, comigo mesmo, a partir de dois computadores diferentes com sistemas operacionais diferentes. Voz e vídeo são transmitidos via WebRTC.
+
+![](https://i.imgur.com/Ob7QTzH.png)
+
+
+## Tem dúvidas?
+
+Se você tiver qualquer problema ao configurar o plugin Assist no seu projeto, entre em contato conosco na nossa [comunidade no Slack](https://slack.openreplay.com/) e pergunte diretamente aos nossos desenvolvedores!

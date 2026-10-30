@@ -1,0 +1,59 @@
+---
+title: "JavaScript SDK - 'start' メソッド"
+metaTitle: "JavaScript SDK - 'start' メソッド"
+metaDescription: "OpenReplay の SDK の 'start' メソッドの詳細"
+---
+
+このメソッドは、トラッカーを開始するために使用します。トラッカーを開始すると、セッションの録画が始まります。
+
+## シグネチャ
+
+```js
+start(startOpts?: Partial<StartOptions>): Promise<StartPromiseReturn>
+```
+
+### パラメーター
+`start` メソッドは、録画のさまざまな側面をカスタマイズできるオプションのパラメーターを受け取ります：
+- `userID: string`: ユーザー ID を手動で設定し、セッションをまたいでトラッキングするために使用します。文字列値で、任意の値を指定できます。
+- `metadata: Record<string, string>`: メタデータの値を手動で設定します。この機能の詳細は[メタデータのセクション](/session-replay/metadata)を確認してください。
+- `forceNew: boolean`: ページの更新後に新しいセッションを強制的に開始するために使用します。デフォルトは `false` に設定されているため、更新後もセッションは維持されます。
+- `sessionToken: string`: 一部のインテグレーションで使用されます。
+- `assistOnly: boolean`: セッションデータをバックエンドに送信しない Assist 専用モードでトラッカーを起動します（EE エディションの機能）
+- `startCallback?: (result: StartPromiseReturn) => void`: トラッカーの開始時、または開始に失敗したときにトリガーされるコールバック。成功または失敗の情報を返します。
+
+
+### 戻り値
+
+開始後、このメソッドは次の内容を含むセッション情報オブジェクトを持つ Promise を返します：
+
+- `sessionID: string`: 開始されたセッションの ID を表す文字列値。
+- `sessionToken: string`: セッションのトークン。
+- `userUUID: string`: ユーザーの一意の識別子。
+
+`StartPromiseReturn` は次のいずれかです：
+
+```js
+// Successful start
+interface OnStartInfo {
+  sessionID: string;
+  sessionToken: string;
+  userUUID: string;
+}
+
+const SuccessfulStart = (body: OnStartInfo): SuccessfulStart => ({
+  ...body,
+  success: true,
+});
+
+// Unsuccessful start
+const UnsuccessfulStart = (reason: string): UnsuccessfulStart => ({
+  reason,
+  success: false,
+});
+
+// Type for start promise return
+export type StartPromiseReturn = SuccessfulStart | UnsuccessfulStart;
+```
+
+- **成功の場合**：成功すると、Promise は sessionID、sessionToken、userUUID を返します。
+- **失敗の場合**：失敗すると、reason と success: false を返します。

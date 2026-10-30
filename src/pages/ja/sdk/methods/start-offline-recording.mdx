@@ -1,0 +1,35 @@
+---
+title: "JavaScript SDK - 'startOfflineRecording' メソッド"
+metaTitle: "JavaScript SDK - 'startOfflineRecording' メソッド"
+metaDescription: "OpenReplay の SDK の 'startOfflineRecording' メソッドの詳細"
+---
+
+オフラインモード（アップロードがトリガーされるまで何も送信されない）でセッション録画を開始し、録画状態を制御するためのメソッドを返します。
+
+> 注記：セッションとイベントのタイムスタンプはユーザーのデバイスから取得され、当社のバックエンドとは同期されません。
+
+## シグネチャ
+
+```ts
+startOfflineRecording(
+	startOpts?: Partial<StartOptions>, 
+	onSessionSent: () => void
+): { saveBuffer, getBuffer, setBuffer }
+```
+
+### パラメーター
+
+`startOpts` を使用すると、録画のさまざまな側面をカスタマイズできます：
+- `userID: string`: `userID` を手動で設定し、セッションをまたいでトラッキングするために使用します。文字列値で、任意の値を指定できます。
+- `metadata: Record<string, string>`: メタデータの値を手動で設定します。この機能の詳細は[メタデータのセクション](/session-replay/metadata)を確認してください。
+- `forceNew: boolean`: ページの更新後に新しいセッションを強制的に開始するために使用します。デフォルトは `false` に設定されているため、更新後もセッションは維持されます。
+- `sessionHash: string`: スティッキーセッションに使用します。マルチサイトのアプリケーションの場合や、ユーザーをいったん外部（決済ゲートウェイなど）にリダイレクトして再びサイトに戻す必要がある場合に便利です。
+- `onSessionSent`: セッションが完全にアップロードされた時点で呼び出されるコールバック。
+
+
+### 戻り値
+
+- `saveBuffer(): void` - 現在のバッファを `localStorage` オブジェクトに保存します（コンストラクターでカスタマイズ可能）。バッファは `startOfflineRecording` が呼び出されたときに自動的に読み込まれます。
+- `getBuffer(): Messages[]` - 現在のメッセージバッファを返します。
+- `setBuffer(buffer: Messages[])` - 現在のバッファを指定されたものに置き換えます（別の一時保存方法を使用している場合）。
+

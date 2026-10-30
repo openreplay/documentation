@@ -1,0 +1,86 @@
+---
+title: "Deploy to Digital Ocean"
+metaTitle: "Deploy to Digital Ocean"
+metaDescription: "Digital Ocean に OpenReplay をデプロイするためのステップバイステップガイドです。"
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+OpenReplay スタックは 1 台のマシン（ドロップレット）にインストールでき、Digital Ocean はその最適な選択肢の 1 つです。手順は次のとおりです。
+
+## ドロップレットを作成する
+
+1. まだプロジェクトを作成していない場合は新規作成し、そのプロジェクトに移動して 'Create' droplet をクリックします
+2. *Ubuntu Server 24.04 LTS* イメージを選択します
+4. 'Shared CPU' を選択し、`Regular Intel | 4 CPUs | 8GB` プラン（x86 アーキテクチャ）を選びます。これが最小スペックで、これを下回ると OpenReplay のバックエンドサービスは起動しません。中程度のボリュームであれば十分ですが、高トラフィックが見込まれる場合は、ここからスケールアップしてください。
+5. 'Authentication' で 'New SSH key' をクリックし、画面の指示に従ってキーを生成します
+6. マシンに名前を付けて、'Create droplet' をクリックします
+
+## OpenReplay をデプロイする
+
+1. ドロップレットが `active` であることを確認してから、接続します。
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem ## wherever you've saved the SSH key
+INSTANCE_IP=REPLACE_WITH_DROPLET_PUBLIC_IP
+chmod 400 $SSH_KEY
+ssh -i $SSH_KEY root@$INSTANCE_IP
+```
+
+2. OpenReplay を実行するドメインを指定してインストールします（例: DOMAIN_NAME=openreplay.mycompany.com）。
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## TLS/SSL を設定する
+
+OpenReplay は機密性の高いユーザーデータを扱うため、動作には HTTPS が必須です。HTTPS がないと、トラッカーは録画を開始できません。ダッシュボードも同様で、HTTPS がなければユーザーセッションをリプレイできません。
+
+そのため、SSL 証明書を生成する（または持ち込む）必要があります。
+
+1. まず 'Manage' > 'Networking' > 'Domains'（または他の DNS サービスプロバイダー）に移動し、`A Record` を作成します。インストール手順で指定したドメインを使用し、ドロップレットのパブリック IP（Droplets タブで確認できます）を指すように設定します。
+
+2. 独自の証明書を持ち込む場合は、次のコマンドで SSL シークレットを作成します: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`。
+
+> **注記**：証明書をお持ちでない場合は、Let's Encrypt を使用して、サブドメイン（インストール時に指定したもの）用に自動更新される証明書を生成できます。OpenReplay のドロップレットに接続し、`cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` を実行して、手順に従ってください。
+
+3. http から https へのリダイレクトを有効にする場合（推奨）は、`/var/lib/openreplay/vars.yaml` の `ingress-nginx` セクションにある以下のブロックのコメントを解除します。
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+なお、`ingress-nginx` はデフォルトでポート `80|443` で動作しますが、必要に応じて `vars.yaml` で簡単に変更できます。
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. 最後に、OpenReplay の NGINX を再インストールします。
+
+```bash
+openreplay -R
+```
+
+これで設定は完了です。OpenReplay にはサブドメインからアクセスできるようになります。`/signup` ページ（例: openreplay.mycompany.com/signup）にアクセスしてアカウントを作成できます。
+
+> **注記**：OpenReplay は既存のロードバランサーの背後で実行することもできます。その場合は、LB レベルで SSL を設定してください。
+- Forwarding rules（Load Balancer）: Load Balancer セクションで HTTPS (443) を選択し、'Certificate' > 'Add a new certificate' をクリックします。ドメインが Digital Ocean で管理されている場合は、Let's Encrypt オプションの手順に従ってください。それ以外の場合は、独自の証明書をインポートする必要があります。
+- Forwarding rules（Droplet）: Droplet セクションで HTTP (80) を選択します。
+
+## ご質問はありますか？
+
+問題が発生した場合は、[Slack](https://slack.openreplay.com) に参加して、コミュニティからサポートを受けてください。

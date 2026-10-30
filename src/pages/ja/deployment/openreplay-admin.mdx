@@ -1,0 +1,172 @@
+---
+title: "OpenReplay の管理"
+metaTitle: "OpenReplay の管理"
+metaDescription: "OpenReplay インスタンスを簡単に管理・運用する方法を説明します。"
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+## CLI
+
+CLI は、OpenReplay インスタンスの基本的な管理に役立ちます。たとえば、サービスの再起動や再インストール、コンポーネントのログへのアクセス、バックエンドサービスのステータス確認などです。
+
+`-h` オプションを付けて CLI を実行します。
+
+```bash
+openreplay -h
+```
+
+利用可能なすべてのオプションの一覧が表示されます。
+
+```shellsession
+  ___                   ____            _
+ / _ \ _ __   ___ _ __ |  _ \ ___ _ __ | | __ _ _   _
+| | | | '_ \ / _ \ '_ \| |_) / _ \ '_ \| |/ _` | | | |
+| |_| | |_) |  __/ | | |  _ <  __/ |_) | | (_| | |_| |
+ \___/| .__/ \___|_| |_|_| \_\___| .__/|_|\__,_|\__, |
+      |_|                        |_|            |___/
+
+[INFO]
+  Usage: openreplay [ -h | --help ]
+                    [ -s | --status ]
+                    [ -i | --install DOMAIN_NAME ]
+                    [ -u | --upgrade ]
+                    [ -U | --deprecated-upgrade /path/to/old_vars.yaml]
+                    [ -r | --restart ]
+                    [ -R | --Reload ]
+                    [ -c | --cleanup N (in days) ]
+                    [ -e | --edit ]
+                    [ -p | --install-packages ]
+                    [ -l | --logs SERVICE ]
+         Services: alerts assets assist chalice
+                   db ender frontend heuristics
+                   http integrations nginx-controller
+                   peers sink sourcemapreader storage
+```
+
+OpenReplay のバックエンドは、以下のコンポーネント／サービスで構成されています。
+
+| サービス | 説明 |
+|---------|-------------|
+| http | イベントとセッションの録画データを取り込みます |
+| sink | ストリーミングパイプライン（Enterprise Edition では Redis または Kafka）からデータを読み取り、一時ストレージ（NFS）に書き込みます |
+| storage | 一時的なセッション録画ファイルをオブジェクトストレージサービスに移動します |
+| assets | 録画を正しく再生できるよう、アセット（CSS、フォント、アイコン）をキャッシュします |
+| db | 各種データベース（Enterprise Edition では Postgres + ClickHouse）への読み書きを行います |
+| ender | 非アクティブまたは切断されたユーザーセッションを終了します |
+| chalice | フロントエンドにデータを提供する API です |
+| alerts | いずれかのパフォーマンスメトリクスでユーザーが設定したしきい値に達したときに、通知（メール、Slack、アプリ内、Webhook）を送信します |
+| integrations |  サポートされているサードパーティ API（Sentry、Elastic、GitHub、Jira など）へのデータのプッシュとプルを行います |
+
+## 便利なコマンド
+
+- OpenReplay のヘルスステータスを確認します
+
+```sh
+openreplay -s
+```
+
+- サービスのログを確認します
+
+```sh
+openreplay -l <service name>
+```
+
+## サービスの容量を増やす
+
+デフォルトの CPU／メモリ割り当て値を上書きすることで、任意のサービスの容量を増やすことができます。これらの値は、セットアップ時にインスタンスの容量に基づいて決定されるため、ほとんどのインストール環境のニーズを満たします。
+
+ 大量のトラフィックがあり、マシンのスペックに余裕がある場合は、`openreplay -e` を実行してファイルを開き、サービスのリソースを上書きします。以下の例では `http` ワーカーに対して行っていますが、以下のブロックのコメントを解除して更新することで、任意のサービス（sink、storage、postgresql、redis など）に対して行えます。複数のサービスに対して行う必要がある場合は、同じブロックをコピーして名前を変更／更新してください（重複にご注意ください）。
+
+```yaml
+http:
+  resources:
+    limits:
+      cpu: 4096m
+      memory: 8192Mi
+    requests:
+      cpu: 1024m
+      memory: 2056Mi
+```
+
+最後に、新しい上限を反映させるためにサービスを再インストールします（データは失われません）。
+
+```bash
+openreplay -R
+```
+
+## PostgreSQL をアップグレードする
+
+PostgreSQL をバージョン 1.16 以降にアップグレードする手順は次のとおりです。
+
+1. 永続ボリューム内で DB のダンプを取得します。
+
+   標準のインストール環境を使用している場合は、次のコマンドを実行してデータベースのダンプを取得します。
+
+   > 注意: データは 3:1 の比率に圧縮されることが見込まれます（例: Postgres のデータが 15G ある場合、ダンプは 5G になります）。そのため、十分なディスク容量があることを確認してください。
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'PGPASSWORD=$POSTGRES_PASSWORD PGUSER=postgres pg_dumpall -v > /bitnami/postgresql/dumpall.sql'
+   ```
+
+2. 既存のデータディレクトリを削除します。
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'rm -rf /bitnami/postgresql/data'
+   ```
+
+3. PostgreSQL StatefulSet を 0 にスケールして、現在の Pod を停止します。
+
+   ```sh
+   kubectl scale sts postgresql --replicas=0 -n db
+   ```
+
+4. PostgreSQL イメージをバージョン 16.3.0 以降に更新します。
+
+   ```sh
+   kubectl set image statefulset/postgresql postgresql=bitnamilegacy/postgresql:16.3.0-debian-12-r9 -n db
+   ```
+
+5. StatefulSet を 1 に戻して、更新された Pod を起動します。
+
+   ```sh
+   kubectl scale sts postgresql --replicas=1 -n db
+   ```
+
+6. Pod が実行中であり、スケーリング操作が完了していることを確認します。
+
+   ```sh
+   kubectl get pod -n db -l app.kubernetes.io/name=postgresql
+   ```
+
+7. ダンプからデータベースをリストアします。
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'PGPASSWORD=$POSTGRES_PASSWORD PGUSER=postgres psql -f /bitnami/postgresql/dumpall.sql'
+   ```
+
+8. アップグレードが完了したら、PostgreSQL の Pod からダンプファイルを削除できます。
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'rm /bitnami/postgresql/dumpall.sql'
+   ```
+
+## OpenReplay をアンインストールする
+
+OpenReplay をアンインストールするには、以下のコマンドを実行します。
+
+```sh
+sudo k3s-uninstall.sh
+```
+
+すべての設定は `/var/lib/openreplay/` に保存されています。
+
+```sh
+sudo rm -rf /var/lib/openreplay
+```
+
+## ClickHouse をアップグレードする
+
+```sh
+kubectl set image statefulset/databases-clickhouse  clickhouse=clickhouse/clickhouse-server:26.8-alpine -n db
+```

@@ -1,0 +1,68 @@
+---
+title: "Profiler"
+metaTitle: "Profiler"
+metaDescription: "OpenReplay 用の Profiler プラグイン。"
+---
+
+Profiler プラグインを使用すると、JS 関数のパフォーマンスを計測し、各呼び出しの引数と結果の両方をキャプチャできます。
+
+## インストール
+
+```bash
+npm i @openreplay/tracker-profiler
+```
+
+## 使い方
+
+トラッカーを初期化し、プラグインを読み込みます。次に、生成された関数でコード内の任意の関数をデコレートします。
+
+### Web サイトがシングルページアプリケーション（SPA）の場合
+
+```js
+import trackerProfiler from '@openreplay/tracker-profiler';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+const profiler = tracker.use(trackerProfiler());
+
+tracker.start();
+
+// ...
+const fn = profiler('MyFunction')(() => {
+  // Inspecting function body
+}, thisArg); // thisArg is optional
+```
+
+### Web アプリがサーバーサイドレンダリング（SSR）の場合
+
+アプリが SSR の場合は、以下の例に従ってください。アプリの起動後（`useEffect` または `componentDidMount` 内）に `tracker.start()` が一度だけ呼び出されるようにしてください。
+
+```js
+import trackerProfiler from '@openreplay/tracker-profiler/cjs';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+const profiler = tracker.use(trackerProfiler());
+
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, [])
+}
+//...
+const fn = profiler('MyFunction')(() => {
+  // Inspecting function body
+}, thisArg); // thisArg is optional
+
+```
+
+## ご質問はありますか？
+
+このプラグインのセットアップで問題が発生した場合は、[Slack](https://slack.openreplay.com) に参加して、コミュニティのサポートを受けてください。

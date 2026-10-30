@@ -1,0 +1,175 @@
+---
+title: "Jobs"
+metaTitle: "Jobs"
+metaDescription: "ユーザーデータの削除ジョブを管理する方法。"
+---
+
+ジョブのステータス値: `scheduled`、`running`、`completed`、`failed`、`cancelled`。
+
+## すべてのジョブの一覧
+
+完了済みおよびキャンセル済みのものを含め、プロジェクトのすべてのジョブを取得します。ページネーションに対応しています。
+
+### メソッド
+`GET`
+
+### URL
+`/public/:projectKey/jobs`
+
+### クエリパラメーター
+
+| 名前  | 型      | 説明                                                                        |
+|-------|---------|-----------------------------------------------------------------------------|
+| limit | integer | ページサイズ、1〜200（デフォルト: 50）。範囲外の値は 50 になります。        |
+| page  | integer | ページ番号、1 から開始（デフォルト: 1）。1 未満の値は 1 になります。        |
+
+### リクエストヘッダー
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### リクエスト例
+
+```shell
+curl -X GET \
+  '{BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs?limit=50&page=1' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### レスポンス例
+
+```json
+{
+  "data": [
+    {
+      "jobId": 3451,
+      "description": "Delete user sessions of userId = shekar@example.com",
+      "status": "scheduled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "shekar@example.com",
+      "createdAt": 1623912955277,
+      "updatedAt": null,
+      "startAt": 1623954600000,
+      "errors": null
+    },
+    {
+      "jobId": 3452,
+      "description": "Delete user sessions of userId = mehdi@example.com",
+      "status": "cancelled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "mehdi@example.com",
+      "createdAt": 1623912962910,
+      "updatedAt": 1623913015276,
+      "startAt": 1623954600000,
+      "errors": null
+    }
+  ]
+}
+```
+
+## ジョブの詳細の取得
+
+ジョブのステータスとメタデータを返します。
+
+### メソッド
+`GET`
+
+### URL
+`/public/:projectKey/jobs/:jobId`
+
+### パラメーター
+
+| 名前  | 型      | 説明                           |
+|-------|---------|--------------------------------|
+| jobId | integer | ジョブ ID（必須）              |
+
+### リクエストヘッダー
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### ステータスコード
+
+`200`: レスポンスは JSON としてボディで送信されます  
+`400`: 無効な `jobId`（整数ではありません）  
+`404`: ジョブが見つかりません
+
+### リクエスト例
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs/3451 \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### レスポンス例
+
+```json
+{
+  "data": {
+    "jobId": 3451,
+    "description": "Delete user sessions of userId = shekar@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "shekar@example.com",
+    "createdAt": 1623912955277,
+    "updatedAt": null,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+## ジョブのキャンセル
+
+開始されていない、またはまだ実行中のジョブをキャンセルします。
+
+### メソッド
+`DELETE`
+
+### URL
+`/public/:projectKey/jobs/:jobId`
+
+### パラメーター
+
+| 名前  | 型      | 説明                           |
+|-------|---------|--------------------------------|
+| jobId | integer | ジョブ ID（必須）              |
+
+### リクエストヘッダー
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### ステータスコード
+
+`200`: ジョブがキャンセルされました  
+`400`: ジョブが現在の状態ではキャンセルできない、または無効な `jobId`  
+`404`: ジョブが見つかりません
+
+### リクエスト例
+
+```shell
+curl -X DELETE \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs/3452 \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### レスポンス例
+
+```json
+{
+  "data": {
+    "jobId": 3452,
+    "description": "Delete user sessions of userId = mehdi@example.com",
+    "status": "cancelled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@example.com",
+    "createdAt": 1623912962910,
+    "updatedAt": 1623913015276,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```

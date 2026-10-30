@@ -1,0 +1,134 @@
+---
+title: "ネットワークオプション"
+metaTitle: "ネットワークオプション"
+metaDescription: "OpenReplay のネットワークオプションプラグイン。"
+---
+import Aside from '~/components/Aside.astro'
+
+このページでは、OpenReplay の JavaScript SDK の[オプション](/sdk/constructor)のうち、`network` 名前空間について説明します。これは `fetch` や `XHR` などのネットワークリクエストのキャプチャに関するもので、必要に応じてペイロードも含め、セッション録画の再生中に後から確認できます。問題の把握と修正に非常に役立ちます。
+
+## オプション
+
+```js
+network?: {
+  failuresOnly: boolean;
+  sessionTokenHeader: string | boolean;
+  ignoreHeaders: Array<string> | boolean;
+  capturePayload: boolean;
+  sanitizer: (RequestResponseData) => RequestResponseData | null;
+  captureInIframes: boolean;
+  axiosInstances: AxiosInstance[];
+  useProxy?: boolean;
+	tokenUrlMatcher?: (url: string) => boolean;
+}
+```
+
+- `useProxy`: トラッカーが window.fetch/window.XMLRequest にパッチを適用する方式から、プロキシオブジェクトを使用する方式に切り替えます。デフォルト：`true`。
+- `failuresOnly`: HTTP ステータスコードが 4xx-5xx のリクエストをキャプチャします。デフォルト：`false`。
+- `sessionTokenHeader`: バックエンドの[インテグレーション](/integrations)（Sentry など）のいずれかを有効にしている場合、このオプションでヘッダー名を指定できます（オプションを `true` にすると、デフォルトの 'X-OpenReplay-SessionToken' が有効になります）。このヘッダーは、OpenReplay の sessionToken の値を含む形で、各 fetch/XHR リクエストに自動的に付加されます。デフォルト：`false`。
+- `tokenUrlMatcher`: 現在のトラッカーのリクエストの URL を受け取り、`boolean` を返します。指定した場合、`sessionTokenHeader` はこの関数が `true` を返したときにのみ適用されます。デフォルト：`undefined`。
+- `ignoreHeaders`: キャプチャしないヘッダーのリストを定義できます。すべてをキャプチャするには値を `false` に設定します（1 つもキャプチャしない場合は `true`）。デフォルト：`['Cookie', 'Set-Cookie', 'Authorization']`。そのため、機密性の高いヘッダーはキャプチャされません。
+- `capturePayload`: リクエスト/レスポンスのボディペイロードを保存します。トラブルシューティングには非常に役立つ場合がありますが、アプリケーションが Fetch/XHR リクエストを多用している場合は、ネットワーク使用量が大きくなる可能性があります。デフォルト：`false`。
+
+<Aside type="caution">
+	キャプチャした HTTP ペイロードには、アプリケーションが Fetch/XHR のリクエスト/レスポンスで送受信する、非常に機密性の高いデータ（パスワードなど）や個人情報が記録される可能性があります。そのため、以下の `sanitizer` オプションを使用して、必ずデータをサニタイズしてください。
+</Aside>
+
+- `captureInIframes`: iFrame 内のネットワークトラッキングを無効にするためのオプションです。デフォルト：`true`。
+- `axiosInstances`: 通常の設定（プロキシ API）が機能しない特定の状況で、カスタムの axios インスタンスをトラッキングするのに便利です。デフォルト：`undefined`。
+- `sanitizer`: Fetch/XHR のリクエスト/レスポンスから機密データをサニタイズするか、リクエストを完全に無視します。リクエストオブジェクトのフィールドを変更して関数から返すことで、フィールドを編集（リダクト）できます（下記の例を参照）。サニタイズは、他のオプションによるすべてのフィルタリングと変更の**後**に適用されます（つまり、`capturePayload` が明示的に `true` に設定されていない場合、引数には `body` ペイロードは含まれません）。
+
+```typescript
+interface RequestData {
+  body: BodyInit | null | undefined; // whatewer you've put in the init.body in fetch(url, init) or xhr.send(body)
+  headers: Record<string, string>;
+}
+
+interface ResponseData {
+  body: string | Object | null;  // Object if response is of JSON type
+  headers: Record<string, string>;
+}
+
+interface RequestResponseData {
+  readonly status: number;
+  readonly method: string;
+  url: string;
+  request: RequestData;
+  response: ResponseData;
+}
+
+sanitizer: (data: RequestResponseData) => { // sanitise the body or headers
+  if (data.url === "/auth") {
+    data.request.body = null
+  }
+
+  if (data.request.headers['x-auth-token']) { // can also use ignoreHeaders option instead
+    data.request.headers['x-auth-token'] = 'SANITISED';
+  }
+
+  // Sanitize response
+  if (data.status < 400 && data.response.body.token) {
+    data.response.body.token = "<TOKEN>"  
+  }
+
+  return data
+}
+
+// OR
+
+sanitizer: data => { // ignore payloads for calls that start with /secure
+  if (data.url.startsWith("/secure")) {
+    data.request.body = null;
+    data.response.body = null;
+  }
+  return data
+}
+
+// OR
+
+sanitizer: data => { // sanitize request url: replace all numbers
+  data.url = data.url.replace(/\d/g, "*")
+  return data
+}
+```
+
+## Examples
+
+以下は、`network` オプションの使用例です。
+
+### NPM を使用する場合
+
+```js
+tracker.configure({
+  projectKey: PROJECT_KEY,
+  network: {
+    capturePayload: true // Capture HTTP payload
+  }
+});
+```
+
+### JavaScript スニペットを使用する場合
+
+`network` オプションを設定するための `initOpts` 変数/行に注目してください。
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { 
+  projectKey: "GxPpaDARdn2345fgt321", 
+  network: { // Enable HTTP payload capture in the network option
+    capturePayload: true
+  } 
+};
+
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+```
+
+## トラブルシューティング
+
+これらのオプションの設定でお困りですか？ [Slack](https://slack.openreplay.com) に参加して、コミュニティのサポートを受けてください。

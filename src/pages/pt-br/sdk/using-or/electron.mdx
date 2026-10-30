@@ -1,0 +1,64 @@
+---
+title: "Usando o OpenReplay com Electron"
+metaTitle: "Gravar um aplicativo Electron com o OpenReplay"
+metaDescription: "Como gravar um aplicativo Electron com o OpenReplay."
+---
+import Aside from '~/components/Aside.astro'
+
+<Aside type="caution">
+	Para oferecer suporte a co-browsing, são necessários Tracker@11.0.0 e Tracker-assist@7.0.0 ou superior.
+</Aside>
+
+Existem duas abordagens diferentes para integrar o OpenReplay a um aplicativo Electron.
+
+Seja qual for a que você escolher, você precisará verificar as suas configurações de CSP para permitir as seguintes APIs:
+- WebWorkers (usados para armazenar, codificar e enviar lotes de mensagens)
+- Websockets (usados no plugin assist para transmitir sessões em tempo real)
+- Peers (usados no plugin assist para chamadas)
+
+## Adicionando o código do snippet
+
+Você pode adicionar o código do snippet do OpenReplay diretamente na raiz do arquivo HTML do seu aplicativo.
+Esta é a forma mais fácil, mas também vem com todas as restrições do snippet JS.
+
+## Usando a biblioteca NPM
+
+Se você usa React, Angular ou Vue, pode adotar exatamente a mesma abordagem e criar a instância do tracker no processo de
+renderização dentro do seu aplicativo. Isso permitirá usar todos os recursos do OpenReplay, incluindo todos os plugins.
+
+Para usar a API do tracker fora do contexto de renderização, você precisará usar IPC para disparar ações por meio de eventos
+enviados a partir do processo principal.
+
+## Usando com o plugin Assist
+
+
+No caso do plugin Tracker-Assist, você precisará adicionar a propriedade `socketHost`, que deve apontar para o seu ingest point
+sem o sufixo `/ingest` para corrigir o roteamento WS padrão.
+
+para a biblioteca NPM:
+```js
+new Tracker({ ingestPoint: 'https://mywebsite.com/ingest' })
+
+// ...
+
+// or https://app.openreplay.com if you're using SaaS version
+tracker.use(trackerAssist({ socketHost: 'https://mywebsite.com' }))
+```
+
+para o snippet de código:
+```js
+  var initOpts = {
+    projectKey: "...",
+		ingestPoint: "https://mywebsite.com/ingest",
+    assistSocketHost: "https://mywebsite.com"
+  };
+```
+
+Caso contrário, o WS tentará criar a conexão em `ws://file/ingest`, o que falhará.
+
+<Aside type="tip">
+	Este artigo é baseado na nossa prova de conceito interna, feita com Electron@26.2.1 e React@16.13.1 configurados
+	para lidar com bundling ESM. Se a sua configuração for diferente, ou se você tiver sugestões ou dúvidas, entre em contato conosco na
+	nossa
+	[comunidade no Slack](https://slack.openreplay.com/)
+</Aside>

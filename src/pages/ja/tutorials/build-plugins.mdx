@@ -1,0 +1,329 @@
+---
+title: "最初の OpenReplay プラグインを作成する方法"
+metaTitle: "独自のプラグインを作成してトラッカーに機能を追加する"
+metaDescription: "独自の OpenReplay プラグインの作成方法を学びます"
+---
+OpenReplay をセルフホストしている場合は、カスタムプラグインを開発してインストールできるという利点があります。これにより、OpenReplay が標準では提供していない機能や互換性を追加できます。
+
+現在、OpenReplay チームが開発・保守しているプラグインがいくつかあります。たとえば、状態の変化を追跡できる [Redux プラグイン](/plugins/redux)や、リクエストとレスポンスのデータを記録できる [Fetch プラグイン](/plugins/fetch)などです。詳細については、[プラグインの完全な一覧はこちら](/plugins)をご覧ください。
+
+このチュートリアルでは、独自のプラグインを作成する方法を学びます。具体的には、JQuery の GET メソッドを追跡するプラグインを作成します。
+
+## プラグインをゼロから作成する
+
+実現したいことに似た機能を持つプラグインのフォルダーをコピー＆ペーストして始めることをおすすめします。そうすれば、必要なロジックとセットアップコードがすべて揃います。
+
+とはいえ、ここで作成するプラグインは Fetch プラグインと似た動作をするため、そのプラグインを複製します。
+
+ただし、次のような作業は引き続き必要です。
+
+- バックエンドを変更する。
+- メッセージプロトコルに新しいメッセージを追加する。
+- 一部のバックエンドサービスをソースからビルドする。
+
+まだ [OpenReplay をソースからビルドする](/deployment/deploy-source)プロセスを経験していない場合は、新しいコードをテストする際に何度も行うことになるため、まず現在のバージョンの OpenReplay でそのプロセスを一通り試すことをおすすめします。
+
+一方で、すでにその部分に慣れている場合は、そのまま読み進めてください。
+
+## 新しいプラグインを作成するために必要なものは？
+
+新しいプラグインの作成は 3 つの部分で構成されます。
+
+1. まず、プラグインがプラットフォームに送信するメッセージの種類を定義します。このメッセージには、追跡したいすべてのテレメトリを含める必要があります。
+2. 次に、プラグインのデータを表示できるコンポーネントを作成するようフロントエンドを更新します。今回は、JQuery で実行されたすべてのリクエストを一覧表示するタブをリプレイヤーに追加します。
+3. 最後に、プラグイン自体を作成します。これが本来の目的です。プラグインは、OpenReplay の外部で開発でき、別の場所（お使いのアプリ）にインストールする唯一の部分です。
+
+このチュートリアルの残りの部分は、GitHub リポジトリをフォークし、どこかで動作する状態に準備できていることを前提としています。まだの場合は、まず[ドキュメントのデプロイセクション](/deployment)を確認してください。
+
+## ステップ 1: 新しいメッセージを作成する
+
+最初に行うのは、プラグインでどのデータをキャプチャーして表示したいかを把握することです。今回は GET リクエストを追跡するものを作成するため、次の項目を確実にキャプチャーする必要があります。
+
+- URL: 言うまでもなく、リクエストの URL
+- Response: レスポンスの一部もキャプチャーします
+- Status: サーバーから受け取ったステータスコード
+
+「duration」プロパティも追加して、リクエストの実行とデータ取得にかかる時間を追跡します。そのためにリクエストの「timestamp」も必要です。
+
+そのためには、`mob/messages.rb` ファイルを変更する必要があります。これは Ruby ファイルですが、Ruby を知らなくても心配いりません。新しいメッセージを記述するレコードを次のように追加するだけです。
+
+```jsx
+message 112, 'JQueryGET' do
+  string 'Method'
+  string 'url'
+  string 'response'
+  string 'status'
+  string 'duration'
+  int  'timestamp'
+end
+```
+
+次の点も定義していることに注意してください。
+
+- メッセージ ID（112）。これは、まだ使用されていない（ファイル内の他のメッセージを確認できます）、200 未満のランダムな数値です。
+- メッセージ名。これは完全に自由ですが、メッセージの種類を表すものにしてください。
+- 「method」フィールド。これにより、将来的に他のメソッドでもこのメッセージを再利用できる可能性があります。
+- プロパティの型は「string」と「int」です。これは、エンコーダーが配列とオブジェクトを文字列に変換するためです。
+
+
+これが完了したら、メッセージをあらゆる場所からアクセスできるようにする必要があるため、このフォルダー内で 2 つのスクリプトを実行します。
+
+```jsx
+$ ruby run.rb
+$ sh format.sh
+```
+
+これが終わると、メッセージとその ID が複製され、バックエンドの必要なすべての場所に追加されます。
+
+次に、フロントエンドに移り、何を変更する必要があるかを見ていきましょう。
+
+## ステップ 2: フロントエンドを更新する
+
+メッセージの準備ができたら、すべてのメッセージを受け取って処理方法を決定する `messageDistributor` 関数（`frontend/app/player/MessageDistributor/MessageDistributor.ts` ファイル内）を更新します。
+
+関数内には大きな `switch` 文があり、その中にあなたのメッセージ用の新しい case がすでに存在しています（使用されている名前は、あなたが使用した名前と大文字小文字の表記が異なることに気づくでしょう）。この例では、メッセージタイプ「JQueryGET」に対して「j_query_get」タイプが得られます。
+
+次に、メッセージをリストに追加します。フロントエンドコンポーネントはこれらのリストを使用します。これには `listAppend` 関数を使用します。
+
+case は次のようになります。
+
+```jsx
+case 'j_query_get': 
+    listAppend("jquery", Resource({
+      method: msg.method,
+      url: msg.url,
+      payload: {},
+      response: msg.response,
+      status: msg.status,
+      type: TYPES.JQUERY,
+      time: msg.timestamp - this.sessionStart,
+      duration: msg.duration,
+      index
+    }))
+  break;
+```
+ここで、これを機能させるために必要なことがいくつかあります。
+
+- 「jquery」リストを追加する必要があります。そのためには、ファイル `frontend/app/player/lists/index.js` を変更し、`entityNamesWithRed` 配列に「jquery」を追加します。
+- `TYPES.JQUERY` を追加する必要があります。これは、このファイル `frontend/app/types/session/resource.js` を変更することで行えます。
+
+それが完了したら、プレイヤー内でデータを表示する実際のコンポーネントを作成します。次のようなものになります。
+
+![最終結果](/tutorials/build-plugins/1.png)
+
+そのために、既存のコンポーネントを利用し、Fetch コンポーネントをコピー＆ペーストします。具体的には、フォルダー `frontend/app/components/Session_/Fetch` を複製し、「JQuery」という名前を付けます。
+
+新しく作成したフォルダー内のすべての fetch への参照を「jquery」に更新します（ここは検索と置換を使うのがよいでしょう）。
+
+これで可視化コンポーネントが作成されますが、それを手動で追加する必要があります。まず、`frontend/app/components/Session_/Player/Controls/Controls.js` ファイルを編集し、すべてのコントロールが表示される画面右下に「JQuery」ボタンを追加します。
+
+JSX コードを探し、次のようなブロックを追加します。
+
+```jsx
+{showJQuery && (
+  <ControlButton
+    disabled={disabled && !inspectorMode}
+    onClick={() => toggleBottomTools(JQUERY)}
+    active={bottomBlock === JQUERY && !inspectorMode}
+    hasErrors={jqueryRedCount > 0}
+    count={jqueryCount}
+    label="JQUERY"
+    noIcon
+    labelClassName="!text-base font-semibold"
+    containerClassName="mx-2"
+  />
+)}
+```
+
+その際、`showJQuery`、`jqueryCount`、`JQUERY`、`jqueryRedCount` など、関連するすべての変数を定義してください。方法がわからない場合は、対応する fetch の変数を検索すれば、すぐに見つかります。
+
+ボタンを追加したら、`frontend/app/components/Session_/Player/Player.js` ファイルを編集して、実際のコンポーネントを追加できます。
+
+そのためには、インポートした後、JSX セクション内に次のようなブロックを追加してください。
+
+```jsx
+{ bottomBlock === JQUERY &&
+  <JQuery />
+}
+```
+
+この一環として、`frontend/app/duck/components/player.js` ファイルから `JQUERY` 定数をエクスポートするように追加する必要もあります。
+
+これで必要な作業はすべて完了です。
+
+これでフロントエンドが情報を表示する準備が整いました。次は、その情報を生成する方法を見つける必要があります。それでは、実際のプラグインのコードを見てみましょう。
+
+## ステップ 3: プラグインを作成する
+
+このプロジェクトは好きな場所に作成できます。重要なのは、他のプロジェクトで使用できるインストール可能なパッケージを提供することです。
+
+そのため、`package.json` ファイルが次のようになっていることを確認してください。
+
+```jsx
+{
+  "name": "tracker-jquery",
+  "version": "1.0.0",
+  "description": "jquery openreplay tracker",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "peerDependencies": {
+    "@openreplay/tracker": ">=3.6.0"
+  },
+  "devDependencies": {
+    "@openreplay/tracker": "<latest version of the tracker>",
+    "prettier": "^1.18.2",
+    "replace-in-files-cli": "^1.0.0"
+  }
+}
+```
+
+そして、プロジェクトの `src` フォルダー内に `index.js` ファイルを追加します。エクスポートする関数が事前に定義された一定の条件に従っている限り、このプロジェクトの構成は自由です。
+
+プラグインの構造はシンプルです。呼び出されると、`app` 属性が渡されることを期待する新しい関数を返す関数を定義します。この `app` 属性にはトラッカーのインスタンスが含まれます。返された関数の内部では、`app` オブジェクトを通じてメッセージを送信する限り、何でも自由に行えます。そのメッセージはプラットフォームによって受信され、一連のルールに従って処理されます。
+
+メッセージの形式は、このチュートリアルの冒頭で定義したものになります。
+
+JQuery プラグインのコードは次のようになります。
+
+```jsx
+import { App, Messages } from '@openreplay/tracker';
+
+export default function($) {
+
+    const oldGET = $.get;
+
+    return (app) => {
+
+        const newGET = async (settingsObj) => {
+
+            const startTime = performance.now();
+            let resp = await fetch(settingsObj.url, {
+                method: 'GET'
+            })
+            const duration = performance.now() - startTime;
+
+            let valueResp = null;
+
+            if(settingsObj.json) {
+                valueResp = await resp.json()
+            } else {
+                valueResp = await resp.text()
+            }
+            const getStj = (res) => {
+                let r = {...res}
+                if (r && typeof r.body !== 'string') {
+	                try {
+	                    r.body = JSON.stringify(r.body)
+	                } catch {
+	                    r.body = "<unable to stringify>"
+	                }
+                }
+                return JSON.stringify(r)
+            }
+
+            const msg = Messages.JQueryGET(
+                    'GET',
+                    String(settingsObj.url),
+                    getStj(resp),
+                    resp.status,
+                    duration,
+                    (new Date()).getTime()
+                )
+            console.log("Sending a message to the tracker....", msg)
+
+            app.send(msg, true)   
+            return valueResp;
+
+        }
+
+        $.get = newGET;
+
+    }
+}
+```
+
+基本的に、JQuery の `.get` メソッドを、内部で実際に `fetch` を使用するカスタムメソッドに置き換えているだけです（これは完全に任意で、JQuery の GET メソッドをそのまま使うこともできます）。そして、すべてのリクエストが実行された後、コードは `app.send` メソッドを使用してメッセージを送信します。メッセージは、先ほどの Ruby スクリプトによって作成された `Messages.JQueryGET` メソッドで生成されます。
+
+このメッセージが受け取る属性は、言うまでもなく、**ステップ 1** でメッセージ自体の構造として定義したものです。そして最も重要なのは、すべて必須であるということです。空の値を扱う必要がある場合は、空の配列／オブジェクト／文字列など何でも構いませんので渡してください。ただし、**キーを省略することは絶対にしないでください**。
+
+### プラグインを公開する
+
+ローカルでのテストが完了し、プラグインの準備ができたら、NPM に公開する必要があります。
+
+その方法については、次のガイドを参照してください: [https://docs.npmjs.com/creating-and-publishing-unscoped-public-packages](https://docs.npmjs.com/creating-and-publishing-unscoped-public-packages)
+
+## プラグインをテストする
+
+公開したら、プラグインを実際に使ってみましょう。OpenReplay トラッカーでプラグインを使用する仕組みは常に同じです。
+
+1. まず、トラッカーをインスタンス化します。
+2. 次に、`use` メソッドを呼び出し、プラグインを呼び出した結果の関数を渡します。
+3. 最後に、`start` メソッドでトラッカーを開始します。
+
+React アプリケーション内でこのプラグインを使用する場合のコードサンプルは次のとおりです。
+
+```jsx
+import logo from './logo.svg';
+import './App.css';
+import tracker from 'openreplay-tracker'
+import jqueryTracker from 'tracker-jquery'
+import { useEffect } from 'react';
+import $ from 'jquery'
+
+const t = new tracker({
+  __DISABLE_SECURE_MODE: true, //only if you're testing locally
+  ingestPoint: "openreplay.<your custom domain>/ingest",
+  projectKey: "<your project key>",
+})
+
+function App() {
+  useEffect(()=> {
+    t.use(jqueryTracker($))
+    t.start()
+    async function doGet() {
+      let resp = await $.get({
+        url: "http://localhost:3000"
+      })
+      console.log(resp)
+    }
+
+    doGet()
+  }, [])
+  return (
+    <div className="App">
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+        <p>
+          Edit <code>src/App.js</code> and save to reload.
+        </p>
+        <a
+          className="App-link"
+          href="https://reactjs.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn React
+        </a>
+      </header>
+    </div>
+  );
+}
+
+export default App;
+```
+
+このコードは、ページの読み込み時に Jquery の `get` メソッドを使用して GET リクエストを実行します。便利な小さなトラッカーをセットアップしてあるため、そのリクエストを実際に追跡できます。
+
+最終結果は次のようになります。
+
+![JQuery リクエストの表示](/tutorials/build-plugins/2.png)
+
+---
+
+このチュートリアルの**完全なソースコード**については、[こちらのリポジトリ](https://github.com/deleteman/openreplay)をご確認ください。
+
+このプロセスのいずれかのステップで問題が発生した場合は、[Slack コミュニティ](https://slack.openreplay.com/)までご連絡いただき、開発者に直接お問い合わせください！

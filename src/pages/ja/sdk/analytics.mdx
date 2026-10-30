@@ -1,0 +1,93 @@
+---
+title: "トラッカー Analytics SDK"
+metaTitle: "OpenReplay トラッカー Analytics SDK の使用"
+metaDescription: "OpenReplay トラッカー Analytics SDK のセットアップと使用方法について説明します"
+---
+import LinkRow from '~/components/LinkRow.astro'
+import Aside from '~/components/Aside.astro'
+
+## Analytics SDK
+
+OpenReplay トラッカー Analytics SDK のセットアップ方法について説明します。
+
+## SDK を有効にする
+
+Analytics SDK は **オプトイン** 方式です。トラッカーのコンストラクターに `analytics.active` を渡した場合にのみインスタンス化されます。それまでは `tracker.analytics` は `null` のままで、`tracker.track()` は何も行いません。
+
+```js
+import Tracker from '@openreplay/tracker'
+
+const tracker = new Tracker({
+  projectKey: "YOUR_PROJECT_KEY",
+  analytics: { active: true },
+})
+
+tracker.start()
+```
+
+### オプション
+
+- `active: boolean` Analytics SDK を有効にします。デフォルト：`false`。
+- `ingestPoint?: string` アナリティクスのバッチの送信先となるエンドポイントです。セルフホスト環境でのみ有効で、OpenReplay Cloud では無視され、`https://api.openreplay.com/ingest` が使用されます。デフォルトはトラッカーの `ingestPoint` です。
+
+<Aside type="note">
+	イベントはキューに入れられ、5 秒ごとにフラッシュされます。また、タブの可視性が変化したときにもフラッシュされるため、タブが閉じられてもバッファされたイベントは失われません。バックエンドへの送信に失敗したバッチはキューの先頭に戻され、次回のフラッシュで再試行されます。
+</Aside>
+
+## モジュール
+
+<div class="or-rowlist">
+  <LinkRow href="/sdk/analytics/people" title="People" icon="user" desc="ユーザープロファイルと属性を管理します。" />
+  <LinkRow href="/sdk/analytics/events" title="Events" icon="api" desc="ユーザーインタラクションとイベントをトラッキングして分析します。" />
+</div>
+
+OpenReplay の UI でアナリティクスデータを管理する方法について詳しくは、[データ管理](/product-analytics/data-management)をご覧ください。
+
+## トップレベルのシグネチャ
+
+```ts
+// Identify a user with an id (e.g. email, username, etc.)
+tracker.analytics.identify(userId: string): void
+// same as
+tracker.analytics.people.identify(userId)
+
+// Add event to batch with option to send it immediately
+tracker.analytics.track(eventName: string, tempProperties?: Record<string, any>, options?: { send_immediately: boolean })
+// same as
+tracker.analytics.events.track(eventName, tempProperties, options)
+
+// Clear user id, people properties and super properties, and stop the batcher
+tracker.analytics.reset(): void
+```
+
+## トラッカーレベルのショートハンド
+
+これらはトラッカー自体に用意されているため、`tracker.analytics` を経由せずに安全に呼び出せます（アナリティクスが無効な間は何も行いません）：
+
+```ts
+// Same as tracker.analytics.track(...)
+tracker.track(eventName: string, properties?: Record<string, any>, options?: { send_immediately: boolean })
+
+// Sets the replay's user ID *and* calls analytics.people.identify() with it
+tracker.setUserID(id: string): void
+tracker.identify(id: string): void // alias of setUserID
+
+// Send analytics events under your own token, without session recording
+tracker.setAnalyticsToken(token: string): void
+```
+
+<Aside type="note">
+	`tracker.setUserID()` は、リプレイとアナリティクスプロファイルの両方に対してユーザーを識別します。`tracker.analytics.people.identify()` を直接呼び出した場合は、アナリティクスプロファイルのみが設定されます。
+</Aside>
+
+## reset
+
+識別されたユーザー（永続的なデバイス ID を含む）、すべての people プロパティ、すべてのスーパープロパティをクリアし、バッチ送信を停止します。ログアウト時に呼び出してください。
+
+```ts
+tracker.analytics.reset()
+```
+
+## ご質問はありますか？
+
+問題が発生した場合は、[Slack](https://slack.openreplay.com) に参加して、コミュニティのサポートを受けてください。

@@ -1,0 +1,175 @@
+---
+title: "Pinia プラグインで状態の変化を追跡する"
+metaTitle: "Pinia プラグインで状態の変化を追跡する"
+metaDescription: "Pinia プラグインを使用して、Pinia 利用時の状態の変化を追跡します"
+minVersion: "1.6.0"
+---
+import Aside from '~/components/Aside.astro'
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="Pinia で状態を追跡する方法を動画で見る"
+  description="文章を読むのが苦手な方は、Pinia を使用する Vue アプリの状態を追跡する方法を解説したこの動画チュートリアルをご覧ください"
+  videoURL="https://youtu.be/0TE5dfzz4-c"
+/>
+
+Pinia は、Vue プロジェクト向けの後継の状態管理ライブラリです。これまで VueX を使用していた場面で、これからは Pinia を使用することになります。[Pinia プラグイン](/plugins/pinia)を使用すると、アプリケーションのライフサイクル全体を通して状態の変化を追跡できます。
+
+## プラグインをインストールする
+
+プラグインは、次のコマンドで簡単にインストールできます。
+
+```jsx
+npm i @openreplay/tracker-vuex
+```
+
+## Vue アプリ内でプラグインを使用する
+
+この例では、サンプルの Vue アプリケーションを使用して、実際のアプリ内でこのプラグインを追加して操作する方法を紹介します。
+
+**注記**：この例の完全なソースコードは、この [GitHub リポジトリ](https://github.com/deleteman/openreplay-vue-pinia-example)にあります。詳細が必要な場合はご確認ください。
+
+プラグインをインストールしたら、`main.js` ファイルを編集し、次の import 文を追加します。
+
+```jsx
+import trackerVuex from '@openreplay/tracker-vuex/cjs';
+```
+
+次に、`startTracker` 関数を使用してトラッカーをインスタンス化し、プラグインを一度に使用します。
+
+この関数を呼び出した結果は、プラグインを指定して `use` メソッドを使用した結果を含むオブジェクトになります。
+
+**注記**：分割代入したプロパティの名前が、`name` プロパティの値と同じになっている点に注目してください。この 2 つが同じであれば問題ありません。
+
+```jsx
+const {piniaPlugin} = startTracker({
+    projectKey: "<your project key>",
+    plugins: [{
+        name: 'piniaPlugin',
+        fn: trackerVuex
+    }]
+})
+```
+
+次に、後で目的のストアにプラグインをセットアップするために使用する、名前付きのストアラッパーを作成します。
+
+```jsx
+const piniaStoreWrapper = piniaPlugin("products")
+saveStore(piniaStoreWrapper)
+```
+
+`piniaStoreWrapper` は、後で追跡対象に決めたストアと一緒に使用する必要があります。ただし、この時点ではストアがまだ作成されていないため、`saveStore` 関数を通じて保存しておきます。
+
+### ユーティリティ関数
+
+先に進む前に、`saveStore` 関数と `startTracker` 関数を見てみましょう。
+
+1 つ目は `storesManager` モジュールの一部で、次のようになっています。
+
+```jsx
+let storeWrapper = null;
+
+export function saveStore(s) {
+    storeWrapper = s;
+}
+
+export function getStore(store) {
+    return storeWrapper;
+}
+```
+
+このモジュールにより、先ほど作成した `piniaStoreWrapper` を別の場所で使用できるようになります。
+
+`startTracker` 関数のコードは次のとおりです。
+
+```jsx
+export function startTracker(config) {
+    console.log("Starting tracker...")
+
+    console.log("Project key used: ", config.projectKey)
+    const trackerConfig = {
+        projectKey: config.projectKey,
+         //ingestPoint: config.ingestPoint,
+        __DISABLE_SECURE_MODE: true
+    }
+
+    const tracker = new Tracker(trackerConfig);
+
+    const pluginReturns = {}
+    config?.plugins.forEach( p => {
+        console.log("Using plugin...", p.name)
+        pluginReturns[p.name] = tracker.use(p.fn())
+    })
+ 
+    tracker.start();
+    return {
+        tracker,
+        ...pluginReturns
+    }
+}
+```
+
+この関数は、渡された設定でトラッカーをインスタンス化します。`ingestPoint` オプションをコメントアウトしたままにしている点に注目してください。これは SaaS 版を直接使用しているためです。セルフホスト版でこのコードを使用する場合は、これを指定する必要があり、`<your-instance>.yourhost/ingest` のような形式になります。
+
+### Pinia ストアを追跡する
+
+セットアップのコードがすべて整ったら、ストアを使用している場所に移動します。この例では `App.vue` ファイルを編集して `getStore` 関数を呼び出します。この関数は、先ほど保存したストアラッパーを返します。
+
+そして、それを使って追跡したいストアをラップします。
+
+```jsx
+<template>
+  <!-- template code -->
+</template>
+
+<script lang="ts">
+import { computed, defineComponent, onMounted, ref } from 'vue'
+import { Product, useProductStore } from './store/products'
+import { useCartStore } from './store/cart'
+import {getStore} from './store/storesManager.js'
+
+export default defineComponent({
+  setup() {
+   
+    const productStore = useProductStore()
+    const loading = ref(true)
+    //we get the wrapper here
+	  const storeWrapper = getStore()
+
+    onMounted(async () => {
+      await productStore.fetchAll()
+      loading.value = false
+    })
+
+    const cartStore = useCartStore()
+
+		//we wrap the cart store here
+    storeWrapper(cartStore)
+    return {
+      products: computed(() => productStore.list),
+      cart: computed(() => cartStore.formattedCart),
+      total: computed(() => cartStore.total),
+      loading,
+      add: (product: Product) => cartStore.add(product),
+      remove: (product: Product) => cartStore.remove(product),
+    }
+  }
+})
+
+</script>
+```
+
+## リプレイで状態を確認する
+
+リプレイ中に状態の変化を確認するには、右下にある新しい VueX タブをクリックします。
+
+![新しい VueX タブ](/tutorials/pinia/new-tab.png)
+
+クリックすると、ストアの内容が表示され、その変化や、そこに保存されたデータを把握できます。
+
+![状態のミューテーション](/tutorials/pinia/state-changes.png)
+
+ストアの名前に注目してください。これは、最初に Pinia プラグインを呼び出したときに使用した名前です。
+
+## ご質問はありますか？
+
+Pinia プラグインを組み込んだ、動作する Pinia/Vue アプリケーションの**完全なソースコード**については、[こちらのリポジトリ](https://github.com/deleteman/openreplay-vue-pinia-example)をご確認ください。プロジェクトで Pinia プラグインをセットアップする際に問題が発生した場合は、[Slack コミュニティ](https://slack.openreplay.com/)で、開発者に直接ご質問ください。

@@ -1,0 +1,166 @@
+---
+title: "Projects"
+metaTitle: "Projects"
+metaDescription: "プロジェクトを作成および取得する方法。"
+---
+
+すべてのレスポンスは JSON で、`{ "data": ... }` でラップされます。エラーは、適切な HTTP ステータスコードとともに `{ "error": "..." }` を返します。
+
+## プロジェクトの作成
+
+`name` と、必要に応じて `platform` を指定して、新しいプロジェクトを作成します。
+
+### メソッド
+`POST`
+
+### URL
+`/public/projects`
+
+### ペイロード
+
+| 名前     | 型     | 説明                                                         |
+|----------|--------|--------------------------------------------------------------|
+| name     | string | プロジェクト名（必須、最大 200 文字）                        |
+| platform | string | プロジェクトのプラットフォーム: `web`（デフォルト）または `ios` |
+
+### リクエストヘッダー
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### ステータスコード
+
+`200`: プロジェクトが作成され、ボディで返されます  
+`400`: 無効なボディ、名前の欠落または長すぎる名前、不明なプラットフォーム、またはすでに存在する名前
+
+### リクエスト例
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/projects \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "name": "MyFirstProject",
+    "platform": "web"
+  }'
+```
+
+### レスポンス例
+
+```json
+{
+  "data": {
+    "projectId": 42,
+    "name": "MyFirstProject",
+    "projectKey": "QsLA07Oa5sqTfwnNaFwS",
+    "tenantId": 1,
+    "maxSessionDuration": 7200000,
+    "sampleRate": 100,
+    "saveRequestPayloads": false,
+    "beaconSize": 0,
+    "platform": "web",
+    "metadata1": null,
+    "metadata2": null,
+    "metadata3": null,
+    "metadata4": null,
+    "metadata5": null,
+    "metadata6": null,
+    "metadata7": null,
+    "metadata8": null,
+    "metadata9": null,
+    "metadata10": null
+  }
+}
+```
+
+## プロジェクトの一覧
+
+現在のテナントのすべてのプロジェクトを返します。
+
+### メソッド
+`GET`
+
+### URL
+`/public/projects`
+
+### リクエストヘッダー
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### リクエスト例
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/projects \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### レスポンス例
+
+```json
+{
+  "data": [
+    {
+      "projectId": 42,
+      "name": "MyFirstProject",
+      "projectKey": "QsLA07Oa5sqTfwnNaFwS",
+      "tenantId": 1,
+      "platform": "web"
+    },
+    {
+      "projectId": 43,
+      "name": "MobileApp",
+      "projectKey": "9cACFRuQVidq0sqS7Bny",
+      "tenantId": 1,
+      "platform": "ios"
+    }
+  ]
+}
+```
+
+## プロジェクトの取得
+
+指定したプロジェクトの詳細を返します。
+
+### メソッド
+`GET`
+
+### URL
+`/public/projects/:projectKey`
+
+### パラメーター
+
+| 名前       | 型     | 説明                         |
+|------------|--------|------------------------------|
+| projectKey | string | プロジェクトキー（必須）     |
+
+### リクエストヘッダー
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### ステータスコード
+
+`200`: ボディで返されます  
+`404`: プロジェクトが見つかりません
+
+### リクエスト例
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/projects/7ePSXFuQVidq9pqS6Xyn \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### レスポンス例
+
+```json
+{
+  "data": {
+    "projectId": 42,
+    "name": "MyFirstProject",
+    "projectKey": "7ePSXFuQVidq9pqS6Xyn",
+    "tenantId": 1,
+    "platform": "web"
+  }
+}
+```

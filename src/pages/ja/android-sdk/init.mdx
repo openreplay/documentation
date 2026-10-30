@@ -1,0 +1,87 @@
+---
+title: "Android SDK - SDK の初期化"
+metaTitle: "Android SDK - SDK の初期化"
+metaDescription: "Android トラッカーのコンストラクターメソッドの設定オプション"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	Android SDK はベータ版です。フィードバックや、発生した問題の報告は [Slack](https://slack.openreplay.com) までお気軽にお寄せください。
+</Aside>
+
+## インストール
+
+次の行でトラッカーと SDK がインストールされ、トラッカーのすべての機能を利用できるようになります。
+
+###  Gradle の設定
+ルートの build.gradle の repositories の末尾に次を追加します。
+```javascript
+dependencyResolutionManagement {
+		repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+		repositories {
+			mavenCentral()
+			maven { url 'https://jitpack.io' }
+		}
+}
+```
+
+アプリの build.gradle ファイルに依存関係を追加します。
+```javascript
+dependencies {
+		implementation("com.github.openreplay:android:v1.1.7")
+}
+```
+
+## 初期化
+
+OpenReplay のトラッカーをインスタンス化する際に、録画や録画時の動作のさまざまな側面をカスタマイズするための設定オプションを多数指定できます。コンストラクターでは `projectKey` オプションの設定が必須です。この値は、OpenReplay ダッシュボードの 'Preferences > Projects' から取得できます。
+
+<Aside type="tip">
+	複数のプロジェクトがある場合は、どのプロジェクトキーを選択するかに注意してください。
+</Aside>
+
+
+### トラッキングコードの追加
+
+`MainActivity.kt` ファイルに次のコードを追加します。
+
+```kotlin
+// MainActivity.kt
+import com.openreplay.tracker.OpenReplay
+
+//...
+
+class MainActivity : AppCompatActivity() {
+	override fun onCreate(savedInstanceState: Bundle?) {
+		// not required if you're using our SaaS version
+		OpenReplay.serverURL = "https://your.instance.com/ingest"
+		// check out our SDK docs to see available options
+		OpenReplay.start(
+			applicationContext,
+			"projectkey",
+			OpenReplay.Options.defaults(),
+			onStarted = {
+				println("OpenReplay Started")
+			})
+
+		// ...
+	}
+}
+```
+
+### データのサニタイズ
+
+詳細については、[Android リプレイでのデータのサニタイズ方法](/android-sdk/sanitization)を参照してください。
+
+## 初期化オプション
+
+- `crashes: Bool` Crashlytics を有効にします。
+- `analytics: Bool` マークされたビューのアナリティクストラッキングを有効にします。
+- `performances: Bool` パフォーマンスリスナーを有効にします。
+- `logs: Bool` ログリスナーを有効にします。
+- `screen: Bool` スクリーンレコーダーを有効にします。
+- `wifiOnly: Bool` ユーザーが Wi-Fi に接続している場合にのみトラッカーを開始するようにします。
+
+## ご質問はありますか？
+この手順についてご不明な点がございましたら、[Slack](https://slack.openreplay.com) までお気軽にお問い合わせください。

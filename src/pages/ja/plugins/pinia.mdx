@@ -1,0 +1,96 @@
+---
+title: "Pinia"
+metaTitle: "Pinia"
+metaDescription: "OpenReplay 用の Pinia プラグイン。"
+---
+import Aside from '~/components/Aside.astro'
+
+このプラグインを使用すると、`Pinia` のミューテーションとステートをキャプチャし、セッション録画の再生中に後から確認できます。問題の把握と修正に非常に役立ちます。
+
+
+<Aside type="tip">
+  このライブラリを使用する場合にアプリケーションのステートをキャプチャする方法について、詳細なチュートリアルもご用意しています。ぜひ[こちら](/tutorials/pinia)をご覧ください。
+</Aside>
+
+
+
+
+## インストール
+
+```bash
+npm i @openreplay/tracker-vuex
+```
+
+## 使い方
+
+`@openreplay/tracker` パッケージを通常どおり初期化し、プラグインを読み込みます。プラグインを呼び出してストア名を設定すると、名前付きのストアトラッカーインスタンスが返されます。このインスタンスにストアのインスタンスを引数として渡して呼び出すと、そのストアの追跡が有効になります。
+
+### Web サイトがシングルページアプリケーション（SPA）の場合
+
+```js
+import OpenReplay from '@openreplay/tracker';
+import trackerVuex from '@openreplay/tracker-vuex';
+```
+
+### Web アプリがサーバーサイドレンダリング（SSR）の場合
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+import trackerVuex from '@openreplay/tracker-vuex/cjs';
+```
+
+### Pinia ストアの追跡
+
+```js
+
+//...
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+// ...
+
+const examplePiniaStore = useExamplePiniaStore()
+const vuexPlugin = tracker.use(trackerVuex(<options>)) // check list of available options below
+
+const piniaStorePlugin = vuexPlugin('STORE NAME') // add a name to your store, 
+                                                  // optional (will be randomly generated otherwise)
+piniaStorePlugin(examplePiniaStore) // start tracking state updates
+
+// now you can use examplePiniaStore as usual pinia store (destructure values or return it as a whole etc)
+```
+
+## オプション
+
+プラグインの動作をオプションでカスタマイズして、データをサニタイズできます。これらは標準の `createLogger` プラグインのオプションと似ています。
+
+```js
+trackerVuex({
+  filter (mutation, state) {
+    // returns `true` if a mutation should be logged
+    // `mutation` is a `{ type, payload }`
+    return mutation.type !== "aBlacklistedMutation";
+  },
+  transformer (state) {
+    // transforms the state before logging it.
+    // for example return only a specific sub-tree
+    return state.subTree;
+  },
+  mutationTransformer (mutation) {
+    // mutations are logged in the format of `{ type, payload }`
+    // we can format it any way we want.
+    return mutation.type;
+  },
+})
+```
+
+## チュートリアル
+
+このプラグインを使用してセッションリプレイ内のステートの変更をキャプチャする実践的な例をお探しの場合は、[詳細なチュートリアル](/tutorials/pinia)をご覧ください。
+
+## ご質問はありますか？
+
+このプラグインのセットアップで問題が発生した場合は、[Slack](https://slack.openreplay.com) に参加して、コミュニティのサポートを受けてください。

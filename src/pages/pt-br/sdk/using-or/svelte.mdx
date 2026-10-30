@@ -1,0 +1,148 @@
+---
+title: "Usando o OpenReplay com Svelte"
+metaTitle: "Usando o tracker dentro de um projeto Svelte"
+metaDescription: "Saiba como começar a rastrear os seus usuários no seu projeto Svelte"
+---
+import Aside from '~/components/Aside.astro'
+
+Instalar o tracker do OpenReplay em um projeto baseado em Svelte é relativamente simples.
+
+A chave para fazer isso funcionar será o uso de contexto (context), que, embora pareça semelhante ao que fazemos com o Next.js, terá uma implementação diferente.
+
+## SvelteKit e comportamento de SSR
+
+Como o nosso tracker precisa do contexto do navegador para ser executado, talvez seja necessário ajustar o exemplo “Criando o contexto do tracker” como mostrado abaixo, para garantir que ele seja importado e criado no lado do cliente:
+
+```jsx
+<script>
+  import { onMount } from 'svelte';
+
+  onMount(async () => {
+    if (process.browser) {
+			// singleton approach
+			const { tracker } = await import('@openreplay/tracker');
+			tracker.configure({
+				projectKey: "<your project key>", 
+        ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
+			});
+			tracker.start();
+			
+			// or you can use a class based approach
+      const Tracker = await import('@openreplay/tracker');
+      const tracker = new Tracker({
+	      projectKey: "", // pKey
+	      ingestPoint: "ingestPoint",
+      })
+      
+      tracker.start()
+    }
+  })
+</script>
+```
+
+## Repositório de exemplo
+
+Se você quiser revisar o código completo deste projeto, confira [o repositório que usaremos ao longo deste tutorial](https://github.com/deleteman/openreplay-svelte-example).
+
+É um aplicativo SvelteKit de exemplo que você pode clonar e testar por conta própria seguindo as instruções do arquivo Readme. Depois de implantado e configurado, você deverá conseguir capturar session replays.
+
+## Usando o Context para compartilhar dados
+
+Esta solução usará o Context do Svelte, que permite compartilhar dados entre um componente pai e todos os seus filhos (muito parecido com os providers de Context do React).
+
+Neste exemplo específico, vamos adicionar o tracker à seção Admin do nosso aplicativo, então definiremos o contexto dentro do arquivo de layout do Admin (`src/layout/Admin.svelte`). Depois, vamos iniciá-lo na primeira página renderizada dentro dessa seção.
+
+## Criando o contexto do tracker
+
+Dentro do arquivo `src/layout/Admin.svelte`, na tag `script`, vamos adicionar o seguinte código:
+
+```jsx
+import {Tracker, key} from "../context/tracker"
+
+let tracker = new Tracker({
+    projectKey: __myapp.env.OPENREPLAY_PROJECT_KEY
+});
+  
+setContext(key, {
+ getTracker: () => tracker
+} )
+```
+
+É claro que você terá mais código dentro deste arquivo, mas o que você vê acima é o que importa para nós agora.
+
+1. Primeiro, estamos importando o Tracker do OpenReplay e uma variável key (falaremos mais sobre elas em instantes).
+2. Em seguida, estamos instanciando o Tracker. Como você pode ver, a única opção de configuração que usamos é a chave do projeto, que você obteria na interface depois de configurar o projeto no OpenReplay.
+3. Estamos salvando a instância do tracker no contexto criado ao chamar `setContext`. A variável `key` será usada depois para recuperar esse valor específico do contexto.
+
+<Aside type="tip">
+Se você usa a versão auto-hospedada do OpenReplay, também terá que especificar a propriedade de configuração `ingestPoint` na etapa 2 (ela deve apontar para o seu domínio: `https://openreplay.mydomain.com/ingest`). Essa propriedade define o endpoint de ingestão dos dados do tracker.
+</Aside>
+
+## Usando o contexto do tracker
+
+Usar o contexto (e chamar o método `start`) é tão simples quanto obter o contexto por meio da função `getContext` do Svelte.
+
+O contexto tinha um objeto com uma função chamada getTracker, então vamos desestruturá-lo e chamar essa função.
+
+```jsx
+import {key} from "../../context/tracker"
+  
+let {getTracker} = getContext(key)
+onMount( () => {
+	let tracker = getTracker()
+	tracker.start()
+})
+```
+
+Depois disso, basta chamar o método `start` de dentro do callback `onMount`. Fazemos isso para garantir que estamos chamando esse método a partir do navegador; caso contrário, o tracker não funcionará.
+
+## O arquivo context/tracker
+
+Temos usado esse arquivo nos dois lugares, então é hora de dar uma olhada rápida nele.
+
+Esse arquivo exporta dois elementos principais:
+
+1. A classe `Tracker`, que instanciamos no arquivo de layout.
+2. Estamos usando a variável `key` para salvar e recuperar o contexto.
+
+Este é o conteúdo do arquivo:
+
+```jsx
+import Tracker from '@openreplay/tracker'
+
+const key = Symbol("openreplay tracker")
+
+export {Tracker, key}
+```
+
+O único detalhe interessante aqui é que a variável `key` não é uma simples string, e sim um `Symbol`. O motivo é evitar possíveis colisões de nomes com outras bibliotecas de terceiros que também usam o contexto.
+
+## Cuidando das variáveis ENV
+
+A última coisa a revisar aqui é como lidamos com a chave do projeto, já que ela não deve ficar fixa (hardcoded) no seu código.
+
+Normalmente, você usaria uma variável de ambiente para isso; porém, como precisamos desses dados no navegador e o Svelte não oferece uma forma fácil de fazer isso, resolveremos o problema com dois pacotes: [dotevn](https://www.npmjs.com/package/dotenv) e [@rollup/plugin-replace](https://www.npmjs.com/package/@rollup/plugin-replace).
+
+De um lado, usaremos o pacote dotenv para ganhar a capacidade de definir as nossas variáveis de ambiente dentro de um arquivo `.env`. Vamos definir a de que precisamos: 
+
+```jsx
+OPENREPLAY_PROJECT_KEY="<YOUR PROJECT KEY>"
+```
+
+Por outro lado, como não podemos usar o `dotenv` no nosso código de front-end (porque ele depende do módulo `fs`, que, claro, não está disponível no navegador), usaremos o plugin replace do roll-up. Esse plugin substituirá o código nos nossos arquivos pelo que dissermos a ele. Então, configuraremos o plugin para substituir a string `“__myapp.env.OPENREPLAY_PROJECT_KEY”` pela chave do projeto real carregada do arquivo `.env` (graças ao pacote dotenv).
+
+Para fazer isso, abra o arquivo `rollup.config.js` na raiz do projeto e adicione o seguinte código na chave `plugins`.
+
+```jsx
+replace({
+  "__myapp.env.OPENREPLAY_PROJECT_KEY": `"${process.env.OPENREPLAY_PROJECT_KEY}"`
+})
+```
+
+Esse plugin será executado no back-end durante o processo de bundling, o que torna isso possível. Se quiser inspecionar o conteúdo completo desse arquivo de configuração, você pode [conferir aqui](https://github.com/deleteman/openreplay-svelte-example/blob/main/rollup.config.js).
+
+## Tem dúvidas?
+
+Você pode [conferir este repositório](https://github.com/deleteman/openreplay-svelte-example) para ver o **código-fonte completo** de um aplicativo baseado em Svelte funcionando com o Tracker.
+
+Se você tiver algum problema ao configurar o Tracker no seu projeto Svelte, entre em contato conosco na nossa [comunidade no Slack](https://slack.openreplay.com/) e fale diretamente com os nossos devs!

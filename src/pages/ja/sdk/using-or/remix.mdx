@@ -1,0 +1,218 @@
+---
+title: "OpenReplay を Remix で使用する"
+metaTitle: "Remix プロジェクト内でのトラッカーの使用"
+metaDescription: "Remix プロジェクトでユーザーのトラッキングを開始する方法を説明します。"
+---
+import Aside from '~/components/Aside.astro'
+
+OpenReplay トラッカーを Remix ベースのプロジェクトに導入するのは比較的簡単です。
+
+Remix プロジェクトの準備ができたら、`app` フォルダー内の `root.jsx` ファイルを探し、プラットフォームでプロジェクトを作成したときに OpenReplay が提供した SSR コードを組み込みます。
+
+## ステップ 1. コードを取得する
+
+プラットフォームが提示するコードをそのまま使用することもできます。それは開始に必要な最小限のものです。その場合は、下に示すように「Server-Side-Rendered (SSR)」オプションを選択してください。
+
+![snippet-code-screenshot.jpg](/using-or/snippet-code-screenshot.jpg)
+
+トラッカーはシングルトンインスタンスとして使用できます。これが推奨される使用方法です。
+この方法なら、アプリ内のどこからでもトラッカーにアクセスできます。
+
+```js
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+```
+
+この例では、`app` フォルダー内に `tracker.ts` として保存するサンプルモジュールを作成します。このモジュールは `startTracker` という関数をエクスポートし、トラッカーのインスタンス化と開始を行います。
+
+```jsx
+import {v4 as uuidV4} from 'uuid'
+import Tracker from '@openreplay/tracker'
+
+function defaultGetUserId() {
+    return uuidV4() 
+}
+
+type TrackerConfig = {
+    projectKey: string,
+    userIdEnabled?: boolean,
+    getUserId?: () => string
+}
+
+export function startTracker(config: TrackerConfig) {
+    let tracker = null;
+    let userId = "";
+   
+    console.log("Starting tracker...")
+    console.log("Custom configuration received: ", config)
+        
+    const getUserId = (config?.userIdEnabled && config?.getUserId) ? config.getUserId : defaultGetUserId
+        
+    const trackerConfig: TrackerConfig = {
+        projectKey: config?.projectKey
+    }
+        
+    console.log("Tracker configuration")
+    console.log(trackerConfig)
+    tracker = new Tracker(trackerConfig);
+        
+    if(config?.userIdEnabled) {
+        userId = getUserId()
+        tracker.setUserID(userId)
+    }
+     
+    tracker.start();
+      
+    return {
+        tracker,
+        userId
+    }
+}
+```
+
+OpenReplay の Tracker モジュールをこの方法でインポートする際に問題が発生する場合は、次のように動的インポートの使用を検討してください。
+
+```jsx
+import {v4 as uuidV4} from 'uuid'
+
+function defaultGetUserId() {
+    return uuidV4() 
+}
+
+type TrackerConfig = {
+    projectKey: string,
+    userIdEnabled?: boolean,
+    getUserId?: () => string
+}
+
+export function startTracker(config: TrackerConfig) {
+    let tracker = null;
+    let Tracker = null
+    let userId = "";
+    
+    (async () => {
+				//dynamic import 
+        Tracker  = (await import('@openreplay/tracker')).default 
+        console.log("Starting tracker...")
+        console.log("Custom configuration received: ", config)
+        
+        const getUserId = (config?.userIdEnabled && config?.getUserId) ? config.getUserId : defaultGetUserId
+        
+        const trackerConfig: TrackerConfig = {
+            projectKey: config?.projectKey
+        }
+        
+        console.log("Tracker configuration")
+        console.log(trackerConfig)
+        tracker = new Tracker(trackerConfig);
+        
+        if(config?.userIdEnabled) {
+            userId = getUserId()
+            tracker.setUserID(userId)
+        }
+        
+        
+        tracker.start();
+        
+    })()
+    
+    return {
+        tracker,
+        userId
+    }
+}
+```
+
+<Aside type="tip">
+OpenReplay のセルフホスト版を使用している場合は、手順 2 で `ingestPoint` 設定プロパティも指定する必要があります（ドメインを指す値にします: `https://openreplay.mydomain.com/ingest`）。このプロパティは、トラッカーのデータの送信先となるインジェストエンドポイントを指定します。
+</Aside>
+
+## ステップ 2. コードとトラッカーをプロジェクトに追加する
+
+それが済んだら、次のコマンドでプロジェクトにトラッカーパッケージをインストールする必要があります。
+
+```markdown
+$ npm install @openreplay/tracker
+```
+
+上記のコードをそのまま動作させるには、[uuid パッケージ](https://www.npmjs.com/package/uuid)もインストールする必要があります。
+
+これで、トラッキングを開始する準備はほぼ整いましたが、**プロジェクトキー**を環境変数として設定し、`startTracker` 関数が受け取る `config` オブジェクトを介してトラッカーに渡す必要があります。
+
+### Remix での環境変数の読み込み
+
+環境変数はバックエンドでアクセスできるため、環境変数を含む外部データの読み込みに使用できる `loader` 関数を活用します。
+
+そして、ハイドレーション後にコンポーネントが読み込まれたデータにアクセスできるよう、`useLoaderData` フックを使用します。
+
+root.tsx ファイル（TypeScript を使用していない場合は jsx）の中に、次の関数を追加します。
+
+```tsx
+type LoaderData = {
+  ENV: {
+    projectKey: string | undefined
+  }
+};
+
+export const loader: LoaderFunction = async ({ }) => {
+  return json<LoaderData>({
+    ENV: {
+      projectKey: process.env.OPENREPLAY_PROJECT_KEY
+    }
+  });
+};
+```
+
+プロジェクトキーを `OPENREPLAY_PROJECT_KEY` 環境変数で設定している点に注目してください。
+
+これを `loader` 関数の実行結果の一部として返すことで、次のようにメインコンポーネント内で `useLoaderData` フックを使用できます。
+
+```tsx
+export default function App() {
+
+  let loaderData = useLoaderData()
+
+  useEffect(() => {
+    startTracker({
+      projectKey:  loaderData.ENV.projectKey
+    })
+  }, []) 
+
+  return (
+    <html lang="en">
+      <head>
+        <Meta />
+        <Links />
+      </head>
+      <body>
+        <Outlet />
+        <ScrollRestoration />
+        <Scripts />
+        <LiveReload />
+      </body>
+    </html>
+  );
+}
+```
+
+コンポーネントの内容は、実現したいことに応じて異なる場合がありますが、この例では、ページのハイドレーション後に、正しいプロジェクトキーでトラッカーを開始する処理を行っています。
+
+## ステップ 3. デバッグ体験を楽しもう！
+
+以上で、アプリケーションのデプロイに進めます。
+
+テストを開始すると、タブを閉じてから数分後にリプレイが一覧に表示されます（これは、タブが誤って閉じられたのではないことを確認するためです）。
+
+<Aside type="tip">
+トラッカーはローカルでは動作せず、ローカルでのテストはプラットフォームに表示されません。トラッカーが OpenReplay のバックエンドにアクセスできるようにするには、アプリケーションをデプロイする必要があります。
+</Aside>
+
+## ご質問はありますか？
+
+Remix ベースの動作するアプリケーションの**完全なコード**については、[こちらのリポジトリ](https://github.com/deleteman/openreplay-remix-example)をご覧ください。
+
+Remix ベースのプロジェクトでトラッカーをセットアップする際に問題が発生した場合は、[Slack コミュニティ](https://slack.openreplay.com/)までお気軽にご連絡ください。開発者に直接質問できます。

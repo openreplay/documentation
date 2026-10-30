@@ -1,0 +1,47 @@
+---
+title: "Flutter SDK - 入力のトラッキング"
+metaTitle: "Flutter SDK - 入力のトラッキング"
+metaDescription: "Flutter トラッカーによる入力のトラッキングの詳細"
+---
+import Aside from '~/components/Aside.astro'
+
+テキストフィールドは自動的には監視されません。Flutter には、フックできる UIKit のレスポンダーチェーンに相当するものがないためです。関心のあるコントローラーにトラッカーをアタッチすると、値の変更が（デバウンスされて）リッスンされ、その結果の値が OpenReplay バックエンドに送信されます。
+
+## トラッキング対象の入力の追加
+
+`observeInput(controller, label:, masked:)` を使用します。
+
+- `controller: TextEditingController` — 監視するコントローラー
+- `label: String` — 記録される入力のラベル
+- `masked: bool` — `true` の場合、トラッカーは入力イベントを記録しますが、値の代わりに `****` を送信します。デフォルト: `false`。
+
+リスナーを削除するコールバックが返されるので、`dispose()` に組み込みます。
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+class _LoginFormState extends State<LoginForm> {
+  final _email = TextEditingController();
+  late final VoidCallback _stopObserving;
+
+  @override
+  void initState() {
+    super.initState();
+    _stopObserving = OpenReplay.instance.observeInput(_email, label: 'Email');
+  }
+
+  @override
+  void dispose() {
+    _stopObserving();
+    _email.dispose();
+    super.dispose();
+  }
+}
+```
+
+<Aside type="note">
+	`masked: true` はイベントストリーム内の値を隠すだけです。記録された画面上ではフィールドは引き続き表示されます。画面上でも非表示にするには、[`ORSanitizedView`](/flutter-sdk/sanitization) でラップしてください。
+</Aside>
+
+## ご質問はありますか？
+このプロセスについてご不明な点がございましたら、お気軽に [Slack](https://slack.openreplay.com) までお問い合わせください。

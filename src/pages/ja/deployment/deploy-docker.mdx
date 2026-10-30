@@ -1,0 +1,43 @@
+---
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+title: "Deploy with Docker Compose"
+metaTitle: "Deploy with Docker Compose"
+metaDescription: "Docker Compose で OpenReplay をデプロイするためのステップバイステップガイドです。"
+---
+import Aside from '~/components/Aside.astro'
+
+<Aside type="tip">
+	これは試験的な機能であり、実装は今後変更される可能性があります。OpenReplay はローカルでは実行できないため、Docker を使用する場合でもサーバーが必要です。他の[デプロイオプション](/deployment)もご検討ください。
+</Aside>
+
+OpenReplay スタックは、Docker Compose を使用して 1 台のマシンにインストールできます。 
+
+## 前提条件
+
+1. Ubuntu 20.04 LTS（LTS バージョンを推奨）
+2. マシンにパブリック IP が割り当てられていること。つまり、サーバーがインターネットから到達可能であることを意味します。
+3. IP アドレスに紐付けられたドメイン名が必要です。
+4. インスタンスタイプを選択します。最小スペックは、x86 アーキテクチャで `2 vCPUs, 8 GB of RAM, 50 GB of storage` です。これを下回ると OpenReplay のバックエンドサービスは起動しません。そのため、低～中程度のボリュームであれば十分な `t3.large`（または同等のもの）を**最低でも**使用することをおすすめします。高トラフィックが見込まれる場合は、ここからスケールアップしてください。
+
+## OpenReplay をデプロイする
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem #! wherever you've saved the SSH key
+INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
+chmod 400 $SSH_KEY
+ssh -i $SSH_KEY ubuntu@$INSTANCE_IP
+```
+
+2. OpenReplay を実行するドメインを指定してインストールします（例: DOMAIN_NAME=openreplay.mycompany.com）。
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/docker-compose/docker-install.sh)"
+```
+
+これで設定は完了です。OpenReplay は、最初に作成したドメインで安全にアクセスできるようになります。`/signup` ページ（例: openreplay.mycompany.com/signup）にアクセスしてアカウントを作成できます。
+
+## ご質問はありますか？
+
+問題が発生した場合は、[Slack](https://slack.openreplay.com) に参加して、コミュニティからサポートを受けてください。

@@ -1,0 +1,59 @@
+---
+title: "Flutter SDK - Sanitizando dados sensíveis"
+metaTitle: "Flutter SDK - Sanitizando dados sensíveis"
+metaDescription: "Detalhes sobre a sanitização de gravações e de dados de rede no tracker do Flutter"
+---
+import Aside from '~/components/Aside.astro'
+
+## Componentes de UI
+
+Envolva em `ORSanitizedView` tudo o que não deve aparecer no replay. A região fica desfocada e hachurada na gravação, igual ao iOS SDK, e o widget se desregistra sozinho assim que sai da árvore.
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+ORSanitizedView(
+  child: TextField(
+    controller: _cardNumber,
+    decoration: const InputDecoration(labelText: 'Card number'),
+  ),
+)
+```
+
+O mascaramento é aplicado como uma segunda passada de raster sobre o frame capturado, então nunca altera o que o seu usuário vê na tela.
+
+<Aside type="note">
+	`ORSanitizedView` oculta o widget na tela gravada. Para também manter o *valor* de um input fora do fluxo de eventos, passe `masked: true` para [`observeInput`](/flutter-sdk/inputs).
+</Aside>
+
+## Platform views
+
+As platform views — WebViews, mapas, previews da câmera — são renderizadas em camadas nativas separadas que o Flutter não consegue ler de volta, então, de outro modo, apareceriam como regiões em branco. O tracker as cobre com um placeholder por padrão. Para desativar esse comportamento, use `maskPlatformViews: false`:
+
+```dart
+await OpenReplay.instance.start(
+  projectKey: 'YOUR_PROJECT_KEY',
+  options: const OROptions(maskPlatformViews: false),
+);
+```
+
+## Requisições de rede
+
+Os corpos são descartados, a menos que você defina `capturePayload: true`, e os headers `cookie`, `set-cookie` e `authorization` são descartados por padrão. Além disso, o `sanitizer` tem a palavra final sobre cada chamada capturada:
+
+```dart
+OpenReplay.instance.patchNetwork(ORNetworkOptions(
+  capturePayload: true,
+  ignoreHeaders: ['cookie', 'set-cookie', 'authorization', 'x-api-key'],
+  sanitizer: (record) {
+    final body = record.requestBody;
+    if (body is Map) body.remove('password');
+    return record; // return null to drop the call entirely
+  },
+));
+```
+
+Veja [opções de rede](/flutter-sdk/network) para a lista completa de campos.
+
+## Tem dúvidas?
+Se você tiver qualquer dúvida sobre este processo, fale com a gente no nosso [Slack](https://slack.openreplay.com).

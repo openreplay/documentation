@@ -1,0 +1,47 @@
+---
+title: "Flutter SDK - rastreando inputs"
+metaTitle: "Flutter SDK - rastreando inputs"
+metaDescription: "Detalhes sobre o rastreamento de inputs com o tracker do Flutter"
+---
+import Aside from '~/components/Aside.astro'
+
+Os campos de texto não são observados automaticamente — o Flutter não tem um equivalente à responder chain do UIKit para se conectar. Associe o tracker aos controllers que lhe interessam: ele vai escutar as mudanças de valor (com debounce) e enviar o valor resultante para o backend do OpenReplay.
+
+## Adicionando inputs rastreados
+
+Use `observeInput(controller, label:, masked:)`:
+
+- `controller: TextEditingController` — o controller a ser observado
+- `label: String` — rótulo do input gravado
+- `masked: bool` — se for `true`, o tracker registra o evento de input, mas envia `****` no lugar do valor. Padrão: `false`.
+
+Ele retorna um callback que remove o listener, então conecte-o ao `dispose()`:
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+class _LoginFormState extends State<LoginForm> {
+  final _email = TextEditingController();
+  late final VoidCallback _stopObserving;
+
+  @override
+  void initState() {
+    super.initState();
+    _stopObserving = OpenReplay.instance.observeInput(_email, label: 'Email');
+  }
+
+  @override
+  void dispose() {
+    _stopObserving();
+    _email.dispose();
+    super.dispose();
+  }
+}
+```
+
+<Aside type="note">
+	`masked: true` oculta o valor apenas do fluxo de eventos. O campo continua visível na tela gravada — envolva-o em [`ORSanitizedView`](/flutter-sdk/sanitization) para ocultá-lo ali também.
+</Aside>
+
+## Tem dúvidas?
+Se você tiver qualquer dúvida sobre este processo, fale com a gente no nosso [Slack](https://slack.openreplay.com).

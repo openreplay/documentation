@@ -1,0 +1,227 @@
+---
+title: "ストレージのクリーンアップ"
+metaTitle: "ストレージのクリーンアップ"
+metaDescription: "データベースから録画を一括削除し、ストレージをクリーンアップします。"
+---
+import Aside from '~/components/Aside.astro'
+
+各録画は、ファイルとデータベース内のエントリーという形で存在します。OpenReplay は、セッションを再生するために必要なもの（DOM の変更、マウス座標、コンソールログ、ネットワークアクティビティなど）を 3 つのファイル（リプレイ自体用に 2 つ、DevTools データ用に 1 つ）に書き出します。これらのファイルはデフォルトでインスタンス上に保存されるため、ストレージの大部分を占めます。セッションのメタデータは PostgreSQL データベースに永続的に保存されますが、180 日後には、録画を含むファイルが minio のライフサイクルポリシーによって期限切れ／削除されます。
+
+## 一時ストレージのクリーンアップ
+
+OpenReplay は、処理してオブジェクトストレージサービス（minIO または S3）にアップロードする前に、一時データをファイルシステムに保存します。処理が完了するとそのデータは不要になり、cronjob が毎週 2 日目にこれらのファイルを削除します。
+
+cronjob を変更する場合は、次の手順に従います。
+1. 設定を編集します。
+
+```bash
+openreplay -e
+```
+
+2. 次の行を追加して、cronjob のタイミングを変更します。
+
+```yaml
+utilities:
+  # Cleanup data everyday morning 3:05 am, server time.
+	cron: "5 3 * * *"
+```
+
+
+OpenReplay インスタンスのストレージをクリーンアップする方法は、自動（CLI）と手動の 2 つがあります。
+
+## データのクリーンアップ（CLI）
+
+このプロセスは CLI によって完全に自動化されています。次のコマンドを実行するだけで、Postgres（イベントが保存されている場所）と minio（録画が保存されている場所）の両方からデータを削除して、ストレージをクリーンアップできます。
+
+```bash
+# To clean data older than 14 days
+openreplay --cleanup 14
+```
+
+## データのクリーンアップ（手動）
+
+データは、データベース（イベントが保存されている場所）と minio（録画が保存されている場所）の両方から削除できます。
+
+### 録画のクリーンアップ
+
+空き容量を確保する必要がある場合は、OpenReplay インスタンスにログインし、次の手順に従ってください。
+
+1. `k9s -n db` を実行します
+2. キーボードの矢印キーでリスト内を移動し、`minio-*` コンテナーを選択します
+3. `s` を押して、Minio（オブジェクトストレージ）コンテナーのシェルにアクセスします
+4. `mc alias set minio http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD` を実行します
+5. `mc rm --recursive --dangerous --force --older-than 7d minio/mobs` を実行します（例: 7 日より古いファイルを削除）
+6. `exit` を使用して Minio コンテナーを終了します
+7. `:quit` を実行して Kubernetes CLI を終了します
+
+#### デフォルトのライフサイクルポリシーの変更
+
+minio（標準インストール）を使用している場合は、次の方法でデフォルトのライフサイクルポリシーを変更できます。
+
+1. `k9s -n db` を実行します
+2. キーボードの矢印キーでリスト内を移動し、`minio-*` コンテナーを選択します
+3. `s` を押して、Minio（オブジェクトストレージ）コンテナーのシェルにアクセスします
+6. `mc alias set minio http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD` を実行します
+7. 作成から 14 日後に録画を自動的にクリーンアップするには、次のようにします
+
+```bash
+export EXPIRATION_DAYS=14
+export DELETE_JOB_DAYS=$((EXPIRATION_DAYS>30 ? 30 : EXPIRATION_DAYS))
+cat <<EOF > /tmp/lifecycle.json
+{
+  "Rules": [
+    {
+      "Expiration": {
+        "Days": $EXPIRATION_DAYS
+      },
+      "ID": "Delete old mob files",
+      "Status": "Enabled"
+    },
+    {
+      "Expiration": {
+        "Days": $DELETE_JOB_DAYS
+      },
+      "ID": "Delete flagged mob files after ${DELETE_JOB_DAYS} days",
+      "Filter": {
+        "Tag": {
+          "Key": "to_delete_in_days",
+          "Value": "${DELETE_JOB_DAYS}"
+        }
+      },
+      "Status": "Enabled"
+    }
+  ]
+}
+EOF
+mc ilm import minio/mobs < /tmp/lifecycle.json
+```
+
+8. `exit` を使用して Minio コンテナーを終了します
+9. `:quit` を実行して Kubernetes CLI を終了します
+
+### データベースのクリーンアップ（PostgreSQL）
+
+利用状況に応じて、さまざまなテーブルから、さまざまな方法でデータを削除できます。
+
+#### PostgreSQL への接続
+
+OpenReplay インスタンスに接続し、次の手順に従います。
+
+1. `k9s -n db` を実行します
+2. キーボードの矢印キーでリスト内を移動し、`postgresql-*` コンテナーを選択します
+3. `s` を押して、Postgres コンテナーのシェルにアクセスします
+4. `PGPASSWORD=MY_PG_PASSWORD psql -U postgres` を実行します（`MY_PG_PASSWORD` は、`/var/lib/openreplay/vars.yaml` ファイルの `postgresqlPassword` 変数の値に置き換えてください）
+5. 削除（またはその他の）クエリを実行します
+6. `exit` と入力して postgresql-client を終了します
+7. `exit` を使用して Postgres コンテナーを終了します
+8. `:quit` を実行して Kubernetes CLI を終了します
+
+#### テーブルサイズの確認
+
+テーブルサイズを確認するには、次のクエリを実行します。
+
+```sql
+SELECT nspname AS "name_space",
+       relname AS "relation",
+       pg_size_pretty(
+               pg_total_relation_size(C.oid)
+           )   AS "total_size"
+FROM pg_class C
+         LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+WHERE nspname NOT IN ('pg_catalog','information_schema')
+  AND C.relkind <> 'i'
+  AND nspname !~ '^pg_toast'
+ORDER BY pg_total_relation_size(C.oid) DESC
+LIMIT 20;
+```
+
+#### 特定のイベントの削除
+
+多くの OpenReplay ユーザーは、前のセクションの結果を確認した後、セッションをクリーンアップする代わりに、特定のイベント（特に `events.resources` と `events_common.requests`）を削除することを選んでいます。
+
+すべてのイベントデータを破棄するには、次のいずれかのクエリを実行できますが、カードの値、クリックマップ、イベント一覧、その他の機能に影響することに注意してください。
+
+<Aside type="caution">
+	この操作は自己責任で行ってください。データベースでこのような操作を行う際は、元に戻せず、OpenReplay の複数の機能に影響を及ぼす可能性があるため、細心の注意を払ってください。
+</Aside>
+
+```sql
+--- To delete all data related to a specific event
+
+-- The next 2 tables are usually the biggest ones, and they affect some cards only
+TRUNCATE TABLE events.resources;
+TRUNCATE TABLE events_common.requests;
+
+-- The next table will affect click-maps and events list of session's replay
+TRUNCATE TABLE events.clicks;
+TRUNCATE TABLE events.errors;
+TRUNCATE TABLE events.graphql;
+TRUNCATE TABLE events.inputs;
+TRUNCATE TABLE events.pages;
+TRUNCATE TABLE events.performance;
+TRUNCATE TABLE events.state_actions;
+TRUNCATE TABLE events_common.customs;
+TRUNCATE TABLE events_common.issues;
+```
+
+#### 期間を指定したセッションの削除
+
+すべてのセッションをクリーンアップする場合は、より高速でストレージ容量もすぐに解放されるため、[次のパート](#delete-all-sessions)に進んでください。
+
+データベース（PostgreSQL）のデータをクリーンアップする場合は、次の SQL クエリを使用します。`2021-01-01` を、録画を保持し始める日付に置き換えてください。これはカスケード削除であるため、すべての録画と、それに対応するイベントがデータベースから削除されます。
+
+<Aside type="caution">
+	この操作は自己責任で行ってください。データベースでこのような操作を行う際は、元に戻せないため、細心の注意を払ってください。
+</Aside>
+
+```sql
+--- Cascade delete all sessions and their related events captured before Jan 1st, 2021
+DELETE FROM public.sessions WHERE start_ts < extract(epoch from '2021-01-01'::date) * 1000;
+```
+
+前のクエリを実行しても、データベースはクリーンアップを後でスケジュールするため、ストレージ容量はすぐには解放されません。手動でストレージを強制的に解放するには、次のクエリを実行します。
+
+<Aside type="note">
+	これらのクエリは各テーブルをロックするため、そのテーブルは使用できなくなり、データベースの規模によっては完了までに数時間かかることがあります。
+	十分な空きストレージ容量がまだある場合は、クリーンアップを PostgreSQL の Auto-Vacuum に任せることもできます。
+	
+	さらに、実行にはある程度の空きストレージ容量が必要になるため、これらのクエリは[テーブルサイズ](#check-tables-size)の小さい順に実行することを強くお勧めします。
+</Aside>
+
+```sql
+--- Recreate indexes and free unused storage
+VACUUM FULL public.sessions;
+VACUUM FULL events_common.customs;
+VACUUM FULL events_common.issues;
+VACUUM FULL events_common.requests;
+VACUUM FULL events.pages;
+VACUUM FULL events.state_actions;
+VACUUM FULL events.errors;
+VACUUM FULL events.graphql;
+VACUUM FULL events.performance;
+VACUUM FULL events.resources;
+VACUUM FULL events.inputs;
+VACUUM FULL events.clicks;
+```
+
+#### すべてのセッションの削除
+
+データベース（PostgreSQL）からすべてのセッションデータをクリーンアップする場合は、次の SQL クエリを使用します。これはカスケード削除であるため、すべての録画と、それに対応するイベントがデータベースから削除されます。
+
+<Aside type="caution">
+	この操作は自己責任で行ってください。データベースでこのような操作を行う際は、元に戻せないため、細心の注意を払ってください。
+	
+	OpenReplay Enterprise Edition では、これらのクエリは vault-sessions も削除します。
+</Aside>
+
+```sql
+--- Cascade delete all sessions and their related events 
+TRUNCATE TABLE public.sessions CASCADE;
+TRUNCATE TABLE public.errors CASCADE;
+TRUNCATE TABLE public.issues CASCADE;
+TRUNCATE TABLE public.autocomplete;
+```
+
+## ご質問はありますか？
+
+この手順についてご不明な点がございましたら、[Slack](https://slack.openreplay.com) までお気軽にお問い合わせください。

@@ -1,0 +1,60 @@
+---
+title: "Canvas and WebGL"
+metaTitle: "Canvas と WebGL"
+metaDescription: "セッションリプレイで canvas と WebGL 要素を録画する方法を説明します。"
+---
+> 注記：Canvas の録画は、[Dedicated Cloud](https://console.openreplay.com/signup) でのみ利用できます。
+
+OpenReplay は、WebGL のサポートを含め、`<canvas>` 要素の内容を録画できます。
+
+> 注記：WebGL コンテキストを使用している場合は、空白のフレームを防ぐために、.getContext のオプションに `{ preserveDrawingBuffer: true }` を追加してください。canvas からの画像データの抽出は、通常、デフォルトでは省略される描画レイヤーに依存しているためです。
+
+## Canvas 録画の有効化
+
+これはバックエンドレベルで行う必要があります。Canvas の録画を有効にするには、`openreplay -e` を実行し、次のブロックを追加して `http` サービスを更新します。
+
+```yaml
+http:
+  env:
+    RECORD_CANVAS: true
+    CANVAS_QUALITY: low
+    CANVAS_FPS: 1
+```
+
+完了したら、`:wq` を使用して設定を保存して終了すると、OpenReplay が変更の適用を行います。
+
+必要に応じて、以下のオプションを調整できます。実際、アプリケーションによってはより高いフレームレートが必要になる場合があります。スナップショットのキャプチャとエンコードはバックグラウンド（Web Worker）で行われ、アプリのパフォーマンスには影響しませんが、値を高く設定すると、エンドユーザー側でより多くの帯域幅を使用し、OpenReplay インスタンス（バックエンド）でより多くのディスクストレージが必要になります。トラッカーによってキャプチャされた画像やスナップショットはバックエンドに送信され、セッションリプレイ用に処理されます。
+
+- `CANVAS_QUALITY: 'low' | 'medium' | 'high'`: 録画されるスナップショットの品質を設定します。デフォルトは `low` です。
+- `CANVAS_FPS: number`: canvas 要素を録画する 1 秒あたりのフレーム数を定義します。デフォルトは `1` です。
+
+## Canvas オプション（SDK）
+
+JavaScript SDK の[オプション](/sdk/constructor)の `canvas` 名前空間には、次のオプションがあります。
+
+```js
+canvas?: {
+  disableCanvas?: boolean
+  fixedCanvasScaling?: boolean
+  useAnimationFrame?: boolean
+  fileExt?: 'webp' | 'png' | 'jpeg' | 'avif'
+}
+```
+
+- `disableCanvas`: 開始されたセッションの canvas 録画を無効にします。デフォルト: `true`。
+- `fixedCanvasScaling`: 高 DPI モニターで、ネイティブの 600x600 解像度での canvas キャプチャを強制します。デフォルト: `false`。
+- `useAnimationFrame`: WebGL 要素をより安定してレンダリングするために、同期録画を有効にします。オーバーヘッドや遅延が発生する可能性があるため、低 FPS のアプリケーションにのみ適しています。デフォルト: `false`。
+- `fileExt`: 録画画像のフォーマット `(webp|png|jpeg|avif)` を選択します。デフォルト: `webp`（WebGL でのアルファチャンネルのサポートのため）。
+
+### データのサニタイズ
+
+プライバシーの観点から、canvas 要素の内容はサニタイズできません。
+
+### コブラウジングセッション
+
+ライブセッション（別名 Assist）では、特別な設定は必要ありません。Canvas はデフォルトで有効になりキャプチャされ、データは P2P プロトコルで送信されます。ネットワーク使用量を最適に保つため、エージェントがライブセッションを視聴していて、かつ canvas の内容が変化している場合にのみデータがストリーミングされます。
+
+## ご質問はありますか？
+
+この手順についてご不明な点がございましたら、お気軽に [Slack](https://slack.openreplay.com) までお問い合わせください。
+

@@ -1,0 +1,63 @@
+---
+title: "MobX"
+metaTitle: "MobX"
+metaDescription: "Plugin do MobX para o OpenReplay."
+---
+
+Este plugin permite capturar mutações do `MobX` e inspecioná-las depois ao reproduzir as gravações de sessões. Isso é útil para entender e corrigir problemas.
+
+
+## Instalação
+
+```bash
+npm i @openreplay/tracker-mobx
+```
+
+## Uso
+
+Inicialize o pacote `@openreplay/tracker` normalmente e carregue o plugin nele.
+Em seguida, use o valor retornado para rastrear os observables do MobX.
+
+```js
+import { observable, observe } from 'mobx';
+import Tracker from '@openreplay/tracker';
+import trackerMobX from '@openreplay/tracker-mobx';
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+// this instance can be exported and used for multiple stores
+const mobxObserver = tracker.use(trackerMobX({ ...options }));
+
+const myArray = observable(['foo', 'bar', 42]);
+
+observe(myArray, mobxObserver)
+
+myArray.push("Hello world"); // This mutation will be tracked
+```
+
+## Opções
+
+Você pode personalizar o comportamento do middleware para sanitizar seus dados.
+
+```js
+interface Options {
+    predicate?: (observeEvent: { type: string; name: string; object: any; debugObjectName: string }) => boolean;
+    sanitize?: (resultAction: { state: any; type: string; property: string }) => { state: any; type: string; property: string };
+    update?: boolean;
+    add?: boolean;
+    delete?: boolean;
+}
+
+trackerMobX({
+  predicate: () => true,
+  sanitize: (event) => event
+})
+```
+
+Onde predicate pode ser usado para desativar dinamicamente a captura e sanitize pode ser usado para modificar o payload antes de enviá-lo ao backend. A maioria das ações se enquadra no tipo update; consulte a documentação do mobx para mais detalhes sobre add e delete (principalmente para Maps)
+
+## Tem dúvidas?
+
+Está com dificuldade para configurar este plugin? Conecte-se ao nosso [Slack](https://slack.openreplay.com) e receba ajuda da nossa comunidade.

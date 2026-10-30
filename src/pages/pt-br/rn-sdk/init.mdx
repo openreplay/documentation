@@ -1,0 +1,114 @@
+---
+title: "React Native SDK - Inicializando o SDK"
+metaTitle: "React Native SDK - Inicializando o SDK"
+metaDescription: "Opções de configuração do método construtor do tracker React Native para iOS"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	O SDK React Native está em Beta. Fique à vontade para nos enviar feedback ou relatar qualquer problema que você encontrar no nosso [Slack](https://slack.openreplay.com).
+</Aside>
+
+## Instalação
+
+A linha a seguir instala o tracker e, com ele, o SDK, para que você aproveite todos os recursos do tracker.
+
+```bash
+npm i @openreplay/react-native
+```
+
+## Inicialização
+
+Ao instanciar o tracker do OpenReplay, há várias opções de configuração que você pode fornecer para personalizar muitos aspectos da gravação e da experiência de gravação. Você deve definir a opção `projectKey` no construtor. Você pode obter esse valor no dashboard do OpenReplay, em 'Preferences > Projects'.
+
+<Aside type="tip">
+	Observe que, se você tiver vários projetos, precisa ter cuidado ao escolher a chave do projeto.
+</Aside>
+
+
+### Adicionando o código de rastreamento
+
+Adicione o código a seguir ao seu arquivo raiz:
+
+```js
+import Openreplay from '@openreplay/react-native';
+
+// ...
+useEffect(() => {
+	Openreplay.tracker.startSession(
+		'yourProjectKey',
+		options, // explained below, set {} if empty
+		'https://local.openreplay.instance/ingest' // if you're using our Serverless/SaaS plan then 'https://api.openreplay.com/ingest'
+	);
+}, [])
+```
+
+### Adicionando componentes aprimorados
+
+Para rastrear as interações dos usuários dentro do app, você precisará adicionar os componentes a seguir à sua aplicação:
+
+- `ORTouchTrackingView` - adicionado no nível raiz para rastrear interações de toque
+- `ORTrackedInput` - wrapper em torno do Input do React-Native que envia sinais sempre que o usuário termina de preencher o input
+- `ORSanitizedView` - desfoca o conteúdo interno
+
+```js
+// App.tsx
+import Openreplay from '@openreplay/react-native';
+
+function App() {
+	const start = () => {
+	    Openreplay.tracker.startSession(
+	      process.env.REACT_APP_KEY!,
+	      {},
+	      process.env.REACT_APP_INGEST
+	    );
+	    Openreplay.tracker.setMetadata('key', 'value');
+	    Openreplay.tracker.setUserID('user-id');
+	    Openreplay.patchNetwork(global, () => false, {});
+	};
+	
+	React.useEffect(() => start(), []);
+	
+	return (
+		// this top-level view is required to track touch interactions
+		<Openreplay.ORTouchTrackingView style={styles.container}> 
+		      <View style={styles.container}>
+		         <Openreplay.ORTrackedInput
+		          style={styles.input}
+		          onChangeText={onChangeNumber}
+		          value={number}
+		          placeholder="Trackable input"
+		          numberOfLines={1}
+		        />
+		
+		        <Openreplay.ORSanitizedView style={styles.sanitizedView}>
+		          <Text>Contents of this view are sanitized and invisible on the recording</Text>
+		        </Openreplay.ORSanitizedView>
+		      </View>
+		</Openreplay.ORTouchTrackingView>
+	)
+}
+```
+
+
+### Sanitizar dados
+
+Consulte [como sanitizar dados em replays do React Native](/rn-sdk/sanitization) para mais detalhes.
+
+## Opções de inicialização
+
+Por padrão, todas as opções estão definidas como `true`:
+
+- `crashes: Bool` Habilita o crashlytics.
+- `analytics: Bool` Habilita o rastreamento de analytics das views marcadas.
+- `performances: Bool` Habilita o listener de desempenho.
+- `logs: Bool` Habilita o listener de logs.
+- `screen: Bool` Habilita o gravador de tela.
+
+## Métodos
+
+<a class="or-card2 or-card-wide" href="/rn-sdk/modules"><span class="or-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg></span><div><h4>Conheça os módulos do SDK React Native</h4></div></a>
+
+## Tem dúvidas?
+Se você tiver alguma dúvida sobre este processo, fique à vontade para entrar em contato conosco no nosso [Slack](https://slack.openreplay.com).

@@ -1,0 +1,149 @@
+---
+title: "Sentry"
+metaTitle: "Sentry を OpenReplay と連携する"
+metaDescription: "Sentry を OpenReplay と連携し、バックエンドエラーをセッションリプレイと併せて確認する方法を紹介します。"
+---
+
+[Sentry](https://sentry.io/auth/login/) のバックエンドログを [OpenReplay](https://www.openreplay.com/) のセッションリプレイと連携させて、モニタリングとデバッグの機能を拡張する方法を紹介します。
+
+## 1. Sentry の認証トークンを生成する
+
+[Sentry > Account > API > Auth Tokens](https://sentry.io/settings/account/api/auth-tokens/) に移動し、次の権限を持つ認証トークンを生成します。
+
+- `event:read`
+- `org:read`
+- `project:read`
+
+このトークンは、次の手順で OpenReplay ダッシュボードの Sentry インテグレーションを有効にする際に使用します。
+
+## 2. OpenReplay で Sentry インテグレーションを有効にする
+
+1. **Organization** と **Project Slugs** をコピーします。
+
+  - Sentry ダッシュボードの **Projects** ページに移動します。
+  - `organization_slug` と `project_slug` をコピーします。
+
+2. OpenReplay でインテグレーションを設定します。
+
+  - OpenReplay で **Preferences > Integrations** に移動します。
+  - Sentry インテグレーションカードを見つけます。
+  - `organization_slug`、`project_slug`、および手順 1 で生成した認証トークンを入力します。
+
+## 3. openReplaySession.id を伝播する
+
+OpenReplay が Sentry のイベントを記録されたユーザーセッションに関連付けるには、イベントに一意のセッション ID `openReplaySession.id` をタグ付けする必要があります。
+
+#### **フロントエンド**
+
+フロントエンドアプリケーションで Sentry を使用している場合は、次の例を参考にしてください。
+
+**注記**：`tracker.start()` は非同期で、Promise を返します。セッション ID を取得する前に、Promise が解決されるまで待つ必要があります。
+
+```javascript
+// JavaScript Example for for Single Page Applications (SPA):
+
+import { tracker } from "@openreplay/tracker";
+import * as Sentry from "@sentry/browser";
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+tracker.start().then(() => {
+  const sessionId = tracker.getSessionID();
+  if (sessionId) {
+    Sentry.setTag("openReplaySession.id", sessionId);
+  }
+  // Your application code
+});
+```
+
+#### OpenReplay スニペットを使用する場合
+
+```javascript
+if (window.OpenReplay) {
+  window.OpenReplay.start().then(() => {
+    const sessionId = window.OpenReplay.getSessionID();
+    if (sessionId) {
+      Sentry.setTag("openReplaySession.id", sessionId);
+    }
+    // Your application code
+  });
+}
+```
+
+#### バックエンド
+
+バックエンドで Sentry SDK を使用している場合は、トラッキング対象とする各リクエストで、セッション ID をフロントエンドからバックエンドへ伝播する必要があります。これは、カスタム HTTP ヘッダーを使用して行えます。
+
+**セッション ID を送信するフロントエンドのコード**
+
+```javascript
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+tracker.start().then(() => {
+  const sessionId = tracker.getSessionID();
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+  if (sessionId) {
+    headers['openReplaySession.id'] = sessionId;
+  }
+
+  fetch('https://www.your-backend.com/api/endpoint', {
+    method: 'GET', // or 'POST', 'PUT', etc.
+    headers,
+    // ...other options
+  })
+    .then(response => {
+      // Handle response
+    })
+    .catch(error => {
+      // Handle error
+    });
+});
+```
+
+## 4. openReplaySessionURL を付与する（任意ですが便利です）
+
+OpenReplay の録画の URL を Sentry と関連付け、タグとして表示したい場合は、`openReplaySessionURL` タグを追加します。
+
+#### フロントエンドの例
+
+```javascript
+import * as Sentry from "@sentry/browser";
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+tracker.start().then(() => {
+  const sessionId = tracker.getSessionID();
+  const sessionURL = tracker.getSessionURL();
+
+  if (sessionId) {
+    // Tag Sentry events with the session ID
+    Sentry.setTag("openReplaySession.id", sessionId);
+  }
+
+  if (sessionURL) {
+    // Tag Sentry events with the session URL (requires OpenReplay Tracker v3.6.0+)
+    Sentry.setTag("openReplaySessionURL", sessionURL);
+  }
+
+  // Your application code
+});
+```
+
+## ご質問はありますか？
+
+問題が発生した場合は、[Slack](https://slack.openreplay.com) に参加して、コミュニティのサポートを受けてください。

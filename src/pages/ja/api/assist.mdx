@@ -1,0 +1,169 @@
+---
+title: "Assist"
+metaTitle: "Assist"
+metaDescription: "特定のプロジェクトのすべてのライブセッションを検索する方法。"
+---
+import Aside from '~/components/Aside.astro'
+
+<Aside type="note">
+Enterprise Edition（EE）でのみ利用できます。
+</Aside>
+
+## ライブセッションの取得
+
+特定のプロジェクトのライブセッションの一覧を返します。オプションで、クエリパラメーターを使って `userId` でフィルターできます。
+
+サーバー側で適用されるデフォルト値: `sort = timestamp`、`order = desc`、`limit = 10`、`page = 1`。
+
+### メソッド
+
+`GET`
+
+### URL
+
+`/public/:projectKey/assist/sessions`
+
+### パラメーター
+
+| 名前       | 型     | 説明                                                    |
+|------------|--------|---------------------------------------------------------|
+| projectKey | string | プロジェクトキー（必須）                                |
+| userId     | string | オプションの `tracker.setUserID` の値（URL クエリパラメーター） |
+
+### リクエストヘッダー
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### リクエスト例
+
+```shell
+curl -X GET \
+  '{BASE_URL}/public/aYYaFHiagqdXKEmVlmvJ/assist/sessions?userId=mickael@openreplay.com' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### レスポンス例
+
+```json
+{
+  "data": {
+    "total": 1,
+    "sessions": [
+      {
+        "pageTitle": "OpenReplay Blog",
+        "sessionID": "6975518573799938",
+        "metadata": {},
+        "userID": "mickael@openreplay.com",
+        "userUUID": "8998545b-553c-4f41-a39d-d7cba7fac2d1",
+        "projectKey": "aYYaFHiagqdXKEmVlmvJ",
+        "timestamp": 1656437966459,
+        "trackerVersion": "3.5.11",
+        "userOs": "Mac OS",
+        "userBrowser": "Chrome",
+        "userBrowserVersion": "103.0.0.0",
+        "userDeviceType": "desktop",
+        "userCountry": "FR",
+        "live": true,
+        "projectId": 3
+      }
+    ],
+    "live": true
+  }
+}
+```
+
+## ライブセッションの検索
+
+JSON ボディを使用して、特定のプロジェクトのライブセッションの一覧を検索します。
+
+省略した場合にサーバー側で適用されるデフォルト値: `sort = timestamp`、`order = desc`、`limit = 10`、`page = 1`。
+
+### メソッド
+
+`POST`
+
+### URL
+
+`/public/:projectKey/assist/sessions`
+
+### パラメーター
+
+| 名前       | 型     | 説明                                                    |
+|------------|--------|---------------------------------------------------------|
+| projectKey | string | プロジェクトキー（必須）                                |
+
+### ペイロード
+
+| 名前    | 型              | 説明                                                 |
+|---------|-----------------|------------------------------------------------------|
+| sort    | string          | ソート属性（デフォルト: `timestamp`）                |
+| order   | string          | `asc` または `desc`（デフォルト: `desc`）            |
+| page    | integer         | ページネーションのページ番号（デフォルト: `1`）      |
+| limit   | integer         | 1 ページあたりのセッション数（デフォルト: `10`）     |
+| filters | array of filter | フィルターのリスト（デフォルト: `[]`）               |
+
+フィルターオブジェクト:
+
+| 名前     | 型         | 説明                                                                           |
+|----------|------------|--------------------------------------------------------------------------------|
+| name     | string     | フィルター属性（必須。例: `userId`）。下記の `source` と併用する場合は `METADATA` を使用します |
+| operator | string     | `contains` または `is`（デフォルト: `contains`）                               |
+| value    | string[]   | 値のリスト（デフォルト: `[]`）                                                 |
+| source   | string     | `name = METADATA` の場合のメタデータ属性名（デフォルト: `""`）                 |
+
+`value = []` の場合、指定された属性が設定されているライブセッション（値は問いません）が検索の対象になります。
+
+### リクエストヘッダー
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### リクエスト例
+
+次の例では、`userId` に `openreplay` が含まれ、`metadata.plan` が `trial` または `free` であるライブセッションを、タイムスタンプの降順で最初の 10 件検索します。
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/aYYaFHiagqdXKEmVlmvJ/assist/sessions \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "filters": [
+      { "value": ["trial", "free"], "name": "METADATA", "source": "plan", "operator": "is" },
+      { "value": ["openreplay"], "name": "userId", "operator": "contains" }
+    ],
+    "sort": "timestamp",
+    "order": "desc",
+    "limit": 10,
+    "page": 1
+  }'
+```
+
+### レスポンス例
+
+```json
+{
+  "data": {
+    "total": 1,
+    "sessions": [
+      {
+        "pageTitle": "OpenReplay Blog",
+        "sessionID": "6975518573799185",
+        "metadata": { "plan": "trial" },
+        "userID": "dev@openreplay.com",
+        "userUUID": "8998545b-553c-4f41-a39d-d7cba7fac2d1",
+        "projectKey": "aYYaFHiagqdXKEmVlmvJ",
+        "timestamp": 1656437966459,
+        "trackerVersion": "3.5.11",
+        "userOs": "Mac OS",
+        "userBrowser": "Chrome",
+        "userBrowserVersion": "103.0.0.0",
+        "userDeviceType": "desktop",
+        "userCountry": "FR",
+        "live": true,
+        "projectId": 3
+      }
+    ],
+    "live": true
+  }
+}
+```

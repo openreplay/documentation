@@ -1,0 +1,192 @@
+---
+title: "GraphQL プラグインの使用"
+metaTitle: "GraphQL プラグインを使用して操作情報をキャプチャおよびサニタイズする"
+metaDescription: "React アプリケーションで GraphQL プラグインをセットアップする方法を学びます"
+---
+アプリケーション内で API のクエリ言語として GraphQL を使用している場合、[GraphQL プラグイン](https://docs.openreplay.com/plugins/graphql)を使用すると、GraphQL サーバーに対して実行されたミューテーションとクエリの両方を追跡できます。
+
+このチュートリアルでは Apollo Boost クライアントを使用しますが、ミドルウェアを設定できるクライアントであれば、コード内でこのプラグインを使用できます。
+
+一緒に進めたい場合は、GraphQL サーバーとクライアントアプリの両方を含む[このリポジトリを確認](https://github.com/deleteman/openreplay-graphql-example)してください。
+
+## まずトラッカーをセットアップする
+
+GraphQL プラグインをインストールする前に、トラッカーをインストールしておく必要があります。すでにインストール方法をご存じの場合は、次のセクションに進んでください。そうでない場合は、このまま読み進めてください。
+
+このコードは、`init` と `start` の 2 つの関数をエクスポートする別のモジュールに保存します。
+
+最初の関数はトラッカーをインスタンス化してすべてのプラグインをセットアップし、2 つ目の関数は `start` メソッドを呼び出すだけです。
+
+```jsx
+import { tracker } from '@openreplay/tracker';
+
+export function init({plugins}) {
+
+    tracker.configure({
+        projectKey: process.env.OPENREPLAY_PROJECT_KEY
+    });
+
+    
+    let pluginResults = {}
+    if(plugins) {
+        Object.keys(plugins).forEach( pk => {
+            pluginResults[pk] = tracker.use(plugins[pk]())
+        })
+    }
+    return pluginResults
+}
+
+export function start() {
+    return tracker.start()
+}
+```
+
+init 関数の興味深い点は、すべてのプラグインの戻り値で構成されたオブジェクトを返すことです。プラグインの中には、後で使用する必要のある関数を返すものがあります（GraphQL プラグインがその例です）。この方法を使うと、すべてのプラグインを一度にトラッカーへ初期化し、返された値を好きなタイミングで使用できます。
+
+## プラグインを使用する
+
+npm i @openreplay/tracker-graphql でプラグインをインストールしたら、次のコードを使用して、先ほど定義した init 関数を呼び出します。
+
+```jsx
+import trackerGraphQL from '@openreplay/tracker-graphql';
+import {init} from './tracker/index'
+
+const {graphqlTracker} = init({
+  plugins: { 
+    graphqlTracker: trackerGraphQL
+  }
+})
+```
+
+ここで使用している `graphqlTracker` キーは、任意の名前にできます。`plugins` セクション内で使用するキーと、`init` 関数の結果から分割代入するキーが同じであれば問題ありません。
+
+## Apollo クライアントでプラグインをセットアップする
+
+このチュートリアルでは Apollo Boost ライブラリを使用します。このライブラリでは、「リンク」と呼ばれる仕組みを通じて、各リクエストのデータフローを変更できます。
+
+これらのリンクはミドルウェア関数のようなもので、リクエストのデータフローをインターセプトし、今回のケースではそれを記録するために使用できます。
+
+次のコードは `ApolloLink` 関数を使って新しいリンクを作成します。このリンクは操作のデータと結果をキャプチャし、`graphqlTracker` 関数（上記の `init` 呼び出しから返された関数）を呼び出します。
+
+```jsx
+const trackerApolloLink = new ApolloLink((operation, forward) => {
+
+  const operationDefinition = operation.query.definitions[0];
+  let {operationName, variables} = operation
+  const {kind, operation: op} = operationDefinition
+  const opKind = kind === 'OperationDefinition' ? op : 'unknown?'
+
+  let results = forward(operation).map((result) => {
+    return graphqlTracker(opKind, operationName, variables, result);
+  });
+  if(results.length === 0) { //if there are no results, then we've not tracked anything so far...
+    graphqlTracker(opKind, operationName, variables, {});
+  }
+  return results
+});
+```
+
+これで準備ができたので、新しく作成したリンクを次のように使用できます。
+
+```jsx
+import {ApolloClient,  HttpLink } from 'apollo-boost';
+import { ApolloProvider } from '@apollo/react-hooks';
+import { InMemoryCache } from 'apollo-cache-inmemory';
+import { ApolloLink, from } from '@apollo/client';
+
+const link = from([
+  trackerApolloLink,
+  new HttpLink({uri: () => 'http://localhost:4000/graphql'}),
+]);
+
+const client = new ApolloClient({
+  link,
+  cache: new InMemoryCache()
+});
+
+ReactDOM.render(<ApolloProvider client={client}>
+  <App />
+</ApolloProvider>, document.getElementById('root'));
+```
+
+上記のコードは Apollo のドキュメントから引用したものです。この時点でトラッカーとプラグインはすでにセットアップされているため、ほかに心配することは特にありません。
+
+完了すると、リプレイにすべての GraphQL 操作を一覧表示する新しいセクションが表示されます。
+
+![セッションリプレイ内の GraphQL UI](/using-or/graphql-ui.png)
+
+ただし、トラッカーによって自動的にサニタイズされる機密情報（メールアドレスなど）は、プラグインではサニタイズされません。そのため、次のように DOM ではサニタイズされたデータが表示される一方で、操作の詳細には実際のデータが表示される状況が発生します。
+
+![サニタイズされたデータとされていないデータの比較](/using-or/sanitized-vs-not-sanitized.png)
+
+プラグイン自体にはサニタイズ機能はありませんが、個人情報や非公開情報をリプレイから隠してユーザーのプライバシーを守るコードを追加することはできます。
+
+## 記録データをサニタイズする
+
+trackerApolloLink オブジェクトを作成しているコードサンプルを見ると、ここで行っているのは、トラッカーに情報を保存する関数を呼び出すことだけだとわかります。
+
+データを変更しなければ、すべてがそのまま保存されます。そのため、リプレイ内のデータをサニタイズしつつ**操作自体は変更しない**ようにするには、トラッカーを呼び出す前に主要な変数をクローンする必要があります。つまり、操作の変数と結果をクローンすることであり、必要なのはそれだけです。
+
+以下は、ApolloLink を作成し、リプレイデータ内でデータを秘匿するコードのスニペットです。
+
+```jsx
+/**
+ * Sanitize the result from a GraphQL operation
+ * @returns Returns the result object but with the sanitized fields changed.
+ */
+function sanitizeResult(res) {
+  //deep clonning needs to happen to make sure this only affects the new object and not
+  //the original object.
+  let sanitized = JSON.parse(JSON.stringify(res))
+
+  let ops = Object.keys(sanitized.data)
+  ops.forEach( o => {
+    if(Array.isArray(sanitized.data[o])) { //mutations don't really return arrays
+      sanitized.data[o] = sanitized.data[o].map( sanitizeData )
+    }
+  })
+  return sanitized
+}
+
+// We only want to hide the content of othe "email" field for now.
+function sanitizeData(vars) {
+  let newVars = {...vars}
+  if(newVars.email) {
+    newVars.email = "****@***.***"
+  }
+  return newVars
+}
+
+const trackerApolloLink = new ApolloLink((operation, forward) => {
+
+  const operationDefinition = operation.query.definitions[0];
+  let {operationName, variables} = operation
+  const {kind, operation: op} = operationDefinition
+  const opKind = kind === 'OperationDefinition' ? op : 'unknown?'
+
+  let trackedVariables = sanitizeData({...variables})
+  let results = forward(operation).map((result) => {
+    let trackeresults = sanitizeResult(result)
+    graphqlTracker(opKind, operationName, trackedVariables, trackeresults);
+    return result //we have to return the original "result" object here, not the sanitized one
+  });
+  if(results.length === 0) { //if there are no results, then we've not tracked anything so far...
+    graphqlTracker(opKind, operationName, trackedVariables, {});
+  }
+  return results
+});
+```
+
+このコードの重要なポイントは次のとおりです。
+
+1. オブジェクトから `email` をサニタイズする関数と、GraphQL 操作の結果をサニタイズする関数の 2 つを追加しました。
+2. （リンク関数の）`map` コールバック内では、graphqlTracker の出力を返さなくなりました。この関数は受け取った結果の値をそのまま返すためです。 1. しかしその結果はクライアントアプリに返されるため、結果をサニタイズしてしまうと、ユーザーにはサニタイズ後のデータセットが表示されてしまいます。そうではなく、結果をクローンして追跡対象のほうを変更し、元の結果を返す必要があります。
+3. `sanitizeResult` 関数はオブジェクトをディープクローンします。そうしないと、変更が結果そのものに影響してしまうためです。
+
+![あらゆる場所でサニタイズされたデータ](/using-or/sanitized.png)
+
+## ご質問はありますか？
+
+トラッカーを組み込んだ、動作する GraphQL ベースのアプリケーションの**完全なソースコード**については、[こちらのリポジトリ](https://github.com/deleteman/openreplay-graphql-example)をご確認ください。
+
+GraphQL プロジェクトでのトラッカーのセットアップで問題が発生した場合は、[Slack コミュニティ](https://slack.openreplay.com/)で、開発者に直接ご質問ください。

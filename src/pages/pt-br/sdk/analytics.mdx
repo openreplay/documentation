@@ -1,0 +1,93 @@
+---
+title: "SDK de Analytics do tracker"
+metaTitle: "Usando o SDK de analytics do tracker do OpenReplay"
+metaDescription: "Saiba como configurar e usar o SDK de analytics do tracker do OpenReplay"
+---
+import LinkRow from '~/components/LinkRow.astro'
+import Aside from '~/components/Aside.astro'
+
+## SDK de Analytics
+
+Saiba como configurar o SDK de analytics do tracker do OpenReplay.
+
+## Habilitando o SDK
+
+O SDK de analytics é **opt-in**. Ele só é instanciado quando você passa `analytics.active` ao construtor do tracker — até lá, `tracker.analytics` é `null` e `tracker.track()` não faz nada (no-op).
+
+```js
+import Tracker from '@openreplay/tracker'
+
+const tracker = new Tracker({
+  projectKey: "YOUR_PROJECT_KEY",
+  analytics: { active: true },
+})
+
+tracker.start()
+```
+
+### Opções
+
+- `active: boolean` Ativa o SDK de analytics. Padrão: `false`.
+- `ingestPoint?: string` Endpoint para o qual os lotes de analytics são enviados. Apenas para implantações auto-hospedadas — no OpenReplay Cloud, isso é ignorado e `https://api.openreplay.com/ingest` é usado. Por padrão, usa o `ingestPoint` do tracker.
+
+<Aside type="note">
+	Os eventos são enfileirados e enviados a cada 5 segundos, e também quando a visibilidade da aba muda, para que os eventos em buffer sobrevivam ao fechamento de uma aba. Um lote que não consegue chegar ao backend é recolocado no início da fila e reenviado no próximo flush.
+</Aside>
+
+## Módulos
+
+<div class="or-rowlist">
+  <LinkRow href="/sdk/analytics/people" title="People" icon="user" desc="Gerencie perfis e atributos de usuários." />
+  <LinkRow href="/sdk/analytics/events" title="Events" icon="api" desc="Rastreie e analise interações e eventos dos usuários." />
+</div>
+
+Para saber mais sobre como gerenciar seus dados de analytics na interface do OpenReplay, acesse [Data Management](/product-analytics/data-management).
+
+## Assinaturas de nível superior
+
+```ts
+// Identify a user with an id (e.g. email, username, etc.)
+tracker.analytics.identify(userId: string): void
+// same as
+tracker.analytics.people.identify(userId)
+
+// Add event to batch with option to send it immediately
+tracker.analytics.track(eventName: string, tempProperties?: Record<string, any>, options?: { send_immediately: boolean })
+// same as
+tracker.analytics.events.track(eventName, tempProperties, options)
+
+// Clear user id, people properties and super properties, and stop the batcher
+tracker.analytics.reset(): void
+```
+
+## Atalhos no nível do tracker
+
+Eles ficam no próprio tracker, então é seguro chamá-los sem acessar `tracker.analytics` (eles não fazem nada enquanto o analytics estiver desabilitado):
+
+```ts
+// Same as tracker.analytics.track(...)
+tracker.track(eventName: string, properties?: Record<string, any>, options?: { send_immediately: boolean })
+
+// Sets the replay's user ID *and* calls analytics.people.identify() with it
+tracker.setUserID(id: string): void
+tracker.identify(id: string): void // alias of setUserID
+
+// Send analytics events under your own token, without session recording
+tracker.setAnalyticsToken(token: string): void
+```
+
+<Aside type="note">
+	`tracker.setUserID()` identifica o usuário tanto no replay quanto no perfil de analytics. Chamar `tracker.analytics.people.identify()` diretamente define apenas o perfil de analytics.
+</Aside>
+
+## reset
+
+Limpa o usuário identificado (incluindo o ID persistente do dispositivo), todas as propriedades de people, todas as super properties e interrompe o batcher. Chame-o no logout.
+
+```ts
+tracker.analytics.reset()
+```
+
+## Tem dúvidas?
+
+Se você encontrar algum problema, conecte-se ao nosso [Slack](https://slack.openreplay.com) e peça ajuda à nossa comunidade.

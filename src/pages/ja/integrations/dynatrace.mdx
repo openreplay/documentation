@@ -1,0 +1,173 @@
+---
+title: "Dynatrace"
+metaTitle: "Dynatrace を OpenReplay と連携する"
+metaDescription: "Dynatrace のバックエンドログを OpenReplay のセッションリプレイと連携する方法を紹介します。"
+---
+
+[Dynatrace](https://www.dynatrace.com/) のバックエンドログを [OpenReplay](https://www.openreplay.com/) のセッションリプレイと連携させて、モニタリングとデバッグの機能を拡張する方法を紹介します。
+
+> このインテグレーションは、**Cloud**（Serverless、Dedicated）および **Self-Host (Community, Enterprise)** のユーザーが利用できます。
+
+## 1. Dynatrace の認証情報を生成する
+
+Dynatrace から必要な認証情報を取得する手順は次のとおりです。
+
+1. Dynatrace アカウントにログインします。
+2. **Account Management** に移動します。
+3. OAuth クライアントを作成します。
+  - **Identity & Access Management** をクリックします。
+  - **OAuth clients** を選択します。
+  - **Create client** をクリックして、必要な認証情報を生成します。
+4. 認証情報を保存します。
+- クライアントの作成後、次の情報を保存します。
+  - Client ID
+  - Client Secret
+  - Account URN
+5. `environment ID` を取得します。
+        ```javascript
+        // Example
+        Dynatrace URL: https://rzr85764.app.dynatrace.com/
+        Environment ID: rzr85764
+        ``` 
+
+
+
+## 2. openReplaySession.id をバックエンドに伝播する
+
+Dynatrace のログを OpenReplay のセッションと紐付けるには、トラッキング対象とする各リクエストで、一意のセッション ID `openReplaySession.id` をフロントエンドからバックエンドへ伝播する必要があります。
+
+#### フロントエンドの API リクエストに openReplaySession.id を含める
+
+フロントエンドのコードを変更して、API リクエストのヘッダーに `openReplaySession.id` を追加します。
+
+```javascript
+
+// JavaScript Example for for Single Page Applications (SPA):
+
+// Import OpenReplay
+import { tracker } from '@openreplay/tracker';
+
+// Initialize the tracker
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+// Start the tracker and wait for it to resolve
+tracker.start().then(() => {
+  // Get the session ID after the tracker has started
+  const sessionId = tracker.getSessionID();
+
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+// Get the session ID
+const sessionId = tracker.getSessionID();
+
+const headers = {
+  'Content-Type': 'application/json',
+};
+
+if (sessionId) {
+  headers['openReplaySession.id'] = sessionId;
+}
+
+// Make the API request
+fetch('/api/endpoint', {
+  method: 'GET', // or 'POST', etc.
+  headers,
+  // ...other options
+})
+  .then(response => {
+    // Handle response
+  })
+  .catch(error => {
+    // Handle error
+  });
+
+```
+
+#### バックエンドのログに openReplaySession.id を含める
+
+バックエンドアプリケーションで、受信したリクエストから `openReplaySession.id` を取り出し、`openReplaySession.id=<sessionId>` という特定のキーと値の形式でログに含めます。
+
+```javascript
+
+//  Example.....
+// Middleware to extract the session ID
+app.use((req, res, next) => {
+  const sessionId = req.headers['openreplaysession.id'];
+  req.sessionId = sessionId; // Attach to request object
+  next();
+});
+
+// When logging events or errors
+app.get('/api/endpoint', (req, res) => {
+  // Your logic here
+
+  // Log with the session ID in the required format
+  console.log(`openReplaySession.id=${req.sessionId} - Endpoint accessed`);
+
+  res.send('Success');
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(`openReplaySession.id=${req.sessionId} - Error: ${err.message}`);
+  res.status(500).send('Internal Server Error');
+});
+
+```
+
+バックエンドのログに `openReplaySession.id` を含めることで、Dynatrace は特定の OpenReplay セッションに関連付けられたログを収集できます。これにより、OpenReplay でのセッションリプレイ中にこれらのログを確認でき、ユーザーの操作とバックエンドのログの全体像を把握できます。
+
+
+## 3. Dynatrace でカスタムログ属性を作成する
+
+Dynatrace でカスタムログ属性を作成し、ログから `openReplaySession.id` を抽出できるようにします。
+
+1. Dynatrace SaaS アカウントにアクセスします。
+2. Settings に移動します。
+3. **Log Monitoring > Custom attributes** を選択し、続けて **Add custom attribute** を選択します。
+4. キーに `openReplaySession.id` を入力します。
+
+> **参考**：詳しい手順は、Dynatrace のドキュメント [ログのカスタム属性](https://docs.dynatrace.com/docs/observe-and-explore/logs/lma-analysis/logs-and-events/lma-log-custom-attributes) を参照してください。
+
+## 4. OpenReplay で Dynatrace インテグレーションを設定する
+OpenReplay アカウントで、次の 3 つの手順に従って、セッションリプレイと Dynatrace のバックエンドログの関連付けを完了します。
+
+#### Dynatrace インテグレーションを有効にする
+1. OpenReplay で **Preferences > Integrations** に移動します。
+2. **Backend Logging** タブを選択します。
+3. Dynatrace インテグレーションを有効にするプロジェクトを選択します。Dynatrace インテグレーションカードを見つけて、クリックします。
+
+#### Dynatrace の認証情報を入力する
+Dynatrace インテグレーションのサイドバーで、次の情報を入力します。
+
+1. **Environment ID**：外部アクセス用の Dynatrace 環境 ID。
+2. **Client ID** と **Client Secret**：最初の手順で保存したもの。
+3. **Dynatrace Account URN**：Dynatrace プラットフォーム内で使用される一意の識別子。こちらも最初の手順で保存したものです。
+
+
+#### 接続を確認する
+1. **Add** をクリックして接続をテストします。成功メッセージが表示されれば、インテグレーションが正しく設定されています。
+
+![OpenReplay の Dynatrace インテグレーション](/static/dynatrace-openreplay.png#center)
+
+## 5. OpenReplay で Dynatrace のログを表示する
+1. OpenReplay で Sessions に移動します。
+2. 任意のセッションリプレイを開きます。
+3. **Traces** ボタンをクリックします。
+4. セッションに関連する Dynatrace のログが表示されます。
+5. ログエントリをクリックすると、詳細情報を確認できます。
+
+![OpenReplay の Dynatrace Traces](/static/traces-dynatrace.png#center)
+
+> ステータスが `WARN`、`ERROR`、`INFO`、`NONE` のタイプ `LOG` のログは、Dynatrace Log Monitoring API v2 を使用して取得されます。
+
+## ご質問はありますか？
+
+問題が発生した場合は、[Slack](https://slack.openreplay.com) に参加して、コミュニティのサポートを受けてください。
+
+

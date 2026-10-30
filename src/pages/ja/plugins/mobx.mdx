@@ -1,0 +1,63 @@
+---
+title: "MobX"
+metaTitle: "MobX"
+metaDescription: "OpenReplay 用の MobX プラグイン。"
+---
+
+このプラグインを使用すると、`MobX` のミューテーションをキャプチャし、セッション録画の再生中に後から確認できます。問題の把握と修正に役立ちます。
+
+
+## インストール
+
+```bash
+npm i @openreplay/tracker-mobx
+```
+
+## 使い方
+
+`@openreplay/tracker` パッケージを通常どおり初期化し、プラグインを読み込みます。
+次に、返された値を使用して MobX の observable を追跡します。
+
+```js
+import { observable, observe } from 'mobx';
+import Tracker from '@openreplay/tracker';
+import trackerMobX from '@openreplay/tracker-mobx';
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+// this instance can be exported and used for multiple stores
+const mobxObserver = tracker.use(trackerMobX({ ...options }));
+
+const myArray = observable(['foo', 'bar', 42]);
+
+observe(myArray, mobxObserver)
+
+myArray.push("Hello world"); // This mutation will be tracked
+```
+
+## オプション
+
+ミドルウェアの動作をカスタマイズして、データをサニタイズできます。
+
+```js
+interface Options {
+    predicate?: (observeEvent: { type: string; name: string; object: any; debugObjectName: string }) => boolean;
+    sanitize?: (resultAction: { state: any; type: string; property: string }) => { state: any; type: string; property: string };
+    update?: boolean;
+    add?: boolean;
+    delete?: boolean;
+}
+
+trackerMobX({
+  predicate: () => true,
+  sanitize: (event) => event
+})
+```
+
+predicate はキャプチャを動的にオフにするために、sanitize はバックエンドへ送信する前にペイロードを変更するために使用できます。ほとんどのアクションは update タイプに分類されます。add と delete（主に Map 用）の詳細については、MobX のドキュメントを参照してください。
+
+## ご質問はありますか？
+
+このプラグインのセットアップで問題が発生した場合は、[Slack](https://slack.openreplay.com) に参加して、コミュニティのサポートを受けてください。

@@ -1,0 +1,73 @@
+---
+title: "Android SDK - ネットワークのインターセプト"
+metaTitle: "Android SDK - ネットワークのインターセプト"
+metaDescription: "Android トラッカーでのネットワークインターセプトの詳細"
+---
+
+## ネットワークのインターセプト
+
+`OpenReplay` は、タスクとリクエストの両方を受け付ける `NetworkListener` をエクスポートしています。次のように使用します。
+
+```swift
+import com.openreplay.tracker.OpenReplay
+
+fun makeSampleRequest() {
+    Thread {
+        try {
+            val url = URL("https://jsonplaceholder.typicode.com/posts/1")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+
+            // Optionally set request headers
+            connection.setRequestProperty("Content-Type", "application/json")
+
+            // Initialize the network listener for this connection
+            val networkListener = NetworkListener(connection)
+
+            val reader = BufferedReader(InputStreamReader(connection.inputStream))
+            val response = StringBuilder()
+            var line: String?
+            while (reader.readLine().also { line = it } != null) {
+                response.append(line)
+            }
+            reader.close()
+
+            // Using the network listener to log the finish event
+            networkListener.finish(connection, response.toString().toByteArray())
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }.start()
+}
+```
+
+## リクエストのサニタイズ
+
+リクエスト／レスポンスのデータを自動的に除外するために、2 つのキーが用意されています。ボディ用の `ignoredKeys` と、ヘッダー用の `ignoredHeaders` です。リクエストとレスポンスの両方がサニタイズされますが、ボディが対象になるのは有効な JSON の場合のみです。
+
+サニタイズしたい文字列のリストを代入するだけです。
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+リスナーに渡す前に、レスポンスデータを変更することもできます。
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```

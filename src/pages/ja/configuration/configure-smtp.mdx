@@ -1,0 +1,52 @@
+---
+title: "SMTP の設定"
+metaTitle: "SMTP の設定"
+metaDescription: "アラートや週次レポートの受信、新規ユーザーの OpenReplay への招待、パスワードのリセットを行うための SMTP を設定します。"
+---
+
+`alerts`、`weekly reports`、`password reset`、`inviting new users` などの機能には、メール送信が**必須**です。そのため、SMTP を設定しないと、これらの機能は動作しません。最大限の信頼性と到達率を確保するため、Mailgun や SendGrid などのメールサービスプロバイダー（ESP）の利用を強く推奨します。以下では Mailgun の設定手順をステップバイステップで説明しますが、他のプロバイダーでも問題なく設定できます。
+
+## SMTP の設定
+
+SMTP を有効にするには、`openreplay -e` を実行し、`email` セクションにある以下の環境変数を更新します。
+
+| 変数 | デフォルト | 説明 |
+|----------|-------------|-------------|
+| emailHost |  | SMTP のホスト名（例: smtp.mailgun.org） |
+| emailPort | 587 | SMTP のポート |
+| emailUser |  | SMTP のユーザー名 |
+| emailPassword |  | SMTP のパスワード |
+| emailUseTls | true | SMTP ホストへの接続時に TLS を使用する場合 |
+| emailUseSsl | false | SMTP ホストへの接続時に SSL を使用する場合 |
+| emailSslKey |  | SSL キーへのパス（該当する場合） |
+| emailSslCert |  | SSL 証明書へのパス（該当する場合） |
+| emailFrom | do-not-reply@openreplay.com | 送信元のメールアドレス |
+
+その後、`:wq` で保存して終了すると、変更が反映されます。続いて、別のメールアドレスを使って自分自身を新しいチームメンバーとして招待し（'Preferences' > 'Users'）、設定をテストできます。
+
+## Mailgun
+
+1. 'Sending' > 'Domains' に移動し、'Add New Domain' をクリックします
+2. 'Domain name' にサブドメイン（例: m.mycompany.com）を入力し、'Create DKIM Authority' にチェックが入っていることを確認します。キー長は 2048 を推奨します
+3. 利用中の DNS プロバイダー（具体的な手順は Mailgun が提示します）に移動し、**表示されたすべてのレコード**を追加します
+4. すべてのレコードを追加したら、'Verify DNS Settings' をクリックします
+5. 次に、'Sending' > 'Domains settings' > 'SMTP credentials' に移動し、'Add new SMTP user' をクリックします。'Login'（例: openreplay）を入力して 'Create SMTP credentials' をクリックします。ポップアップが表示されるので、'Copy' を押して生成されたパスワードをコピーします。
+6. 表示された SMTP 設定と認証情報を使用して、OpenReplay の SMTP を設定します。`openreplay -e` を実行し、`email` セクションにある以下の環境変数を更新します。
+
+```yaml
+emailHost: 'smtp.eu.mailgun.org' # from SMTP settings section
+emailPort: '587'
+emailUser: 'openreplay@mycompany.com' # from SMTP credentials section
+emailPassword: 'password' # the one copied when you created SMTP credentials
+emailUseTls: 'true'
+emailUseSsl: 'false'
+emailSslKey: ''
+emailSslCert: ''
+emailFrom: 'openreplay@mycompany.com' # sender email, use your domain'
+```
+
+7. `:wq` で保存して終了すると、変更が反映されます。
+8. 別のメールアドレスを使って自分自身を新しいチームメンバーとして招待し（'Preferences' > 'Users'）、設定をテストできます。
+
+## ご質問はありますか？
+この手順についてご不明な点がございましたら、お気軽に [Slack](https://slack.openreplay.com) までお問い合わせください。

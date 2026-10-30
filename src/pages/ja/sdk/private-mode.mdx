@@ -1,0 +1,60 @@
+---
+title: "プライベートモード"
+metaTitle: "OpenReplay のプライベートモード"
+metaDescription: "プライベートモードを有効にすると、セッション録画に機密情報が記録されることを防げます。"
+---
+
+## プライベートモード
+
+**プライベートモード**（Private Mode）は、すべてのテキストと機密データの記録をブロックする新しい設定です。有効にすると、OpenReplay のトラッカーは、画面に表示されるテキスト、ネットワークデータ、コンソールログを一切キャプチャしません。すべてがソースの時点でマスクされるため、機密情報がブラウザーの外に出ることはありません。
+
+これは、UI の動作を完全に把握しながら、ユーザーのコンテンツとデータを完全にプライベートに保ちたい場合に便利です。
+
+## プライベートモードを有効にする方法
+
+OpenReplay の初期化時に、トラッカーレベルでプライベートモードを有効にできます。
+
+#### NPM を使用する場合
+
+```js
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+    projectKey: PROJECT_KEY,
+    privateMode: true
+})
+tracker.start();
+```
+
+`privateMode` を `true` に設定すると、次のものがマスクされます：
+
+- ページ上に表示されるすべてのテキスト  
+- 画像の `alt` 属性  
+- 入力欄の `placeholder` 値  
+- ラベルのテキスト  
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/images/javascript-sdk/private-mode.png" alt="プライベートモード" style={{ width: '700px', height: 'auto' }} />
+</div>
+
+- ネットワークリクエスト（URL、ペイロード、ヘッダー）  
+- コンソールログ
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/images/javascript-sdk/private-mode-network.png" alt="プライベートモード" style={{ width: '700px', height: 'auto' }} />
+</div>
+
+追加のセットアップは不要です。有効にすると、セッションではレイアウトと操作が記録されますが、コンテンツは一切記録されません。
+
+
+## 使用するケース
+
+次の場合に `privateMode` を使用してください：
+
+- ユーザーデータの完全なプライバシーを確保する必要がある場合
+- OpenReplay を**クラウド環境**でテストしていて、**後でセルフホストする**予定であり、**実際のデータを外部に送信できない**場合
+- **プライバシーが最優先**となる規制の厳しい業界で作業している場合
+
+## ご質問はありますか？
+
+プライバシー関連の機能は継続的に改善しています。まだサポートされていない機能が必要な場合は、ぜひお知らせください。問題が発生した場合は、[Slack](https://slack.openreplay.com) にお問い合わせいただき、コミュニティのサポートを受けてください。

@@ -1,0 +1,119 @@
+---
+title: "Deploy to Kubernetes"
+metaTitle: "Deploy to Kubernetes"
+metaDescription: "Kubernetes に OpenReplay をデプロイするためのステップバイステップガイドです。"
+---
+
+OpenReplay のデプロイは [Helm Charts](https://helm.sh) をベースとしているため、Kubernetes と完全に互換性があります。OpenReplay に必要な PostgreSQL と Redis もパッケージに含まれています。手順は次のとおりです。
+
+## 前提条件
+
+Kubernetes への OpenReplay のデプロイには、以下が必要です。
+ - Kubernetes **v1.18+**
+ - helm **3.10+**
+ - **ユーザー ID 1001 に RW 権限を持つ RWX PVC**（クラスターに複数のノードがある場合の共有コンポーネント用）。`/var/lib/openreplay/vars.yaml` の `hostPath` を、作成した PVC 名に必ず置き換えてください。
+
+```yaml
+# In case of multiple nodes in the kubernetes cluster,
+# You'll have to create an RWX PVC for shared components.
+# If it's a single node, we'll use hostVolume, which is the default for the community/oss edition.
+pvcRWXName: "hostPath"
+```
+
+また、OpenReplay を正常に動作させるには、x86 アーキテクチャで `2 vCPUs, 8 GB of RAM, 50 GB of storage` が**必須**です。これを下回ると OpenReplay のバックエンドサービスは起動しません。このスペックは中程度のボリュームであれば十分ですが、高トラフィックが見込まれる場合は、ここからスケールアップしてください。
+
+デプロイは、以下のプラットフォームでテスト済みです。
+- ローカルのシングルノード Kube クラスター
+- Google Kubernetes Engine (GKE)
+- Amazon Elastic Kubernetes Service (EKS)
+- Microsoft Azure Kubernetes Service (AKS)
+- Scaleway Elements Kubernetes (Kapsule)
+
+## OpenReplay をデプロイする
+
+クラスターに接続し、OpenReplay リポジトリをクローンします。
+
+```bash
+git clone https://github.com/openreplay/openreplay.git
+cd openreplay/scripts/helmcharts
+```
+
+> Kubernetes クラスターに複数のノードがある場合は、
+コンテナ間でデータを共有するための RWX（AWS の場合は efs など）PVC を作成する必要があります。
+シングルノードの場合は、コミュニティ版インストールのデフォルトである hostVolume を使用します。
+
+次に、`vim vars.yaml` コマンドで `vars.yaml` ファイルを開き、以下を置き換えます。
+- `domainName`: OpenReplay にアクセスする場所です（例: openreplay.mycompany.com）
+- `postgresqlPassword`: Postgres のパスワードです（任意に設定するか、ランダムに生成してください）
+- `accessKey`: オブジェクトストレージサービスに必要です（ランダムに生成した文字列を使用してください）
+- `secretKey`: オブジェクトストレージサービスに必要です（ランダムに生成した文字列を使用してください）
+- `jwt_secret`: API に必要です（ランダムに生成した文字列を使用してください）
+
+[helm](https://helm.sh/docs/intro/install/) がインストールされていることを確認してから、OpenReplay をセットアップします。
+
+```bash
+cd openreplay/scripts/helmcharts
+helm upgrade --install databases ./databases -n db --create-namespace --wait -f ./vars.yaml --atomic
+helm upgrade --install openreplay ./openreplay -n app --create-namespace --wait -f ./vars.yaml --atomic
+```
+
+## TLS/SSL を設定する
+
+OpenReplay は機密性の高いユーザーデータを扱うため、動作には HTTPS が必須です。HTTPS がないと、トラッカーは録画を開始できません。ダッシュボードも同様で、HTTPS がなければユーザーセッションをリプレイできません。
+
+Kubernetes クラスターがクラウド上にある場合（EKS、AKS、GKE など）、SSL を扱う最も簡単な方法は、クラウドロードバランサーをセットアップし、その背後でクラスターを実行することです。もう 1 つの方法は、独自の SSL 証明書を生成または使用し、サブドメイン（例: openreplay.mycompany.com）をクラスターに向けることです。どちらのオプションについても、以下で詳しく説明します。
+
+### クラウドロードバランサーをセットアップする（オプション 1）
+
+OpenReplay をクラウドロードバランサーの背後で実行する主なメリットの 1 つは、証明書をクラウドプロバイダーが管理してくれることです。作成方法を解説したステップバイステップガイドは以下のとおりです。
+- [AWS - Elastic Load Balancing](/deployment/deploy-aws#setup-aws-load-balancer-option-1)
+- [Google - Cloud Load Balancing](/deployment/deploy-gcp#setup-google-load-balancer-option-1)
+- [Azure - Load Balancer](/deployment/deploy-azure#configure-tlsssl)
+- [Digital Ocean - TLS/SSL の設定](/deployment/deploy-digitalocean#configure-tlsssl)
+
+次に、クラウドロードバランサーからのトラフィックを OpenReplay のバックエンドに転送できるよう、クラスターが [サービスタイプ](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer) `LoadBalancer` をプロビジョニングすることを確認してください。その後、DNS サービスプロバイダーに移動し、クラスターのパブリック IP を指す `A Record` を作成します。
+
+これで設定は完了です。OpenReplay にはサブドメインからアクセスできるようになります。`/signup` ページ（例: openreplay.mycompany.com/signup）にアクセスしてアカウントを作成できます。
+
+### SSL 証明書を持ち込む／生成する（オプション 2）
+
+ロードバランサーを作成する代わりに、独自の SSL 証明書を持ち込む（または生成する）こともできます。
+
+1. まず DNS サービスプロバイダーに移動し、`A Record` を追加します。インストール手順で指定したドメインを使用し、クラスターのパブリック IP を指すように設定します。
+
+2. 独自の証明書を持ち込む場合は、次のコマンドで SSL シークレットを作成します: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`。
+
+> **注記**：証明書をお持ちでない場合は、Let's Encrypt を使用して、サブドメイン（インストール時に指定したもの）用に自動更新される証明書を生成できます。OpenReplay のインスタンスに接続し、`cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` を実行して、手順に従ってください。
+
+3. http から https へのリダイレクトを有効にする場合（推奨）は、`/var/lib/openreplay/vars.yaml` の `ingress-nginx` セクションにある以下のブロックのコメントを解除します。
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+なお、`ingress-nginx` はデフォルトでポート `80|443` で動作しますが、必要に応じて `vars.yaml` で簡単に変更できます。
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. 最後に、OpenReplay の NGINX を再インストールします。
+
+```bash
+openreplay -R
+```
+
+これで設定は完了です。OpenReplay にはサブドメインからアクセスできるようになります。`/signup` ページ（例: openreplay.mycompany.com/signup）にアクセスしてアカウントを作成できます。
+
+## ご質問はありますか？
+
+お使いのプラットフォームで問題が発生した場合は、Slack または GitHub Issue でお知らせください。動作させるためのお手伝いをいたします。
