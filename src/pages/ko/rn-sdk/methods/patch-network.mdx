@@ -1,0 +1,37 @@
+---
+title: "React Native SDK - patchNetwork 메서드"
+metaTitle: "React Native SDK - patchNetwork 메서드"
+metaDescription: "OpenReplay React Native SDK의 patchNetwork 메서드에 대한 자세한 설명"
+---
+
+이 메서드는 XHR 및 Fetch API를 패치하여 네트워크 요청을 가로챕니다.
+
+## 시그니처
+
+```js
+import OR from '@openreplay/react-native'
+
+OR.patchNetwork(
+    global,
+		(url) => url.includes('openreplaydomain'),
+    { mode: 'fetch' }
+)
+```
+
+## 매개변수
+
+- `context: globalThis`: 앱의 현재 컨텍스트(fetch/xhr를 가져올 대상)
+- `isServiceURL: (url: string) => boolean`: 현재 요청을 추적할지(false) 건너뛸지(true) 판단하는 함수
+- `options: Partial<Options>`: 옵션 객체
+
+## 옵션
+
+- `ignoreHeaders: Array<string> | boolean`: 무시할 헤더(기본값: `['cookie', 'set-cookie', 'authorization']`)
+- `capturePayload: boolean`: 요청 페이로드를 캡처할지 여부(기본값: `false`)
+- `sanitizer: data: RequestResponseData) => RequestResponseData`: 요청/응답을 정제하는 함수(기본값: `undefined`)
+- `mode: 'fetch' | 'xhr' | 'all'`: 패치할 API(기본값: `'fetch'`)
+
+> 참고: React-Native의 fetch는 (작성 시점 기준) 내부적으로 XHR을 사용하므로, "all"을 사용하면 녹화에 요청이 중복되어 기록될 수 있습니다
+
+## 궁금한 점이 있으신가요?
+이 과정에 대해 궁금한 점이 있다면 언제든지 [Slack](https://slack.openreplay.com)으로 문의해 주세요.

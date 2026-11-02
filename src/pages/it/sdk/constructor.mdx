@@ -1,0 +1,258 @@
+---
+title: "JavaScript SDK - Inizializzazione dell'SDK"
+metaTitle: "JavaScript SDK - Inizializzazione dell'SDK"
+metaDescription: "Opzioni di configurazione per il metodo costruttore del tracker"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+## Installazione
+
+La riga seguente installa il tracker e, con esso, l'SDK, così puoi sfruttare tutte le funzionalità del tracker.
+
+```bash
+npm i @openreplay/tracker
+```
+
+## Inizializzazione
+Quando istanzi il tracker di OpenReplay, puoi fornire diverse opzioni di configurazione per personalizzare molti aspetti della registrazione e dell'esperienza di registrazione.
+
+Devi impostare l'opzione `projectKey` nel costruttore. Puoi ottenere questo valore dalla dashboard di OpenReplay, in 'Preferences > Projects'.
+
+<Aside type="tip">
+  Nota che, se hai più progetti, devi fare attenzione a quale chiave del progetto scegli.
+</Aside>
+
+
+### Single Page Application (SPA)
+Se il tuo sito web è una **Single Page Application (SPA)** puoi usare il tracker come singleton:
+
+```js
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+	projectKey: PROJECT_KEY,
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+})
+
+tracker.start() // returns a promise with session info (sessionID, sessionHash, userUUID)
+```
+
+In alternativa, puoi creare una nuova istanza della classe:
+
+```js
+import OpenReplay from '@openreplay/tracker';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+tracker.start(); // returns a promise with session info (sessionID, sessionHash, userUUID)
+```
+
+### Rendering lato server (SSR)
+Se invece la tua web app usa il **rendering lato server (SSR, Server-Side Rendering)** (ad es. NextJS, NuxtJS), usa lo snippet seguente. 
+Assicurati che `tracker.start()` venga chiamato una volta avviata l'app (in `useEffect` o `componentDidMount`).
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+//...
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY,
+      ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start(); // returns a promise with session info (sessionID, sessionHash, userUUID)
+  }, [])
+}
+```
+
+<Aside type="tip">
+Se usi un particolare framework web, consulta la nostra sezione [Tracker Setup](/sdk/using-or) per sapere come iniziare.
+</Aside>
+
+## Esempio
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+//...
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY,
+      ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+      capturePerformance: true,
+      __DISABLE_SECURE_MODE: true // for local testing
+});
+```
+
+## Opzioni di inizializzazione
+
+Esistono diverse opzioni che puoi passare al costruttore. Solo `projectKey` è obbligatoria.
+
+### Uso generale 
+
+- `projectKey: string` L'ID del progetto che stai tracciando.
+- `sessionHash?: string` L'hash della sessione iniziale. È utile quando le sessioni attraversano sottodomini diversi della tua web app ma vuoi unirle in un'unica registrazione. Se non è possibile proseguire la sessione (non esiste o è terminata), il tracker ne avvierà automaticamente una nuova. Viene restituito anche da `stop()`. Maggiori dettagli [qui](/troubleshooting/session-recordings#replays-are-broken-across-subdomains).
+- `ingestPoint?: string` Il tuo dominio OpenReplay (ad es. https://openreplay.mydomain.com/ingest) a cui il tracker invierà gli eventi. È facoltativo per gli utenti di OpenReplay Cloud. Predefinito: `https://api.openreplay.com/ingest` (che punta a OpenReplay Cloud). 
+- `revID?: string` L'ID di revisione della tua web app. Utile per cercare i problemi che si verificano in una specifica versione di rilascio.
+- `resourceBaseHref?: string` Indica il dominio pubblicamente accessibile da cui OpenReplay può recuperare gli asset (stili, font e icone). Poiché sono necessari per un session replay corretto, questa opzione è utile per aggirare la limitazione di avere il sito (e quindi gli asset) ospitato su un dominio privato. Esempio: `https://mypublicsite.com/assets/`.
+- `captureIFrames?: boolean` Per catturare tutti gli iFrame dello stesso dominio nella tua web app. Se vuoi tracciare un iFrame specifico, aggiungi invece semplicemente l'attributo HTML `data-openreplay-capture` al tag `<iframe>`. Predefinito: `true`.
+- `disableClickmaps?: boolean` Per disattivare il calcolo dei selettori CSS (usato nelle click map). Predefinito: `false`.
+- `__debug__: number` Per abilitare i log di debug. Predefinito: `0` (disattivato).
+    - `2`: Errori.
+    - `3`: Errori e avvisi.
+    - `4`: Errori, avvisi e log.
+    - `5`: Dettagliato.
+- `autoResetOnWindowOpen?: boolean` Abilita questa opzione per reimpostare il sessionID quando si apre una nuova scheda dalla tua applicazione. Sovrascrive il metodo `window.open` per evitare sessionID duplicati dovuti alla session storage condivisa tra le schede del browser. Predefinito: `false`.
+- `forceSingleTab: boolean` Disattiva la funzionalità di registrazione multi-scheda, che unisce in un'unica replay le sessioni degli utenti svolte su più schede. Abilitando invece questa opzione, le sessioni catturate in schede diverse del browser verranno registrate in registrazioni separate. Predefinito: `false`.
+- `disableStringDict: boolean` Disattiva la logica del dizionario di stringhe (usata per ottimizzare lo storage) nelle registrazioni. Predefinito: `false`.
+- `fixedCanvasScaling: boolean` Forza il rendering delle immagini canvas con una densità di pixel pari a 1 invece di devicePixelRatio (riduce la qualità potenziale di un'immagine per ottenere un risultato finale di dimensioni minori). Predefinito: `false`.
+- `disableCanvas?: boolean` Disattiva la registrazione degli elementi canvas. Predefinito: `false`.
+- `assistSocketHost?: string` Può essere usato per impostare un host specifico per la connessione del plugin Assist. Per impostazione predefinita assume il valore di `ingestPoint`.
+- `analytics?: { active: boolean, ingestPoint?: string }` Abilita l'[Analytics SDK](/sdk/analytics), che espone `tracker.analytics` (eventi, super property e profili utente) oltre alla scorciatoia di primo livello `tracker.track()`. L'SDK **non** viene istanziato a meno che `active` sia `true`, e `tracker.analytics` resta `null` fino ad allora. `ingestPoint` consente alle installazioni self-hosted di inviare i dati di analytics a un endpoint diverso da quello dell'ingest dei replay; viene ignorato su OpenReplay Cloud. Predefinito: `{ active: false }`.
+- `nodes?: { maintainer: MaintainerOptions }` La nuova opzione `nodes.maintainer` aiuta a gestire la memoria e a ripulire i nodi DOM che non sono più in uso. Ha i parametri seguenti:
+    - `interval: number`: Intervallo di tempo (in millisecondi) tra un ciclo di pulizia e l'altro. Predefinito: `30 * 1000` (30 secondi).
+    - `batchSize: number`: Numero di nodi da controllare a ogni ciclo di pulizia. Predefinito: `2500`.
+    - `enabled: boolean`: Abilita o disabilita il node maintainer. Predefinito: `true`.
+
+### Fogli di stile
+
+- `inlineCss: number`: Forza il tracker a registrare e inviare i fogli di stile remoti come normali messaggi, invece di metterli in cache sul backend. È utile quando i file CSS sono privati e quindi non possono essere messi in cache dal backend di OpenReplay. I valori possibili sono:
+    - `0`: Il file CSS viene messo in cache dal backend. Comportamento predefinito.
+    - `1`: Tenta di registrare il file CSS collegato come oggetto AdoptedStyleSheet.
+    - `2`: Recupera il file, quindi simula il comportamento di AdoptedStyleSheets per la replay.
+    - `3`: Recupera il file, quindi lo salva come CSS semplice all'interno di un nodo `<style>` -- usa questa opzione se i tuoi file CSS contengono molte proprietà abbreviate (aggira un bug della specifica CSSOM).
+- `css: CssRulesOptions`: Offre un supporto migliore per le applicazioni realizzate con la libreria emotion-js (ad es. i componenti MUI). Include i parametri seguenti:
+    - `scanInMemoryCSS: boolean`: Attivalo se hai problemi con gli stili creati da emotionjs. Predefinito: `false`.
+    - `checkCssInterval: number`: Frequenza con cui scansionare i fogli di stile tracciati che hanno regole vuote. Predefinito: `200` (ms).
+    - `checkLimit: number`: Utile nei casi con un numero limitato di mutazioni e/o quando i fogli di stile vengono idratati sul client dopo il rendering iniziale. Viene applicato a ogni foglio di stile singolarmente. Il valore dovrebbe essere = X/checkCssInterval, dove X è la durata dell'osservazione in ms. Predefinito: `0` (disattivato). 
+
+### Privacy
+
+- `respectDoNotTrack?: boolean` Non avvia il tracker se nel browser dell'utente è attivo il flag do-not-track. Predefinito: `false`.
+- `obscureTextEmails?: boolean` Oscura le email negli elementi di testo. Le email verranno convertite in una sequenza casuale di asterischi. Predefinito: `true`.
+- `obscureTextNumbers?: boolean` Oscura i numeri negli elementi di testo. I numeri verranno convertiti in una sequenza casuale di asterischi. Predefinito: `false`.
+- `obscureInputEmails?: boolean` Oscura le email nei campi di input. I valori delle email verranno convertiti in una sequenza casuale di asterischi. Predefinito: `true`.
+- `obscureInputNumbers?: boolean` Oscura i numeri nei campi di input. I valori numerici verranno convertiti in una sequenza casuale di asterischi. Se disabilitata, assicurati di [sanificare i campi di input](/sdk/sanitize-data#granular-level) che possono contenere dati sensibili come CAP o dati di carte di credito. Predefinito: `true`.
+- `obscureInputDates?: boolean` Oscura le date nei campi di input. I valori delle date verranno convertiti in una sequenza casuale di asterischi. Predefinito: `false`.
+- `defaultInputMode?: 0 | 1 | 2` Modalità di acquisizione predefinita per i valori di input. Rispettivamente: in chiaro, oscurato o ignorato. Predefinito: `2` (ignorato).
+- `urls`: Consente di personalizzare come vengono registrati gli eventi di posizione della pagina tramite le opzioni seguenti:
+	- `urlSanitizer?: (url: string) => string` Consente di sanificare l'URL della pagina (ad esempio per rimuovere i token di utilizzo).
+	- `titleSanitizer?: (title: string) => string` Consente di sanificare il titolo della pagina.
+- `resourceNameSanitizer?: (url: string) => string` Consente di sanificare gli URL delle risorse di rete registrate.
+
+Nota che i dati esclusi vengono oscurati o soppressi prima di essere inviati ai server di OpenReplay. Le modifiche applicate alle opzioni qui sopra non sono retroattive e si applicano solo ai dati raccolti da quel momento in poi. Consulta [Sanitize Data](/sdk/sanitize-data) per maggiori dettagli.
+
+### Console
+
+- `consoleMethods?: Array<'log' | 'info' | 'warn' | 'error'  'debug' | 'assert'> | null` Specifica l'elenco dei metodi della console da catturare. Predefinito: `['log', 'info', 'warn', 'error', 'debug', 'assert']`
+- `consoleThrottling?: number` Numero massimo di voci della console catturate al secondo. Predefinito: `30`.
+
+### Eccezioni
+
+- `captureExceptions?: boolean` Cattura le eccezioni JavaScript e gli stacktrace. Predefinito: `true`.
+
+### Timing
+
+- `captureResourceTimings?: boolean` Registra i timing delle risorse. Predefinito: `true`.
+- `capturePageLoadTimings?: boolean` Registra i timing di caricamento della pagina. Predefinito: `true`.
+- `capturePageRenderTimings?: boolean` Calcola le metriche di rendering della pagina come Speed Index, Visually Complete o Time To Interactive. Richiede `captureResourceTimings = true`. Predefinito: `true`.
+
+### Prestazioni
+
+- `capturePerformance?: boolean` Per catturare metriche di prestazioni come framerate, consumo di CPU e di memoria. Predefinito: `true`.
+- `longTasks?: boolean` Per catturare gli eventi long-animation-frame. Predefinito `false`.
+
+### Rete
+
+L'opzione `network` riguarda la cattura delle richieste di rete e dei payload per `fetch` e `XHR`.
+
+```js
+network?: {
+    failuresOnly: boolean;
+    sessionTokenHeader: string;
+    ignoreHeaders: Array<string> | boolean;
+    capturePayload: boolean; // make sure you sanitize your data before enabling it
+    sanitizer: (RequestResponseData) => RequestResponseData | null;
+		captureInIframes: boolean;
+  	axiosInstances: AxiosInstance[];
+    useProxy?: boolean;
+		tokenUrlMatcher?: (url: string) => boolean;
+  }
+```
+
+Consulta [Network Options](/sdk/network-options) per esempi e maggiori dettagli su come oscurare i dati sensibili. 
+
+### Canvas
+
+L'opzione `canvas` riguarda la cattura degli elementi canvas/WebGL:
+
+```js
+canvas?: {
+  disableCanvas?: boolean
+  fixedCanvasScaling?: boolean
+  useAnimationFrame?: boolean
+  fileExt?: 'webp' | 'png' | 'jpeg' | 'avif'
+}
+```
+
+Consulta [Canvas and WebGL](/session-replay/canvas) per sapere come abilitare questa funzionalità e per maggiori dettagli sulle opzioni disponibili.
+
+### iFrame cross-domain
+
+L'opzione `crossdomain` riguarda la cattura degli iFrame di domini diversi. Si usa insieme all'opzione `captureIFrames`, che deve essere impostata su `true`.
+
+```ts 
+	crossdomain?: {
+		/**
+		 * Enable cross-domain tracking
+		 * @default false
+		 * */
+		enabled?: boolean
+		/**
+		 * Used to specify the parent domain, will be '*' by default
+		 * (Check your CSP settings)
+		 * @default '*'
+		 * */
+		parentDomain?: string
+	}
+```
+A partire dalla versione [14.0.10](https://github.com/openreplay/openreplay/blob/dev/tracker/tracker/CHANGELOG.md) del tracker, **l'attributo `data-domain` non è più richiesto** sugli elementi HTML quando si lavora con iFrame cross-domain.
+
+Consulta [Cross-domain iFrame Tracking](/session-replay/crossdomain-iframe) per maggiori dettagli su come catturare un iFrame di un dominio diverso. 
+
+### Puntatore del mouse
+
+L'opzione `mouse` riguarda la cattura dei selettori per i clic, per costruire le clickmap.
+
+```js
+mouse?: 
+  {
+  disableClickmaps?: boolean
+  minSelectorDepth?: number
+  nthThreshold?: number
+  maxOptimiseTries?: number
+  }
+```
+
+- `disableClickmaps?: boolean` Disattiva completamente il calcolo dei selettori. Predefinito: `false`.
+- `minSelectorDepth?: number` Lunghezza minima di un selettore ottimizzato (predefinito 2). Esempio: `body > div > div > p => body > p`
+- `nthThreshold?: number` Numero di tentativi sul selettore prima di ripiegare sui selettori nth-child. È un'**operazione costosa** e può comportare un overhead significativo: non impostarlo a un valore superiore a 2000. Predefinito: `1000`.
+- `maxOptimiseTries?: number` Numero di tentativi per ottimizzare e accorciare il selettore. Predefinito: `10 000`.
+
+### Riconnessioni
+
+- `connAttemptCount?: number` Numero massimo di tentativi quando le richieste HTTP del tracker non riescono a raggiungere il backend. Predefinito: `10`.
+- `connAttemptGap?: number` Intervallo tra un tentativo e l'altro (espresso in ms). Predefinito: `8000`.
+
+### Sicurezza
+
+- `__DISABLE_SECURE_MODE?: boolean` Per consentire una connessione non sicura tra tracker e backend su siti senza SSL. Va usata **solo a scopo di sviluppo**. Predefinito: `false`.
+
+<Aside type="caution">
+    Nota che, usando `__DISABLE_SECURE_MODE` dalla tua workstation locale, **potresti** vedere differenze visive durante la visione della replay, ad esempio stili CSS che non si caricano correttamente. Segui [questa guida](/troubleshooting/localhost) per risolvere il problema.
+</Aside>
+
+## Metodi
+
+<a class="or-card2 or-card-wide" href="/sdk/methods"><span class="or-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m8 8-4 4 4 4M16 8l4 4-4 4M14 5l-4 14"/></svg></span><div><h4>Scopri i metodi</h4></div></a>

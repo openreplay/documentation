@@ -1,0 +1,85 @@
+---
+title: "MCP-Einrichtung"
+metaTitle: "Die OpenReplay-MCP-App einrichten"
+metaDescription: "Installieren Sie den OpenReplay-MCP-Server in Claude Desktop, ChatGPT oder Codex, richten Sie ihn auf Ihre OpenReplay-Instanz aus und melden Sie sich über den browserbasierten Autorisierungsablauf an."
+---
+
+import Aside from '~/components/Aside.astro';
+
+Diese Seite führt Sie durch die Installation der OpenReplay-MCP-App, die Verbindung mit Ihrer Instanz und die Anmeldung.
+
+## 1. MCP-Server installieren
+
+Fügen Sie den OpenReplay-MCP-Server zur MCP-Konfiguration Ihres Clients hinzu. 
+
+### Claude Desktop
+
+Claude Desktop installiert das OpenReplay-MCP mit einem einzigen Klick als **Erweiterung** (`.mcpb`-Bundle):
+
+1. Laden Sie `openreplay.mcpb` von der OpenReplay-[Releases-Seite](https://github.com/openreplay/openreplay/releases) herunter.
+2. Doppelklicken Sie auf die Datei – Claude Desktop öffnet sich und fordert Sie auf, sie als Erweiterung zu installieren.
+3. Klicken Sie auf **Install**.
+
+Das war's schon. Sie müssen keine JSON-Konfiguration bearbeiten und keine Node-Toolchain installieren.
+
+## 2. MCP auf Ihre OpenReplay-Instanz ausrichten
+
+Öffnen Sie in Claude Desktop das Einstellungsfenster der Erweiterung und tragen Sie im Feld **OpenReplay URL** die Adresse ein, die Sie im Browser verwenden – `https://app.openreplay.com` für Cloud oder Ihre eigene Domain für selbst gehostete Instanzen. Das MCP leitet den API-Host automatisch ab.
+
+<img src="/mcp/config-panel.png" alt="Konfiguration der OpenReplay-URL in den Einstellungen der MCP-App" style={{ width: '700px', height: 'auto' }} />
+
+Bei ChatGPT und Codex stammt die URL aus der Umgebungsvariable `OPENREPLAY_BACKEND_URL`, die Sie in Schritt 1 festgelegt haben.
+
+Sie können die Instanz auch jederzeit direkt im Chat wechseln: *"Verwenden Sie OpenReplay unter https://openreplay.mycompany.com"*.
+
+## 3. Über den Browser anmelden
+
+Das MCP verwendet einen browserbasierten Autorisierungsablauf – Sie müssen Ihr Passwort nie in den Chat einfügen.
+
+<Aside type="tip" title="Der Ablauf auf einen Blick" >
+  1. Bitten Sie Claude, sich **bei OpenReplay anzumelden**.
+  2. Claude liefert einen Autorisierungslink und versucht, ihn in Ihrem Browser zu öffnen.
+  3. Sie melden sich bei OpenReplay an (falls noch nicht geschehen) und klicken auf **Authorize**.
+  4. Sie sagen Claude *"I authorized it"*.
+  5. Claude schließt die Anmeldung ab und bestätigt, dass das Token ausgestellt wurde.
+</Aside>
+
+### Schritt für Schritt
+
+**1.** Sagen Sie im Chat:
+
+```
+Log me in to OpenReplay
+```
+
+**2.** Claude ruft das Tool `login_browser` auf und antwortet mit einer URL der Form `…/mcp/authorize?state=…`. Auf den meisten Systemen wird der Link außerdem automatisch in Ihrem Standardbrowser geöffnet.
+
+**3.** Bestätigen Sie im OpenReplay-Tab die Zugriffsanfrage, indem Sie auf **Authorize** klicken.
+
+<img src="/mcp/authorize.png" alt="Der Autorisierungsbildschirm von OpenReplay" style={{ width: '700px', height: 'auto' }} />
+
+**4.** Wechseln Sie zurück zu Claude und sagen Sie:
+
+```
+I authorized it
+```
+
+**5.** Claude schließt die Anmeldung ab (über das Tool `complete_login`) und bestätigt, dass ein Token erzeugt wurde. Das Token wird lokal gespeichert, sodass Sie dies beim nächsten Chat nicht wiederholen müssen.
+
+<Aside type="caution" title="Alternative: Passwort" >
+  Wenn Ihr Host keine Browserfenster öffnen kann, unterstützt das MCP auch die Anmeldung per E-Mail und Passwort – sagen Sie einfach *"Melden Sie mich mit der E-Mail-Adresse `you@example.com` und dem Passwort `...` an"*. Der Browser-Ablauf wird bevorzugt, wann immer er verfügbar ist.
+</Aside>
+
+## Verbindung überprüfen
+
+Fragen Sie Claude nach der Anmeldung:
+
+```
+List my OpenReplay projects
+```
+
+Wenn alles eingerichtet ist, sehen Sie die Namen und IDs Ihrer Projekte. Auf der Seite [Capabilities](/mcp/capabilities) erfahren Sie anschließend, was Sie sonst noch anfragen können.
+
+## Haben Sie Fragen?
+
+Falls Probleme auftreten, treten Sie unserem [Slack](https://slack.openreplay.com) bei.

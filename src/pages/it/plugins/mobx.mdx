@@ -1,0 +1,63 @@
+---
+title: "MobX"
+metaTitle: "MobX"
+metaDescription: "Plugin MobX per OpenReplay."
+---
+
+Questo plugin ti consente di catturare le mutazioni di `MobX` e di ispezionarle in seguito durante la riproduzione delle registrazioni delle sessioni. È utile per comprendere e risolvere i problemi. 
+
+
+## Installazione
+
+```bash
+npm i @openreplay/tracker-mobx
+```
+
+## Utilizzo
+
+Inizializza il pacchetto `@openreplay/tracker` come al solito e carica al suo interno il plugin.
+Poi usa il valore restituito per tracciare gli observable di MobX.
+
+```js
+import { observable, observe } from 'mobx';
+import Tracker from '@openreplay/tracker';
+import trackerMobX from '@openreplay/tracker-mobx';
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+// this instance can be exported and used for multiple stores
+const mobxObserver = tracker.use(trackerMobX({ ...options }));
+
+const myArray = observable(['foo', 'bar', 42]);
+
+observe(myArray, mobxObserver)
+
+myArray.push("Hello world"); // This mutation will be tracked
+```
+
+## Opzioni
+
+Puoi personalizzare il comportamento del middleware per sanificare i tuoi dati.
+
+```js
+interface Options {
+    predicate?: (observeEvent: { type: string; name: string; object: any; debugObjectName: string }) => boolean;
+    sanitize?: (resultAction: { state: any; type: string; property: string }) => { state: any; type: string; property: string };
+    update?: boolean;
+    add?: boolean;
+    delete?: boolean;
+}
+
+trackerMobX({
+  predicate: () => true,
+  sanitize: (event) => event
+})
+```
+
+Con predicate puoi disattivare dinamicamente la cattura, mentre con sanitize puoi modificare il payload prima di inviarlo al backend. La maggior parte delle azioni rientra nel tipo update; consulta la documentazione di MobX per maggiori dettagli su add e delete (usati soprattutto per le Map)
+
+## Hai domande?
+
+Hai difficoltà a configurare questo plugin? Unisciti al nostro [Slack](https://slack.openreplay.com) e ricevi aiuto dalla nostra community.

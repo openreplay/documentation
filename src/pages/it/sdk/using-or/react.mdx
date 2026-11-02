@@ -1,0 +1,81 @@
+---
+title: "Usare OpenReplay con React"
+metaTitle: "Aggiungere il tracker di OpenReplay alla tua applicazione React"
+metaDescription: "Scopri come far funzionare il tracker nella tua applicazione React"
+---
+import Aside from '~/components/Aside.astro'
+
+Far funzionare il tracker in un'applicazione React è piuttosto semplice. 
+
+## Aggiungere il codice di tracciamento
+
+Supponendo che tu stia sviluppando una SPA (Single Page Application), tutto ciò che devi fare è aggiungere il codice seguente al punto di ingresso:
+
+```jsx
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: "<your project key>", 
+  ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
+});
+
+function YourMainComponent({props}) {
+    //some code here...
+
+    useEffect(() => {
+        tracker.start();
+    }, [])
+
+    return //....
+}
+```
+
+In alternativa, puoi anche usare direttamente la classe `Tracker` per gestirne manualmente l'istanza:
+
+```jsx
+import Tracker from '@openreplay/tracker';
+
+const tracker = new Tracker({
+  projectKey: "<your project key>",  
+  ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
+});
+
+function YourMainComponent({props}) {
+    //some code here...
+
+    useEffect(() => {
+        tracker.start();
+    }, [])
+
+    return //....
+}
+```
+
+In altre parole, puoi istanziare il tracker all'inizio dello script e, una volta caricata la pagina, avviarlo con un hook `useEffect`.
+
+<Aside type="tip">
+Anche se puoi ottenere la [versione snippet JS](/sdk/using-or/snippet#getting-the-snippet) del nostro tracker direttamente dalla nostra CDN quando crei un nuovo progetto, il codice è troppo essenziale e renderà più difficile personalizzarlo e aggiungere plugin extra.
+</Aside>
+
+### Gestire la "projectKey" nel tuo codice
+
+Per motivi di sicurezza, evita di inserire la `projectKey` direttamente nel codice della tua applicazione. Salvala invece in un file di configurazione o in un sistema di gestione dell'ambiente.
+
+Sono disponibili diversi approcci, a seconda della configurazione del tuo progetto:
+- **Variabili d'ambiente**: se usi Create React App, sfrutta il suo [supporto integrato per le variabili d'ambiente](https://create-react-app.dev/docs/adding-custom-environment-variables/)
+- **File di configurazione**: usa file di configurazione dedicati, esclusi dal controllo di versione
+- **Gestione dell'ambiente**: strumenti come `dotenv` possono aiutarti a gestire chiavi diverse nei vari ambienti
+
+Di seguito un esempio:
+```javascript
+// Access the key from environment variables
+const openReplayKey = process.env.REACT_APP_OPENREPLAY_KEY;
+```
+
+## Stai creando qualcosa di più complesso?
+
+Se stai creando un'applicazione complessa con React, è probabile che tu stia usando [Next](/sdk/using-or/next), [Remix](/sdk/using-or/remix) o un framework simile. Consulta la nostra sezione [Configurazione del tracker](/sdk/using-or) per trovare il framework con cui stai lavorando.
+
+## Hai domande?
+
+In caso di problemi nella configurazione del tracker nel tuo progetto React, contattaci nella nostra [community Slack](https://slack.openreplay.com/) e chiedi direttamente ai nostri sviluppatori!

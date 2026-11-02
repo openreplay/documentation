@@ -1,0 +1,157 @@
+---
+title: "Sanificare i dati (Web)"
+metaTitle: "Sanificare i dati (Web)"
+metaDescription: "Come sanificare i dati e garantire la privacy dei tuoi utenti."
+---
+import Aside from '~/components/Aside.astro'
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+
+## Sanificare i dati delle replay
+
+Puoi sanificare ciò che OpenReplay cattura sia a livello globale sia a livello granulare (o a entrambi). I dati oscurati o ignorati non vengono catturati alla fonte. In altre parole, quei dati non lasciano mai il browser dell'utente.
+
+<YoutubeVideo title="Guarda come sanificare i dati sensibili nelle tue replay"
+  description="Se non ti piace leggere, puoi seguire questo video tutorial che mostra come sanificare i dati nelle tue registrazioni."
+  videoURL="https://youtu.be/22-UCoocy6s"
+/>
+
+### Livello globale
+
+I dati possono essere sanificati a livello di tracker, quando configuri OpenReplay.
+
+#### Uso lo script di OpenReplay
+
+![Configurazione del progetto in OpenReplay](/static/gdpr-1.png#center)
+
+1) Fai clic su *Tracking Code* del tuo progetto in 'Preferences > Projects'.
+2) Le opzioni di registrazione dei dati dovrebbero comparire subito prima dello snippet di codice:
+- **Inputs**: Per ignorare, oscurare o registrare tutti i valori di input dei tuoi utenti.
+- **Do not record any numeric text**: Per ignorare i valori numerici contenuti negli elementi di testo.
+- **Do not record email addresses**: Per impostazione predefinita, tutte le email contenute negli elementi di testo vengono oscurate e non compaiono nelle replay. Puoi disattivare questo comportamento deselezionando la casella.
+3) La modifica delle opzioni di registrazione dei dati cambia lo snippet di codice. Assicurati di copiare e incollare lo script aggiornato nella tua web app.
+
+#### Uso OpenReplay con NPM
+
+Esistono diverse opzioni relative alla privacy che puoi passare al costruttore:
+- `obscureTextEmails?: boolean` Oscura le email negli elementi di testo. Le email verranno convertite in una sequenza casuale di asterischi. Predefinito: true.
+- `obscureTextNumbers?: boolean` Oscura i numeri negli elementi di testo. I numeri verranno convertiti in una sequenza casuale di asterischi. Predefinito: false.
+- `obscureInputEmails?: boolean` Oscura le email nei campi di input. I valori delle email verranno convertiti in una sequenza casuale di asterischi. Predefinito: true.
+- `obscureInputNumbers?: boolean` Oscura i numeri nei campi di input. I valori numerici verranno convertiti in una sequenza casuale di asterischi. Predefinito: false.
+- `obscureInputDates?: boolean` Oscura le date nei campi di input. I valori delle date verranno convertiti in una sequenza casuale di asterischi. Predefinito: false.
+- `defaultInputMode?: 0 | 1 | 2` Modalità di acquisizione predefinita per i valori di input. Rispettivamente: in chiaro, oscurato o ignorato. Predefinito: 1 (oscurato).
+
+Il testo, le email e i numeri sanificati vengono oscurati o soppressi prima di inviare i dati ai server di OpenReplay. Di conseguenza, le modifiche applicate alle opzioni qui sopra non sono retroattive e si applicano solo ai dati raccolti da quel momento in poi.
+
+### Livello granulare
+
+Puoi anche sanificare i dati a livello di codice per una maggiore granularità. È utile per oscurare o ignorare elementi del DOM e campi di input.
+
+#### Uso degli attributi HTML
+
+- `data-openreplay-obscured` per mascherare il contenuto testuale dei tag `<input>`, `<img>` e di altri elementi HTML (ad es. `<div>`), con l'eccezione di `<svg>` e `<canvas>`.
+
+```html
+<!--Obscuring input fields-->
+<form action="/action_page.php">
+  Name: <input type="text" name="fname" data-openreplay-obscured><br>
+  <input type="submit" value="Submit">
+</form>
+<!--Obscuring a div element-->
+<div style="background-color:lightblue" data-openreplay-obscured>
+  <h3>This is a sensitive information</h3>
+  <p>This is an important paragraph</p>
+  <img src="important_image.jpg">
+</div>
+```
+
+- `data-openreplay-hidden` per oscurare completamente il contenuto dei tag `<input>`, `<img>`, `<svg>` e di altri elementi HTML (ad es. `<div>`), con l'eccezione di `<canvas>`. Il contenuto dell'elemento (inclusi i suoi componenti figli) viene rimosso, ma le sue props e i suoi argomenti vengono mantenuti, come in questo esempio:
+
+```html
+<div style="background-color:lightblue" data-openreplay-hidden>
+  <div>This is a sensitive information</div>
+  <svg>An important chart</svg>
+</div>
+```
+
+Il risultato è che il tracker registra il seguente DOM:
+
+```html
+<div style="background-color:lightblue" data-openreplay-hidden>
+</div>
+```
+
+#### Uso della funzione domSanitizer
+
+- La funzione `domSanitizer: (node: Element) => SanitizeLevel` evita di dover strumentare ogni componente HTML che deve essere sanificato. `SanitizeLevel` può essere `Plain` (0), `Obscured` (1) o `Hidden` (2). Questa funzione viene passata al costruttore del tracker. Di seguito un esempio di oscuramento di tutti gli elementi HTML che hanno uno specifico nome di classe CSS:
+
+```js
+// Import SanitizeLevel enum
+import Tracker, { SanitizeLevel } from "@openreplay/tracker";
+
+const tracker = new Tracker({
+  projectKey: PROJECT_KEY,
+  domSanitizer: (node: Element) => {
+    const elementClassNames = node.classList
+
+    if (elementClassNames.contains('to_be_redacted_class')) {
+      return SanitizeLevel.Hidden
+    }
+
+    if (node.id === 'sensitiveData') {
+      return SanitizeLevel.Obscured
+    }
+
+    return SanitizeLevel.Plain
+  }
+})
+tracker.start()
+```
+
+> **Nota:** tutti gli elementi sanificati vengono mascherati/oscurati alla fonte (nel tracker), in modo che i dati sensibili non raggiungano mai l'istanza di OpenReplay.
+
+## Sanificare i dati degli strumenti di sviluppo
+
+Puoi usare l'SDK di OpenReplay per sanificare i dati di rete e lo stato dell'applicazione.
+
+### Rete
+
+La cattura di richieste/risposte può registrare informazioni altamente sensibili o private che la tua applicazione può inviare/ricevere. Assicurati di oscurare correttamente i dati di rete.
+
+#### Fetch/XHR
+
+Usa l'opzione `sanitizer` per oscurare i dati sensibili delle richieste/risposte Fetch/XHR. Consulta le [opzioni di rete](/sdk/network-options#options) per maggiori dettagli.
+
+Dai un'occhiata anche a questo tutorial passo passo su come [catturare e sanificare le richieste di rete](/tutorials/capture-request).
+
+#### GraphQL
+
+Per sanificare i dati GraphQL, devi clonare le variabili chiave e i risultati dell'operazione prima di chiamare il tracker. Consulta come [sanificare i dati registrati in GraphQL](/tutorials/graphql/#sanitizing-the-recorded-data) per maggiori dettagli.
+
+### Gestione dello stato
+
+Rimuovi i dati sensibili dallo store dello stato del tuo frontend usando l'SDK di OpenReplay.
+
+#### Redux
+
+Usa le opzioni `actionFilter`, `actionTransformer` e `stateTransformer` per oscurare azioni e sotto-alberi sensibili del tuo store. Consulta la [documentazione del plugin redux](/plugins/redux/#options) per maggiori dettagli.
+
+#### VueX
+
+Usa le opzioni `filter`, `transformer` e `mutationTransformer` per oscurare mutazioni e sotto-alberi sensibili del tuo store. Consulta la [documentazione del plugin vuex](/plugins/vuex/#options) per maggiori dettagli.
+
+#### Zustand
+
+Usa le opzioni `filter`, `transformer` e `mutationTransformer` per oscurare mutazioni e sotto-alberi sensibili del tuo store. Consulta la [documentazione del plugin zustand](/plugins/zustand/#options) per maggiori dettagli.
+
+#### Pinia
+
+Usa le opzioni `filter`, `transformer` e `mutationTransformer` per oscurare mutazioni e sotto-alberi sensibili del tuo store. Consulta la [documentazione del plugin pinia](/plugins/pinia/#options) per maggiori dettagli.
+
+#### NgRx
+
+Usa le opzioni `actionFilter`, `actionTransformer` e `stateTransformer` per oscurare azioni e sotto-alberi sensibili del tuo store. Consulta la [documentazione del plugin ngrx](/plugins/ngrx/#options) per maggiori dettagli.
+
+## Hai domande?
+
+Miglioriamo costantemente le nostre funzionalità legate alla privacy, quindi faccelo sapere se ti serve qualcosa che non supportiamo ancora. Se hai difficoltà a sanificare i dati, scrivici sul nostro [Slack](https://slack.openreplay.com) e chiedi aiuto alla nostra community.

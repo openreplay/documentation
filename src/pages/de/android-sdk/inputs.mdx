@@ -1,0 +1,43 @@
+---
+title: "Android SDK - Eingaben erfassen"
+metaTitle: "Android SDK - Eingaben erfassen"
+metaDescription: "Details zur Erfassung von Eingaben mit dem Android-Tracker"
+---
+
+Der Tracker lauscht auf Ereignisse bei Wertänderungen (mit Debouncing) und sendet den resultierenden Wert an das OpenReplay-Backend.
+
+## Erfasste Eingaben hinzufügen
+
+### EditText
+
+Verwenden Sie `.trackTextInput(label:masked)`, um Eingabeereignisse zu beobachten,
+- `label: String` - Bezeichnung für die aufgezeichnete Eingabe
+- `masked: Bool` - Wenn `true`, zeichnet der Tracker nur das Eingabeereignis selbst auf, nicht den Wert.
+
+```kotlin
+import com.opnereplay.tracker.OpenReplay
+
+val passwordEditText = binding.password
+passwordEditText.trackTextInput(label = "password", masked = true)
+```
+
+### View
+
+```kotlin
+import com.opnereplay.listeners.Analytics
+
+Analytics.addObservedInput(inputEl)
+```
+
+### Jetpack Compose
+
+```kotlin
+import com.openreplay.tracker.listeners.trackTextInputChanges
+
+OutlinedTextField(
+        modifier = Modifier
+            .fillMaxWidth()
+            .trackTextInputChanges("Email Field", emailState.text),
+        ...,
+    )
+```

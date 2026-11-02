@@ -1,0 +1,21 @@
+---
+title: "Cache leeren"
+metaTitle: "Cache leeren"
+metaDescription: "So leeren und setzen Sie den Cache (CSS, Schriftarten und Symbole) in OpenReplay zurück."
+---
+
+OpenReplay benötigt Zugriff auf Ressourcen wie Ihre Stylesheets, Symbole und Schriftarten, damit Replays funktionieren. Diese Dateien werden von unserem Backend kopiert und zwischengespeichert, sodass Sie ältere Aufzeichnungen auch dann ansehen können, wenn sich Ihre Web-App geändert hat. Führen Sie die folgenden Schritte aus, um Ihren Cache zu leeren:
+
+1. Führen Sie `k9s -n db` aus
+2. Navigieren Sie mit den Pfeiltasten durch die Liste, bis Sie den Container `minio-*` erreichen
+3. Drücken Sie s, um Shell-Zugriff auf den Minio-Container (Objektspeicher) zu erhalten
+4. Führen Sie `export MINIO_ACCESS_KEY=<accessKey from vars.yaml>` aus
+5. Führen Sie `export MINIO_SECRET_KEY=<secretKey from vars.yaml>` aus
+6. Führen Sie `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY` aus
+7. Führen Sie `mc rm --recursive --dangerous --force minio/sessions-assets` aus, um alle zwischengespeicherten Dateien (CSS, Schriftarten und Symbole) zu entfernen
+8. Verwenden Sie `exit`, um den Minio-Container zu verlassen
+9. Führen Sie `:quit` aus, um die Kubernetes-CLI zu beenden
+10. Starten Sie den Dienst `assets` neu, indem Sie `openreplay -R` ausführen
+
+## Haben Sie Fragen?
+Wenn Sie Fragen zu diesem Vorgang haben, wenden Sie sich gerne über unseren [Slack](https://slack.openreplay.com) an uns.

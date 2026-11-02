@@ -1,0 +1,114 @@
+---
+title: "React Native SDK - SDK initialisieren"
+metaTitle: "React Native SDK - SDK initialisieren"
+metaDescription: "Konfigurationsoptionen für die Konstruktormethode des iOS-React-Native-Trackers"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	Das React Native SDK befindet sich in der Beta-Phase. Geben Sie uns gerne Feedback oder melden Sie Probleme, auf die Sie stoßen, in unserem [Slack](https://slack.openreplay.com) .
+</Aside>
+
+## Installation
+
+Mit der folgenden Zeile installieren Sie den Tracker und damit das SDK, sodass Sie alle Funktionen des Trackers nutzen können.
+
+```bash
+npm i @openreplay/react-native
+```
+
+## Initialisierung
+
+Beim Instanziieren des OpenReplay-Trackers stehen Ihnen mehrere Konfigurationsoptionen zur Verfügung, mit denen Sie viele Aspekte der Aufzeichnung und der Aufzeichnungserfahrung anpassen können. Sie müssen die Option `projectKey` im Konstruktor festlegen. Diesen Wert finden Sie in Ihrem OpenReplay-Dashboard unter 'Preferences > Projects'.
+
+<Aside type="tip">
+	Beachten Sie: Wenn Sie mehrere Projekte haben, müssen Sie darauf achten, welchen Projektschlüssel Sie auswählen.
+</Aside>
+
+
+### Tracking-Code hinzufügen
+
+Fügen Sie den folgenden Code in Ihre Root-Datei ein:
+
+```js
+import Openreplay from '@openreplay/react-native';
+
+// ...
+useEffect(() => {
+	Openreplay.tracker.startSession(
+		'yourProjectKey',
+		options, // explained below, set {} if empty
+		'https://local.openreplay.instance/ingest' // if you're using our Serverless/SaaS plan then 'https://api.openreplay.com/ingest'
+	);
+}, [])
+```
+
+### Erweiterte Komponenten hinzufügen
+
+Um Benutzerinteraktionen innerhalb der App zu erfassen, müssen Sie Ihrer Anwendung die folgenden Komponenten hinzufügen:
+
+- `ORTouchTrackingView` - wird auf der Root-Ebene hinzugefügt, um Touch-Interaktionen zu erfassen
+- `ORTrackedInput` - Wrapper um den React-Native-Input, der Signale sendet, sobald der Benutzer die Eingabe abgeschlossen hat
+- `ORSanitizedView` - verwischt den darin enthaltenen Inhalt
+
+```js
+// App.tsx
+import Openreplay from '@openreplay/react-native';
+
+function App() {
+	const start = () => {
+	    Openreplay.tracker.startSession(
+	      process.env.REACT_APP_KEY!,
+	      {},
+	      process.env.REACT_APP_INGEST
+	    );
+	    Openreplay.tracker.setMetadata('key', 'value');
+	    Openreplay.tracker.setUserID('user-id');
+	    Openreplay.patchNetwork(global, () => false, {});
+	};
+	
+	React.useEffect(() => start(), []);
+	
+	return (
+		// this top-level view is required to track touch interactions
+		<Openreplay.ORTouchTrackingView style={styles.container}> 
+		      <View style={styles.container}>
+		         <Openreplay.ORTrackedInput
+		          style={styles.input}
+		          onChangeText={onChangeNumber}
+		          value={number}
+		          placeholder="Trackable input"
+		          numberOfLines={1}
+		        />
+		
+		        <Openreplay.ORSanitizedView style={styles.sanitizedView}>
+		          <Text>Contents of this view are sanitized and invisible on the recording</Text>
+		        </Openreplay.ORSanitizedView>
+		      </View>
+		</Openreplay.ORTouchTrackingView>
+	)
+}
+```
+
+
+### Daten bereinigen
+
+Weitere Informationen finden Sie unter [So bereinigen Sie Daten in React-Native-Replays](/rn-sdk/sanitization).
+
+## Initialisierungsoptionen
+
+Standardmäßig sind alle Optionen auf `true` gesetzt:
+
+- `crashes: Bool` Aktiviert Crashlytics.
+- `analytics: Bool` Aktiviert das Analytics-Tracking markierter Ansichten.
+- `performances: Bool` Aktiviert den Performance-Listener.
+- `logs: Bool` Aktiviert den Logs-Listener.
+- `screen: Bool` Aktiviert den Screen Recorder.
+
+## Methoden
+
+<a class="or-card2 or-card-wide" href="/rn-sdk/modules"><span class="or-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg></span><div><h4>Die Module des React Native SDK kennenlernen</h4></div></a>
+
+## Haben Sie Fragen?
+Wenn Sie Fragen zu diesem Vorgang haben, melden Sie sich gerne bei uns im [Slack](https://slack.openreplay.com) .

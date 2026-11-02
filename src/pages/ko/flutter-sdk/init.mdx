@@ -1,0 +1,147 @@
+---
+title: "Flutter SDK - SDK 초기화"
+metaTitle: "Flutter SDK - SDK 초기화"
+metaDescription: "Flutter 트래커의 start 메서드 구성 옵션"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	Flutter SDK는 베타 버전입니다. 피드백이나 발견한 문제가 있다면 언제든지 [Slack](https://slack.openreplay.com)으로 알려 주세요.
+</Aside>
+
+## 요구 사항
+
+- Flutter `3.41` 이상(Dart SDK `^3.0.0`).
+- `v1.26.0` 이상의 OpenReplay 백엔드. 이보다 오래된 백엔드는 프레임 지원을 보고하지 않으므로 이벤트는 계속 기록되지만 화면은 기록되지 않습니다.
+
+이 패키지는 **pub 의존성이 없습니다**. 와이어 프로토콜, 배치 처리, gzip, multipart를 모두 Dart로 구현했으며, 네이티브 기능은 모두 하나의 플랫폼 채널을 통해 처리합니다.
+
+## 설치
+
+```sh
+flutter pub add openreplay
+```
+
+또는 `pubspec.yaml`에 직접 추가합니다.
+
+```yaml
+dependencies:
+  openreplay: ^1.0.9
+```
+
+## 초기화
+
+`start()`에 `projectKey`를 전달해야 합니다. 이 값은 OpenReplay 대시보드의 'Preferences > Projects'에서 확인할 수 있습니다.
+
+<Aside type="tip">
+	프로젝트가 여러 개라면 올바른 프로젝트 키를 선택하도록 주의하세요.
+</Aside>
+
+### 트래킹 코드 추가
+
+앱을 `OpenReplayWidget`으로 감싼 다음 트래커를 시작합니다. 이 래퍼는 **필수**입니다. 프레임을 캡처하는 리페인트 경계(repaint boundary)를 제공하므로, 이 래퍼가 없으면 아무것도 기록되지 않습니다.
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:openreplay/openreplay.dart';
+
+void main() {
+  runApp(const OpenReplayWidget(child: MyApp()));
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await OpenReplay.instance.start(
+        projectKey: 'YOUR_PROJECT_KEY',
+        // not required if you're using our SaaS version
+        serverUrl: 'https://your.instance.com/ingest',
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+        // records screen transitions
+        navigatorObservers: [ORNavigatorObserver()],
+        home: const HomePage(),
+      );
+}
+```
+
+`start()`는 첫 프레임 이전에 호출해도 안전합니다. 캡처는 `OpenReplayWidget`의 레이아웃이 끝난 뒤에야 시작됩니다.
+
+### 내비게이션 리스너 설정
+
+`MaterialApp`(또는 `CupertinoApp`, 혹은 아무 `Navigator`)에 `ORNavigatorObserver`를 추가하면 푸시되고 팝된 라우트가 리플레이 타임라인에 표시됩니다.
+
+```dart
+MaterialApp(
+  navigatorObservers: [ORNavigatorObserver()],
+  // ...
+)
+```
+
+라우트는 `route.settings.name`으로 보고됩니다. 이름이 없는 라우트는 스택에서의 위치(`route/2`)로 대체되므로, 라우트에 이름을 지정하면 타임라인이 훨씬 읽기 쉬워집니다.
+
+### 데이터 정제
+
+자세한 내용은 [Flutter 리플레이에서 데이터를 정제하는 방법](/flutter-sdk/sanitization)을 참고하세요.
+
+## 초기화 옵션
+
+옵션은 `OROptions`로 `start()`에 전달합니다.
+
+```dart
+await OpenReplay.instance.start(
+  projectKey: 'YOUR_PROJECT_KEY',
+  options: const OROptions(
+    logs: false,
+    targetLongEdge: 1080,
+  ),
+);
+```
+
+- `crashes: bool` Dart 오류를 캡처합니다. 네이티브 크래시는 여전히 네이티브 리포터가 필요합니다. 기본값: `true`.
+- `analytics: bool` 터치, 스와이프, 화면, 입력을 캡처합니다. 기본값: `true`.
+- `performances: bool` CPU, 메모리, 배터리, 발열 상태를 캡처합니다. 기본값: `true`.
+- `logs: bool` `debugPrint` 출력을 캡처합니다. 기본값: `true`.
+- `screen: bool` 프레임 캡처를 활성화합니다. 기본값: `true`.
+- `screenshotBatchSize: ScreenshotBatchSize` 배치로 묶어 업로드하기 전에 버퍼에 쌓아 두는 프레임 수로, `low`(10), `normal`(20), `high`(30) 중 하나입니다. 기본값: `normal`.
+- `targetLongEdge: int` 캡처되는 프레임의 가장 긴 변의 길이(픽셀)입니다. 화면 크기에 따라 프레임당 비용이 크게 달라지지 않도록 상한을 둡니다. 기본값: `720`.
+- `dedupeFrames: bool` 픽셀이 이전 프레임과 바이트 단위로 동일한 프레임을 건너뜁니다. 플레이어가 현재 시점 이전의 마지막 스냅샷을 유지하므로 재생에는 영향이 없습니다. 기본값: `true`.
+- `maskPlatformViews: bool` 플랫폼 뷰(WebView, 지도, 카메라 미리보기)를 플레이스홀더로 덮습니다. 이들은 Flutter가 다시 읽어 올 수 없는 네이티브 레이어에서 렌더링되므로, 이 옵션이 없으면 빈 화면으로 보입니다. 기본값: `true`.
+- `wifiOnly: bool` 예약된 옵션이며 **아직 적용되지 않습니다**. 기본값: `true`.
+- `debugLogs: bool` SDK 자체 로깅을 활성화합니다. 기본값: `false`.
+- `debugImages: bool` 디버깅을 위해 캡처된 프레임을 덤프합니다. 기본값: `false`.
+
+두 가지 프리셋이 제공됩니다. `OROptions.defaults`(위의 모든 옵션 사용)와 `OROptions.defaultDebug`(동일하되 `debugLogs: true`)입니다.
+
+<Aside type="note">
+	프레임 레이트와 이미지 품질은 여기서 설정하지 **않습니다**. 이 값들은 프로젝트 설정에서 가져오며 `/start` 응답으로 전달됩니다.
+</Aside>
+
+## 서버 URL
+
+`serverUrl`의 기본값은 OpenReplay Cloud입니다. 셀프 호스팅 배포에서는 이 값을 `start()`에 전달하거나 미리 설정합니다.
+
+```dart
+OpenReplay.instance.serverUrl = 'https://your.instance.com/ingest';
+```
+
+## 모듈
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="Flutter SDK의 모듈 알아보기" url="/flutter-sdk/modules" hideIcon={true} width="100"/>
+</div>
+
+## 메서드
+
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="Flutter SDK의 메서드 알아보기" url="/flutter-sdk/methods" hideIcon={true} width="100"/>
+</div>
+
+## 질문이 있으신가요?
+이 과정에 대해 궁금한 점이 있으시면 언제든지 [Slack](https://slack.openreplay.com)으로 문의해 주세요.

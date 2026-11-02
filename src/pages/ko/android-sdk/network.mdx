@@ -1,0 +1,73 @@
+---
+title: "Android SDK - 네트워크 가로채기"
+metaTitle: "Android SDK - 네트워크 가로채기"
+metaDescription: "Android 트래커의 네트워크 가로채기에 대한 상세 정보"
+---
+
+## 네트워크 가로채기
+
+`OpenReplay`는 태스크와 요청을 모두 받을 수 있는 `NetworkListener`를 내보냅니다. 사용 방법은 다음과 같습니다.
+
+```swift
+import com.openreplay.tracker.OpenReplay
+
+fun makeSampleRequest() {
+    Thread {
+        try {
+            val url = URL("https://jsonplaceholder.typicode.com/posts/1")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+
+            // Optionally set request headers
+            connection.setRequestProperty("Content-Type", "application/json")
+
+            // Initialize the network listener for this connection
+            val networkListener = NetworkListener(connection)
+
+            val reader = BufferedReader(InputStreamReader(connection.inputStream))
+            val response = StringBuilder()
+            var line: String?
+            while (reader.readLine().also { line = it } != null) {
+                response.append(line)
+            }
+            reader.close()
+
+            // Using the network listener to log the finish event
+            networkListener.finish(connection, response.toString().toByteArray())
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }.start()
+}
+```
+
+## 요청 데이터 정제
+
+요청/응답 데이터를 자동으로 잘라내기 위해 두 개의 키가 제공됩니다. 본문(body)에는 `ignoredKeys`, 헤더에는 `ignoredHeaders`를 사용합니다. 요청과 응답 모두 정제되지만, 본문은 유효한 JSON인 경우에만 영향을 받습니다.
+
+정제하려는 문자열 목록을 간단히 지정하면 됩니다.
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+응답 데이터를 리스너에 전달하기 전에 변경하는 것도 가능합니다.
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```

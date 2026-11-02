@@ -1,0 +1,64 @@
+---
+title: "Flutter SDK - start-Methode"
+metaTitle: "Flutter SDK - start-Methode"
+metaDescription: "Details zur Methode 'start' des Flutter SDK von OpenReplay"
+---
+import Aside from '~/components/Aside.astro'
+
+Mit dieser Methode starten Sie den Tracker. Mit dem Start des Trackers beginnt die Aufzeichnung der Sitzung.
+
+## Signatur
+
+```dart
+Future<void> OpenReplay.instance.start({
+  required String projectKey,
+  OROptions options = OROptions.defaults,
+  String? serverUrl,
+})
+```
+
+## Parameter
+
+- `projectKey: String`: Zu finden in Ihrem OpenReplay-Dashboard unter 'Preferences > Projects'.
+- `options: OROptions`: Was der Tracker erfasst, siehe unten.
+- `serverUrl: String?`: Ingest-Endpunkt für selbst gehostete Bereitstellungen. Lassen Sie ihn bei OpenReplay Cloud weg.
+
+<Aside type="note">
+	Ihre App muss in `OpenReplayWidget` eingebettet sein, damit der Bildschirm aufgezeichnet wird. `start()` kann bedenkenlos vor dem ersten Frame aufgerufen werden – die Erfassung beginnt, sobald das Widget gelayoutet wurde.
+</Aside>
+
+### Initialisierungsoptionen
+
+Verfügbare Optionen:
+
+- `crashes: bool` Erfasst Dart-Fehler.
+- `analytics: bool` Erfasst Touch-Eingaben, Wischgesten, Bildschirme und Eingaben.
+- `performances: bool` Erfasst CPU-Auslastung, Arbeitsspeicher, Akku und thermischen Zustand.
+- `logs: bool` Erfasst die Ausgabe von `debugPrint`.
+- `screen: bool` Aktiviert die Frame-Erfassung.
+- `screenshotBatchSize: ScreenshotBatchSize` Frames pro Upload – `low` (10), `normal` (20), `high` (30). Standard: `normal`.
+- `targetLongEdge: int` Längste Kante eines erfassten Frames in Pixeln. Standard: `720`.
+- `dedupeFrames: bool` Überspringt Frames, die mit dem vorherigen identisch sind.
+- `maskPlatformViews: bool` Überdeckt WebViews, Karten und Kameravorschauen mit einem Platzhalter.
+- `wifiOnly: bool` Reserviert; wird noch nicht durchgesetzt.
+- `debugLogs: bool` / `debugImages: bool` Die eigene Debug-Ausgabe des SDK. Standard: `false`.
+
+Standard: alle booleschen Optionen sind `true`, außer `debugLogs` und `debugImages`. Eine vollständige Beschreibung jeder Option finden Sie unter [Initialisierung](/flutter-sdk/init#initialization-options).
+
+Bildrate und Bildqualität stammen aus Ihren Projekteinstellungen, nicht aus diesen Optionen.
+
+## Gepufferter Start
+
+Um in einen rollierenden Puffer aufzuzeichnen, ohne eine Sitzung anzulegen – sodass ein späterer Auslöser die vorangegangenen Sekunden mitsenden kann –, starten Sie mit `coldStart()` und überführen die Aufzeichnung mit `triggerRecording()` in eine Sitzung:
+
+```dart
+await OpenReplay.instance.coldStart(projectKey: 'YOUR_PROJECT_KEY');
+
+// later, when something worth recording happens
+await OpenReplay.instance.triggerRecording(condition: 'checkout_error');
+```
+
+Die serverseitige Auswertung von Bedingungen ist im Flutter SDK noch nicht verfügbar; rufen Sie `triggerRecording()` aus Ihrem eigenen Code auf.
+
+## Haben Sie Fragen?
+Wenn Sie Fragen zu diesem Vorgang haben, wenden Sie sich gern über unseren [Slack](https://slack.openreplay.com) an uns.

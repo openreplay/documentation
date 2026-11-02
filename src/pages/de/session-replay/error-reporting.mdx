@@ -1,0 +1,104 @@
+---
+title: "Fehler-Tracking"
+metaTitle: "Fehler-Tracking"
+metaDescription: "Erfahren Sie, wie Sie Fehler mit OpenReplay erfassen und beheben. Gewinnen Sie detaillierte Einblicke in Fehler Ihrer Webanwendungen und analysieren Sie sie im vollständigen Kontext."
+---
+
+Erhalten Sie sowohl einen Überblick als auch detaillierte Einblicke in Fehler Ihrer Webanwendungen. Mit OpenReplay können Sie Probleme im vollständigen Kontext analysieren und so schneller beheben.
+
+## Fehler-Tracking-Einblicke in verschiedenen Ansichten
+
+### In der Ansicht „Sessions“
+
+1. Wechseln Sie zur Sitzungsansicht > Tab **Errors**
+2. **Omnisearch verwenden**: Wählen Sie das Ereignis **“Error Message”** aus und geben Sie die konkrete Fehlermeldung ein.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/error-tracking/errors_sessions_view.gif" alt="Fehler in Sitzungen" style={{ width: '600px', height: 'auto' }} />
+</div>
+
+### In einer einzelnen Sitzung
+
+1. Wechseln Sie zu **Console > Errors Tab**
+2. Öffnen Sie den Fehler, um die vollständigen Source Maps anzuzeigen.
+3. Klicken Sie auf **"Find all sessions with this error"**, um die Liste der Sitzungen anzuzeigen, in denen der Fehler aufgetreten ist.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/error-tracking/errors_session_view.gif" alt="Sitzungsfehler" style={{ width: '600px', height: 'auto' }} />
+</div>
+
+### In der Ansicht „Cards“
+
+1. Wechseln Sie zu Cards > Add Card > Monitors
+2. Wählen Sie die Karte **Table of Errors** aus
+
+{/* <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/error-tracking/errors_cards_view.gif" alt="Tabelle der Fehler" style={{ width: '600px', height: 'auto' }} />
+</div> */}
+
+## Ausnahmen manuell protokollieren
+
+Der OpenReplay-Tracker unterstützt das Protokollieren von drei Fehlerarten:
+
+1. **Abgefangene Ausnahmen** - [Error](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error)
+2. **Abgelehnte Promises** - [PromiseRejectionEvent](https://developer.mozilla.org/en-US/docs/Web/API/PromiseRejectionEvent)
+3. **Fehlerereignisse (onError)** - [ErrorEvent](https://developer.mozilla.org/en-US/docs/Web/API/ErrorEvent)
+
+Alle diese Fehler lassen sich mit einer einzigen Methode melden:
+
+```javascript
+tracker.handleError(error, metaObject); // metaObject is optional and is a flat object
+```
+
+Sehen wir uns Beispiele für jede Fehlerart an:
+
+### Abgefangene Ausnahmen (Error)
+
+Standardmäßig werden abgefangene Ausnahmen nicht im Tab ‚Console‘ protokolliert. Um einen Fehler zu melden, verwenden Sie das folgende Muster:
+
+```javascript
+try {
+    // application code
+} catch (err) {
+    // application code that handles the error
+    tracker.handleError(err, metaObject); // metaObject is optional and is a flat object
+}
+```
+
+### Abgelehnte Promises (PromiseRejectionEvent)
+
+Wenn ein Promise abgelehnt wird und an OpenReplay gemeldet werden soll, gehen Sie wie folgt vor:
+
+```javascript
+function myFunc() {
+    doSomeAsyncStuff()
+        .then((result) => {
+            // application code
+        })
+        .catch(promiseRejectionErr => {
+            // application code to handle the error
+            tracker.handleError(promiseRejectionErr, metaObject); // metaObject is optional and is a flat object
+        });
+}
+```
+
+### onError (ErrorEvent)
+
+Melden Sie durch Ereignisse ausgelöste Fehler, etwa wenn ein `<img>`-Element nicht geladen werden kann:
+
+```javascript
+<img id="myImg" src="image.gif">
+<p id="demo"></p>
+
+<script>
+document.getElementById("myImg").addEventListener("error", myFunction);
+
+function myFunction(errorEvent) {
+    document.getElementById("demo").innerHTML = "The image could not be loaded.";
+    tracker.handleError(errorEvent, { context: "demo" });
+}
+</script>
+```
+
+## Haben Sie Fragen?
+Wenn Sie Fragen zu diesem Vorgang haben, wenden Sie sich gerne über unseren [Slack](https://slack.openreplay.com) an uns.

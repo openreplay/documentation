@@ -1,0 +1,175 @@
+---
+title: "Jobs"
+metaTitle: "Jobs"
+metaDescription: "So verwalten Sie Jobs zum Löschen von Benutzerdaten."
+---
+
+Werte für den Job-Status: `scheduled`, `running`, `completed`, `failed`, `cancelled`.
+
+## Alle Jobs auflisten
+
+Ruft alle Jobs eines Projekts ab, einschließlich abgeschlossener und abgebrochener. Paginiert.
+
+### Methode
+`GET`
+
+### URL
+`/public/:projectKey/jobs`
+
+### Query-Parameter
+
+| Name  | Typ    | Beschreibung                                                                 |
+|-------|---------|-----------------------------------------------------------------------------|
+| limit | integer | Seitengröße, 1-200 (Standard: 50). Werte außerhalb des Bereichs werden auf 50 zurückgesetzt.   |
+| page  | integer | Seitennummer, beginnt bei 1 (Standard: 1). Werte < 1 werden auf 1 zurückgesetzt.           |
+
+### Anfrage-Header
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Beispielanfrage
+
+```shell
+curl -X GET \
+  '{BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs?limit=50&page=1' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Beispielantwort
+
+```json
+{
+  "data": [
+    {
+      "jobId": 3451,
+      "description": "Delete user sessions of userId = shekar@example.com",
+      "status": "scheduled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "shekar@example.com",
+      "createdAt": 1623912955277,
+      "updatedAt": null,
+      "startAt": 1623954600000,
+      "errors": null
+    },
+    {
+      "jobId": 3452,
+      "description": "Delete user sessions of userId = mehdi@example.com",
+      "status": "cancelled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "mehdi@example.com",
+      "createdAt": 1623912962910,
+      "updatedAt": 1623913015276,
+      "startAt": 1623954600000,
+      "errors": null
+    }
+  ]
+}
+```
+
+## Jobdetails abrufen
+
+Gibt den Status und die Metadaten des Jobs zurück.
+
+### Methode
+`GET`
+
+### URL
+`/public/:projectKey/jobs/:jobId`
+
+### Parameter
+
+| Name  | Typ    | Beschreibung                    |
+|-------|---------|--------------------------------|
+| jobId | integer | Die Job-ID (erforderlich)          |
+
+### Anfrage-Header
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Statuscodes
+
+`200`: Antwort wird als JSON im Body gesendet  
+`400`: Ungültige `jobId` (keine Ganzzahl)  
+`404`: Job nicht gefunden
+
+### Beispielanfrage
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs/3451 \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Beispielantwort
+
+```json
+{
+  "data": {
+    "jobId": 3451,
+    "description": "Delete user sessions of userId = shekar@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "shekar@example.com",
+    "createdAt": 1623912955277,
+    "updatedAt": null,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+## Job abbrechen
+
+Bricht einen Job ab, der noch nicht gestartet wurde oder noch läuft.
+
+### Methode
+`DELETE`
+
+### URL
+`/public/:projectKey/jobs/:jobId`
+
+### Parameter
+
+| Name  | Typ    | Beschreibung                    |
+|-------|---------|--------------------------------|
+| jobId | integer | Die Job-ID (erforderlich)          |
+
+### Anfrage-Header
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Statuscodes
+
+`200`: Job abgebrochen  
+`400`: Der Job kann in seinem aktuellen Zustand nicht abgebrochen werden, oder ungültige `jobId`  
+`404`: Job nicht gefunden
+
+### Beispielanfrage
+
+```shell
+curl -X DELETE \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs/3452 \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Beispielantwort
+
+```json
+{
+  "data": {
+    "jobId": 3452,
+    "description": "Delete user sessions of userId = mehdi@example.com",
+    "status": "cancelled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@example.com",
+    "createdAt": 1623912962910,
+    "updatedAt": 1623913015276,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```

@@ -1,0 +1,59 @@
+---
+title: "Flutter SDK - Sanificare i dati sensibili"
+metaTitle: "Flutter SDK - Sanificare i dati sensibili"
+metaDescription: "Dettagli sulla sanificazione delle registrazioni e dei dati di rete nel tracker Flutter"
+---
+import Aside from '~/components/Aside.astro'
+
+## Componenti UI
+
+Racchiudi in `ORSanitizedView` tutto ciò che non deve comparire nel replay. L'area viene sfocata e tratteggiata nella registrazione, come nell'SDK iOS, e il widget si deregistra da solo non appena esce dall'albero.
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+ORSanitizedView(
+  child: TextField(
+    controller: _cardNumber,
+    decoration: const InputDecoration(labelText: 'Card number'),
+  ),
+)
+```
+
+Il mascheramento viene applicato come secondo passaggio di rasterizzazione sul frame acquisito, quindi non modifica mai ciò che il tuo utente vede sullo schermo.
+
+<Aside type="note">
+	`ORSanitizedView` nasconde il widget sullo schermo registrato. Per tenere fuori dal flusso di eventi anche il *valore* di un input, passa `masked: true` a [`observeInput`](/flutter-sdk/inputs).
+</Aside>
+
+## Platform view
+
+Le platform view — WebView, mappe, anteprime della fotocamera — vengono renderizzate in layer nativi separati che Flutter non può rileggere, quindi altrimenti apparirebbero come aree vuote. Per impostazione predefinita il tracker le copre con un segnaposto. Per disattivarlo, usa `maskPlatformViews: false`:
+
+```dart
+await OpenReplay.instance.start(
+  projectKey: 'YOUR_PROJECT_KEY',
+  options: const OROptions(maskPlatformViews: false),
+);
+```
+
+## Richieste di rete
+
+I body vengono scartati a meno che tu non imposti `capturePayload: true`, e gli header `cookie`, `set-cookie` e `authorization` vengono scartati per impostazione predefinita. Oltre a questo, `sanitizer` ha l'ultima parola su ogni chiamata acquisita:
+
+```dart
+OpenReplay.instance.patchNetwork(ORNetworkOptions(
+  capturePayload: true,
+  ignoreHeaders: ['cookie', 'set-cookie', 'authorization', 'x-api-key'],
+  sanitizer: (record) {
+    final body = record.requestBody;
+    if (body is Map) body.remove('password');
+    return record; // return null to drop the call entirely
+  },
+));
+```
+
+Consulta le [opzioni di rete](/flutter-sdk/network) per l'elenco completo dei campi.
+
+## Hai domande?
+Se hai domande su questo processo, non esitare a contattarci su [Slack](https://slack.openreplay.com) .

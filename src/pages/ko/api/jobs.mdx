@@ -1,0 +1,175 @@
+---
+title: "Jobs"
+metaTitle: "Jobs"
+metaDescription: "사용자 데이터 삭제 작업을 관리하는 방법."
+---
+
+작업 상태 값: `scheduled`, `running`, `completed`, `failed`, `cancelled`.
+
+## 전체 작업 목록 조회
+
+완료되었거나 취소된 작업을 포함하여 프로젝트의 모든 작업을 조회합니다. 결과는 페이지네이션됩니다.
+
+### 메서드
+`GET`
+
+### URL
+`/public/:projectKey/jobs`
+
+### 쿼리 매개변수
+
+| 이름  | 유형    | 설명                                                                        |
+|-------|---------|-----------------------------------------------------------------------------|
+| limit | integer | 페이지 크기, 1-200(기본값: 50). 범위를 벗어난 값은 50으로 처리됩니다.       |
+| page  | integer | 페이지 번호, 1부터 시작(기본값: 1). 1보다 작은 값은 1로 처리됩니다.         |
+
+### 요청 헤더
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### 요청 예시
+
+```shell
+curl -X GET \
+  '{BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs?limit=50&page=1' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### 응답 예시
+
+```json
+{
+  "data": [
+    {
+      "jobId": 3451,
+      "description": "Delete user sessions of userId = shekar@example.com",
+      "status": "scheduled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "shekar@example.com",
+      "createdAt": 1623912955277,
+      "updatedAt": null,
+      "startAt": 1623954600000,
+      "errors": null
+    },
+    {
+      "jobId": 3452,
+      "description": "Delete user sessions of userId = mehdi@example.com",
+      "status": "cancelled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "mehdi@example.com",
+      "createdAt": 1623912962910,
+      "updatedAt": 1623913015276,
+      "startAt": 1623954600000,
+      "errors": null
+    }
+  ]
+}
+```
+
+## 작업 상세 정보 조회
+
+작업의 상태와 메타데이터를 반환합니다.
+
+### 메서드
+`GET`
+
+### URL
+`/public/:projectKey/jobs/:jobId`
+
+### 매개변수
+
+| 이름  | 유형    | 설명                           |
+|-------|---------|--------------------------------|
+| jobId | integer | 작업 ID(필수)                  |
+
+### 요청 헤더
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### 상태 코드
+
+`200`: 응답이 본문에 JSON으로 전송됩니다  
+`400`: 잘못된 `jobId`(정수가 아님)  
+`404`: 작업을 찾을 수 없음
+
+### 요청 예시
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs/3451 \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### 응답 예시
+
+```json
+{
+  "data": {
+    "jobId": 3451,
+    "description": "Delete user sessions of userId = shekar@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "shekar@example.com",
+    "createdAt": 1623912955277,
+    "updatedAt": null,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+## 작업 취소
+
+아직 시작되지 않았거나 진행 중인 작업을 취소합니다.
+
+### 메서드
+`DELETE`
+
+### URL
+`/public/:projectKey/jobs/:jobId`
+
+### 매개변수
+
+| 이름  | 유형    | 설명                           |
+|-------|---------|--------------------------------|
+| jobId | integer | 작업 ID(필수)                  |
+
+### 요청 헤더
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### 상태 코드
+
+`200`: 작업이 취소됨  
+`400`: 현재 상태에서는 작업을 취소할 수 없거나 `jobId`가 잘못됨  
+`404`: 작업을 찾을 수 없음
+
+### 요청 예시
+
+```shell
+curl -X DELETE \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs/3452 \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### 응답 예시
+
+```json
+{
+  "data": {
+    "jobId": 3452,
+    "description": "Delete user sessions of userId = mehdi@example.com",
+    "status": "cancelled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@example.com",
+    "createdAt": 1623912962910,
+    "updatedAt": 1623913015276,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```

@@ -1,0 +1,157 @@
+---
+title: "Daten bereinigen (Web)"
+metaTitle: "Daten bereinigen (Web)"
+metaDescription: "So bereinigen Sie Daten und schützen die Privatsphäre Ihrer Benutzer."
+---
+import Aside from '~/components/Aside.astro'
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+
+## Replay-Daten bereinigen
+
+Sie können bereinigen, was OpenReplay erfasst, und zwar auf globaler und/oder granularer Ebene. Verschleierte oder ignorierte Daten werden an der Quelle gar nicht erst erfasst. Mit anderen Worten: Diese Daten verlassen den Browser des Benutzers nie.
+
+<YoutubeVideo title="So bereinigen Sie sensible Daten in Ihren Replays"
+  description="Wenn Sie nicht gern lesen, folgen Sie einfach diesem Video-Tutorial, das zeigt, wie Sie Daten in Ihren Aufzeichnungen bereinigen."
+  videoURL="https://youtu.be/22-UCoocy6s"
+/>
+
+### Globale Ebene
+
+Daten können auf Tracker-Ebene bereinigt werden, wenn Sie OpenReplay einrichten.
+
+#### Ich verwende das OpenReplay-Skript
+
+![Projektkonfiguration in OpenReplay](/static/gdpr-1.png#center)
+
+1) Klicken Sie unter 'Preferences > Projects' auf den *Tracking Code* Ihres Projekts.
+2) Die Optionen zur Datenaufzeichnung erscheinen direkt vor dem Code-Snippet:
+- **Inputs**: Um die Eingabewerte Ihrer Benutzer zu ignorieren, zu verschleiern oder vollständig aufzuzeichnen.
+- **Do not record any numeric text**: Um numerische Werte in Textelementen zu ignorieren.
+- **Do not record email addresses**: Standardmäßig werden alle E-Mail-Adressen in Textelementen verschleiert und erscheinen nicht in den Replays. Sie können das deaktivieren, indem Sie das Kontrollkästchen abwählen.
+3) Das Ändern der Optionen zur Datenaufzeichnung wirkt sich auf das Code-Snippet aus. Kopieren Sie das aktualisierte Skript unbedingt in Ihre Web-App.
+
+#### Ich verwende OpenReplay NPM
+
+Es gibt eine Reihe datenschutzbezogener Optionen, die Sie dem Konstruktor übergeben können:
+- `obscureTextEmails?: boolean` Verschleiert E-Mail-Adressen in Textelementen. E-Mail-Adressen werden in eine zufällige Zeichenkette aus Sternchen umgewandelt. Standard: true.
+- `obscureTextNumbers?: boolean` Verschleiert Zahlen in Textelementen. Zahlen werden in eine zufällige Zeichenkette aus Sternchen umgewandelt. Standard: false.
+- `obscureInputEmails?: boolean` Verschleiert E-Mail-Adressen in Eingabefeldern. E-Mail-Werte werden in eine zufällige Zeichenkette aus Sternchen umgewandelt. Standard: true.
+- `obscureInputNumbers?: boolean` Verschleiert Zahlen in Eingabefeldern. Zahlenwerte werden in eine zufällige Zeichenkette aus Sternchen umgewandelt. Standard: false.
+- `obscureInputDates?: boolean` Verschleiert Datumsangaben in Eingabefeldern. Datumswerte werden in eine zufällige Zeichenkette aus Sternchen umgewandelt. Standard: false.
+- `defaultInputMode?: 0 | 1 | 2` Standardmäßiger Erfassungsmodus für Eingabewerte. Der Reihe nach: Klartext, verschleiert oder ignoriert. Standard: 1 (verschleiert).
+
+Bereinigter Text sowie bereinigte E-Mail-Adressen und Zahlen werden verschleiert oder unterdrückt, bevor die Daten an die OpenReplay-Server gesendet werden. Änderungen an den obigen Optionen wirken daher nicht rückwirkend und gelten nur für neu erfasste Daten.
+
+### Granulare Ebene
+
+Sie können Ihre Daten auch auf Code-Ebene bereinigen, um eine feinere Steuerung zu erhalten. Das ist nützlich, um DOM-Elemente und Eingabefelder zu verschleiern oder zu ignorieren.
+
+#### HTML-Attribute verwenden
+
+- `data-openreplay-obscured`, um den Textinhalt von `<input>`-Tags, `<img>` und anderen HTML-Elementen (z. B. `<div>`) zu maskieren, mit Ausnahme von `<svg>` und `<canvas>`.
+
+```html
+<!--Obscuring input fields-->
+<form action="/action_page.php">
+  Name: <input type="text" name="fname" data-openreplay-obscured><br>
+  <input type="submit" value="Submit">
+</form>
+<!--Obscuring a div element-->
+<div style="background-color:lightblue" data-openreplay-obscured>
+  <h3>This is a sensitive information</h3>
+  <p>This is an important paragraph</p>
+  <img src="important_image.jpg">
+</div>
+```
+
+- `data-openreplay-hidden`, um den Inhalt von `<input>`-Tags, `<img>`, `<svg>` und anderen HTML-Elementen (z. B. `<div>`) zu schwärzen, mit Ausnahme von `<canvas>`. Der Inhalt des Elements (einschließlich seiner untergeordneten Komponenten) wird entfernt, seine Props und Argumente bleiben jedoch erhalten, wie in diesem Beispiel:
+
+```html
+<div style="background-color:lightblue" data-openreplay-hidden>
+  <div>This is a sensitive information</div>
+  <svg>An important chart</svg>
+</div>
+```
+
+Daraus ergibt sich, dass der Tracker das folgende DOM aufzeichnet:
+
+```html
+<div style="background-color:lightblue" data-openreplay-hidden>
+</div>
+```
+
+#### Die Funktion domSanitizer verwenden
+
+- `domSanitizer: (node: Element) => SanitizeLevel`: Funktion, mit der Sie nicht jede einzelne HTML-Komponente, die bereinigt werden soll, separat auszeichnen müssen. `SanitizeLevel` kann `Plain` (0), `Obscured` (1) oder `Hidden` (2) sein. Diese Funktion wird an den Konstruktor des Trackers übergeben. Nachfolgend ein Beispiel, das alle HTML-Elemente mit einem bestimmten CSS-Klassennamen schwärzt:
+
+```js
+// Import SanitizeLevel enum
+import Tracker, { SanitizeLevel } from "@openreplay/tracker";
+
+const tracker = new Tracker({
+  projectKey: PROJECT_KEY,
+  domSanitizer: (node: Element) => {
+    const elementClassNames = node.classList
+
+    if (elementClassNames.contains('to_be_redacted_class')) {
+      return SanitizeLevel.Hidden
+    }
+
+    if (node.id === 'sensitiveData') {
+      return SanitizeLevel.Obscured
+    }
+
+    return SanitizeLevel.Plain
+  }
+})
+tracker.start()
+```
+
+> **Hinweis:** Alle bereinigten Elemente werden bereits an der Quelle (im Tracker) maskiert bzw. geschwärzt, sodass sensible Daten nie Ihre OpenReplay-Instanz erreichen.
+
+## DevTools-Daten bereinigen
+
+Mit dem OpenReplay SDK können Sie die Netzwerkdaten und den Anwendungsstatus bereinigen.
+
+### Netzwerk
+
+Beim Erfassen von Anfragen und Antworten können hochsensible oder private Informationen protokolliert werden, die Ihre Anwendung sendet bzw. empfängt. Achten Sie darauf, Ihre Netzwerkdaten sorgfältig zu schwärzen.
+
+#### Fetch/XHR
+
+Verwenden Sie die Option `sanitizer`, um sensible Daten in Fetch-/XHR-Anfragen und -Antworten zu schwärzen. Weitere Details finden Sie unter [Netzwerkoptionen](/sdk/network-options#options).
+
+Sehen Sie sich außerdem dieses Schritt-für-Schritt-Tutorial an, wie Sie [Netzwerkanfragen erfassen und bereinigen](/tutorials/capture-request).
+
+#### GraphQL
+
+Um GraphQL-Daten zu bereinigen, müssen Sie die wichtigsten Variablen und die Ergebnisse der Operation klonen, bevor Sie den Tracker aufrufen. Weitere Details finden Sie unter [Aufgezeichnete Daten in GraphQL bereinigen](/tutorials/graphql/#sanitizing-the-recorded-data).
+
+### State Management
+
+Entfernen Sie sensible Daten mit dem OpenReplay SDK aus dem State Store Ihres Frontends.
+
+#### Redux
+
+Verwenden Sie die Optionen `actionFilter`, `actionTransformer` und `stateTransformer`, um sensible Aktionen und Teilbäume aus Ihrem Store zu schwärzen. Weitere Details finden Sie in der [Redux-Plugin-Dokumentation](/plugins/redux/#options).
+
+#### VueX
+
+Verwenden Sie die Optionen `filter`, `transformer` und `mutationTransformer`, um sensible Mutationen und Teilbäume aus Ihrem Store zu schwärzen. Weitere Details finden Sie in der [VueX-Plugin-Dokumentation](/plugins/vuex/#options).
+
+#### Zustand
+
+Verwenden Sie die Optionen `filter`, `transformer` und `mutationTransformer`, um sensible Mutationen und Teilbäume aus Ihrem Store zu schwärzen. Weitere Details finden Sie in der [Zustand-Plugin-Dokumentation](/plugins/zustand/#options).
+
+#### Pinia
+
+Verwenden Sie die Optionen `filter`, `transformer` und `mutationTransformer`, um sensible Mutationen und Teilbäume aus Ihrem Store zu schwärzen. Weitere Details finden Sie in der [Pinia-Plugin-Dokumentation](/plugins/pinia/#options).
+
+#### NgRx
+
+Verwenden Sie die Optionen `actionFilter`, `actionTransformer` und `stateTransformer`, um sensible Aktionen und Teilbäume aus Ihrem Store zu schwärzen. Weitere Details finden Sie in der [NgRx-Plugin-Dokumentation](/plugins/ngrx/#options).
+
+## Haben Sie Fragen?
+
+Wir verbessern unsere Datenschutzfunktionen laufend. Sagen Sie uns daher Bescheid, wenn Sie etwas benötigen, das wir noch nicht unterstützen. Wenn Sie Probleme beim Bereinigen Ihrer Daten haben, wenden Sie sich bitte an unseren [Slack](https://slack.openreplay.com) und holen Sie sich Hilfe aus unserer Community.

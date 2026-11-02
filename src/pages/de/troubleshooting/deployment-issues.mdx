@@ -1,0 +1,118 @@
+---
+title: "Bereitstellungsprobleme"
+metaTitle: "Bereitstellungsprobleme"
+metaDescription: "Probleme und häufige Fragen rund um die Bereitstellung"
+---
+
+## Installation
+
+### Fehler: „release openreplay failed, and has been uninstalled due to atomic being set“
+
+Das kann an einer fehlgeschlagenen Helm-Installation liegen. Gehen Sie zur Fehlersuche wie folgt vor:
+
+```bash
+openreplay -s
+
+# If you see any failed pods, check the log. it should shed some light.
+openreplay -l <pod name>
+
+# If there is no pods in running/error/crashloop status, then check the status of pod using following command
+kubectl describe po -n app -n db <pod name>
+```
+
+## Registrierung funktioniert nicht
+
+### Health-Check meldet „SSL check failed“
+  
+Wenn Sie ein selbstsigniertes Zertifikat verwenden, können Sie das Problem mit dem folgenden Befehl beheben:
+
+```bash
+openreplay -e
+
+# Add following line to skip the SSL health check
+chalice:
+  env:
+    ...
+    # append the following line under env section
+    SKIP_H_SSL: true
+```
+
+Speichern Sie die Konfigurationsdatei und beenden Sie den Editor mit `:wq`
+
+## Meine Installation funktioniert plötzlich nicht mehr
+   
+Dafür kann es mehrere Gründe geben. So können Sie die Situation analysieren:
+
+### Status der Installation mit `openreplay -s` prüfen
+
+Prüfen Sie den Abschnitt zur Festplattennutzung. Liegt sie über 80 %, werden die Dienste nicht ausgeführt.
+
+## Upgrade schlägt ohne bestimmte Fehlermeldung fehl
+   
+### Es erscheint die Meldung „helm or another operation (install/upgrade/rollback) is in progress“
+
+Das bedeutet in der Regel, dass Sie den Installations- bzw. Upgrade-Vorgang mehrfach wiederholt haben. Führen Sie den folgenden Befehl aus, um das Problem zu beheben:
+
+```bash
+helm rollback -n app openreplay
+```
+
+### Es erscheinen keine Fehler, nur die Meldung „installation failed“
+
+```bash
+# Check for failed pods
+kubectl get pods -n app --field-selector="status.phase!=Succeeded,status.phase!=Running" -o custom-columns="POD:metadata.name"
+        
+# Check for the err logs
+openreplay -l `pod name from above`
+ ```
+
+## Fehler bei selbst gehosteten Installationen
+
+### Fehler: „You must be logged in to the server (Unauthorized)“
+
+`openreplay -s` oder `kubectl get po` gibt den Fehler `error: You must be logged in to the server (Unauthorized)` aus. Möglicherweise hat k3s das Client-Zertifikat für die Anmeldung am Cluster neu generiert, kubectl hat dies aber nicht übernommen. Kopieren Sie die neue Konfiguration mit `cp /etc/rancher/k3s/k3s.yaml ~/.kube/config`, und schon kann es weitergehen.
+
+## Datenbanken
+
+### Postgres bereinigt Daten auch nach pg-cleanup nicht
+
+Die Bereinigung in Postgres übernimmt PG selbst. Das heißt: Wir löschen Daten vor dem angegebenen Datum, und PG markiert diese Daten zum Löschen. PG löscht die Daten in einem Prozess namens AutoVacuum, dessen Auslöselogik intern ist. Wir können daher keine Aussage dazu treffen, wann die Daten tatsächlich vom Datenträger entfernt werden. Sie können nachsehen, in welchen Tabellen Daten liegen, und eine Tabelle leeren (TRUNCATE), wenn Sie einen Datenverlust verkraften können – zum Beispiel die Tabelle `requests`, die die Daten zu Netzwerkanfragen enthält. Wenn dort keine Daten vorhanden sind, können Sie Sitzungen nicht mehr nach Request-URLs durchsuchen.
+
+So prüfen Sie die Tabellengröße
+
+```sql
+SELECT nspname AS "name_space",
+       relname AS "relation",
+       pg_size_pretty(
+               pg_total_relation_size(C.oid)
+           )   AS "total_size"
+FROM pg_class C
+         LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+WHERE nspname NOT IN ('pg_catalog','information_schema')
+  AND C.relkind <> 'i'
+  AND nspname !~ '^pg_toast'
+ORDER BY pg_total_relation_size(C.oid) DESC
+LIMIT 20;
+```
+
+## SSL
+
+### SSL auf einen externen Proxy bzw. Load Balancer auslagern
+
+```bash
+openreplay -e
+
+# Under ingress-nginx block disable ssl redirection
+ingress-nginx: &ingress-nginx
+  ...
+  controller:
+    ...
+    config:
+      ...
+      ssl-redirect: false
+      force-ssl-redirect: false
+```
+## Haben Sie Fragen?
+
+Wenn Sie Fragen zu diesem Vorgang haben, wenden Sie sich gerne über unseren [Slack](https://slack.openreplay.com) an uns.

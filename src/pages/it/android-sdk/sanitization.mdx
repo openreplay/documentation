@@ -1,0 +1,71 @@
+---
+title: "Android SDK - Sanificare i dati sensibili"
+metaTitle: "Android SDK - Sanificare i dati sensibili"
+metaDescription: "Dettagli sulla sanificazione delle registrazioni e dei dati di rete nel tracker Android"
+---
+
+## Componenti UI
+
+Le viste sanificate verranno sfocate nel replay risultante. Puoi aggiungere qualsiasi componente UI: verrà rimosso automaticamente (per risparmiare memoria) non appena non è più sullo schermo.
+
+### View
+
+```kotlin
+import com.openreplay.tracker.OpenReplay
+
+OpenReplay.addIgnoredView(view)
+```
+
+#### Jetpack Compose
+```kotlin
+import com.openreplay.tracker.Sanitize
+
+Sanitize {
+		Button(
+				modifier = Modifier
+						.fillMaxWidth()
+						.padding(top = 28.dp, bottom = 3.dp)
+						.trackTouchEvents("Continue Button"),
+				onClick = onSubmit,
+		) {
+				Text(
+						text = "Submit",
+						style = MaterialTheme.typography.titleSmall
+				)
+		}
+}
+```
+
+## Richieste di rete
+
+Vengono esportate due chiavi per rimuovere automaticamente i dati della richiesta e della risposta: `ignoredKeys` per il body e `ignoredHeaders` per gli header. Sia la richiesta sia la risposta verranno sanificate, ma il body sarà interessato solo se è un JSON valido.
+
+Ti basta assegnare un elenco di stringhe che vuoi sanificare:
+
+```kotlin
+val networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+È anche possibile modificare i dati della risposta prima di passarli al listener:
+
+```kotlin
+// ... request
+
+var sanitizedData: Any? = null
+data?.let {
+    try {
+        val json = JSONTokener(it).nextValue()
+        sanitizedData = customSanitizeFunction(it)
+        println(json)
+    } catch (error: JSONException) {
+        println("Error deserializing JSON: $error")
+    }
+}
+
+networkListener.finish(response, sanitizedData)
+```
+
+## Hai domande?
+Se hai domande su questa procedura, contattaci pure sul nostro [Slack](https://slack.openreplay.com) .

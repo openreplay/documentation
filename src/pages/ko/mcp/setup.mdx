@@ -1,0 +1,85 @@
+---
+title: "MCP 설정"
+metaTitle: "OpenReplay MCP 앱 설정하기"
+metaDescription: "Claude Desktop, ChatGPT 또는 Codex에 OpenReplay MCP 서버를 설치하고, OpenReplay 인스턴스에 연결한 다음, 브라우저 기반 인증 흐름으로 로그인합니다."
+---
+
+import Aside from '~/components/Aside.astro';
+
+이 페이지에서는 OpenReplay MCP 앱을 설치하고, 인스턴스에 연결하고, 로그인하는 방법을 안내합니다.
+
+## 1. MCP 서버 설치
+
+클라이언트의 MCP 구성에 OpenReplay MCP 서버를 추가합니다.
+
+### Claude Desktop
+
+Claude Desktop은 OpenReplay MCP를 클릭 한 번으로 설치할 수 있는 **확장 프로그램**(`.mcpb` 번들)으로 제공합니다.
+
+1. OpenReplay [릴리스 페이지](https://github.com/openreplay/openreplay/releases)에서 `openreplay.mcpb`를 다운로드합니다.
+2. 파일을 더블 클릭하면 Claude Desktop이 열리고 확장 프로그램으로 설치할지 묻는 메시지가 표시됩니다.
+3. **Install**을 클릭합니다.
+
+이것으로 끝입니다. 편집할 JSON 구성도, 설치할 Node 툴체인도 없습니다.
+
+## 2. MCP를 OpenReplay 인스턴스에 연결
+
+Claude Desktop에서 확장 프로그램의 설정 패널을 열고 **OpenReplay URL** 필드에 브라우저에서 사용하는 주소를 입력합니다. Cloud는 `https://app.openreplay.com`, 셀프 호스팅은 사용 중인 도메인입니다. MCP가 API 호스트를 자동으로 파악합니다.
+
+<img src="/mcp/config-panel.png" alt="MCP 앱 설정에서 OpenReplay URL 구성하기" style={{ width: '700px', height: 'auto' }} />
+
+ChatGPT와 Codex의 경우 URL은 1단계에서 설정한 `OPENREPLAY_BACKEND_URL` 환경 변수에서 가져옵니다.
+
+채팅 안에서 언제든지 인스턴스를 전환할 수도 있습니다. 예를 들면 다음과 같습니다. *"https://openreplay.mycompany.com 에 있는 OpenReplay를 사용해 줘"*
+
+## 3. 브라우저로 로그인
+
+MCP는 브라우저 기반 인증 흐름을 사용하므로 채팅에 비밀번호를 붙여넣을 필요가 없습니다.
+
+<Aside type="tip" title="진행 과정 한눈에 보기" >
+  1. Claude에게 **OpenReplay에 로그인**하도록 요청합니다.
+  2. Claude가 인증 링크를 반환하고 브라우저에서 열려고 시도합니다.
+  3. OpenReplay에 로그인한 다음(이미 로그인되어 있다면 생략) **Authorize**를 클릭합니다.
+  4. Claude에게 다음과 같이 알려 줍니다. *"I authorized it"*
+  5. Claude가 로그인을 마무리하고 토큰이 발급되었음을 확인합니다.
+</Aside>
+
+### 단계별 안내
+
+**1.** 채팅에서 다음과 같이 입력합니다.
+
+```
+Log me in to OpenReplay
+```
+
+**2.** Claude가 `login_browser` 도구를 호출하고 `…/mcp/authorize?state=…` URL로 응답합니다. 대부분의 시스템에서는 이 링크가 기본 브라우저에서 자동으로 열리기도 합니다.
+
+**3.** OpenReplay 탭에서 **Authorize**를 클릭하여 액세스 요청을 승인합니다.
+
+<img src="/mcp/authorize.png" alt="OpenReplay 인증 화면" style={{ width: '700px', height: 'auto' }} />
+
+**4.** Claude로 돌아가 다음과 같이 입력합니다.
+
+```
+I authorized it
+```
+
+**5.** Claude가 (`complete_login` 도구를 통해) 로그인을 마무리하고 토큰이 생성되었음을 확인합니다. 토큰은 로컬에 저장되므로 다음 채팅에서는 이 과정을 반복할 필요가 없습니다.
+
+<Aside type="caution" title="비밀번호 대체 로그인" >
+  호스트가 브라우저 창을 열 수 없는 경우 MCP는 이메일/비밀번호 로그인도 지원합니다. 다음과 같이 말하면 됩니다. *"이메일 `you@example.com`과 비밀번호 `...`로 OpenReplay에 로그인해 줘"*. 브라우저 방식을 사용할 수 있다면 항상 이 방식을 권장합니다.
+</Aside>
+
+## 연결 확인
+
+로그인한 후 Claude에게 다음과 같이 요청합니다.
+
+```
+List my OpenReplay projects
+```
+
+모든 것이 제대로 연결되었다면 프로젝트 이름과 ID가 표시됩니다. 이제 [기능](/mcp/capabilities) 페이지에서 그 밖에 어떤 요청을 할 수 있는지 확인해 보세요.
+
+## 질문이 있으신가요?
+
+문제가 발생하면 [Slack](https://slack.openreplay.com)에 참여해 주세요.

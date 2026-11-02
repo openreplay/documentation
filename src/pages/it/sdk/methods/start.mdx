@@ -1,0 +1,59 @@
+---
+title: "JavaScript SDK - metodo 'start'"
+metaTitle: "JavaScript SDK - metodo 'start'"
+metaDescription: "Dettagli sul metodo 'start' dell'SDK di OpenReplay"
+---
+
+Questo metodo serve ad avviare il tracker. Avviando il tracker inizia la registrazione della sessione.
+
+## Firma
+
+```js
+start(startOpts?: Partial<StartOptions>): Promise<StartPromiseReturn>
+```
+
+### Parametri
+Il metodo `start` accetta un parametro facoltativo con cui puoi personalizzare diversi aspetti della registrazione:
+- `userID: string`: serve a impostare manualmente l'ID utente per tracciarlo tra le sessioni. È un valore di tipo stringa e può essere qualsiasi cosa tu voglia.
+- `metadata: Record<string, string>`: imposta manualmente i valori dei metadati. Consulta la [sezione Metadati](/session-replay/metadata) per saperne di più su questa funzionalità.
+- `forceNew: boolean`: serve a forzare una nuova sessione dopo un aggiornamento della pagina. Per impostazione predefinita è `false`, quindi dopo un aggiornamento la sessione viene mantenuta.
+- `sessionToken: string`: usato in alcune integrazioni.
+- `assistOnly: boolean`: avvia il tracker in modalità solo Assist, che salta l'invio dei dati di sessione al backend (funzionalità dell'edizione EE)
+- `startCallback?: (result: StartPromiseReturn) => void`: Una callback attivata quando il tracker si avvia o non riesce ad avviarsi. Restituisce informazioni sull'esito, positivo o negativo.
+
+
+### Valore restituito
+
+Una volta avviato, il metodo restituirà una promise con un oggetto di informazioni sulla sessione contenente:
+
+- `sessionID: string`: Un valore stringa che rappresenta l'ID della sessione avviata.
+- `sessionToken: string`: Il token della sessione.
+- `userUUID: string`: Un identificativo univoco per l'utente.
+
+`StartPromiseReturn` può essere uno dei due seguenti:
+
+```js
+// Successful start
+interface OnStartInfo {
+  sessionID: string;
+  sessionToken: string;
+  userUUID: string;
+}
+
+const SuccessfulStart = (body: OnStartInfo): SuccessfulStart => ({
+  ...body,
+  success: true,
+});
+
+// Unsuccessful start
+const UnsuccessfulStart = (reason: string): UnsuccessfulStart => ({
+  reason,
+  success: false,
+});
+
+// Type for start promise return
+export type StartPromiseReturn = SuccessfulStart | UnsuccessfulStart;
+```
+
+- **Caso di successo**: se l'avvio riesce, la promise restituirà sessionID, sessionToken e userUUID.
+- **Caso di errore**: se l'avvio non riesce, restituirà reason e success: false.

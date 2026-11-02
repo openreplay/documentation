@@ -1,0 +1,38 @@
+---
+title: "Flutter SDK - patchNetwork-Methode"
+metaTitle: "Flutter SDK - patchNetwork-Methode"
+metaDescription: "Details zur patchNetwork-Methode des Flutter SDK von OpenReplay"
+---
+import Aside from '~/components/Aside.astro'
+
+Startet die Erfassung von `dart:io`-HTTP-Datenverkehr. Dabei wird ein `HttpOverrides` installiert, das an ein eventuell bereits vorhandenes weiterleitet. Es deckt daher `HttpClient` direkt sowie den `IOClient` von `package:http` und den Standardadapter von Dio ab.
+
+## Signatur
+
+```dart
+OpenReplay.instance.patchNetwork([ORNetworkOptions options = const ORNetworkOptions()])
+OpenReplay.instance.unpatchNetwork()
+```
+
+`patchNetwork()` ist idempotent. `unpatchNetwork()` beendet die Erfassung und stellt die vorherigen Overrides wieder her.
+
+## Beispiel
+
+```dart
+OpenReplay.instance.patchNetwork(ORNetworkOptions(
+  capturePayload: true,
+  sanitizer: (record) {
+    record.url = record.url.replaceAll(RegExp(r'token=[^&]+'), 'token=***');
+    return record; // return null to drop the call entirely
+  },
+));
+```
+
+Alle Felder von `ORNetworkOptions` finden Sie unter [Netzwerkoptionen](/flutter-sdk/network).
+
+<Aside type="note">
+	Ein benutzerdefinierter Dio-Adapter umgeht `HttpOverrides`. Fügen Sie in diesem Fall einen eigenen Interceptor hinzu und rufen Sie darin `OpenReplay.instance.networkRequest(...)` auf.
+</Aside>
+
+## Haben Sie Fragen?
+Wenn Sie Fragen zu diesem Vorgang haben, wenden Sie sich gern über unseren [Slack](https://slack.openreplay.com) an uns.

@@ -1,0 +1,194 @@
+---
+title: "Events"
+metaTitle: "SDK di Analytics di OpenReplay — Events"
+metaDescription: "Definisci e gestisci le super properties per gli eventi di analytics del tracker di OpenReplay."
+---
+import Aside from '~/components/Aside.astro'
+
+## Events
+
+Questo modulo ti permette di gestire **eventi** e **proprietà**: coppie chiave/valore persistenti che vengono allegate automaticamente a ogni evento tracciato.
+
+Le super properties vengono memorizzate localmente e unite al payload di ogni evento quando tracci gli eventi.
+
+Per saperne di più sulla gestione degli eventi nell'interfaccia di OpenReplay, visita [Gestione dei dati](/product-analytics/data-management).
+
+Disponibile in:
+
+`tracker.analytics.events`
+
+## Concetti
+
+### Super properties
+
+Le super properties vengono memorizzate nello SDK e unite a ogni evento sotto `properties`.
+
+### Proprietà dell'evento
+
+Le proprietà dell'evento vengono passate solo per una singola chiamata a `track/sendEvent` e **non vengono salvate** come super properties.
+
+## Chiavi riservate
+
+Vengono rifiutati due insiemi diversi di chiavi, a seconda dell'helper:
+
+**Proprietà predefinite** — raccolte dallo SDK stesso e inviate con ogni evento. `setProperty` le ignora silenziosamente, quindi non puoi sovrascriverle con una super property:
+
+`os`, `os_version`, `browser`, `browser_version`, `platform`, `screen_height`, `screen_width`, `initial_referrer`, `utm_source`, `utm_medium`, `utm_campaign`, `user_id`, `distinct_id`, `sdk_edition`, `sdk_version`, `timezone`, `search_engine`
+
+**Chiavi del payload** — `properties`, `token` e `timestamp`. Fanno parte dell'envelope dell'evento, quindi `setPropertiesOnce` e `unsetProperties` le ignorano.
+
+<Aside type="note">
+	I due elenchi sono applicati da metodi diversi: `setProperty` protegge le proprietà predefinite, mentre `setPropertiesOnce` e `unsetProperties` proteggono le chiavi del payload. La stessa distinzione vale per il modulo People, dove `setProperties`, `setPropertiesOnce` e `appendValues` proteggono tutti le proprietà predefinite.
+</Aside>
+
+## Firme di primo livello
+
+```ts
+// Track an event.
+// The `properties` argument is per-event only (not persisted).
+tracker.analytics.events.sendEvent(eventName: string, properties?: Record<string, any>, options?: { send_immediately: boolean })
+
+// Create/update super properties (persisted)
+tracker.analytics.events.setProperty(name: string, value: any): void
+tracker.analytics.events.setProperty(properties: Record<string, any>): void
+
+// Create super properties only if they don't exist yet (persisted)
+tracker.analytics.events.setPropertiesOnce(name: string, value: any): void
+tracker.analytics.events.setPropertiesOnce(properties: Record<string, any>): void
+
+// Remove super properties (persisted)
+tracker.analytics.events.unsetProperties(name: string): void
+tracker.analytics.events.unsetProperties(names: string[]): void
+
+// Clear all super properties
+tracker.analytics.events.reset(): void
+```
+
+## Tracciare eventi con proprietà
+
+### Proprietà per singolo evento (non persistenti)
+
+```ts
+tracker.analytics.events.sendEvent("Button Clicked", {
+  button_text: "Start",
+  page: "home",
+})
+```
+
+Queste proprietà si applicano solo a questo evento.
+
+### Super properties + proprietà per singolo evento (unite)
+
+Quando imposti le super properties, queste vengono incluse automaticamente in ogni evento e poi unite alle proprietà per singolo evento:
+
+```ts
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  env: "prod",
+})
+
+tracker.analytics.events.sendEvent("Signup Started", {
+	// per-event, can override a super property with the same key
+  plan: "pro", 
+})
+```
+
+Ordine di unione:
+
+- prima vengono aggiunte le super properties
+- poi vengono unite, sopra di esse, le proprietà per singolo evento
+
+Quindi, in caso di conflitto tra chiavi, prevalgono le proprietà per singolo evento.
+
+## setProperty
+
+Crea o sovrascrive le super properties.
+
+```ts
+// object form
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  region: "eu",
+})
+
+// key/value form
+tracker.analytics.events.setProperty("build_sha", "3f2c9a1")
+```
+
+### Note:
+
+- Le [proprietà predefinite](#reserved-keys) raccolte dallo SDK vengono ignorate e non verranno aggiunte come super properties.
+- La forma chiave/valore viene ignorata quando `value` è `undefined`; passa `null` per memorizzare un valore vuoto.
+- Le modifiche vengono salvate localmente solo se qualcosa è effettivamente cambiato.
+
+## setPropertiesOnce
+
+Crea le super properties solo se non esistono ancora.
+
+```ts
+tracker.analytics.events.setPropertiesOnce({
+  first_seen_at: Date.now(),
+  signup_source: "docs",
+})
+
+// key/value form
+tracker.analytics.events.setPropertiesOnce("initial_referrer", document.referrer)
+```
+
+### Note:
+
+- Le proprietà vengono impostate solo se la chiave è assente.
+- Le chiavi riservate (`properties`, `token`, `timestamp`) vengono ignorate.
+
+## unsetProperties
+
+Rimuove una o più super properties.
+
+```ts
+// single
+tracker.analytics.events.unsetProperties("region")
+
+// multiple
+tracker.analytics.events.unsetProperties(["app_version", "build_sha"])
+```
+
+### Note:
+
+- Le chiavi riservate non possono essere rimosse.
+- La rimozione è persistente.
+
+## reset
+
+Cancella tutte le super properties.
+
+```ts
+tracker.analytics.events.reset()
+```
+
+## Invio immediato
+
+Per impostazione predefinita, gli eventi vengono messi in coda e raggruppati in batch. Puoi richiedere l'invio immediato di un evento:
+
+```ts
+tracker.analytics.events.sendEvent(
+  "Checkout Completed",
+  { value: 199, currency: "EUR" },
+  { send_immediately: true },
+)
+```
+
+## Alias compatibili con Mixpanel
+
+Tutti i metodi supportano un livello di compatibilità, offerto per garantire un'interfaccia familiare:
+
+```ts
+tracker.analytics.events.register       // setProperty
+tracker.analytics.events.register_once  // setPropertiesOnce
+tracker.analytics.events.unregister     // unsetProperties
+tracker.analytics.events.track          // sendEvent
+```
+
+
+## Hai domande?
+
+Se riscontri problemi, collegati al nostro [Slack](https://slack.openreplay.com) e chiedi aiuto alla nostra community.

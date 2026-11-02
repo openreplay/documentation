@@ -1,0 +1,81 @@
+---
+title: "NgRx"
+metaTitle: "NgRx"
+metaDescription: "NgRx-Plugin für OpenReplay."
+---
+
+Mit diesem Plugin können Sie `NgRx`-Aktionen und -Zustände erfassen und später beim Abspielen von Sitzungsaufzeichnungen untersuchen. Das ist sehr hilfreich, um Probleme zu verstehen und zu beheben.
+
+## Installation
+
+```bash
+npm i @openreplay/tracker-ngrx --save
+```
+
+## Verwendung
+
+Fügen Sie den generierten Meta-Reducer zu Ihren `imports` hinzu. Weitere Informationen finden Sie in der [NgRx-Dokumentation](https://ngrx.io/guide/store/metareducers).
+
+## Wenn Ihre Website eine Single Page Application (SPA) ist
+
+```js
+import { StoreModule } from '@ngrx/store';
+import trackerNgRx from '@openreplay/tracker-ngrx';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+const metaReducers = [tracker.use(trackerNgRx(<options>))]; // check list of available options below
+
+tracker.start();
+
+//...
+@NgModule({
+  imports: [StoreModule.forRoot({}, { metaReducers })]
+})
+export class AppModule {}
+```
+
+### Wenn Ihre Web-App serverseitig gerendert wird (SSR)
+
+Orientieren Sie sich am folgenden Beispiel, wenn Ihre App SSR verwendet. Stellen Sie sicher, dass `tracker.start()` aufgerufen wird, sobald die App gestartet ist (in `useEffect` oder `componentDidMount`).
+
+```js
+import { StoreModule } from '@ngrx/store';
+import OpenReplay from '@openreplay/tracker/cjs';
+import trackerNgRx from '@openreplay/tracker-ngrx/cjs';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY
+});
+const metaReducers = [tracker.use(trackerNgRx(<options>))]; // check list of available options below
+//...
+  @NgModule({
+    imports: [StoreModule.forRoot({}, { metaReducers })]
+  })
+  export class AppModule {}
+}
+
+```
+
+## Optionen
+
+Sie können das Verhalten der Middleware anpassen, um Ihre Daten zu bereinigen.
+
+```js
+trackerNgRx({
+  actionFilter: action => action.type !== 'DRAW', // only actions which pass this test will be recorded
+  actionTransformer: action => action.type === 'LOGIN' ? null : action,
+  actionType: action => action.type // action type for search, that's the default one
+  stateTransformer: state => {
+    const { jwt, ..._state } = state;
+    return _state;
+  },
+})
+```
+
+## Haben Sie Fragen?
+
+Haben Sie Probleme bei der Einrichtung dieses Plugins? Verbinden Sie sich mit unserem [Slack](https://slack.openreplay.com) und holen Sie sich Hilfe von unserer Community.

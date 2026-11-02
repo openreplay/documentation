@@ -1,0 +1,193 @@
+---
+title: "Assist 활성화"
+metaTitle: "라이브 세션 리플레이로 사용자 지원하기"
+metaDescription: "OpenReplay Assist를 설정하고 라이브 화면과 WebRTC로 최종 사용자를 지원하는 방법입니다."
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="Next.js에서 Assist 사용하는 방법 보기"
+  description="글 읽기를 좋아하지 않으신다면, 애플리케이션에서 Assist 플러그인을 사용하는 방법을 보여 주는 이 영상 튜토리얼을 따라 해 보세요"
+  videoURL="https://www.youtube.com/watch?v=8hpolw2_mMs"
+  />
+
+세션 리플레이는 애플리케이션이 프로덕션에 배포된 이후 모든 제품 팀과 개발 팀에 필요한 도구입니다. 
+이 도구를 사용하면 통제된 사용자 테스트 그룹에서 생기는 편향 없이 실제 사용자가 제품을 어떻게 사용하는지 파악할 수 있습니다. 이 정보를 바탕으로 사용자 경험의 빈틈, 사용자의 잘못된 조작으로 인한 비즈니스 로직 문제, 복잡한 일련의 동작이 있어야 발생하는 엣지 케이스 등 다양한 사항을 파악할 수 있습니다.
+
+하지만 기존 세션 리플레이 도구가 제대로 처리하지 못하는 사용 사례가 하나 있습니다. 바로 라이브 세션 지원입니다.
+
+사용자가 _지금_ 무엇을 하고 있는지 실시간으로 보고 바로 대응하며, 마우스를 대신 조작하거나 짧은 통화로 문제를 직접 _보여 줄_ 수 있다는 것은 값을 매길 수 없는 가치입니다. OpenReplay가 [Assist 기능](https://openreplay.com/feature-assist.html)을 구현한 이유도 바로 여기에 있습니다.
+
+## OpenReplay Assist로 무엇을 할 수 있나요?
+
+일반적으로 애플리케이션이 사용자 세션을 녹화하도록 설정하면, 탭을 닫고 몇 분이 지난 뒤에 (실수로 닫은 것이 아닌지 앱이 확인해야 하기 때문입니다) 일반적인 이벤트, 오류, 앱의 문제가 OpenReplay 인스턴스(또는 SaaS 버전)로 전달됩니다. 사용자가 무엇을 했는지 단계별로 분석할 수는 있지만, 문제를 발견하더라도 해당 사용자와 직접 문제를 확인할 수는 없습니다.
+
+하지만 Assist를 사용하면 이제 다음을 할 수 있습니다.
+
++ **사용자가 페이지를 여는 순간부터** 사용자의 동작을 실시간으로 직접 살펴볼 수 있습니다. 
++ WebRTC를 사용하므로 클라이언트와 운영자 사이에 1:1 채널이 만들어집니다. 따라서 두 컴퓨터 모두에 타사 통신 소프트웨어를 설치하지 않고도 **애플리케이션에서 바로 통화를 시작**할 수 있습니다.
++ (물론 사용자의 허락을 받은 뒤) **사용자의 마우스를 제어**하여 정확히 어디를 클릭해야 하는지 보여 줄 수 있습니다. 
+
+운영자가 특정 시점에 사용자의 동작을 보고 있을 때의 Assist 기능 UI를 살펴보세요.
+
+![](https://i.imgur.com/4vxXpHn.png)
+
+이 기능은 실시간으로 업데이트를 보여 주므로, 핵심은 "email"과 "mobile number" 필드입니다. 첫 번째 필드는 사용자의 개인정보 보호를 위해 난독화되어 있고, 두 번째 필드는 개인 데이터가 수집되지 않도록 트래커가 말 그대로 무시합니다.
+또한 데이터 변환은 클라이언트 측에서 이루어지므로, 운영자인 여러분은 이 값을 볼 방법이 없습니다.
+
+덕분에 어떤 유형의 시스템이든 지원하면서도, 사용자에게 개인 데이터를 전혀 처리하지 않는다고 확신시켜 줄 수 있습니다.
+
+## 설정에 Assist 플러그인 추가
+
+이 기능은 OpenReplay의 모든 최신 버전에서 이미 사용할 수 있으므로, 활성화하기만 하면 됩니다.
+OpenReplay의 패키지 버전을 사용 중이라면, 명령줄에서 다음 플러그인을 바로 설치하면 됩니다.
+
+```bash 
+npm install @openreplay/tracker-assist
+```
+
+그런 다음 다음 코드를 사용해 활성화합니다.
+
+```javascript 
+//...
+import { tracker } from '@openreplay/tracker';
+import trackerAssist from '@openreplay/tracker-assist';
+//...
+tracker.configure({
+  projectKey: "your project key"
+});
+tracker.use(trackerAssist({})); //add this line
+tracker.start();
+```
+
+반대로, 처음 설정할 때 플랫폼에서 받은 JS 스니펫을 사용 중이라면 경로 하나만 수정하면 됩니다.
+기존 스니펫은 아마 다음과 비슷했을 것입니다.
+
+```javascript 
+<!-- OpenReplay Tracking Code for HOST -->
+<script>
+  var initOpts = {
+    projectKey: "your project key",
+    defaultInputMode: 0,
+    obscureTextNumbers: false,
+    obscureTextEmails: true,
+  };
+  var startOpts = { userID: "" };
+  (function(A,s,a,y,e,r){
+    r=window.OpenReplay=[e,r,y,[s-1, e]];
+    s=document.createElement('script');s.src=A;s.async=!a;
+    document.getElementsByTagName('head')[0].appendChild(s);
+    r.start=function(v){r.push([0])};
+    r.stop=function(v){r.push([1])};
+    r.setUserID=function(id){r.push([2,id])};
+    r.setUserAnonymousID=function(id){r.push([3,id])};
+    r.setMetadata=function(k,v){r.push([4,k,v])};
+    r.event=function(k,p,i){r.push([5,k,p,i])};
+    r.issue=function(k,p){r.push([6,k,p])};
+    r.isActive=function(){return false};
+    r.getSessionToken=function(){};
+  })("//static.openreplay.com/latest/openreplay.js",1,0,initOpts,startOpts);
+</script>
+```
+
+맨 아래에 있는 `openreplay.js` 파일 경로를 확인하세요. 이를 `openreplay-assist.js`로 바꿔야 하므로, 다음과 같이 수정합니다.
+
+```javascript 
+<!-- OpenReplay Tracking Code for HOST -->
+<script>
+  var initOpts = {
+    projectKey: "your project key",
+    defaultInputMode: 0,
+    obscureTextNumbers: false,
+    obscureTextEmails: true,
+  };
+  var startOpts = { userID: "" };
+  (function(A,s,a,y,e,r){
+    r=window.OpenReplay=[e,r,y,[s-1, e]];
+    s=document.createElement('script');s.src=A;s.async=!a;
+    document.getElementsByTagName('head')[0].appendChild(s);
+    r.start=function(v){r.push([0])};
+    r.stop=function(v){r.push([1])};
+    r.setUserID=function(id){r.push([2,id])};
+    r.setUserAnonymousID=function(id){r.push([3,id])};
+    r.setMetadata=function(k,v){r.push([4,k,v])};
+    r.event=function(k,p,i){r.push([5,k,p,i])};
+    r.issue=function(k,p){r.push([6,k,p])};
+    r.isActive=function(){return false};
+    r.getSessionToken=function(){};
+  })("//static.openreplay.com/latest/openreplay-assist.js",1,0,initOpts,startOpts);
+</script>
+```
+
+기본 설정에서 Assist 기능을 사용하기 위해 바꿔야 할 부분은 이것이 전부입니다. 
+
+정말 간단하죠?!
+
+다음 오류 메시지가 표시된다면(저도 겪었습니다), [이 단계](https://github.com/peers/peerjs/issues/630#issuecomment-910028230)를 따라 해결하세요.
+
+**"Critical dependency: the request of a dependency is an expression"**
+
+해당 이슈에 나온 해결 방법이면 충분히 문제를 해결할 수 있습니다.
+
+이제 OpenReplay의 Assist를 본격적으로 활용할 수 있으니, 하나씩 살펴보겠습니다.
+
+## 세션을 실시간으로 보기
+
+이제부터 클라이언트가 따로 해야 할 일은 없으므로, 운영자 쪽 화면을 살펴볼 차례입니다.
+
+플랫폼에서 아래 그림처럼 탐색 메뉴의 Assist 옵션을 클릭하세요.
+
+![](https://i.imgur.com/3LG9hcc.png)
+
+클릭하면 활성 Assist 세션 목록이 표시됩니다. 사용자가 애플리케이션을 열면 세션이 이곳에 자동으로 나타나며, 다음과 같이 목록에 표시됩니다.
+
+![](https://i.imgur.com/pp86irQ.png)
+
+여기에서 다음 정보를 확인할 수 있습니다.
+
+- 사용자 ID: 이메일이 보이시나요? 트래커의 `setUserID` 메서드로 설정한 값입니다. 
+- 각 세션의 시작 시간과 날짜.
+- 세션 지속 시간(스크린샷에서는 "14 seconds"로 표시됩니다).
+- 마지막으로 사용자의 위치 정보. 제가 스페인에 있고, macOS 데스크톱에서 Firefox를 사용 중이라는 것을 볼 수 있습니다. 
+
+이처럼 많은 정보가 제공되며, 실시간으로 보려는 세션을 식별하는 데 중요한 단서가 됩니다. 이 예시에서는 세션이 하나뿐이지만, 실제로는 수백 개(또는 그 이상)가 동시에 활성 상태일 수 있습니다.
+또한 검색 창을 사용해 복잡한 쿼리로 원하는 세션을 찾을 수도 있습니다. 
+
+### 특정 세션 들어가기
+
+찾던 세션을 찾았다면 해당 세션의 "Play" 아이콘을 클릭하세요. 클라이언트 애플리케이션의 라이브 화면으로 이동합니다.
+
+아래의 나란히 비교한 이미지에서, 현재 관찰 중인 사용자의 세션이 Assist 화면에 어떻게 표시되는지 볼 수 있습니다.
+
+![](https://i.imgur.com/G7xAxTZ.png)
+
+보시다시피 사용자가 보는 화면과 운영자가 보는 화면에는 몇 가지 차이가 있으며, 이는 의도된 것입니다.
+개인 정보는 자동으로 난독화되거나 완전히 무시됩니다. 관찰 대상 사용자를 보호하기 위한 것으로, 운영자가 전화번호나 이메일 주소를 꼭 볼 필요는 없기 때문입니다. 
+이는 기본 동작이라는 점에 유의하세요. 클라이언트 애플리케이션에 설치된 트래커가 입력되는 데이터의 유형과 형식(예: 이메일 필드)을 감지하고, 그 자리에서 보호할지 결정합니다.
+
+다만 이 동작을 바꿔 트래커가 다른 필드를 무시하거나 난독화하도록 하려면, 다양한 수준의 세분화로 데이터를 정제할 수 있습니다. 필요한 모든 정보는 공식 문서에 있으니 [확인해 보세요.](https://docs.openreplay.com/sdk/sanitize-data)
+
+### 사용자의 마우스 제어하기
+
+매우 흥미로운 추가 기능으로, 클라이언트의 마우스 포인터를 제어할 수 있습니다. 이 기능으로 마우스를 움직여 애플리케이션의 여러 위치를 클릭할 수 있습니다.
+다른 종류의 입력 신호는 보낼 수 없지만, 사용자를 돕기에는 충분합니다.
+
+이 기능을 사용하려면 화면 오른쪽 상단의 "Remote Control" 링크를 클릭하기만 하면 됩니다.
+그러면 클라이언트에게 권한을 요청하는 모달 창이 표시됩니다.
+
+![](https://i.imgur.com/5HtwYtb.png)
+
+사용자가 확인하면 마우스를 제어할 수 있게 됩니다. 정확히는 사용자의 화면에 운영자의 포인터가 나타나고, 사용자의 마우스를 직접 쓰는 것처럼 애플리케이션을 클릭하고 조작할 수 있습니다.
+다음 스크린샷에서 빨간 점은 Assist 마우스이고, 검은 포인터는 사용자의 마우스입니다.
+
+![](https://i.imgur.com/L9K20q2.png)
+
+사용자가 앱을 어떻게 사용해야 할지, 또는 정확히 어디를 클릭해야 할지 모를 때 매우 유용한 기능입니다.
+사용자와 라이브 통화를 시작하고 빨간 포인터로 클릭할 위치를 보여 주면서 지원할 수도 있습니다.
+다음 스크린샷은 운영체제가 서로 다른 두 컴퓨터에서 라이브 통화를 하는 모습입니다. 상대는 사실 저 자신입니다. 음성과 영상은 모두 WebRTC로 전송됩니다.
+
+![](https://i.imgur.com/Ob7QTzH.png)
+
+
+## 궁금한 점이 있으신가요?
+
+프로젝트에 Assist 플러그인을 설정하는 중 문제가 생기면 [Slack 커뮤니티](https://slack.openreplay.com/)에 문의하여 개발자에게 직접 질문해 보세요!

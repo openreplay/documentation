@@ -1,0 +1,99 @@
+---
+title: "Events"
+metaTitle: "Events"
+metaDescription: "특정 녹화의 모든 이벤트를 가져오는 방법."
+---
+
+## 이벤트 조회
+
+특정 세션에서 캡처된 이벤트(클릭, 페이지 방문, 입력, 커스텀 이벤트 등)의 목록을 반환합니다. 세션 범위는 서버에서 강제되며, `sessionID` 경로 매개변수가 자동으로 이벤트 필터로 추가됩니다.
+
+### 메서드
+<p><span class="or-method post">POST</span></p>
+
+### URL
+`/public/:projectKey/sessions/:sessionId/events`
+
+### 매개변수
+
+| 이름       | 유형   | 설명                                                       |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | 프로젝트 키(필수)                                          |
+| sessionId  | string | 세션 ID(필수, 최대 256)                                    |
+
+### 페이로드
+
+| 이름           | 유형       | 설명                                                             |
+|----------------|------------|----------------------------------------------------------------------|
+| startTimestamp | epoch (ms) | 시간 범위의 시작(필수, 최소 946684800000)                        |
+| endTimestamp   | epoch (ms) | 시간 범위의 끝(필수, > startTimestamp)                           |
+| limit          | integer    | 페이지 크기, 1-200(필수)                                         |
+| page           | integer    | 페이지 번호, 1부터 시작(필수)                                    |
+| sortBy         | string     | 정렬 기준 이벤트 컬럼(선택 사항)                                 |
+| sortOrder      | string     | `asc` 또는 `desc`(선택 사항)                                     |
+| filters        | array      | 추가 이벤트 필터(선택 사항) — 아래 필터 구조 참고                |
+| columns        | array      | 응답에 포함할 이벤트 컬럼(선택 사항)                             |
+
+필터 객체:
+
+| 이름     | 유형     | 설명                                                          |
+|----------|----------|---------------------------------------------------------------|
+| name     | string   | 필터 속성 이름(필수, 최대 256)                                |
+| operator | string   | 비교 연산자(예: `is`, `contains`)                             |
+| value    | string[] | 최대 10개의 값, 각각 최대 256자                               |
+| isEvent  | boolean  | 필터가 이벤트 속성을 대상으로 하는지 여부                     |
+| dataType | string   | `string`, `number`, `boolean`, `integer`, `timestamp` 중 하나 |
+
+### 요청 헤더
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### 상태 코드
+
+<p><span class="or-method ok">200</span> 응답이 본문에 JSON으로 전송됩니다<br/>
+<span class="or-method err">400</span> 잘못된 본문 또는 잘못된 <code>sessionID</code>(비어 있거나 &gt; 256자)</p>
+
+### 요청 예시
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/sessions/4813023023591169/events \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "startTimestamp": 1623440000000,
+    "endTimestamp":   1623441000000,
+    "limit": 100,
+    "page":  1,
+    "sortOrder": "asc"
+  }'
+```
+
+### 응답 예시
+
+```json
+{
+  "data": {
+    "total": 3,
+    "events": [
+      {
+        "event_id": "01H7Z...",
+        "$event_name": "$pageview",
+        "created_at": 1623440905732,
+        "distinct_id": "mickael@openreplay.com",
+        "session_id": "4813023023591169",
+        "properties": { "path": "/my-account/" }
+      },
+      {
+        "event_id": "01H7Z...",
+        "$event_name": "$click",
+        "created_at": 1623440915126,
+        "distinct_id": "mickael@openreplay.com",
+        "session_id": "4813023023591169",
+        "$properties": { "label": "Shop" },
+        "$auto_captured": true
+      }
+    ]
+  }
+}
+```

@@ -1,0 +1,50 @@
+---
+title: "Cross-Domain-iFrame-Tracking"
+metaTitle: "Cross-Domain-iFrame-Tracking"
+metaDescription: "Erfassen Sie Benutzerinteraktionen in Cross-Domain-iFrames mit OpenReplay."
+---
+
+Um das Cross-Domain-iFrame-Tracking zu aktivieren, müssen Sie dem Konstruktor des Trackers die Option `crossdomain.enabled` hinzufügen, wie unten gezeigt:
+
+```html
+<iframe
+	title="test"
+	src="http://iframe1.website.com/iframe-path"
+	width="300"
+	height="300"
+></iframe>
+``` 
+
+Fügen Sie die Option `crossdomain` wie folgt zum Konstruktor Ihres Trackers hinzu:
+
+```js
+tracker.configure({
+	projectKey: PROJECT_KEY,
+	crossdomain: {
+		enabled: true
+	},
+	captureIFrames: true
+});
+```
+
+Initialisieren Sie dann die Tracker-Instanz im gewünschten iFrame und fügen Sie dessen Konstruktor `crossdomain.parentDomain` hinzu:
+
+```js
+tracker.configure({
+	projectKey: PROJECT_KEY,
+	crossdomain: {
+	  // Specifies the domain of the parent window
+	  // If not specified, it will be set to '*'
+	  // Which means that child window will send messages to all domains inside the browser window
+	  // Consult your CSP settings to ensure that '*' is allowed or specify the parent domain
+		parentDomain: '*',
+	  enabled: true
+	}
+});
+```
+
+Bitte beachten Sie: Wenn Sie das Tracker-Snippet verwenden, empfehlen wir, für untergeordnete iFrames die reguläre Instanz (openreplay.js) statt `openreplay-assist.js` zu nutzen (da sich die Assist-Sitzung nur mit der übergeordneten Instanz verbinden sollte).
+
+## Haben Sie Fragen?
+
+Wenn Probleme auftreten, verbinden Sie sich mit unserem [Slack](https://slack.openreplay.com) und holen Sie sich Hilfe von unserer Community.

@@ -1,0 +1,194 @@
+---
+title: "Events"
+metaTitle: "OpenReplay Analytics SDK — Events"
+metaDescription: "OpenReplay 트래커 Analytics 이벤트에 사용할 슈퍼 속성을 정의하고 관리합니다."
+---
+import Aside from '~/components/Aside.astro'
+
+## Events
+
+이 모듈에서는 **이벤트**와 **속성**을 관리할 수 있습니다. 속성은 추적되는 모든 이벤트에 자동으로 첨부되는 영구적인 키/값 쌍입니다.
+
+슈퍼 속성(super properties)은 로컬에 저장되며, 이벤트를 추적할 때 각 이벤트 페이로드에 병합됩니다.
+
+OpenReplay UI에서 이벤트를 관리하는 방법을 더 알아보려면 [데이터 관리](/product-analytics/data-management)를 참고하세요.
+
+다음 위치에서 사용할 수 있습니다:
+
+`tracker.analytics.events`
+
+## 개념
+
+### 슈퍼 속성
+
+슈퍼 속성은 SDK에 저장되며 모든 이벤트의 `properties` 아래에 병합됩니다.
+
+### 이벤트 속성
+
+이벤트 속성은 단일 `track/sendEvent` 호출에만 전달되며 슈퍼 속성으로 **저장되지 않습니다**.
+
+## 예약된 키
+
+사용하는 헬퍼에 따라 두 가지 서로 다른 키 집합이 거부됩니다.
+
+**기본 속성(Default properties)** — SDK가 직접 수집하여 모든 이벤트와 함께 전송하는 속성입니다. `setProperty`는 이를 조용히 건너뛰므로 슈퍼 속성으로 덮어쓸 수 없습니다:
+
+`os`, `os_version`, `browser`, `browser_version`, `platform`, `screen_height`, `screen_width`, `initial_referrer`, `utm_source`, `utm_medium`, `utm_campaign`, `user_id`, `distinct_id`, `sdk_edition`, `sdk_version`, `timezone`, `search_engine`
+
+**페이로드 키(Payload keys)** — `properties`, `token`, `timestamp`가 해당합니다. 이 키들은 이벤트 엔벨로프의 일부이므로 `setPropertiesOnce`와 `unsetProperties`는 이를 건너뜁니다.
+
+<Aside type="note">
+	두 목록은 서로 다른 메서드에서 적용됩니다. `setProperty`는 기본 속성을, `setPropertiesOnce`와 `unsetProperties`는 페이로드 키를 보호합니다. People 모듈에서도 같은 구분이 적용되며, `setProperties`, `setPropertiesOnce`, `appendValues`는 모두 기본 속성을 보호합니다.
+</Aside>
+
+## 최상위 시그니처
+
+```ts
+// Track an event.
+// The `properties` argument is per-event only (not persisted).
+tracker.analytics.events.sendEvent(eventName: string, properties?: Record<string, any>, options?: { send_immediately: boolean })
+
+// Create/update super properties (persisted)
+tracker.analytics.events.setProperty(name: string, value: any): void
+tracker.analytics.events.setProperty(properties: Record<string, any>): void
+
+// Create super properties only if they don't exist yet (persisted)
+tracker.analytics.events.setPropertiesOnce(name: string, value: any): void
+tracker.analytics.events.setPropertiesOnce(properties: Record<string, any>): void
+
+// Remove super properties (persisted)
+tracker.analytics.events.unsetProperties(name: string): void
+tracker.analytics.events.unsetProperties(names: string[]): void
+
+// Clear all super properties
+tracker.analytics.events.reset(): void
+```
+
+## 속성을 포함하여 이벤트 추적하기
+
+### 이벤트별 속성 (저장되지 않음)
+
+```ts
+tracker.analytics.events.sendEvent("Button Clicked", {
+  button_text: "Start",
+  page: "home",
+})
+```
+
+이 속성들은 해당 이벤트에만 적용됩니다.
+
+### 슈퍼 속성 + 이벤트별 속성 (병합)
+
+슈퍼 속성을 설정하면 각 이벤트에 자동으로 포함된 뒤 이벤트별 속성과 병합됩니다:
+
+```ts
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  env: "prod",
+})
+
+tracker.analytics.events.sendEvent("Signup Started", {
+	// per-event, can override a super property with the same key
+  plan: "pro", 
+})
+```
+
+병합 순서:
+
+- 슈퍼 속성이 먼저 추가됩니다
+- 이벤트별 속성이 그 위에 병합됩니다
+
+따라서 키가 충돌하면 이벤트별 속성이 우선합니다.
+
+## setProperty
+
+슈퍼 속성을 생성하거나 덮어씁니다.
+
+```ts
+// object form
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  region: "eu",
+})
+
+// key/value form
+tracker.analytics.events.setProperty("build_sha", "3f2c9a1")
+```
+
+### 참고:
+
+- SDK가 수집하는 [기본 속성](#reserved-keys)은 무시되며 슈퍼 속성으로 추가되지 않습니다.
+- 키/값 형식은 `value`가 `undefined`이면 무시됩니다. 빈 값을 저장하려면 `null`을 전달하세요.
+- 변경 사항은 실제로 무언가 바뀐 경우에만 로컬에 저장됩니다.
+
+## setPropertiesOnce
+
+슈퍼 속성이 아직 존재하지 않는 경우에만 생성합니다.
+
+```ts
+tracker.analytics.events.setPropertiesOnce({
+  first_seen_at: Date.now(),
+  signup_source: "docs",
+})
+
+// key/value form
+tracker.analytics.events.setPropertiesOnce("initial_referrer", document.referrer)
+```
+
+### 참고:
+
+- 키가 없는 경우에만 속성이 설정됩니다.
+- 예약된 키(`properties`, `token`, `timestamp`)는 무시됩니다.
+
+## unsetProperties
+
+하나 이상의 슈퍼 속성을 제거합니다.
+
+```ts
+// single
+tracker.analytics.events.unsetProperties("region")
+
+// multiple
+tracker.analytics.events.unsetProperties(["app_version", "build_sha"])
+```
+
+### 참고:
+
+- 예약된 키는 제거할 수 없습니다.
+- 제거 결과는 영구적으로 저장됩니다.
+
+## reset
+
+모든 슈퍼 속성을 지웁니다.
+
+```ts
+tracker.analytics.events.reset()
+```
+
+## 즉시 전송
+
+기본적으로 이벤트는 큐에 쌓였다가 일괄 전송됩니다. 특정 이벤트는 즉시 전송하도록 요청할 수 있습니다:
+
+```ts
+tracker.analytics.events.sendEvent(
+  "Checkout Completed",
+  { value: 199, currency: "EUR" },
+  { send_immediately: true },
+)
+```
+
+## Mixpanel 호환 별칭
+
+모든 메서드는 익숙하게 사용할 수 있도록 제공되는 호환 계층을 지원합니다:
+
+```ts
+tracker.analytics.events.register       // setProperty
+tracker.analytics.events.register_once  // setPropertiesOnce
+tracker.analytics.events.unregister     // unsetProperties
+tracker.analytics.events.track          // sendEvent
+```
+
+
+## 궁금한 점이 있으신가요?
+
+문제가 발생하면 [Slack](https://slack.openreplay.com)에 접속하여 커뮤니티의 도움을 받으세요.

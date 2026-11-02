@@ -1,0 +1,114 @@
+---
+title: "Datadog"
+metaTitle: "Integrare Datadog con OpenReplay"
+metaDescription: "Come integrare Datadog con OpenReplay e vedere gli errori di backend insieme ai session replay."
+---
+
+Scopri come integrare gli errori di backend di [Datadog](https://www.datadoghq.com/) con i session replay di [OpenReplay](https://www.openreplay.com/) per ampliare le tue capacità di monitoraggio e debug.
+
+## 1. Generare l'API Key e l'Application Key di Datadog
+
+1. Vai su **[Datadog > Integrations > APIs](https://app.datadoghq.com/account/settings#api)** e genera l'API Key, oppure usa quella esistente.
+2. Nella stessa pagina, fai clic su **Application Keys** e genera una nuova Application Key.
+
+## 2. Configurare l'integrazione Datadog in OpenReplay
+Nel tuo account OpenReplay, segui questi 3 passaggi per completare la correlazione tra i session replay e gli errori di backend di Datadog.
+
+#### Abilitare l'integrazione con Datadog
+1. Vai su **Preferences > Integrations** in OpenReplay.
+2. Seleziona la scheda **Backend Logging**.
+3. Seleziona il progetto per cui vuoi abilitare l'integrazione con Datadog: individua la card dell'integrazione Datadog > fai clic su di essa.
+
+#### Inserire le credenziali di Datadog
+Nella barra laterale dell'integrazione Datadog inserisci:
+
+1. l'API Key di Datadog
+2. l'Application Key
+
+#### Verificare la connessione
+1. Fai clic su **Add** per testare la connessione
+
+## 3. Propagare openReplaySession.id
+
+Per collegare un evento di Datadog alla sessione utente registrata, è necessario propagare un ID di sessione univoco `openReplaySession.id` dal tuo frontend al tuo backend a ogni richiesta che vuoi tracciare. Puoi farlo usando un header HTTP personalizzato.
+
+#### Frontend: includere openReplaySession.id nelle richieste API
+
+```javascript
+// JavaScript Example for for Single Page Applications (SPA):
+const sessionId = tracker.getSessionID(); 
+
+const headers = {
+  'Content-Type': 'application/json',
+};
+
+if (sessionId) {
+  headers['openReplaySession.id'] = sessionId;
+}
+
+// Make the API request
+fetch('https://www.your-backend.com/api/endpoint', {
+  method: 'GET', // or 'POST', 'PUT', etc.
+  headers,
+  // ...other options
+})
+  .then(response => {
+    // Handle response
+  })
+  .catch(error => {
+    // Handle error
+  });
+
+```
+#### Backend: includere openReplaySession.id nei log
+
+Di seguito un esempio in Python che usa il modulo logging per includere automaticamente openReplaySession.id nei tuoi log.
+
+```python
+import logging
+from flask import Flask, request, g
+
+app = Flask(__name__)
+
+# Configure the root logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
+
+# Create a custom logging filter
+class OpenReplayFilter(logging.Filter):
+    def filter(self, record):
+        session_id = getattr(g, 'openreplay_session_id', None)
+        if session_id:
+            record.msg = f"[openReplaySession.id={session_id}] {record.msg}"
+        return True
+
+# Add the filter to the logger
+logger.addFilter(OpenReplayFilter())
+
+@app.before_request
+def before_request():
+    # Extract the session ID from headers and store it in the Flask `g` object
+    g.openreplay_session_id = request.headers.get('openReplaySession.id')
+
+@app.route('/api/endpoint')
+def api_endpoint():
+    # Your logic here
+
+    # Log an event with the session ID automatically included
+    logger.info("Endpoint accessed")
+
+    return 'Success', 200
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Log the error with the session ID automatically included
+    logger.error(f"Error: {str(e)}")
+    return 'Internal Server Error', 500
+
+if __name__ == '__main__':
+    app.run()
+```
+
+## Hai domande?
+
+Se riscontri dei problemi, unisciti al nostro [Slack](https://slack.openreplay.com) e ricevi aiuto dalla nostra community.

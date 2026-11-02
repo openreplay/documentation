@@ -1,0 +1,189 @@
+---
+title: "Data Management"
+metaTitle: "Data Management - OpenReplay"
+metaDescription: "OpenReplay에서 커스텀 이벤트와 사용자 속성을 추적하여 제품 분석을 강화하세요."
+---
+
+OpenReplay의 Data Management를 사용하면 커스텀 이벤트와 사용자 속성을 추적하여 제품 분석을 강화할 수 있습니다. 이 페이지에서는 데이터를 전송하는 SDK 연동과 데이터를 관리하는 UI를 모두 다룹니다.
+
+SDK 전체 문서는 [Analytics SDK 레퍼런스](/sdk/analytics)를 참고하세요.
+
+## 이벤트 개요
+
+OpenReplay는 두 가지 유형의 이벤트를 캡처합니다.
+
+- **자동 수집 이벤트**: 페이지 뷰, 클릭, 폼 제출처럼 자동으로 추적되는 상호작용
+- **커스텀 이벤트**: "purchase completed"나 "feature enabled"처럼 직접 정의하는 도메인별 이벤트
+
+커스텀 이벤트를 사용하면 비즈니스에 중요한 특정 사용자 행동을 추적하고, 이를 [Trends](/product-analytics/trends), [Funnels](/product-analytics/funnels), [Journeys](/product-analytics/journeys) 같은 분석 기능에서 활용할 수 있습니다.
+
+## 이벤트 캡처
+
+커스텀 이벤트를 추적하려면 SDK의 analytics events 모듈을 사용하세요. 전체 API 문서는 [Events SDK 레퍼런스](/sdk/analytics/events)를 참고하세요.
+
+### 기본 예제
+
+```ts
+// Track a simple event
+tracker.analytics.events.sendEvent("Button Clicked", {
+  button_text: "Start",
+  page: "home",
+})
+```
+
+### 슈퍼 속성
+
+슈퍼 속성(Super properties)은 추적되는 모든 이벤트에 자동으로 첨부되는 영구적인 키/값 쌍입니다.
+
+```ts
+// Set super properties that apply to all events
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  env: "prod",
+})
+
+// This event will include app_version and env automatically
+tracker.analytics.events.sendEvent("Signup Started", {
+  plan: "pro",
+})
+```
+
+## 사용자 정보 보강
+
+사용자 속성을 사용하면 세분화와 분석에 활용할 수 있도록 사용자에 대한 속성을 저장할 수 있습니다. 전체 API 문서는 [People SDK 레퍼런스](/sdk/analytics/people)를 참고하세요.
+
+### 사용자 식별
+
+```ts
+// Identify the current user
+tracker.analytics.people.identify("user_123")
+
+// Set user properties
+tracker.analytics.people.setProperties({
+  email: "user@example.com",
+  plan: "pro",
+})
+```
+
+### 속성 유형
+
+OpenReplay는 여러 가지 속성 유형을 지원합니다.
+
+| 유형 | 설명 | 예시 |
+|------|-------------|----------|
+| **Auto-tracked** | SDK가 자동으로 캡처 | 기기, 브라우저, OS, UTM 파라미터, 리퍼러 |
+| **Special** | 정해진 동작을 가진 특수 속성 | `$user_id`, `$email`, `$name` |
+| **Custom** | 사용자 정의 속성 | `plan type`, `company`, `signup date` |
+
+## UI에서 데이터 관리
+
+OpenReplay는 사용자, 이벤트 및 각각의 속성을 탐색하고 필터링하고 정리할 수 있는 Data Management 인터페이스를 제공합니다.
+
+### People
+
+<img src="/data-management/people-page.png" alt="이벤트 페이지" style={{ width: '700px', height: 'auto' }} />
+
+People 탭에서는 식별된 사용자의 목록을 볼 수 있습니다.
+
+- 사용자와 해당 속성 탐색
+- 사용자 ID 또는 속성 값으로 검색
+- 사용자 활동과 세션 기록 보기
+- 개별 사용자 프로필 열기
+
+### Events
+
+<img src="/data-management/events-page.png" alt="이벤트 페이지" style={{ width: '700px', height: 'auto' }} />
+
+Events 탭에는 프로젝트에서 추적되는 모든 이벤트 종류가 표시됩니다.
+
+- 이름으로 이벤트 탐색 및 검색
+- 이벤트 유형(자동 수집 vs 커스텀)으로 필터링
+- 이벤트 메타데이터(표시 이름, 설명) 편집
+- 대시보드와 필터에서의 이벤트 표시 여부 제어
+
+### Properties
+
+<img src="/data-management/props-page.png" alt="이벤트 페이지" style={{ width: '700px', height: 'auto' }} />
+
+Properties 탭에서는 사용자 속성과 이벤트 속성을 모두 관리할 수 있습니다.
+
+- 사용자 속성과 이벤트 속성 간 전환
+- 속성 유형과 값 분포 확인
+- 속성 표시 이름 편집
+- 대시보드와 필터에서의 속성 표시 여부 제어 
+
+### Activity
+
+<img src="/data-management/activity-page.png" alt="이벤트 페이지" style={{ width: '700px', height: 'auto' }} />
+
+Activity 탭에는 이벤트의 실시간 스트림이 표시됩니다.
+
+- 이벤트가 수집되는 즉시 모니터링
+- 이벤트 유형 또는 사용자별 필터링
+- 이벤트가 올바르게 캡처되고 있는지 확인
+
+### Segments
+
+세그먼트(Segments)를 사용하면 여러 이벤트를 사용자 지정 이름과 설명을 가진 하나의 재사용 가능한 컬렉션으로 묶을 수 있습니다. 매번 개별 이벤트를 선택하는 대신 세그먼트를 한 번 정의해 두면 OpenReplay 전반에서 사용할 수 있습니다.
+
+<img src="/data-management/segments-list.png" alt="세그먼트 목록" style={{ width: '700px', height: 'auto' }} />
+
+세그먼트를 만드는 방법은 다음과 같습니다.
+
+1. Data Management의 **Segments** 탭으로 이동합니다
+2. **Create** 버튼을 클릭합니다
+3. 이름을 변경하고 공개 범위를 설정합니다
+4. 컬렉션에 포함할 이벤트와 필터를 선택합니다
+5. 세그먼트를 생성합니다
+
+생성한 세그먼트는 다음 위치에서 사용할 수 있습니다.
+
+- **Sessions** — 저장된 검색과 비슷하게 세그먼트로 세션을 필터링하여 관련 사용자 활동을 빠르게 찾을 수 있습니다
+- **Cards** — 카드에서 세그먼트를 필터로 사용할 수 있습니다
+
+<img src="/data-management/segments-search.png" alt="세션 검색에서 세그먼트 사용" style={{ width: '700px', height: 'auto' }} />
+
+### Features
+
+Features를 사용하면 세션 녹화에서 요소를 시각적으로 살펴보고 태그를 지정할 수 있으며, 이를 애플리케이션의 다른 여러 부분에서 재사용하여 클릭을 쉽게 추적할 수 있습니다.
+
+<img src="/data-management/features-create.png" alt="Feature 생성" style={{ width: '700px', height: 'auto' }} />
+
+Feature를 만드는 방법은 다음과 같습니다.
+
+1. 녹화를 재생한 다음 오른쪽 위에 있는 **Tag** 탭을 클릭합니다
+2. 마우스로 리플레이에서 시각적 요소를 선택(태그 지정)합니다. 요소를 선택하면 해당 CSS 선택자가 자동으로 채워지며, 필요하면 변경할 수 있습니다.
+3. 발생하는 데드 클릭이나 레이지 클릭은 무시합니다
+4. 범위를 선택합니다(애플리케이션 전체에서 클릭을 추적할지, 리플레이에 표시된 페이지에서만 추적할지)
+5. Feature를 저장합니다
+
+Feature는 전용 섹션에서 관리할 수 있습니다.
+
+<img src="/data-management/features-list.png" alt="Features 목록" style={{ width: '700px', height: 'auto' }} />
+
+생성한 Feature는 다음 위치에서 사용할 수 있습니다.
+
+- **Sessions** — 저장된 검색과 비슷하게 Feature로 세션을 필터링하여 관련 사용자 활동을 빠르게 찾을 수 있습니다
+- **Cards** — 카드에서 Feature를 필터로 사용할 수 있습니다
+
+<img src="/data-management/features-search.png" alt="세션 검색에서 Features 사용" style={{ width: '700px', height: 'auto' }} />
+
+### Mixpanel 호환 별칭
+
+모든 메서드는 익숙하게 사용할 수 있도록 제공되는 호환 레이어를 지원합니다.
+
+```ts
+tracker.analytics.people.set            // setProperties
+tracker.analytics.people.set_once       // setPropertiesOnce
+tracker.analytics.people.append         // appendValues
+tracker.analytics.people.union          // appendUniqueValues
+tracker.analytics.people.incrementBy    // increment
+tracker.analytics.events.register       // setProperty
+tracker.analytics.events.register_once  // setPropertiesOnce
+tracker.analytics.events.unregister     // unsetProperties
+tracker.analytics.events.track          // sendEvent
+```
+
+## 질문이 있으신가요?
+
+문제가 발생하면 [Slack](https://slack.openreplay.com)에 접속하여 커뮤니티의 도움을 받으세요.

@@ -1,0 +1,88 @@
+---
+title: "Deploy to Scaleway"
+metaTitle: "Deploy to Scaleway"
+metaDescription: "Scaleway Elements에 OpenReplay를 배포하는 단계별 가이드입니다."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+OpenReplay 스택은 하나의 인스턴스에 설치할 수 있으며, Scaleway Elements는 이에 적합한 환경입니다. 설치 방법은 다음과 같습니다.
+
+## 인스턴스 시작
+
+1. Scaleway Dashboard로 이동합니다
+2. 'Compute > Instances'로 이동한 다음 'Create an instance'를 클릭합니다
+3. 원하는 Availability Zone을 선택합니다
+4. Image를 선택합니다. 이 가이드에서는 *Ubuntu Server 24.04 LTS*를 사용합니다
+5. 인스턴스 유형을 선택합니다. 최소 사양은 x86 아키텍처 기준 `2 vCPUs, 8 GB of RAM, 50 GB of storage`이며, 이보다 낮으면 OpenReplay 백엔드 서비스가 시작되지 않습니다. 따라서 **최소** `DEV1-L`(또는 동급)을 권장하며, 이는 낮거나 중간 정도의 트래픽에는 충분합니다. 트래픽이 많을 것으로 예상된다면 여기서부터 확장하세요.
+6. Add Volumes: 크기를 50 GB 이상으로 설정합니다(로컬 스토리지든 블록 스토리지든 상관없음)
+7. 인스턴스에 멋진 이름을 지어 줍니다(예: openreplay)
+8. SSH Keys: 인스턴스에 접속할 수 있도록 프로젝트에 연결된 키가 이미 있는지 확인합니다
+9. 'Create a new instance'를 클릭합니다
+
+> **참고:** Scaleway에서는 SMTP 포트(25, 465, 587)가 기본적으로 차단되어 있습니다. 보안 그룹 설정에서 SMTP를 활성화하지 않으면 OpenReplay 인스턴스에서 이메일을 보낼 수 없습니다. 방법은 이 [간단한 튜토리얼](https://www.scaleway.com/en/faq/why-can-i-not-send-any-email/)을 참고하세요.
+
+## OpenReplay 배포
+
+1. 인스턴스가 `Started` 상태인지 확인한 다음 접속합니다:
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem #! wherever you've saved the SSH key
+INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
+chmod 400 $SSH_KEY
+ssh -i $SSH_KEY root@$INSTANCE_IP
+```
+
+2. OpenReplay가 실행될 도메인을 지정하여 설치합니다(예: DOMAIN_NAME=openreplay.mycompany.com):
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## TLS/SSL 구성
+
+OpenReplay는 민감한 사용자 데이터를 다루므로 실행하려면 HTTPS가 필요합니다. 이는 필수 사항으로, HTTPS가 없으면 트래커가 녹화를 시작하지 않습니다. 대시보드도 마찬가지로, HTTPS가 없으면 사용자 세션을 리플레이할 수 없습니다.
+
+따라서 SSL 인증서를 직접 준비하거나 생성해야 합니다.
+
+1. 먼저 'Network' > 'DNS'(또는 다른 DNS 서비스 제공업체)로 이동하여 `A Record`를 생성합니다. 설치 단계에서 지정한 도메인을 사용하고, 인스턴스의 퍼블릭 IP('Compute' > 'Instances'에서 확인 가능)를 통해 해당 인스턴스를 가리키도록 설정합니다.
+
+2. 직접 준비한 인증서를 사용하는 경우, 다음 명령으로 SSL 시크릿을 생성합니다: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
+
+> **참고:** 인증서가 없다면 Let's Encrypt를 사용해 서브도메인(설치 중에 지정한 도메인)용 인증서를 자동 갱신되도록 생성하세요. OpenReplay 인스턴스에 접속하여 `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh`를 실행하고 안내에 따르면 됩니다.
+
+3. HTTP에서 HTTPS로의 리디렉션을 활성화하려면(권장) `/var/lib/openreplay/vars.yaml`의 `ingress-nginx` 섹션 아래에 있는 다음 블록의 주석을 해제하세요:
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+참고로 `ingress-nginx`는 기본적으로 `80|443` 포트에서 실행되지만, 필요하면 `vars.yaml`에서 쉽게 변경할 수 있습니다:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. 마지막으로 OpenReplay NGINX를 다시 설치합니다:
+
+```bash
+openreplay -R
+```
+
+이제 설정이 모두 끝났습니다. 서브도메인에서 OpenReplay에 접속할 수 있을 것입니다. `/signup` 페이지(예: openreplay.mycompany.com/signup)에 접속하여 계정을 만들 수 있습니다.
+
+## 질문이 있으신가요?
+
+문제가 발생하면 [Slack](https://slack.openreplay.com)에 접속하여 커뮤니티의 도움을 받으세요.

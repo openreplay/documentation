@@ -1,0 +1,134 @@
+---
+title: "네트워크 옵션"
+metaTitle: "네트워크 옵션"
+metaDescription: "OpenReplay용 네트워크 옵션 플러그인입니다."
+---
+import Aside from '~/components/Aside.astro'
+
+이 페이지에서는 OpenReplay JavaScript SDK [옵션](/sdk/constructor)의 `network` 네임스페이스를 설명합니다. 이 옵션은 `fetch`와 `XHR` 같은 네트워크 요청을 캡처하고, 필요한 경우 페이로드까지 포함하여 세션 녹화를 재생하는 동안 나중에 확인할 수 있도록 해 줍니다. 문제를 파악하고 해결하는 데 매우 유용합니다.
+
+## 옵션
+
+```js
+network?: {
+  failuresOnly: boolean;
+  sessionTokenHeader: string | boolean;
+  ignoreHeaders: Array<string> | boolean;
+  capturePayload: boolean;
+  sanitizer: (RequestResponseData) => RequestResponseData | null;
+  captureInIframes: boolean;
+  axiosInstances: AxiosInstance[];
+  useProxy?: boolean;
+	tokenUrlMatcher?: (url: string) => boolean;
+}
+```
+
+- `useProxy`: 트래커가 window.fetch/window.XMLRequest를 패치하는 방식 대신 프록시 객체를 사용하도록 전환합니다. 기본값: `true`.
+- `failuresOnly`: HTTP 상태 코드가 4xx-5xx인 요청만 캡처합니다. 기본값: `false`.
+- `sessionTokenHeader`: 백엔드 [통합](/integrations)(예: Sentry)을 활성화한 경우, 이 옵션으로 헤더 이름을 지정할 수 있습니다(옵션을 `true`로 설정하면 기본 헤더인 'X-OpenReplay-SessionToken'이 활성화됩니다). 이 헤더는 각 fetch/XHR 요청에 자동으로 추가되며 OpenReplay sessionToken 값을 담고 있습니다. 기본값: `false`.
+- `tokenUrlMatcher`: 현재 트래커 요청의 URL을 받아 `boolean`을 반환합니다. 이 옵션을 지정하면 함수가 `true`를 반환할 때만 `sessionTokenHeader`가 적용됩니다. 기본값: `undefined`.
+- `ignoreHeaders`: 캡처하지 않을 헤더 목록을 정의합니다. 모든 헤더를 캡처하려면 값을 `false`로 설정하세요(하나도 캡처하지 않으려면 `true`). 기본값: `['Cookie', 'Set-Cookie', 'Authorization']`이므로 민감한 헤더는 캡처되지 않습니다.
+- `capturePayload`: 요청/응답 본문 페이로드를 저장합니다. 문제 해결에 매우 유용할 수 있지만, 애플리케이션이 Fetch/XHR 요청을 많이 사용하는 경우 네트워크 사용량이 커질 수 있습니다. 기본값: `false`.
+
+<Aside type="caution">
+	HTTP 페이로드를 캡처하면 비밀번호 같은 매우 민감한 데이터나 애플리케이션이 Fetch/XHR 요청/응답으로 주고받는 개인 정보가 기록될 수 있으므로, 아래의 `sanitizer` 옵션을 사용하여 해당 데이터를 반드시 정제하세요.
+</Aside>
+
+- `captureInIframes`: iFrame 내부의 네트워크 추적을 비활성화합니다. 기본값: `true`.
+- `axiosInstances`: 일반 구성(프록시 API)이 작동하지 않을 때 사용자 지정 axios 인스턴스를 추적하는 데 유용한 특수 옵션입니다. 기본값: `undefined`.
+- `sanitizer`: Fetch/XHR 요청/응답의 민감한 데이터를 정제하거나 요청을 완전히 무시합니다. 함수 안에서 요청 객체를 수정한 뒤 반환하면 해당 필드를 가릴 수 있습니다(아래 예제 참고). 정제는 다른 옵션에 의한 모든 필터링과 수정이 끝난 **후에** 적용됩니다(즉, `capturePayload`를 명시적으로 `true`로 설정하지 않으면 인수에 `body` 페이로드가 포함되지 않습니다).
+
+```typescript
+interface RequestData {
+  body: BodyInit | null | undefined; // whatewer you've put in the init.body in fetch(url, init) or xhr.send(body)
+  headers: Record<string, string>;
+}
+
+interface ResponseData {
+  body: string | Object | null;  // Object if response is of JSON type
+  headers: Record<string, string>;
+}
+
+interface RequestResponseData {
+  readonly status: number;
+  readonly method: string;
+  url: string;
+  request: RequestData;
+  response: ResponseData;
+}
+
+sanitizer: (data: RequestResponseData) => { // sanitise the body or headers
+  if (data.url === "/auth") {
+    data.request.body = null
+  }
+
+  if (data.request.headers['x-auth-token']) { // can also use ignoreHeaders option instead
+    data.request.headers['x-auth-token'] = 'SANITISED';
+  }
+
+  // Sanitize response
+  if (data.status < 400 && data.response.body.token) {
+    data.response.body.token = "<TOKEN>"  
+  }
+
+  return data
+}
+
+// OR
+
+sanitizer: data => { // ignore payloads for calls that start with /secure
+  if (data.url.startsWith("/secure")) {
+    data.request.body = null;
+    data.response.body = null;
+  }
+  return data
+}
+
+// OR
+
+sanitizer: data => { // sanitize request url: replace all numbers
+  data.url = data.url.replace(/\d/g, "*")
+  return data
+}
+```
+
+## 예제
+
+아래는 `network` 옵션을 사용하는 방법에 대한 예제입니다.
+
+### NPM을 사용하는 경우
+
+```js
+tracker.configure({
+  projectKey: PROJECT_KEY,
+  network: {
+    capturePayload: true // Capture HTTP payload
+  }
+});
+```
+
+### JavaScript 스니펫을 사용하는 경우
+
+`network` 옵션을 설정하는 `initOpts` 변수/줄에 주목하세요.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { 
+  projectKey: "GxPpaDARdn2345fgt321", 
+  network: { // Enable HTTP payload capture in the network option
+    capturePayload: true
+  } 
+};
+
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+```
+
+## 문제 해결
+
+이러한 옵션을 구성하는 데 문제가 있나요? [Slack](https://slack.openreplay.com)에 접속하여 커뮤니티의 도움을 받아 보세요.

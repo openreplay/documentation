@@ -1,0 +1,53 @@
+---
+title: "Flutter SDK - Bildschirme und Views verfolgen"
+metaTitle: "Flutter SDK - Bildschirme und Views verfolgen"
+metaDescription: "Details zum Verfolgen von Bildschirmen und Views mit dem Flutter-Tracker"
+---
+import Aside from '~/components/Aside.astro'
+
+Ist `analytics` aktiviert (Standard), erfasst der Tracker Taps, Wischgesten, Viewport-Änderungen und Eingabeereignisse selbstständig. Bildschirme und einzelne Views werden über zwei exportierte Widgets gemeldet.
+
+## Bildschirme
+
+Fügen Sie `ORNavigatorObserver` zum Navigator Ihrer App hinzu, um Routenwechsel aufzuzeichnen:
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+MaterialApp(
+  navigatorObservers: [ORNavigatorObserver()],
+  // ...
+)
+```
+
+Pushes, Pops, Ersetzungen und Entfernungen werden alle gemeldet. Eine Route wird über `route.settings.name` benannt; eine unbenannte Route greift auf ihre Position im Stack zurück (`route/2`). Benannte Routen ergeben daher deutlich besser lesbare Zeitleisten.
+
+## Verfolgte Views
+
+Umschließen Sie ein beliebiges Widget mit `ORTrackedView`, um es als benannte, beobachtbare View zu melden. Beim Einbinden und beim Entfernen wird jeweils ein Sichtbarkeitsereignis ausgelöst, und der Name dient als Label für Touch-Eingaben innerhalb dieser View.
+
+- `screenName: String` — Titel des Bildschirms oder der Funktion
+- `viewName: String` — Name der verfolgten View
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+ORTrackedView(
+  screenName: 'Checkout',
+  viewName: 'Pay button',
+  child: ElevatedButton(onPressed: _pay, child: const Text('Pay')),
+)
+```
+
+## Touch-Eingaben
+
+Taps und Wischgesten werden über die globale Route des Pointer-Routers erfasst. Der Tracker sieht daher jedes Pointer-Ereignis, ohne je in der Gesture Arena zu konkurrieren – er kann also keinen Tap abfangen, den Ihre App benötigt hat. Ein Pointer, der sich um mehr als 10 logische Pixel bewegt, wird als Wischgeste mit seiner dominanten Richtung aufgezeichnet, alles Kürzere als Klick.
+
+Touch-Labels stammen aus dem Hit-Testing des Texts unter dem Pointer oder von der umschließenden `ORTrackedView`.
+
+<Aside type="note">
+	Labels werden nie aus den Typnamen von Widgets oder Render-Objekten abgeleitet: `flutter build --obfuscate` reduziert diese zu Rauschen.
+</Aside>
+
+## Haben Sie Fragen?
+Wenn Sie Fragen zu diesem Vorgang haben, wenden Sie sich gern über unseren [Slack](https://slack.openreplay.com) an uns.

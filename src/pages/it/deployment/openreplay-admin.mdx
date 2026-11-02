@@ -1,0 +1,172 @@
+---
+title: "Amministrazione di OpenReplay"
+metaTitle: "Amministrazione di OpenReplay"
+metaDescription: "Come amministrare e gestire facilmente la tua istanza di OpenReplay."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+## CLI
+
+La CLI è utile per gestire gli aspetti di base della tua istanza di OpenReplay, come riavviare o reinstallare un servizio, consultare i log di un componente o semplicemente controllare lo stato dei servizi backend.
+
+Esegui la CLI con l'opzione `-h`:
+
+```bash
+openreplay -h
+```
+
+E consulta l'elenco di tutte le opzioni disponibili:
+
+```shellsession
+  ___                   ____            _
+ / _ \ _ __   ___ _ __ |  _ \ ___ _ __ | | __ _ _   _
+| | | | '_ \ / _ \ '_ \| |_) / _ \ '_ \| |/ _` | | | |
+| |_| | |_) |  __/ | | |  _ <  __/ |_) | | (_| | |_| |
+ \___/| .__/ \___|_| |_|_| \_\___| .__/|_|\__,_|\__, |
+      |_|                        |_|            |___/
+
+[INFO]
+  Usage: openreplay [ -h | --help ]
+                    [ -s | --status ]
+                    [ -i | --install DOMAIN_NAME ]
+                    [ -u | --upgrade ]
+                    [ -U | --deprecated-upgrade /path/to/old_vars.yaml]
+                    [ -r | --restart ]
+                    [ -R | --Reload ]
+                    [ -c | --cleanup N (in days) ]
+                    [ -e | --edit ]
+                    [ -p | --install-packages ]
+                    [ -l | --logs SERVICE ]
+         Services: alerts assets assist chalice
+                   db ender frontend heuristics
+                   http integrations nginx-controller
+                   peers sink sourcemapreader storage
+```
+
+Il backend di OpenReplay si basa sui seguenti componenti/servizi:
+
+| Servizio | Descrizione |
+|---------|-------------|
+| http | Acquisisce gli eventi e le registrazioni delle sessioni |
+| sink | Legge i dati dalla pipeline di streaming (Redis o Kafka per l'edizione enterprise) e li inserisce in uno storage temporaneo (NFS) |
+| storage | Sposta i file temporanei delle registrazioni delle sessioni nel servizio di object storage |
+| assets | Mette in cache gli asset (CSS, font e icone) per riprodurre correttamente le registrazioni |
+| db | Legge e scrive su vari database (Postgres + ClickHouse per l'edizione enterprise) |
+| ender | Termina le sessioni degli utenti se inattive o disconnesse |
+| chalice | API per servire il frontend |
+| alerts | Invia notifiche (email, slack, in-app, webhook) quando viene raggiunta una soglia impostata dall'utente su una qualsiasi delle metriche di prestazione |
+| integrations |  Invia e recupera dati dalle API di terze parti supportate (Sentry, Elastic, GitHub, Jira, ecc.) |
+
+## Comandi utili
+
+- Controlla lo stato di salute di OpenReplay
+
+```sh
+openreplay -s
+```
+
+- Controlla i log dei servizi
+
+```sh
+openreplay -l <service name>
+```
+
+## Aumentare la capacità dei servizi
+
+È possibile aumentare la capacità di qualsiasi servizio sovrascrivendo i valori predefiniti di allocazione di cpu/memoria. Questi ultimi vengono determinati durante il processo di configurazione in base alla capacità della tua istanza e dovrebbero soddisfare le esigenze della maggior parte delle installazioni.
+
+ Se hai un volume elevato e una macchina molto potente, esegui semplicemente `openreplay -e` e sovrascrivi le risorse del servizio. Nell'esempio seguente lo facciamo per il worker `http`, ma si può fare per qualsiasi servizio (ad es. sink, storage, postgresql, redis, ecc.) rimuovendo il commento e aggiornando il blocco qui sotto. Se devi farlo per più di un servizio, copia semplicemente lo stesso blocco e rinominalo/aggiornalo (attenzione ai duplicati).
+
+```yaml
+http:
+  resources:
+    limits:
+      cpu: 4096m
+      memory: 8192Mi
+    requests:
+      cpu: 1024m
+      memory: 2056Mi
+```
+
+Infine, reinstalla il servizio affinché i nuovi limiti abbiano effetto (i tuoi dati non andranno persi):
+
+```bash
+openreplay -R
+```
+
+## Aggiornare PostgreSQL
+
+Di seguito trovi le istruzioni per aggiornare PostgreSQL alla versione 1.16 o successiva:
+
+1. Esegui il dump del DB nel volume persistente:
+
+   Se stai usando un'installazione standard, esegui il comando seguente per creare un dump del database:
+
+   > Nota: puoi aspettarti che i dati vengano compressi con un rapporto di 3:1 (ad esempio: se hai 15G di dati postgres, il dump sarà di 5G). Assicurati quindi di avere spazio su disco sufficiente.
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'PGPASSWORD=$POSTGRES_PASSWORD PGUSER=postgres pg_dumpall -v > /bitnami/postgresql/dumpall.sql'
+   ```
+
+2. Elimina la directory dei dati esistente:
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'rm -rf /bitnami/postgresql/data'
+   ```
+
+3. Riduci a zero lo StatefulSet di PostgreSQL per fermare i pod attuali:
+
+   ```sh
+   kubectl scale sts postgresql --replicas=0 -n db
+   ```
+
+4. Aggiorna l'immagine di PostgreSQL alla versione 16.3.0 o successiva:
+
+   ```sh
+   kubectl set image statefulset/postgresql postgresql=bitnamilegacy/postgresql:16.3.0-debian-12-r9 -n db
+   ```
+
+5. Riporta lo StatefulSet a uno per avviare il pod aggiornato:
+
+   ```sh
+   kubectl scale sts postgresql --replicas=1 -n db
+   ```
+
+6. Verifica che il pod sia in esecuzione e che l'operazione di scaling sia completata:
+
+   ```sh
+   kubectl get pod -n db -l app.kubernetes.io/name=postgresql
+   ```
+
+7. Ripristina il database dal dump:
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'PGPASSWORD=$POSTGRES_PASSWORD PGUSER=postgres psql -f /bitnami/postgresql/dumpall.sql'
+   ```
+
+8. Una volta completato l'aggiornamento, puoi eliminare il file di dump dal pod di PostgreSQL:
+
+   ```sh
+   kubectl -n db exec -it postgresql-0 -- /bin/bash -c 'rm /bitnami/postgresql/dumpall.sql'
+   ```
+
+## Disinstallare OpenReplay
+
+Esegui i comandi seguenti per disinstallare OpenReplay:
+
+```sh
+sudo k3s-uninstall.sh
+```
+
+Tutta la configurazione è memorizzata in `/var/lib/openreplay/`.
+
+```sh
+sudo rm -rf /var/lib/openreplay
+```
+
+## Aggiornare ClickHouse
+
+```sh
+kubectl set image statefulset/databases-clickhouse  clickhouse=clickhouse/clickhouse-server:26.8-alpine -n db
+```

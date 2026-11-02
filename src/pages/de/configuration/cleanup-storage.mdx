@@ -1,0 +1,227 @@
+---
+title: "Speicher bereinigen"
+metaTitle: "Speicher bereinigen"
+metaDescription: "Aufzeichnungen in großen Mengen aus der Datenbank löschen und den Speicher bereinigen."
+---
+import Aside from '~/components/Aside.astro'
+
+Jede Aufzeichnung besteht aus einer Datei und einem Eintrag in der Datenbank. OpenReplay legt alles, was zum Abspielen einer Sitzung nötig ist (DOM-Mutationen, Mauskoordinaten, Konsolenprotokolle, Netzwerkaktivität und vieles mehr), in 3 Dateien ab (2 für das Replay selbst und 1 für die DevTools-Daten). Diese Dateien werden standardmäßig auf Ihrer Instanz gespeichert und machen daher den größten Teil ihres Speichers aus. Sitzungsmetadaten werden dauerhaft in der PostgreSQL-Datenbank gespeichert, die Datei mit der Aufzeichnung läuft jedoch nach 180 Tagen über eine minio-Lifecycle-Richtlinie ab bzw. wird gelöscht.
+
+## Bereinigung des temporären Speichers
+
+OpenReplay speichert temporäre Daten im Dateisystem, bevor sie verarbeitet und in den Objektspeicherdienst (minIO oder S3) hochgeladen werden. Nach Abschluss der Verarbeitung sind die Daten veraltet, und ein Cronjob löscht diese Dateien jeweils am 2. Tag der Woche. 
+
+Wenn Sie den Cronjob anpassen möchten:
+1. Bearbeiten Sie die Konfiguration:
+
+```bash
+openreplay -e
+```
+
+2. Ändern Sie den Zeitplan des Cronjobs, indem Sie die folgende Zeile anhängen:
+
+```yaml
+utilities:
+  # Cleanup data everyday morning 3:05 am, server time.
+	cron: "5 3 * * *"
+```
+
+
+Es gibt zwei Möglichkeiten, den Speicher Ihrer OpenReplay-Instanz zu bereinigen: automatisiert (CLI) und manuell.
+
+## Datenbereinigung (CLI)
+
+Dieser Vorgang ist über unsere CLI vollständig automatisiert. Führen Sie einfach den folgenden Befehl aus, um Ihren Speicher zu bereinigen, indem Daten sowohl aus Postgres (wo Ereignisse gespeichert sind) als auch aus minio (wo Aufzeichnungen gespeichert sind) entfernt werden:
+
+```bash
+# To clean data older than 14 days
+openreplay --cleanup 14
+```
+
+## Datenbereinigung (manuell)
+
+Daten können sowohl aus der Datenbank (wo Ereignisse gespeichert sind) als auch aus minio (wo Aufzeichnungen gespeichert sind) entfernt werden.
+
+### Aufzeichnungen bereinigen
+
+Wenn Sie einmal Speicherplatz freigeben müssen, melden Sie sich bei Ihrer OpenReplay-Instanz an und führen Sie die folgenden Schritte aus:
+
+1. Führen Sie `k9s -n db` aus
+2. Navigieren Sie mit den Pfeiltasten durch die Liste und wechseln Sie zum Container `minio-*`
+3. Drücken Sie `s`, um Shell-Zugriff auf den Minio-Container (Objektspeicher) zu erhalten
+4. Führen Sie `mc alias set minio http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD` aus
+5. Führen Sie `mc rm --recursive --dangerous --force --older-than 7d minio/mobs` aus (d. h. Dateien löschen, die älter als 7 Tage sind)
+6. Verlassen Sie den Minio-Container mit `exit`
+7. Führen Sie `:quit` aus, um die Kubernetes-CLI zu beenden
+
+#### Standard-Lifecycle-Richtlinie ändern
+
+Wenn Sie minio (Standardinstallation) verwenden, können Sie die standardmäßige Lifecycle-Richtlinie folgendermaßen ändern:
+
+1. Führen Sie `k9s -n db` aus
+2. Navigieren Sie mit den Pfeiltasten durch die Liste und wechseln Sie zum Container `minio-*`
+3. Drücken Sie `s`, um Shell-Zugriff auf den Minio-Container (Objektspeicher) zu erhalten
+6. Führen Sie `mc alias set minio http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD` aus
+7. So bereinigen Sie Aufzeichnungen automatisch 14 Tage nach ihrer Erstellung
+
+```bash
+export EXPIRATION_DAYS=14
+export DELETE_JOB_DAYS=$((EXPIRATION_DAYS>30 ? 30 : EXPIRATION_DAYS))
+cat <<EOF > /tmp/lifecycle.json
+{
+  "Rules": [
+    {
+      "Expiration": {
+        "Days": $EXPIRATION_DAYS
+      },
+      "ID": "Delete old mob files",
+      "Status": "Enabled"
+    },
+    {
+      "Expiration": {
+        "Days": $DELETE_JOB_DAYS
+      },
+      "ID": "Delete flagged mob files after ${DELETE_JOB_DAYS} days",
+      "Filter": {
+        "Tag": {
+          "Key": "to_delete_in_days",
+          "Value": "${DELETE_JOB_DAYS}"
+        }
+      },
+      "Status": "Enabled"
+    }
+  ]
+}
+EOF
+mc ilm import minio/mobs < /tmp/lifecycle.json
+```
+
+8. Verlassen Sie den Minio-Container mit `exit`
+9. Führen Sie `:quit` aus, um die Kubernetes-CLI zu beenden
+
+### Datenbankbereinigung (PostgreSQL)
+
+Je nach Nutzung können Daten auf unterschiedliche Weise aus verschiedenen Tabellen entfernt werden. 
+
+#### Mit PostgreSQL verbinden
+
+Verbinden Sie sich mit Ihrer OpenReplay-Instanz und gehen Sie dann wie folgt vor:
+
+1. Führen Sie `k9s -n db` aus
+2. Navigieren Sie mit den Pfeiltasten durch die Liste und wechseln Sie zum Container `postgresql-*`
+3. Drücken Sie `s`, um Shell-Zugriff auf den Postgres-Container zu erhalten
+4. Führen Sie `PGPASSWORD=MY_PG_PASSWORD psql -U postgres` aus (ersetzen Sie `MY_PG_PASSWORD` durch den Wert der Variable `postgresqlPassword` aus der Datei `/var/lib/openreplay/vars.yaml`)
+5. Führen Sie Ihre Löschabfrage (oder eine beliebige andere Abfrage) aus
+6. Geben Sie `exit` ein, um den postgresql-Client zu beenden
+7. Verlassen Sie den Postgres-Container mit `exit`
+8. Führen Sie `:quit` aus, um die Kubernetes-CLI zu beenden
+
+#### Tabellengrößen prüfen
+
+Um die Größe der Tabellen zu prüfen, können Sie die folgende Abfrage ausführen:
+
+```sql
+SELECT nspname AS "name_space",
+       relname AS "relation",
+       pg_size_pretty(
+               pg_total_relation_size(C.oid)
+           )   AS "total_size"
+FROM pg_class C
+         LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+WHERE nspname NOT IN ('pg_catalog','information_schema')
+  AND C.relkind <> 'i'
+  AND nspname !~ '^pg_toast'
+ORDER BY pg_total_relation_size(C.oid) DESC
+LIMIT 20;
+```
+
+#### Bestimmte Ereignisse löschen
+
+Wir haben festgestellt, dass sich die meisten OpenReplay-Benutzer nach Prüfung der Ergebnisse des vorherigen Abschnitts dafür entschieden haben, bestimmte Ereignisse zu entfernen, anstatt Sitzungen zu löschen (insbesondere `events.resources` und `events_common.requests`).
+
+Um alle Ereignisdaten zu verwerfen, können Sie eine der folgenden Abfragen ausführen. Beachten Sie jedoch, dass dies die Werte von Karten, Click-Maps, die Ereignisliste und andere Funktionen beeinträchtigt.
+
+<Aside type="caution">
+	Dies geschieht auf eigene Gefahr. Gehen Sie bei solchen Aktionen in der Datenbank äußerst vorsichtig vor, da sie unumkehrbar sind und mehrere OpenReplay-Funktionen beeinträchtigen können.
+</Aside>
+
+```sql
+--- To delete all data related to a specific event
+
+-- The next 2 tables are usually the biggest ones, and they affect some cards only
+TRUNCATE TABLE events.resources;
+TRUNCATE TABLE events_common.requests;
+
+-- The next table will affect click-maps and events list of session's replay
+TRUNCATE TABLE events.clicks;
+TRUNCATE TABLE events.errors;
+TRUNCATE TABLE events.graphql;
+TRUNCATE TABLE events.inputs;
+TRUNCATE TABLE events.pages;
+TRUNCATE TABLE events.performance;
+TRUNCATE TABLE events.state_actions;
+TRUNCATE TABLE events_common.customs;
+TRUNCATE TABLE events_common.issues;
+```
+
+#### Bestimmte Sitzungen nach Zeitpunkt löschen
+
+Wenn Sie alle Sitzungen löschen möchten, springen Sie zum [nächsten Abschnitt](#delete-all-sessions), da das schneller geht und den Speicherplatz sofort freigibt.
+
+Verwenden Sie die folgende SQL-Abfrage, wenn Sie Daten aus Ihrer Datenbank (PostgreSQL) bereinigen möchten. Ersetzen Sie `2021-01-01` durch das Datum, ab dem Aufzeichnungen behalten werden sollen. Es handelt sich um ein kaskadierendes Löschen, daher werden alle Aufzeichnungen sowie ihre zugehörigen Ereignisse aus der Datenbank entfernt.
+
+<Aside type="caution">
+	Dies geschieht auf eigene Gefahr. Gehen Sie bei solchen Aktionen in der Datenbank äußerst vorsichtig vor, da sie unumkehrbar sind.
+</Aside>
+
+```sql
+--- Cascade delete all sessions and their related events captured before Jan 1st, 2021
+DELETE FROM public.sessions WHERE start_ts < extract(epoch from '2021-01-01'::date) * 1000;
+```
+
+Nach der Ausführung der vorherigen Abfrage gibt die Datenbank den Speicherplatz nicht sofort frei, da sie die Bereinigung für später einplant. Um die Freigabe manuell zu erzwingen, können Sie die folgenden Abfragen ausführen:
+
+<Aside type="note">
+	Diese Abfragen sperren jede Tabelle, sodass sie nicht verfügbar ist, und die Ausführung kann – je nach Datenbank –
+	mehrere Stunden dauern. Wenn Sie noch genügend freien Speicherplatz haben, können Sie die Bereinigung dem PostgreSQL Auto-Vacuum überlassen.
+	
+	Außerdem benötigen sie etwas freien Speicherplatz, um zu funktionieren. Deshalb empfehlen wir dringend, diese Abfragen in aufsteigender Reihenfolge der [Tabellengröße](#check-tables-size) auszuführen
+</Aside>
+
+```sql
+--- Recreate indexes and free unused storage
+VACUUM FULL public.sessions;
+VACUUM FULL events_common.customs;
+VACUUM FULL events_common.issues;
+VACUUM FULL events_common.requests;
+VACUUM FULL events.pages;
+VACUUM FULL events.state_actions;
+VACUUM FULL events.errors;
+VACUUM FULL events.graphql;
+VACUUM FULL events.performance;
+VACUUM FULL events.resources;
+VACUUM FULL events.inputs;
+VACUUM FULL events.clicks;
+```
+
+#### Alle Sitzungen löschen
+
+Verwenden Sie die folgende SQL-Abfrage, wenn Sie alle Sitzungsdaten aus Ihrer Datenbank (PostgreSQL) löschen möchten. Es handelt sich um ein kaskadierendes Löschen, daher werden alle Aufzeichnungen sowie ihre zugehörigen Ereignisse aus der Datenbank entfernt.
+
+<Aside type="caution">
+	Dies geschieht auf eigene Gefahr. Gehen Sie bei solchen Aktionen in der Datenbank äußerst vorsichtig vor, da sie unumkehrbar sind.
+	
+	Bei der OpenReplay Enterprise Edition löschen diese Abfragen auch Vault-Sitzungen.
+</Aside>
+
+```sql
+--- Cascade delete all sessions and their related events 
+TRUNCATE TABLE public.sessions CASCADE;
+TRUNCATE TABLE public.errors CASCADE;
+TRUNCATE TABLE public.issues CASCADE;
+TRUNCATE TABLE public.autocomplete;
+```
+
+## Haben Sie Fragen?
+
+Wenn Sie Fragen zu diesem Vorgang haben, melden Sie sich gern bei uns im [Slack](https://slack.openreplay.com).

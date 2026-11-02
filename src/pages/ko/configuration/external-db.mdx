@@ -1,0 +1,47 @@
+---
+title: "외부 데이터베이스 (Postgres)"
+metaTitle: "외부 데이터베이스 (Postgres)"
+metaDescription: "OpenReplay의 기본 데이터베이스 대상을 변경하여 외부 데이터베이스를 사용하는 방법을 설명합니다."
+---
+
+데이터베이스 서비스인 Postgres는 기본적으로 OpenReplay와 함께 설치되며, 배포 비용을 낮추기 위해 인스턴스의 전용 컨테이너에서 실행됩니다. 더 높은 확장성이나 더 간편한 운영이 필요하다면 외부 Postgres(예: AWS RDS 또는 GCP Cloud SQL)를 사용할 수도 있습니다.
+
+## 기존 스키마와 데이터 내보내기
+
+> **참고:** 처음부터 새로 시작하는 경우이고 아직 OpenReplay를 설치하지 않았다면, 그대로 설정을 진행하고 아래 단계는 무시하세요.
+
+로컬 스키마와 녹화된 데이터를 외부 Postgres로 내보내야 합니다.
+
+1. 먼저 로컬 데이터베이스를 백업합니다.
+
+```bash
+kubectl exec -n db postgresql-0 -- bash -c 'PGPASSWORD=<postgresPassword from vars.yaml> pg_dumpall -U postgres '  > ~/path/to/dump.sql
+```
+
+2. OpenReplay 인스턴스에 Postgres 클라이언트를 설치하고, 외부 데이터베이스에 접근할 수 있는지 확인합니다.
+
+```bash
+sudo apt install postgresql-client
+```
+   
+3. 백업을 새 외부 Postgres로 복원합니다.
+
+```bash
+PGPASSWORD=PG_PASSWORD psql -U PG_USERNAME -h {RDS_URL} -d postgres < /path/to/dump.sql
+```
+
+4. 마지막으로 `openreplay -e`에서 모든 `postgres` 변수를 수정하여 외부 데이터베이스를 가리키도록 합니다.
+
+```yaml
+  postgresqlPassword: "changeMePassword"
+  postgresqlHost: "postgresql.db.svc.cluster.local"
+  postgresqlPort: "5432"
+  postgresqlUser: "postgres"
+  postgresqlDatabase: "postgres"
+```
+
+5. `:wq`를 입력해 저장하고 종료하면 변경 사항이 적용됩니다
+
+## 궁금한 점이 있으신가요?
+
+문제가 발생하면 [Slack](https://slack.openreplay.com)에 참여하여 커뮤니티의 도움을 받으세요.

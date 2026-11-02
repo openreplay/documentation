@@ -1,0 +1,77 @@
+---
+title: "Gatsby에서 OpenReplay 사용하기"
+metaTitle: "Gatsby 애플리케이션에 OpenReplay 트래커 추가하기"
+metaDescription: "Gatsby 애플리케이션에서 트래커를 동작시키는 방법을 알아봅니다."
+---
+OpenReplay 트래커를 Gatsby 기반 프로젝트에 설치하는 과정은 비교적 간단합니다. Gatsby는 내부적으로 React를 사용하므로, 메인 페이지에 트래커 코드를 추가하고 `useEffect` 훅에서 `start` 메서드를 호출하기만 하면 됩니다.
+
+살펴보겠습니다.
+
+## 정적 사이트에 트래커를 설정하는 이유
+
+앱에 동적 콘텐츠가 없다고 해서 OpenReplay의 다른 기능을 활용할 필요가 없는 것은 아닙니다.
+
+세션 리플레이로 버그를 찾을 일은 없겠지만, 흥미로운 지표를 수집하고 이 지표를 기반으로 [나만의 커스텀 대시보드](https://docs.openreplay.com/tutorials/custom-dashboard)를 만들 수 있습니다.
+
+성능, 웹 바이탈, 리소스 관련 지표까지 활용하면 사용자가 사이트에서 어떤 경험을 하고 있는지 전반적으로 파악할 수 있습니다.
+
+## Gatsby에서 트래커 설정하기
+
+정적 Gatsby 사이트에서 진입점이 `pages` 폴더 안의 `index.tsx` 파일이라면, 여기에 다음 코드를 추가하면 됩니다.
+
+트래커를 싱글톤 인스턴스로 사용할 수 있으며, 이 방식을 권장합니다.
+이렇게 하면 앱 어디에서든 트래커에 접근할 수 있습니다.
+
+```js
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+const Index = ({data, location }) => {
+
+	React.useEffect(() => {
+		tracker.start();
+	}, [])
+
+	 //the rest of your code here...
+}
+```
+
+또는 `Tracker` 클래스를 직접 사용하여 인스턴스를 수동으로 관리할 수도 있습니다.
+
+```jsx
+import Tracker from '@openreplay/tracker';
+const tracker = new Tracker({
+  projectKey: process.env.GATSBY_OPENREPLAY_PROJECT_KEY
+});
+
+const Index = ({data, location }) => {
+
+  React.useEffect(() => {
+    tracker.start();
+  }, [])
+
+   //the rest of your code here...
+}
+```
+
+트래커는 페이지가 컴파일될 때(SSR이든 클라이언트 사이드 렌더링이든) 인스턴스화되지만 start 메서드는 브라우저에서만 호출할 수 있으므로, 컴포넌트가 마운트된 후에 호출되도록 해야 합니다(그래서 여기서 `useEffect` 훅을 사용합니다). `useEffect` 훅의 두 번째 인자로 빈 배열을 전달하면 콜백이 한 번만 실행됩니다.
+
+💡**셀프 호스팅 사용자를 위한 참고:** 셀프 호스팅 버전의 OpenReplay를 사용 중이라면 트래커를 인스턴스화할 때 `ingestPoint` 설정 속성도 지정해야 합니다. 이 속성은 트래커 데이터의 수집 엔드포인트를 지정합니다. 클라우드 사용자는 트래커가 기본적으로 SaaS 버전 엔드포인트의 위치를 알고 있으므로 필요하지 않지만, 셀프 호스팅한다면 반드시 지정해야 합니다(`https://openreplay.mydomain.com/ingest`와 비슷한 형태입니다).
+
+## Gatsby에서 ENV 변수 처리하기
+
+보안을 위해 프로젝트 키를 코드에 하드코딩하지 않는 것을 권장합니다. 즉, Gatsby가 읽을 수 있도록 ENV 변수로 내보내야 합니다.
+
+그러면 OpenReplay 프로젝트 키는 `GATSBY_OPENREPLAY_PROJECT_KEY`라는 변수에 저장됩니다.
+
+이름 앞에 `GATSBY_` 접두사가 붙어 있는 점에 주목하세요. 이 접두사는 Gatsby가 해당 변수를 프런트엔드 코드에서도 사용할 수 있게 해 줍니다. 접두사가 없으면 Node.js 코드를 실행하는 경우가 아니고서는 값을 읽을 수 없습니다.
+
+## 질문이 있으신가요?
+
+트래커가 적용된 Gatsby 기반 애플리케이션의 **전체 소스 코드**는 [이 저장소](https://github.com/deleteman/openreplay-gatsby-example)에서 확인할 수 있습니다.
+
+Gatsby 프로젝트에 트래커를 설정하는 중 문제가 있다면 [Slack 커뮤니티](https://slack.openreplay.com/)로 문의하여 개발자에게 직접 질문하세요!

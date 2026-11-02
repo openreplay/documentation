@@ -1,0 +1,82 @@
+---
+title: "Proxy-Einstellungen"
+metaTitle: "Proxy-Einstellungen"
+metaDescription: "Einstellungen für den Betrieb von OpenReplay hinter einem Proxy wie NGINX oder Apache2."
+---
+
+## OpenReplay mit anderen Anwendungen über einen Reverse Proxy betreiben
+
+Wenn OpenReplay auf einem Rechner läuft, stellt es die Anwendung über Port 80/443 bereit. Bei Verwendung eines Reverse Proxys kann OpenReplay jedoch so konfiguriert werden, dass es einen anderen Port für den Zugriff auf die Anwendung nutzt. Die folgenden Schritte zeigen, wie das geht:
+
+1. Bearbeiten Sie die Konfigurationsdatei:
+
+```bash
+openreplay -e
+```
+
+2. Ändern Sie den nginx-Konfigurationsabschnitt:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+	...
+	...
+    service:
+      externalTrafficPolicy: "Local"
+      ports:
+        http: 880   # Change this port for http
+        https: 8443 # Change this port for https
+```
+3. Speichern Sie die Konfiguration und beenden Sie den Editor mit `:wq`, damit OpenReplay die Konfiguration neu laden kann.
+
+Anschließend kann Ihr Reverse Proxy konfiguriert werden. Die Anleitungen dazu finden Sie in den folgenden Abschnitten.
+
+### NGINX-Einstellungen
+
+Stellen Sie sicher, dass Ihr Proxy die Header `X-Forwarded-For` und `X-Forwarded-Proto` sendet. Außerdem muss SSL aktiviert sein, damit OpenReplay funktioniert. Der Rest der Konfiguration sollte wie folgt aussehen:
+
+```nginx
+location / {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        proxy_pass http://1.2.3.4:880; # replace with OpenReplay instance IP
+    }
+```
+
+### Apache2-Einstellungen
+
+Stellen Sie sicher, dass die Module `proxy`, `proxy_http` und `proxy_html` aktiviert sind. Auch SSL sollte konfiguriert sein; die übrigen Einstellungen sollten dem folgenden Beispiel ähneln:
+
+```
+<VirtualHost *:443>
+    ProxyPass / http://1.2.3.4:880 <!-- replace with instance IP -->
+    RequestHeader set X-Forwarded-Proto expr=%{REQUEST_SCHEME}
+    # SSL + other config here
+</VirtualHost>
+```
+
+## Öffentliche Endpunkte
+
+Wenn Sie Ihre OpenReplay-Instanz mit einem Proxy schützen, stellen Sie sicher, dass die folgenden Endpunkte öffentlich erreichbar sind, damit OpenReplay einwandfrei funktioniert.
+
+| Endpunkt | Beschreibung | Ursprung |
+|----------|-------------|------------|
+| /ingest | Zum Erfassen von Ereignissen und Aufzeichnungen, die aus Ihrer App stammen | Ihre getrackten App(s) (wenn öffentlich erreichbar, sollte dieser Endpunkt ebenfalls öffentlich sein) |
+| /ws-assist | Für Live-Session-Replays mit Endbenutzern (WebSocket) | Ihre getrackten App(s) (wenn öffentlich erreichbar, sollte dieser Endpunkt ebenfalls öffentlich sein) |
+| /api | Für die Authentifizierung und den Abruf von Sitzungen, Projekten, RBAC und Kontodaten | OpenReplay Dashboard |
+| /v2/api | Für Suche, Analysen, Session Replay und Co-Browsing | OpenReplay Dashboard |
+| /spots | Zum Abrufen von Spot-Videos aus dem Objektspeicher | OpenReplay Dashboard |
+| /mobs | Zum Abrufen von Session Replays aus dem Objektspeicher | OpenReplay Dashboard |
+| /sessions-assets | Zum Abrufen zwischengespeicherter Stylesheets und Schriftarten aus dem Objektspeicher | OpenReplay Dashboard |
+| /static | Zum Abrufen von Daten zu Co-Browsing-Sitzungen | OpenReplay Dashboard |
+| /records | Zum Abrufen von Co-Browsing-Aufzeichnungen aus dem Objektspeicher | OpenReplay Dashboard |
+| /integrations | Zum Abrufen von Logs aus Integrationen von Drittanbietern (wie Sentry oder Datadog) | OpenReplay Dashboard |
+| /sourcemaps | Zum Hochladen von Source Maps | Sourcemaps CLI |
+| /spot | Zum Abrufen von Daten zu Spot-Aufzeichnungen | Spot Chrome Extension |
+| /script | Nützlich, wenn Sie die Dateien openreplay-*.js aus Ihrer eigenen Umgebung ausliefern möchten (andernfalls wird standardmäßig das OpenReplay-CDN verwendet) | Ihre getrackten App(s) |
+
+## Haben Sie Fragen?
+
+Wenn Sie Fragen zu diesem Vorgang haben, melden Sie sich gerne bei uns auf [Slack](https://slack.openreplay.com) .

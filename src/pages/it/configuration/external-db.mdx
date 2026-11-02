@@ -1,0 +1,47 @@
+---
+title: "Database esterno (Postgres)"
+metaTitle: "Database esterno (Postgres)"
+metaDescription: "Come cambiare la destinazione predefinita del database di OpenReplay e usarne uno esterno."
+---
+
+Il nostro servizio di database, Postgres, viene installato per impostazione predefinita con OpenReplay ed è eseguito in un container dedicato sulla tua istanza, per ridurre i costi di deployment. Se cerchi maggiore scalabilità o una gestione più semplice, puoi comunque usare un Postgres esterno (ad es. AWS RDS o GCP Cloud SQL).
+
+## Esportare lo schema e i dati esistenti
+
+> **Nota:** se stai partendo da zero e non hai ancora installato OpenReplay, procedi semplicemente con la configurazione e ignora i passaggi seguenti.
+
+Lo schema locale e i dati registrati devono ora essere esportati nel Postgres esterno:
+
+1. Per prima cosa, esegui il backup del database locale:
+
+```bash
+kubectl exec -n db postgresql-0 -- bash -c 'PGPASSWORD=<postgresPassword from vars.yaml> pg_dumpall -U postgres '  > ~/path/to/dump.sql
+```
+
+2. Installa il client Postgres sulla tua istanza di OpenReplay e assicurati che abbia accesso al database esterno:
+
+```bash
+sudo apt install postgresql-client
+```
+   
+3. Ripristina il backup nel nuovo Postgres esterno:
+
+```bash
+PGPASSWORD=PG_PASSWORD psql -U PG_USERNAME -h {RDS_URL} -d postgres < /path/to/dump.sql
+```
+
+4. Infine, aggiorna tutte le variabili `postgres` in `openreplay -e` e puntale al database esterno:
+
+```yaml
+  postgresqlPassword: "changeMePassword"
+  postgresqlHost: "postgresql.db.svc.cluster.local"
+  postgresqlPort: "5432"
+  postgresqlUser: "postgres"
+  postgresqlDatabase: "postgres"
+```
+
+5. Salva ed esci con `:wq` affinché le modifiche abbiano effetto
+
+## Hai domande?
+
+Se riscontri dei problemi, unisciti al nostro [Slack](https://slack.openreplay.com) e chiedi aiuto alla nostra community.

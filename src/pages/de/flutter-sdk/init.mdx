@@ -1,0 +1,147 @@
+---
+title: "Flutter SDK - SDK initialisieren"
+metaTitle: "Flutter SDK - SDK initialisieren"
+metaDescription: "Konfigurationsoptionen für die start-Methode des Flutter-Trackers"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	Das Flutter SDK befindet sich in der Beta-Phase. Geben Sie uns gern Feedback oder melden Sie Probleme, auf die Sie stoßen, in unserem [Slack](https://slack.openreplay.com).
+</Aside>
+
+## Voraussetzungen
+
+- Flutter `3.41` oder neuer (Dart SDK `^3.0.0`).
+- Ein OpenReplay-Backend ab `v1.26.0`. Ältere Backends melden keine Frame-Unterstützung: Ereignisse werden weiterhin aufgezeichnet, der Bildschirm jedoch nicht.
+
+Das Paket hat **keine pub-Abhängigkeiten** – das Übertragungsprotokoll, Batching, gzip und Multipart sind alle in Dart implementiert, und alles Native läuft über einen einzigen Platform Channel.
+
+## Installation
+
+```sh
+flutter pub add openreplay
+```
+
+Oder fügen Sie es Ihrer `pubspec.yaml` hinzu:
+
+```yaml
+dependencies:
+  openreplay: ^1.0.9
+```
+
+## Initialisierung
+
+Sie müssen den `projectKey` an `start()` übergeben. Diesen Wert finden Sie in Ihrem OpenReplay-Dashboard unter 'Preferences > Projects'.
+
+<Aside type="tip">
+	Beachten Sie: Wenn Sie mehrere Projekte haben, müssen Sie darauf achten, welchen Projektschlüssel Sie wählen.
+</Aside>
+
+### Tracking-Code hinzufügen
+
+Umschließen Sie Ihre App mit `OpenReplayWidget` und starten Sie dann den Tracker. Der Wrapper ist **erforderlich**: Er stellt die Repaint Boundary bereit, aus der die Frames erfasst werden – ohne ihn wird nichts aufgezeichnet.
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:openreplay/openreplay.dart';
+
+void main() {
+  runApp(const OpenReplayWidget(child: MyApp()));
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await OpenReplay.instance.start(
+        projectKey: 'YOUR_PROJECT_KEY',
+        // not required if you're using our SaaS version
+        serverUrl: 'https://your.instance.com/ingest',
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+        // records screen transitions
+        navigatorObservers: [ORNavigatorObserver()],
+        home: const HomePage(),
+      );
+}
+```
+
+`start()` kann bedenkenlos vor dem ersten Frame aufgerufen werden – die Erfassung beginnt erst, wenn `OpenReplayWidget` gelayoutet wurde.
+
+### Navigations-Listener einrichten
+
+Fügen Sie `ORNavigatorObserver` zu Ihrer `MaterialApp` (oder `CupertinoApp` oder einem beliebigen `Navigator`) hinzu, damit hinzugefügte und entfernte Routen in der Replay-Zeitleiste erscheinen:
+
+```dart
+MaterialApp(
+  navigatorObservers: [ORNavigatorObserver()],
+  // ...
+)
+```
+
+Routen werden über `route.settings.name` gemeldet. Unbenannte Routen greifen auf ihre Position im Stack zurück (`route/2`); benannte Routen ergeben daher deutlich besser lesbare Zeitleisten.
+
+### Daten bereinigen
+
+Weitere Details finden Sie unter [So bereinigen Sie Daten in Flutter-Replays](/flutter-sdk/sanitization).
+
+## Initialisierungsoptionen
+
+Optionen werden als `OROptions` an `start()` übergeben:
+
+```dart
+await OpenReplay.instance.start(
+  projectKey: 'YOUR_PROJECT_KEY',
+  options: const OROptions(
+    logs: false,
+    targetLongEdge: 1080,
+  ),
+);
+```
+
+- `crashes: bool` Erfasst Dart-Fehler. Native Abstürze benötigen weiterhin einen nativen Reporter. Standard: `true`.
+- `analytics: bool` Erfasst Touch-Eingaben, Wischgesten, Bildschirme und Eingaben. Standard: `true`.
+- `performances: bool` Erfasst CPU-Auslastung, Arbeitsspeicher, Akku und thermischen Zustand. Standard: `true`.
+- `logs: bool` Erfasst die Ausgabe von `debugPrint`. Standard: `true`.
+- `screen: bool` Aktiviert die Frame-Erfassung. Standard: `true`.
+- `screenshotBatchSize: ScreenshotBatchSize` Anzahl der Frames, die gepuffert werden, bevor ein Batch gepackt und hochgeladen wird – `low` (10), `normal` (20) oder `high` (30). Standard: `normal`.
+- `targetLongEdge: int` Längste Kante eines erfassten Frames in Pixeln. Begrenzt die Kosten pro Frame, sodass sie nicht mit der Bildschirmgröße schwanken. Standard: `720`.
+- `dedupeFrames: bool` Überspringt Frames, deren Pixel byte-identisch mit dem vorherigen Frame sind. Die Wiedergabe bleibt davon unberührt – der Player zeigt den letzten Snapshot zum aktuellen Zeitpunkt oder davor. Standard: `true`.
+- `maskPlatformViews: bool` Überdeckt Platform Views (WebView, Karten, Kameravorschau) mit einem Platzhalter. Sie werden in nativen Ebenen gerendert, die Flutter nicht zurücklesen kann, und erscheinen daher ohne diese Option leer. Standard: `true`.
+- `wifiOnly: bool` Reserviert; **wird noch nicht durchgesetzt**. Standard: `true`.
+- `debugLogs: bool` Aktiviert die SDK-eigene Protokollierung. Standard: `false`.
+- `debugImages: bool` Legt erfasste Frames zum Debuggen ab. Standard: `false`.
+
+Es werden zwei Presets mitgeliefert: `OROptions.defaults` (alle oben genannten Optionen) und `OROptions.defaultDebug` (dasselbe, mit `debugLogs: true`).
+
+<Aside type="note">
+	Bildrate und Bildqualität werden hier **nicht** festgelegt. Sie stammen aus Ihren Projekteinstellungen und werden in der `/start`-Antwort übermittelt.
+</Aside>
+
+## Server-URL
+
+`serverUrl` verweist standardmäßig auf OpenReplay Cloud. Selbst gehostete Bereitstellungen übergeben sie an `start()` oder setzen sie vorab:
+
+```dart
+OpenReplay.instance.serverUrl = 'https://your.instance.com/ingest';
+```
+
+## Module
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="Die Module des Flutter SDK kennenlernen" url="/flutter-sdk/modules" hideIcon={true} width="100"/>
+</div>
+
+## Methoden
+
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="Die Methoden des Flutter SDK kennenlernen" url="/flutter-sdk/methods" hideIcon={true} width="100"/>
+</div>
+
+## Haben Sie Fragen?
+Wenn Sie Fragen zu diesem Vorgang haben, wenden Sie sich gern über unseren [Slack](https://slack.openreplay.com) an uns.

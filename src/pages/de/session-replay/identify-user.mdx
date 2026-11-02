@@ -1,0 +1,87 @@
+---
+title: "Einen Benutzer identifizieren"
+metaTitle: "Einen Benutzer identifizieren"
+metaDescription: "So ordnen Sie der Sitzungsaufzeichnung eine interne Benutzer-ID zu."
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="So identifizieren Sie Benutzer in Ihren Replays"
+  description="Wenn Sie nicht gerne lesen, können Sie diesem Video-Tutorial folgen, das Ihnen zeigt, wie Sie Ihre Replays Ihren Benutzern zuordnen."
+  videoURL="https://youtu.be/xfotXkeyXZM"
+/>
+
+Ordnen Sie der aufgezeichneten Sitzung Ihre interne Benutzer-ID zu, indem Sie die folgenden Schritte ausführen.
+
+### Mit NPM
+
+Übergeben Sie die userID beim Start des Trackers:
+
+```js
+tracker.configure({
+  projectKey: PROJECT_KEY
+});
+
+tracker.start({
+  userID: "john@doe.com",
+  metadata: {
+    balance: "10M",
+    plan: "free"
+  }
+});
+```
+
+Ist das nicht möglich (die userID ist erst später im Navigationsablauf bekannt, also deutlich nach dem Start des Trackers), rufen Sie die Methode `setUserID` auf, um Ihre Benutzer zu identifizieren. Die Identität des Benutzers kann während der Sitzung jederzeit durch einen erneuten Aufruf von `setUserID` geändert werden. OpenReplay behält jedoch nur die zuletzt übergebene Benutzer-ID.
+
+```js
+tracker.setUserID('john@doe.com'); // after tracker.start()
+```
+
+### Mit dem JavaScript-Snippet
+
+Nachfolgend sehen Sie ein Beispiel, wie Sie die userID mithilfe des Snippets übergeben. Beachten Sie die Variable bzw. Zeile `startOpts`, über die die userID übergeben wird.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: getUserID() }; // use startOpts variable to inject userID
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+```
+
+Ist das nicht möglich (die userID ist erst später im Navigationsablauf bekannt, also deutlich nach dem Start des Trackers), rufen Sie stattdessen die Methode `setUserID` auf, um Ihre Benutzer zu identifizieren. Die Identität des Benutzers kann während der Sitzung jederzeit durch einen erneuten Aufruf von `setUserID` geändert werden. OpenReplay behält jedoch nur die zuletzt übergebene Benutzer-ID.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" };
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay.js", 1, 0, initOpts, startOpts);
+</script>
+  ...
+  OpenReplay.setUserID("john@doe.com"); // set the userID later in your code
+  ...
+```
+
+### Mit einer iOS-App
+
+Rufen Sie einfach `setUserID(String)` zu einem beliebigen Zeitpunkt während Ihres Replays auf.
+
+```swift
+import ORTracker
+
+// ... your code
+
+ORTracker.shared.setUserID(_ userID: String)
+```
+
+## Haben Sie Fragen?
+Wenn Sie Fragen zu diesem Vorgang haben, wenden Sie sich gerne über unseren [Slack](https://slack.openreplay.com) an uns.

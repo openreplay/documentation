@@ -1,0 +1,73 @@
+---
+title: "Android SDK - Netzwerk abfangen"
+metaTitle: "Android SDK - Netzwerk abfangen"
+metaDescription: "Details zum Abfangen von Netzwerkanfragen im Android-Tracker"
+---
+
+## Netzwerk abfangen
+
+`OpenReplay` stellt den `NetworkListener` bereit, der sowohl Tasks als auch Requests akzeptiert. So gehen Sie vor:
+
+```swift
+import com.openreplay.tracker.OpenReplay
+
+fun makeSampleRequest() {
+    Thread {
+        try {
+            val url = URL("https://jsonplaceholder.typicode.com/posts/1")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+
+            // Optionally set request headers
+            connection.setRequestProperty("Content-Type", "application/json")
+
+            // Initialize the network listener for this connection
+            val networkListener = NetworkListener(connection)
+
+            val reader = BufferedReader(InputStreamReader(connection.inputStream))
+            val response = StringBuilder()
+            var line: String?
+            while (reader.readLine().also { line = it } != null) {
+                response.append(line)
+            }
+            reader.close()
+
+            // Using the network listener to log the finish event
+            networkListener.finish(connection, response.toString().toByteArray())
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }.start()
+}
+```
+
+## Anfrage bereinigen
+
+Zwei Schlüssel stehen zur Verfügung, um die Anfrage-/Antwortdaten automatisch zu kürzen: `ignoredKeys` für den Body und `ignoredHeaders` für die Header. Sowohl die Anfrage als auch die Antwort werden bereinigt; der Body ist jedoch nur betroffen, wenn er gültiges JSON ist.
+
+Weisen Sie einfach eine Liste von Strings zu, die Sie bereinigen möchten:
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+Sie können die Antwortdaten auch ändern, bevor Sie sie an den Listener übergeben:
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```

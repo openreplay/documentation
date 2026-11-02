@@ -1,0 +1,235 @@
+---
+title: "요청 데이터 캡처 및 정제"
+metaTitle: "리플레이에서 요청 데이터 정제하기"
+metaDescription: "요청 데이터를 캡처하여 프런트엔드에서 어떤 유형의 실수를 하고 있는지 파악하세요"
+---
+클라이언트 코드의 오류가 항상 자바스크립트 코드가 전혀 동작하지 않아 빈 화면이 나타나는 것처럼 명확하게 드러나지는 않습니다.
+때로는 사용자가 특정 동작을 했을 때 서버로 보내는 요청이 잘못 구성되어 있는 것이 문제입니다.
+클라이언트 코드는 동작하고 콘솔에 JS 오류도 없지만, 백엔드는 전송된 내용을 받아들이지 못합니다.
+
+OpenReplay를 사용하면 클라이언트와 서버 간 통신을 표준 세션 리플레이의 일부로 캡처하고 나중에 검토할 수 있습니다. 그럼 어떻게 하는지, 그리고 이를 통해 어떤 이점을 얻을 수 있는지 살펴보겠습니다.
+
+## 샘플 앱
+이 가이드를 위해 [Bored API](https://www.boredapi.com/)를 사용하는 간단한 React 애플리케이션을 만들었습니다. 몇 가지 파라미터를 기준으로 무작위 활동을 추천해 주는 매우 단순한 API입니다.
+그렇게 만든 "I'm bored App"은 다음과 같습니다.
+
+![](https://i.imgur.com/ZCEOtiC.png)
+
+Netlify에서 [여기](https://venerable-tartufo-f87748.netlify.app)를 통해 직접 사용해 볼 수 있으며, 코드를 자세히 살펴보고 싶다면 [GitHub](https://github.com/deleteman/im-bored-app)에서 전체 코드를 볼 수 있습니다.
+
+이 애플리케이션은 두 개의 컴포넌트로 구성됩니다. `SearchForm` 컴포넌트는 두 개의 필드와 버튼을 렌더링하고 API로 실제 요청을 보내는 역할을 합니다.
+그리고 `Suggestion` 컴포넌트는 추천 내용을 보기 좋은 상자 안에 렌더링하기만 합니다.
+
+`fetch` 함수로 요청을 보내는 것은 첫 번째 컴포넌트뿐이므로, 이 컴포넌트에 집중하겠습니다.
+
+**참고**: 이 기법은 **Axios**로 보내는 모든 요청에도 동일하게 적용됩니다. 
+
+컴포넌트가 어떤 일을 하는지 간단히 살펴보겠습니다.
+
+### SearchForm 컴포넌트의 코드
+
+복잡한 컴포넌트는 아니지만, 이번 사용 사례와 특히 관련이 깊은 부분이 있으니 간단히 살펴보겠습니다.
+
+```javascript 
+import { Container, Col, Form, Row, Button } from 'react-bootstrap';
+
+const SearchForm = ({setResult, fetcher}) => {
+const getSomething = async (evt) => {
+    evt.preventDefault()
+    let form = evt.target
+
+    const API_URL = "/api/activity?"
+    let getParams = {}
+    if(form.participants.value !== '') {
+      getParams.participants = form.participants.value
+    }
+
+    if(form.priceRange.value !== '') {
+      let prices = form.priceRange.value.split("_")
+      getParams.minprice = prices[0]
+      getParams.maxprice = prices[1]
+    }
+
+    let results = await fetcher(API_URL + new URLSearchParams(getParams), {
+        mode: 'no-cors'
+    })
+    setResult(await results.json())
+
+    return false
+  }
+
+    return (
+        <Container>
+        <Form onSubmit={getSomething}>
+          <Row>
+            <Col>
+          <Form.Group controlId='participants' >
+            <Form.Label>Participants</Form.Label>
+            <Form.Control type='text' name="totalParticipants" placeholder='Leave empty if you dont care...'></Form.Control>
+          </Form.Group>
+          </Col>
+            <Col>
+          <Form.Group controlId='priceRangeId'>
+            <Form.Label>Price range</Form.Label>
+            <Form.Select name="priceRange" >
+              <option value="" >Select one or leave empty if you dont care</option>
+              <option value="0.0">Free</option>
+              <option value="0.1_0.5">Cheap</option>
+              <option value="0.6_1.0">Expensive</option>
+            </Form.Select>
+          </Form.Group>
+          </Col>
+          </Row>
+          <Row className='m-3'>
+            <Col>
+            <Form.Group>
+              <Button variant="primary" type="submit">Get me something!</Button>
+            </Form.Group>
+            </Col>
+          </Row>
+        </Form>
+      </Container>
+    )
+}
+
+export default SearchForm
+```
+
+`getSomething` 함수를 보세요. 대부분의 동작이 이곳에서 이루어집니다. 이 함수는 폼의 submit 이벤트가 발생할 때 호출됩니다.
+그러면 함수는 `target` 속성 안에 폼이 연결된 합성 이벤트를 받습니다. 각 필터(입력 필드와 드롭다운)의 값을 가져온 뒤 `fetch` 함수로 요청을 실행합니다.
+URL이 BoredAPI의 엔드포인트를 직접 가리키지 않는다는 점에 주목하세요. CORS 제한으로 요청이 차단되지 않고 동작하도록, 백엔드에 프록시를 설정해 `/api`로 들어오는 모든 요청을 실제 API로 리디렉션하고 있기 때문입니다.
+
+코드를 살펴보았으니, fetch 플러그인 없이 OpenReplay 트래커를 설치하면 어떤 결과를 얻는지 확인해 보겠습니다.
+
+## OpenReplay의 일반적인 데이터 캡처
+이 예제에서는 패키지의 NPM 버전을 사용합니다. 사용 방법을 모른다면 [문서](https://docs.openreplay.com/deployment/setup-or)를 확인한 뒤 다시 돌아오세요.
+
+![](/tutorials/fetch/network-tab-imbored.png)
+
+기본적으로 세션 리플레이 UI는 이렇게 표시됩니다. 
+아래쪽 절반에서 "Network" 탭을 이미 선택했는데, 요청이 전송되고 있다는 것은 보여 주지만 요청에 대한 세부 정보는 
+없습니다. 요청 하나를 클릭해도 최소한의 세부 정보만 표시됩니다.
+
+![](/tutorials/fetch/network-tab-details.png)
+
+그럼 어떻게 해야 할까요? [Network options 객체](installation/network-options)를 사용하면 요청 정보 캡처를 활성화할 수 있습니다. 
+살펴보겠습니다.
+
+### 세션 리플레이에서 요청 데이터 캡처
+
+이를 위해서는 트래커를 인스턴스화할 때 설정 옵션을 하나 추가하기만 하면 됩니다.
+따라서 `new tracker(...)` 줄을 작성할 때 새 속성을 추가합니다.
+
+```javascript
+import Tracker from '@openreplay/tracker';
+
+const tracker = new Tracker({
+  projectKey: "<your project key>",
+  network: {
+    capturePayload: true //start capturing the payload of every request
+  }
+});
+```
+
+필요한 작업은 이것이 전부입니다. 이제부터 요청을 수행할 때마다 트래커가 데이터를 기록합니다.
+이제 변경 사항을 배포하고 앱을 테스트한 다음 탭을 닫고 몇 분 기다리세요. 
+세션이 곧 나타나며, "play" 버튼을 누르면 됩니다.
+
+## 클라이언트-서버 통신 살펴보기
+
+예시를 위해, 애플리케이션을 게시한 뒤 발생하기 시작한 문제도 살펴보겠습니다.
+
+이번 경우에 표시되는 경고 상자를 보세요.
+
+![](https://i.imgur.com/nOlRjO9.png)
+
+이 코드를 작성한 개발자인 저는 어떻게 테스트하고 버그가 어디에 있는지 파악하는지 알고 있습니다. 하지만 사용자 입장에서 이 오류는 별다른 정보를 주지 않으며, 개발팀이 이해할 수 있는 방식으로 상황을 전달하지 못할 수도 있습니다. 
+그래서 사용자는 앱이 동작하지 않는다고 회사에 불만을 제기하기만 하면 되고, 애플리케이션을 담당하는 개발자인 여러분은 제 세션을 살펴보며 클라이언트가 보낸 요청과 서버의 응답을 확인할 수 있습니다.
+
+![](/tutorials/fetch/network-tab-requests.png)
+
+이제 세션 리플레이 UI를 보세요. Network 탭에서 외부 API로 보낸 요청을 확인할 수 있습니다.
+
+이제 오류 응답을 받은 시점을 찾아 해당 시점에 전송된 요청을 살펴보면 됩니다. 
+요청 세부 정보 안에서 문제를 발견할 가능성이 높습니다. 
+이번 경우에는 오류 메시지가 "Failed to query due to error in arguments"입니다. 드롭다운에서 "Free" 옵션을 선택했을 때 
+유효하지 않은 요청을 보내고 있다는 뜻입니다. 요청의 세부 정보를 살펴보겠습니다.
+
+![](https://i.imgur.com/FAtZEgt.png)
+
+문제가 보이시나요? 제가 알려 드리겠습니다.
+
+![](https://i.imgur.com/yX8TJpp.png)
+
+네, `maxprice` 속성의 값으로 `undefined`를 보내고 있습니다. 로직에서 이 부분을 완전히 놓쳤고, 요청을 살펴보다가 발견했습니다.
+문제가 어디 있는지 알았으니 수정은 쉽습니다. 하지만 이 과정 덕분에, 매우 상세한 오류 보고서를 올리거나 개발자가 직접 테스트하고 문제를 재현하지 않고도 문제를 파악하고 해결하도록 곧바로 도울 수 있었을 것입니다. 
+
+## 개인정보 보호 테스트
+
+좋습니다. 이 예제를 조금 더 확장해 보겠습니다. 이번 요청에 사용자의 전화번호도 필요하다고 가정해 봅시다. 사실은 필요하지 않지만, 잠시만 맞춰 주세요.
+
+폼에 필드를 추가하고, 이 값을 가져와 요청의 일부로 보내도록 코드를 업데이트하겠습니다.
+
+폼의 HTML은 다음과 같이 새 `Col` 요소를 추가하기만 하면 됩니다.
+
+```html 
+<!-- previous code -->
+<Col>
+    <Form.Group controlId='phoneNumber'>
+        <Form.Label>Phone Number</Form.Label>
+        <Form.Control type='number' name="phoneNumber" placeholder='Enter your phone number here please'></Form.Control>
+    </Form.Group>
+</Col>
+<!-- rest of the code -->
+```
+
+그리고 이 필드의 내용을 실제 요청에 추가하는 데에는 코드 한 줄이면 충분합니다.
+
+```javascript 
+getParams.phonenumber = form.phoneNumber.value
+```
+
+이제 이 새 코드를 사용해 OpenReplay로 세션을 캡처하면 어떻게 될까요?
+두 가지 일이 일어납니다. 
+
+1. 리플레이에서 _보게 되는_ 전화번호 필드의 내용은 자동으로 정제되어, 리플레이를 보는 누구에게도 표시되지 않습니다.
+2. 하지만 플러그인이 캡처한 요청 정보에는 그 값이 표시됩니다.
+
+다음 스크린샷은 방금 설명한 내용을 보여 줍니다.
+
+![](https://i.imgur.com/kKL47Rd.png)
+
+화면 오른쪽 영역에서 전화번호 전체를 볼 수 있습니다. 일반 트래커는 전화번호 필드를 숫자 필드로 인식하고, 숫자가 개인 정보일 수 있으므로 입력 내용을 캡처하지 않기 때문입니다. 하지만 요청 쪽에서는 개발자가 데이터나 파라미터 이름을 어떻게 지정했을지 알 수 없으므로 이런 가정을 할 수 없습니다. 
+그렇다면 이 플러그인으로 사용자의 개인정보를 보호할 수 있을까요?
+
+기쁘게도 답은 '예, 가능합니다'입니다.
+
+### 요청 데이터 정제
+
+이 튜토리얼의 처음으로 돌아가 network 옵션을 설정했던 부분을 보면, 데이터 정제에 대해서는 아무 말도 하지 않았음을 알 수 있습니다. 
+하지만 이 옵션에는 데이터를 정제하기 위한 콜백을 지정할 수 있습니다. 이 콜백은 요청 객체와 응답 객체를 모두 담은 단일 인자를 받습니다. 그런 다음 원하는 대로 수정할 수 있으며, 실제 요청에는 영향을 주지 않고 OpenReplay UI에 데이터가 표시되는 방식만 바뀝니다. 
+
+예를 들어 "phonenumber" 속성에서 숫자를 제거해 해당 정보가 유출되지 않도록 하려고 합니다. 다음과 같이 하면 됩니다.
+
+```javascript 
+const tracker = new Tracker({
+  projectKey: "<your project id>",
+  network: {
+    capturePayload: true,
+    sanitizer: (data) => { //we change the content of the "phonenumber" parameter from the url
+      data.url = data.url.replace(/phonenumber=([0-9]+)/, "phonenumber=XXXXXX")
+      return data
+    }
+    }
+});
+```
+
+보시다시피 변경은 간단합니다. 이 속성의 숫자만 바꾸었으므로, 이제 UI에서 요청은 다음과 같이 표시됩니다.
+
+![](/tutorials/fetch/network-tab-sanitized-data.png)
+
+이제 사용자의 데이터가 다시 안전하게 보호됩니다. 
+
+## 궁금한 점이 있으신가요?
+
+이 예제의 코드를 자세히 살펴보고 싶다면 [GitHub에서 여기](https://github.com/deleteman/im-bored-app/tree/v1.10)를 확인하세요. Fetch 플러그인이나 트래커 설정 중 문제가 생기면 [Slack 커뮤니티](https://slack.openreplay.com/)에 문의하여 개발자에게 직접 질문해 보세요!

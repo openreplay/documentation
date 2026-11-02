@@ -1,0 +1,97 @@
+---
+title: "Zustand"
+metaTitle: "Zustand"
+metaDescription: "OpenReplay용 Zustand 플러그인입니다."
+---
+import Aside from '~/components/Aside.astro'
+
+이 플러그인을 사용하면 `Zustand` 뮤테이션/상태를 캡처하여 세션 녹화를 재생하면서 나중에 확인할 수 있습니다. 문제를 파악하고 해결하는 데 매우 유용합니다.
+
+<Aside type="tip">
+  Zustand 플러그인으로 이 라이브러리를 사용하는 애플리케이션의 상태를 캡처하는 방법을 자세히 설명한 튜토리얼도 준비되어 있습니다. [여기](/tutorials/zustand)에서 확인해 보세요.
+</Aside>
+
+
+
+## 설치
+
+```bash
+npm i @openreplay/tracker-zustand
+```
+
+## 사용법
+
+`@openreplay/tracker` 패키지를 평소처럼 초기화하고 플러그인을 로드합니다. 플러그인을 호출해 스토어 이름을 설정하면 이름이 지정된 스토어 트래커 인스턴스가 반환되며, 여기에 스토어 인스턴스를 인자로 넘겨 호출하면 해당 스토어의 추적이 활성화됩니다.
+
+### 웹사이트가 싱글 페이지 애플리케이션(SPA)인 경우
+
+```js
+import Tracker from '@openreplay/tracker';
+import trackerZustand from '@openreplay/tracker-zustand';
+```
+
+### 웹 앱이 서버 사이드 렌더링(SSR)인 경우
+
+```js
+import Tracker from '@openreplay/tracker/cjs';
+import trackerZustand from '@openreplay/tracker-zustand/cjs';
+```
+
+### Zustand 스토어 추적
+
+```js
+import create from "zustand";
+import Tracker from '@openreplay/tracker';
+import trackerZustand, { StateLogger } from '@openreplay/tracker-zustand';
+
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+// as per https://docs.pmnd.rs/zustand/guides/typescript#middleware-that-doesn't-change-the-store-type
+// cast type to new one
+// but this seems to not be required and everything is working as is
+const zustandPlugin = tracker.use(trackerZustand()) as unknown as StateLogger
+
+
+const useBearStore = create(
+  zustandPlugin((set: any) => ({
+    bears: 0,
+    increasePopulation: () => set((state: any) => ({ bears: state.bears + 1 })),
+    removeAllBears: () => set({ bears: 0 }),
+  }),
+    // store name is optional
+    // and is randomly generated if undefined
+  'bear_store'
+  )
+)
+```
+
+## 옵션
+
+옵션을 사용해 플러그인 동작을 커스터마이징하여 데이터를 정제할 수 있습니다. 이 옵션은 표준 `createLogger` 플러그인의 옵션과 비슷합니다.
+
+```js
+trackerZustand({
+  filter (mutation, state) {
+    // returns `true` if a mutation should be logged
+    // `mutation` is a `{ type, payload }`
+    return mutation.type !== "aBlacklistedMutation";
+  },
+  transformer (state) {
+    // transform the state before logging it.
+    // for example return only a specific sub-tree
+    return state.subTree;
+  },
+  mutationTransformer (mutation) {
+    // mutations are logged in the format of `{ type, payload }`
+    // we can format it any way we want.
+    return mutation.type;
+  },
+})
+```
+
+## 질문이 있으신가요?
+
+이 플러그인 설정에 문제가 있나요? [Slack](https://slack.openreplay.com)에 접속하여 커뮤니티의 도움을 받으세요.

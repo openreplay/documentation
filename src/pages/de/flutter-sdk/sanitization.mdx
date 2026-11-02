@@ -1,0 +1,59 @@
+---
+title: "Flutter SDK - Sensible Daten bereinigen"
+metaTitle: "Flutter SDK - Sensible Daten bereinigen"
+metaDescription: "Details zum Bereinigen von Aufzeichnungen und Netzwerkdaten im Flutter-Tracker"
+---
+import Aside from '~/components/Aside.astro'
+
+## UI-Komponenten
+
+Umschließen Sie alles, was nicht im Replay erscheinen darf, mit `ORSanitizedView`. Der Bereich wird in der Aufzeichnung unscharf dargestellt und schraffiert, passend zum iOS SDK; das Widget meldet sich selbstständig ab, sobald es den Widget-Baum verlässt.
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+ORSanitizedView(
+  child: TextField(
+    controller: _cardNumber,
+    decoration: const InputDecoration(labelText: 'Card number'),
+  ),
+)
+```
+
+Die Maskierung wird als zweiter Raster-Durchgang auf den erfassten Frame angewendet und verändert daher nie, was Ihr Benutzer auf dem Bildschirm sieht.
+
+<Aside type="note">
+	`ORSanitizedView` verbirgt das Widget auf dem aufgezeichneten Bildschirm. Um zusätzlich den *Wert* einer Eingabe aus dem Ereignisstrom herauszuhalten, übergeben Sie `masked: true` an [`observeInput`](/flutter-sdk/inputs).
+</Aside>
+
+## Platform Views
+
+Platform Views – WebViews, Karten, Kameravorschauen – werden in separaten nativen Ebenen gerendert, die Flutter nicht zurücklesen kann, und würden sonst als leere Bereiche erscheinen. Der Tracker überdeckt sie standardmäßig mit einem Platzhalter. Mit `maskPlatformViews: false` deaktivieren Sie das:
+
+```dart
+await OpenReplay.instance.start(
+  projectKey: 'YOUR_PROJECT_KEY',
+  options: const OROptions(maskPlatformViews: false),
+);
+```
+
+## Netzwerkanfragen
+
+Bodys werden verworfen, sofern Sie nicht `capturePayload: true` setzen, und die Header `cookie`, `set-cookie` und `authorization` werden standardmäßig verworfen. Darüber hinaus hat `sanitizer` das letzte Wort über jeden erfassten Aufruf:
+
+```dart
+OpenReplay.instance.patchNetwork(ORNetworkOptions(
+  capturePayload: true,
+  ignoreHeaders: ['cookie', 'set-cookie', 'authorization', 'x-api-key'],
+  sanitizer: (record) {
+    final body = record.requestBody;
+    if (body is Map) body.remove('password');
+    return record; // return null to drop the call entirely
+  },
+));
+```
+
+Die vollständige Liste der Felder finden Sie unter [Netzwerkoptionen](/flutter-sdk/network).
+
+## Haben Sie Fragen?
+Wenn Sie Fragen zu diesem Vorgang haben, wenden Sie sich gern über unseren [Slack](https://slack.openreplay.com) an uns.

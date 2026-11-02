@@ -2,57 +2,49 @@ import { UIDictionary } from '../translation-checkers';
 
 export default UIDictionary({
 	'a11y.skipLink': 'Zum Inhalt springen',
-	'navbar.a11yTitle': 'Haupt',
+	'navbar.a11yTitle': 'Oben',
+	'homepage.banner': 'OpenReplay bereitstellen, verwalten und anpassen – mit Quickstarts, Tutorials und Anleitungen. Erfahren Sie mehr über unser SDK und die API-Referenzen.',
 	// Site settings
-	'site.title': 'Astro-Dokumentation',
-	'site.description': 'Erzeuge schnellere Websites mit weniger ausgeliefertem JavaScript.',
-	'site.og.imageAlt':
-		'Astro-Logo im Weltraum mit Sternen und einem violetten, Saturn-ähnlichen Planeten rechts im Vordergrund',
+	'site.title': 'OpenReplay-Dokumentation',
+	'site.description': 'Open-Source-Session-Replay-Suite für Entwickler.',
+	'site.og.imageSrc': '/default-og-image.png?v=1',
+	'site.og.imageAlt': 'Open-Source-Session-Replay-Suite für Entwickler.',
 	// Left Sidebar
-	'leftSidebar.a11yTitle': 'Primär',
+	'leftSidebar.a11yTitle': 'Hauptnavigation',
 	'leftSidebar.learnTab': 'Lernen',
 	'leftSidebar.referenceTab': 'Referenz',
 	'leftSidebar.viewInEnglish': 'Auf Englisch ansehen',
+	'leftSidebar.sponsoredBy': 'Gesponsert von',
 	// Right Sidebar
-	'rightSidebar.a11yTitle': 'Sekundär',
+	'rightSidebar.a11yTitle': 'Sekundäre Navigation',
 	'rightSidebar.onThisPage': 'Auf dieser Seite',
 	'rightSidebar.overview': 'Überblick',
 	'rightSidebar.community': 'Community',
-	'rightSidebar.joinDiscord': 'Tritt unserem Discord bei',
-	'rightSidebar.readBlog': 'Lies unsere Blog-Beiträge',
-	'rightSidebar.openCollective': 'Unsere Open Collective-Seite',
-	'rightSidebar.contribute': 'Wirke mit',
-	'rightSidebar.editPage': 'Bearbeite diese Seite',
-	'rightSidebar.translatePage': 'Übersetze diese Seite',
-	'rightSidebar.github': 'Astro Docs auf GitHub',
+	'rightSidebar.joinSlack': 'Treten Sie unserer Slack-Community bei',
+	'rightSidebar.readBlog': 'Blog',
+	'rightSidebar.contribute': 'Mitwirken',
+	'rightSidebar.editPage': 'Diese Seite bearbeiten',
+	'rightSidebar.translatePage': 'Diese Seite übersetzen',
+	'rightSidebar.github': 'Auf GitHub ansehen',
+	// Footer
+	'footer.privacyPolicy': 'Datenschutzerklärung',
+	'footer.terms': 'Nutzungsbedingungen',
 	// `<ThemeToggleButton>` acessibility labels
-	'themeToggle.useLight': 'Nutze das helle Theme',
-	'themeToggle.useDark': 'Nutze das dunkle Theme',
+	'themeToggle.useLight': 'Helles Design verwenden',
+	'themeToggle.useDark': 'Dunkles Design verwenden',
 	// Used in previous/next page links at the bottom of pages
-	'articleNav.nextPage': 'Nächste Seite',
+	'articleNav.nextPage': 'Weiter',
 	'articleNav.prevPage': 'Zurück',
 	// Used in `<Since>`: Added in: v0.24.0 [NEW]
 	'since.addedIn': 'Hinzugefügt in:',
 	'since.new': 'Neu',
-	// Installation Guide
-	'install.autoTab': 'Automatische Installation',
-	'install.manualTab': 'Manuelle Installation',
-	// `<DeployGuidesNav>` vocabulary
-	'deploy.sectionTitle': 'Veröffentlichungs-Anleitungen',
-	'deploy.altSectionTitle': 'Weitere Veröffentlichungs-Anleitungen',
-	'deploy.filterLabel': 'Nach Art filtern',
-	'deploy.ssrTag': 'SSR',
-	'deploy.staticTag': 'Statisch',
-	// `<ContributorList>` fallback text
-	'contributors.seeAll': 'Alle Mitwirkenden ansehen',
 	// Fallback content notice shown when a page is not yet translated
-	'fallbackContent.notice':
-		'Da diese Seite noch nicht auf Deutsch verfügbar ist, siehst du sie auf Englisch. Möchtest du uns helfen?',
-	'fallbackContent.linkText': 'Übersetze diese Seite',
+	'fallbackContent.notice': 'Diese Seite ist noch nicht auf Deutsch verfügbar, daher sehen Sie die englische Version. Helfen Sie gern bei der Übersetzung!',
+	'fallbackContent.linkText': 'So können Sie mitwirken',
 	// 404 Page
-	'404.title': 'Nicht gefunden',
-	'404.content': 'Diese Seite befindet sich nicht in unserem Sonnensystem.',
-	'404.linkText': 'Bring mich nach Hause.',
+	'404.title': 'Seite nicht gefunden',
+	'404.content': 'Diese Seite scheint nicht mehr zu existieren.',
+	'404.linkText': 'Zur Startseite',
 	// Aside component default labels
 	'aside.note': 'Hinweis',
 	'aside.tip': 'Tipp',

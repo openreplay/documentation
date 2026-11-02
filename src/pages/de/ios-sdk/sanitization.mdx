@@ -1,0 +1,63 @@
+---
+title: "iOS SDK - Sensible Daten bereinigen"
+metaTitle: "iOS SDK - Sensible Daten bereinigen"
+metaDescription: "Details zur Bereinigung von Aufzeichnungen und Netzwerkdaten im iOS-Tracker"
+---
+
+## UI-Komponenten
+
+Bereinigte Ansichten werden im resultierenden Replay unkenntlich gemacht. Sie können jede beliebige UI-Komponente hinzufügen; sie wird automatisch entfernt (um Speicher zu sparen), sobald sie nicht mehr auf dem Bildschirm zu sehen ist.
+
+### SwiftUI
+
+Fügen Sie der gewünschten Komponente einfach den Modifier `.sensitive()` hinzu
+
+```swift
+import ORTracker
+
+Text("Very important sensitive text")
+.sensitive()
+
+```
+
+### UIKit
+
+```swift
+import ORTracker
+
+ORTracker.shared.addIgnoredView(view)
+```
+
+## Netzwerkanfragen
+
+Es werden zwei Schlüssel bereitgestellt, um die Anfrage- und Antwortdaten automatisch zu kürzen: `ignoredKeys` für den Body und `ignoredHeaders` für die Header. Sowohl Anfrage als auch Antwort werden bereinigt, der Body jedoch nur, wenn es sich um gültiges JSON handelt.
+
+Weisen Sie einfach eine Liste von Strings zu, die Sie bereinigen möchten:
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+Sie können die Antwortdaten auch ändern, bevor Sie sie an den Listener übergeben:
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```
+
+## Haben Sie Fragen?
+Wenn Sie Fragen zu diesem Vorgang haben, melden Sie sich gerne bei uns auf [Slack](https://slack.openreplay.com).

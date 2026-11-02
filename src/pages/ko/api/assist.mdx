@@ -1,0 +1,169 @@
+---
+title: "Assist"
+metaTitle: "Assist"
+metaDescription: "특정 프로젝트의 모든 라이브 세션을 검색하는 방법."
+---
+import Aside from '~/components/Aside.astro'
+
+<Aside type="note">
+Enterprise Edition(EE)에서만 사용할 수 있습니다.
+</Aside>
+
+## 라이브 세션 조회
+
+특정 프로젝트의 라이브 세션 목록을 반환합니다. 쿼리 매개변수로 `userId`를 지정하여 필터링할 수도 있습니다.
+
+서버 측에서 적용되는 기본값: `sort = timestamp`, `order = desc`, `limit = 10`, `page = 1`.
+
+### 메서드
+
+`GET`
+
+### URL
+
+`/public/:projectKey/assist/sessions`
+
+### 매개변수
+
+| 이름       | 유형   | 설명                                                  |
+|------------|--------|---------------------------------------------------------|
+| projectKey | string | 프로젝트 키(필수)                                     |
+| userId     | string | 선택 사항인 `tracker.setUserID` 값(URL 쿼리 매개변수)  |
+
+### 요청 헤더
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### 요청 예시
+
+```shell
+curl -X GET \
+  '{BASE_URL}/public/aYYaFHiagqdXKEmVlmvJ/assist/sessions?userId=mickael@openreplay.com' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### 응답 예시
+
+```json
+{
+  "data": {
+    "total": 1,
+    "sessions": [
+      {
+        "pageTitle": "OpenReplay Blog",
+        "sessionID": "6975518573799938",
+        "metadata": {},
+        "userID": "mickael@openreplay.com",
+        "userUUID": "8998545b-553c-4f41-a39d-d7cba7fac2d1",
+        "projectKey": "aYYaFHiagqdXKEmVlmvJ",
+        "timestamp": 1656437966459,
+        "trackerVersion": "3.5.11",
+        "userOs": "Mac OS",
+        "userBrowser": "Chrome",
+        "userBrowserVersion": "103.0.0.0",
+        "userDeviceType": "desktop",
+        "userCountry": "FR",
+        "live": true,
+        "projectId": 3
+      }
+    ],
+    "live": true
+  }
+}
+```
+
+## 라이브 세션 검색
+
+JSON 본문을 사용하여 특정 프로젝트의 라이브 세션 목록을 검색합니다.
+
+생략 시 서버 측에서 적용되는 기본값: `sort = timestamp`, `order = desc`, `limit = 10`, `page = 1`.
+
+### 메서드
+
+`POST`
+
+### URL
+
+`/public/:projectKey/assist/sessions`
+
+### 매개변수
+
+| 이름       | 유형   | 설명                                                  |
+|------------|--------|---------------------------------------------------------|
+| projectKey | string | 프로젝트 키(필수)                                     |
+
+### 페이로드
+
+| 이름    | 유형            | 설명                                              |
+|---------|-----------------|------------------------------------------------------|
+| sort    | string          | 정렬 기준 속성(기본값: `timestamp`)               |
+| order   | string          | `asc` 또는 `desc`(기본값: `desc`)                 |
+| page    | integer         | 페이지네이션용 페이지 번호(기본값: `1`)           |
+| limit   | integer         | 페이지당 세션 수(기본값: `10`)                    |
+| filters | array of filter | 필터 목록(기본값: `[]`)                           |
+
+필터 객체:
+
+| 이름     | 유형       | 설명                                                                           |
+|----------|------------|--------------------------------------------------------------------------------|
+| name     | string     | 필터 속성(필수, 예: `userId`). 아래 `source`와 함께 `METADATA`를 사용합니다     |
+| operator | string     | `contains` 또는 `is`(기본값: `contains`)                                       |
+| value    | string[]   | 값 목록(기본값: `[]`)                                                          |
+| source   | string     | `name = METADATA`일 때의 메타데이터 속성 이름(기본값: `""`)                    |
+
+`value = []`이면 지정한 속성이 설정된 라이브 세션(값은 무관)이 검색 결과에 포함됩니다.
+
+### 요청 헤더
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### 요청 예시
+
+다음 예시는 `userId`에 `openreplay`가 포함되고 `metadata.plan`이 `trial` 또는 `free`인 라이브 세션 중 처음 10개를 (타임스탬프 내림차순으로 정렬하여) 검색합니다.
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/aYYaFHiagqdXKEmVlmvJ/assist/sessions \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "filters": [
+      { "value": ["trial", "free"], "name": "METADATA", "source": "plan", "operator": "is" },
+      { "value": ["openreplay"], "name": "userId", "operator": "contains" }
+    ],
+    "sort": "timestamp",
+    "order": "desc",
+    "limit": 10,
+    "page": 1
+  }'
+```
+
+### 응답 예시
+
+```json
+{
+  "data": {
+    "total": 1,
+    "sessions": [
+      {
+        "pageTitle": "OpenReplay Blog",
+        "sessionID": "6975518573799185",
+        "metadata": { "plan": "trial" },
+        "userID": "dev@openreplay.com",
+        "userUUID": "8998545b-553c-4f41-a39d-d7cba7fac2d1",
+        "projectKey": "aYYaFHiagqdXKEmVlmvJ",
+        "timestamp": 1656437966459,
+        "trackerVersion": "3.5.11",
+        "userOs": "Mac OS",
+        "userBrowser": "Chrome",
+        "userBrowserVersion": "103.0.0.0",
+        "userDeviceType": "desktop",
+        "userCountry": "FR",
+        "live": true,
+        "projectId": 3
+      }
+    ],
+    "live": true
+  }
+}
+```

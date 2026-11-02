@@ -1,0 +1,60 @@
+---
+title: "Canvas and WebGL"
+metaTitle: "Canvas 및 WebGL"
+metaDescription: "세션 리플레이에서 canvas 및 WebGL 요소를 녹화하는 방법을 알아봅니다."
+---
+> 참고: Canvas 녹화는 [Dedicated Cloud](https://console.openreplay.com/signup) 플랜에서만 사용할 수 있습니다.
+
+OpenReplay는 WebGL 지원과 함께 `<canvas>` 요소의 콘텐츠를 녹화할 수 있습니다.
+
+> 참고: WebGL 컨텍스트를 사용하는 경우, canvas에서 이미지 데이터를 추출하는 작업은 대개 기본적으로 생략되는 드로잉 레이어에 의존하므로, 빈 프레임을 방지하려면 .getContext 옵션에 `{ preserveDrawingBuffer: true }`를 추가해야 합니다.
+
+## Canvas 녹화 활성화
+
+이 작업은 백엔드 수준에서 수행해야 합니다. Canvas 녹화를 활성화하려면 `openreplay -e`를 실행한 다음, 아래 블록을 추가하여 `http` 서비스를 업데이트합니다.
+
+```yaml
+http:
+  env:
+    RECORD_CANVAS: true
+    CANVAS_QUALITY: low
+    CANVAS_FPS: 1
+```
+
+완료되면 `:wq`를 사용해 설정을 저장하고 종료하세요. 그러면 OpenReplay가 변경 사항을 적용합니다.
+
+아래 옵션은 필요에 따라 세부 조정할 수 있습니다. 실제로 일부 애플리케이션은 더 높은 프레임 레이트가 필요할 수 있습니다. 스냅샷 캡처와 인코딩은 백그라운드(web-worker)에서 수행되어 앱 성능에 영향을 주지 않지만, 높은 값을 사용하면 최종 사용자 측에서 더 많은 대역폭을 사용하고 OpenReplay 인스턴스(백엔드)에 더 많은 디스크 스토리지가 필요합니다. 트래커가 캡처한 이미지/스냅샷은 백엔드로 전송된 후 세션 리플레이용으로 처리됩니다.
+
+- `CANVAS_QUALITY: 'low' | 'medium' | 'high'`: 녹화되는 스냅샷의 품질을 설정합니다. 기본값은 `low`입니다.
+- `CANVAS_FPS: number`: canvas 요소를 녹화하는 초당 프레임 수를 정의합니다. 기본값은 `1`입니다.
+
+## Canvas 옵션 (SDK)
+
+JavaScript SDK [옵션](/sdk/constructor)의 `canvas` 네임스페이스에는 다음 옵션이 있습니다.
+
+```js
+canvas?: {
+  disableCanvas?: boolean
+  fixedCanvasScaling?: boolean
+  useAnimationFrame?: boolean
+  fileExt?: 'webp' | 'png' | 'jpeg' | 'avif'
+}
+```
+
+- `disableCanvas`: 시작된 세션에서 canvas 녹화를 비활성화합니다. 기본값: `true`.
+- `fixedCanvasScaling`: 고DPI 모니터에서 canvas 캡처를 네이티브 600x600 해상도로 강제합니다. 기본값: `false`.
+- `useAnimationFrame`: WebGL 요소를 더 안정적으로 렌더링하기 위해 동기식 녹화를 활성화합니다. 오버헤드나 지연이 생길 수 있으므로 낮은 FPS 애플리케이션에만 적합합니다. 기본값: `false`.
+- `fileExt`: 녹화되는 이미지의 형식을 선택합니다: `(webp|png|jpeg|avif)`. 기본값: `webp`(WebGL의 알파 채널 지원을 위해).
+
+### 데이터 정제
+
+개인정보 보호 측면에서 canvas 요소의 콘텐츠는 정제할 수 없습니다.
+
+### 코브라우징 세션
+
+라이브 세션(일명 Assist)의 경우 별도의 설정이 필요하지 않습니다. Canvas는 기본적으로 활성화되어 캡처되며 데이터는 P2P 프로토콜로 전송됩니다. 네트워크 사용을 최적화하기 위해, 에이전트가 라이브 세션을 시청 중이고 canvas의 콘텐츠가 변경되는 경우에만 데이터가 스트리밍됩니다.
+
+## 질문이 있으신가요?
+
+이 과정에 대해 궁금한 점이 있다면 언제든지 [Slack](https://slack.openreplay.com)으로 문의해 주세요.
+

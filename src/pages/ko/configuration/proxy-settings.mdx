@@ -1,0 +1,82 @@
+---
+title: "프록시 설정"
+metaTitle: "프록시 설정"
+metaDescription: "NGINX나 Apache2 같은 프록시 뒤에서 OpenReplay를 실행하기 위한 설정입니다."
+---
+
+## 리버스 프록시를 사용해 다른 애플리케이션과 함께 OpenReplay 호스팅하기
+
+OpenReplay가 머신에서 실행될 때는 80/443 포트를 사용해 애플리케이션을 노출합니다. 하지만 리버스 프록시를 사용하는 경우에는 OpenReplay가 다른 포트를 사용하도록 설정하여 애플리케이션에 접근할 수 있습니다. 설정 방법은 다음과 같습니다.
+
+1. 구성 파일을 엽니다.
+
+```bash
+openreplay -e
+```
+
+2. nginx 구성 섹션을 수정합니다.
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+	...
+	...
+    service:
+      externalTrafficPolicy: "Local"
+      ports:
+        http: 880   # Change this port for http
+        https: 8443 # Change this port for https
+```
+3. `:wq`를 입력해 구성을 저장하고 종료하면 OpenReplay가 구성을 다시 불러옵니다.
+
+이제 리버스 프록시를 설정할 수 있습니다. 아래 섹션을 참고하세요.
+
+### NGINX 설정
+
+프록시가 `X-Forwarded-For` 및 `X-Forwarded-Proto` 헤더를 전송하는지 확인하세요. 또한 OpenReplay가 동작하려면 SSL이 활성화되어 있어야 합니다. 나머지 구성은 다음과 같아야 합니다.
+
+```nginx
+location / {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        proxy_pass http://1.2.3.4:880; # replace with OpenReplay instance IP
+    }
+```
+
+### Apache2 설정
+
+`proxy`, `proxy_http`, `proxy_html` 모듈이 활성화되어 있는지 확인하세요. SSL도 구성되어 있어야 하며, 나머지 설정은 다음과 비슷해야 합니다.
+
+```
+<VirtualHost *:443>
+    ProxyPass / http://1.2.3.4:880 <!-- replace with instance IP -->
+    RequestHeader set X-Forwarded-Proto expr=%{REQUEST_SCHEME}
+    # SSL + other config here
+</VirtualHost>
+```
+
+## 공개 엔드포인트
+
+프록시로 OpenReplay 인스턴스를 보호하는 경우, OpenReplay가 제대로 동작하려면 아래 엔드포인트가 공개적으로 접근 가능해야 합니다.
+
+| 엔드포인트 | 설명 | 요청 주체 |
+|----------|-------------|------------|
+| /ingest | 앱에서 전송되는 이벤트와 녹화 데이터를 수집합니다 | 추적 대상 앱 (앱이 공개적으로 접근 가능하다면 이 엔드포인트도 공개되어야 합니다) |
+| /ws-assist | 최종 사용자와의 라이브 세션 리플레이용입니다 (WebSocket) | 추적 대상 앱 (앱이 공개적으로 접근 가능하다면 이 엔드포인트도 공개되어야 합니다) |
+| /api | 인증과 세션, 프로젝트, RBAC, 계정 데이터 조회에 사용됩니다 | OpenReplay 대시보드 |
+| /v2/api | 검색, 분석, 세션 리플레이, 코브라우징에 사용됩니다 | OpenReplay 대시보드 |
+| /spots | 오브젝트 스토리지에서 Spot 동영상을 가져옵니다 | OpenReplay 대시보드 |
+| /mobs | 오브젝트 스토리지에서 세션 리플레이를 가져옵니다 | OpenReplay 대시보드 |
+| /sessions-assets | 오브젝트 스토리지에서 캐시된 스타일시트와 글꼴을 가져옵니다 | OpenReplay 대시보드 |
+| /static | 코브라우징 세션 관련 데이터를 가져옵니다 | OpenReplay 대시보드 |
+| /records | 오브젝트 스토리지에서 코브라우징 녹화를 가져옵니다 | OpenReplay 대시보드 |
+| /integrations | Sentry나 Datadog 같은 서드파티 통합에서 로그를 가져옵니다 | OpenReplay 대시보드 |
+| /sourcemaps | 소스 맵을 업로드합니다 | Sourcemaps CLI |
+| /spot | Spot 녹화 관련 데이터를 가져옵니다 | Spot Chrome 확장 프로그램 |
+| /script | 사용자의 환경에서 openreplay-*.js 파일을 직접 제공하려는 경우에 유용합니다 (그렇지 않으면 기본적으로 OpenReplay CDN을 사용합니다) | 추적 대상 앱 |
+
+## 궁금한 점이 있으신가요?
+
+이 과정에 대해 궁금한 점이 있으시면 언제든지 [Slack](https://slack.openreplay.com)으로 문의해 주세요.

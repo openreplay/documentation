@@ -1,0 +1,60 @@
+---
+title: "비공개 모드"
+metaTitle: "OpenReplay의 비공개 모드"
+metaDescription: "비공개 모드를 활성화하면 세션 녹화에 민감한 정보가 절대 기록되지 않도록 할 수 있습니다."
+---
+
+## 비공개 모드
+
+**비공개 모드**(Private Mode)는 모든 텍스트와 민감한 데이터의 기록을 차단하는 새로운 설정입니다. 활성화하면 OpenReplay 트래커가 화면에 표시되는 텍스트, 네트워크 데이터, 콘솔 로그를 일절 캡처하지 않습니다. 모든 것이 소스 단계에서 가려지므로 민감한 정보는 브라우저 밖으로 나가지 않습니다.
+
+사용자 콘텐츠와 데이터는 완전히 비공개로 유지하면서 UI 동작은 전체적으로 확인하고 싶을 때 유용합니다.
+
+## 비공개 모드 활성화 방법
+
+OpenReplay를 초기화할 때 트래커 수준에서 비공개 모드를 활성화할 수 있습니다.
+
+#### NPM 사용
+
+```js
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+    projectKey: PROJECT_KEY,
+    privateMode: true
+})
+tracker.start();
+```
+
+`privateMode`를 `true`로 설정하면 다음 항목이 가려집니다:
+
+- 페이지에 표시되는 모든 텍스트  
+- 이미지의 `alt` 속성  
+- 입력 필드의 `placeholder` 값  
+- 레이블 텍스트  
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/images/javascript-sdk/private-mode.png" alt="비공개 모드" style={{ width: '700px', height: 'auto' }} />
+</div>
+
+- 네트워크 요청(URL, 페이로드, 헤더)  
+- 콘솔 로그
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/images/javascript-sdk/private-mode-network.png" alt="비공개 모드" style={{ width: '700px', height: 'auto' }} />
+</div>
+
+별도의 추가 설정은 필요하지 않습니다. 활성화하면 세션에는 레이아웃과 상호작용만 기록되고 콘텐츠는 전혀 기록되지 않습니다.
+
+
+## 사용 시기
+
+다음과 같은 경우 `privateMode`를 사용하세요:
+
+- 사용자 데이터 프라이버시를 완벽하게 보장해야 하는 경우
+- **클라우드 환경**에서 OpenReplay를 테스트하지만 나중에 **셀프 호스팅**으로 전환할 계획이며, **실제 데이터를 외부로 전송할 수 없는** 경우
+- **개인정보 보호가 최우선**인 규제 산업에서 작업하는 경우
+
+## 궁금한 점이 있으신가요?
+
+저희는 개인정보 보호 관련 기능을 지속적으로 개선하고 있으니, 아직 지원하지 않는 기능이 필요하다면 알려 주세요. 문제가 있다면 [Slack](https://slack.openreplay.com)에 문의하여 커뮤니티의 도움을 받아 보세요.

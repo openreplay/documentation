@@ -1,0 +1,330 @@
+---
+title: "SSO"
+metaTitle: "SSO"
+metaDescription: "SAML2를 통해 SSO(Single Sign-On)를 설정하는 방법을 설명합니다."
+---
+import ORDynamicCode from '../../../components/Code/ORDynamicCode';
+export const initialValues = {domain: "YOUR_DOMAIN", tenantId: "TENANT_ID", tenantKey: "TENANT_KEY", port: "PORT"};
+export const ignoreValues = {jumpcloud: "https://sso.jumpcloud.com"};
+
+SAML2를 통한 SSO(Single Sign-On)는 OpenReplay Enterprise Edition에서만 사용할 수 있습니다.
+
+## Identity Provider(IDP) 설정
+
+Identity Provider의 대시보드에서 `openreplay`라는 이름의 새 앱을 만듭니다(이 <a href="https://docs.openreplay.com/static/OpenReplay.png" target="_blank">아이콘</a>을 사용할 수 있습니다). 구성 페이지에서 다음 값을 설정하세요(<code>{initialValues.domain}</code>을 올바른 값으로 바꿔야 합니다. 예: `https://openreplay.mycompany.com`).
+
+| 변수 | 값 |
+|----------|-------------|
+| ACS URL (Single Sign On URL 또는 Consumer URL이라고도 함) | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/</code> |
+| Entity ID (Audience라고도 함) | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code> |
+| Single Logout URL (SLO URL이라고도 함) | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/sls/</code> (선택 사항) |
+| Name ID ('Attribute Statements' 또는 'Parameters' 섹션에서 설정할 수 있는 경우도 있음) | `Email`, `EmailAddress` 또는 `urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress` (Identity Provider에 따라 다름) |
+| SAML initiator | `Service Provider`로 설정합니다 (선택 사항) |
+
+'Attribute Statements' 또는 'Parameters' 섹션에서 다음 필드를 반드시 정의하세요.
+
+| 필드 | 값 |
+|----------|-------------|
+| tenantKey | <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> 이 값은 대시보드의 'Preferences' > 'Account'에서 확인할 수 있습니다 (Cloud Dedicated 플랜을 사용하는 경우 이 속성을 추가하지 마세요) |
+| firstName | `user.firstName` |
+| lastName |  `user.lastName` |
+| internalId | Internal ID 또는 `user.email` (ID 관리 시스템에서의 사용자 ID) (선택 사항) |
+| groups | OpenReplay에서 사용자의 역할과 관리자 권한을 나타냅니다. Identity Provider에 따라 `user.role` 또는 `group` 등을 사용할 수 있습니다 (선택 사항, 기본값 = 관리자 권한이 없는 `member`). IdP 쪽에서 OpenReplay 역할 관리를 간소화하려면 관리자 권한을 가진 사용자를 모아 둔 OpenReplay-admin 그룹과, 'member' 역할을 가진 사용자를 모아 둔 OpenReplay-member 그룹을 만들 수 있습니다 |
+
+이제 다음 단계/섹션에 필요한 값을 모두 확보했습니다.
+
+## SSO(SAML2) 설정
+
+Cloud dedicated 플랜을 사용하는 경우 [Console](https://console.openreplay.com)로 이동하여 인스턴스를 클릭한 다음 SSO 섹션에서 변수를 설정합니다.
+
+그렇지 않고 Enterprise Edition을 실행하는 경우에는 `openreplay -e`를 실행한 다음 `chalice` 섹션의 아래 환경 변수 주석을 해제하고 값을 수정합니다.
+
+| 변수 | 설명 |
+|----------|-------------|
+| idp_entityId | Identity Provider의 `entityId`이며, `Issuer URL`이라고도 합니다 |
+| idp_sso_url | Identity Provider의 `singleSignOnService`이며, `SAML 2.0 Endpoint (HTTP)`라고도 합니다 |
+| idp_x509cert | `x509cert`이며, 줄 바꿈이 없는 한 줄 문자열이어야 합니다. 값의 형식을 맞추려면 <a href="https://www.samltool.com/format_x509cert.php" title="X509 인증서 형식 변환" target="_blank">이 도구</a>를 사용할 수 있습니다 |
+| idp_name | Identity Provider의 이름 (선택 사항) |
+| idp_sls_url | Identity Provider의 `singleLogoutService`이며, `SLO Endpoint (HTTP)`라고도 합니다 (선택 사항) |
+| enforce_SSO | `true`로 설정하면 사용자 이름과 비밀번호를 사용하는 모든 연결이 차단됩니다 (선택 사항, 기본값=`false`) |
+| idp_group_prefixes | IdP 그룹 이름 접두사 (선택 사항, 기본값=`OpenReplay-,or-`) |
+
+그런 다음 `:wq`를 입력해 저장하고 종료하면 변경 사항이 적용됩니다.
+
+## OpenReplay 인증서
+
+선택 사항이며, SSO 보안을 강화하기 위해 x509 인증서를 추가할 수 있습니다.
+
+1. 서버 또는 보안 머신에서 다음 명령을 실행합니다(필요에 따라 인증서 유효 기간을 변경할 수 있습니다).
+```bash
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout openreplay-sso.key -out openreplay-sso.crt
+```
+2. 서버에서 `openreplay -e`를 실행합니다
+3. `chalice` 섹션 아래에 다음 환경 변수를 추가합니다.
+- **sp_crt**: 생성된 'openreplay-sso.crt' 파일의 내용을 줄 바꿈 없는 한 줄 문자열로 만든 값입니다(값의 형식을 맞추려면 <a href="https://www.samltool.com/format_x509cert.php" title="X509 인증서 형식 변환" target="_blank">이 도구</a>를 사용할 수 있습니다)
+- **sp_key**: 생성된 'openreplay-sso.key' 파일의 내용을 줄 바꿈 없는 한 줄 문자열로 만든 값입니다
+4. `:wq`를 입력해 저장하고 종료하면 변경 사항이 적용됩니다
+5. 생성된 'openreplay-sso.crt' 파일을 Identity Provider의 애플리케이션 구성에 추가합니다
+
+## Okta 사용 예시
+
+1. Okta 관리 대시보드에 로그인하여 'Applications' > 'Applications'로 이동합니다
+2. 'Create new app integration'을 누른 다음 SAML 2.0을 선택하고 'Next'를 누릅니다
+3. 'App Name'을 OpenReplay로 설정하고(애플리케이션용으로 이 <a href="https://docs.openreplay.com/static/OpenReplay.png" target="_blank">아이콘</a>을 업로드할 수 있습니다) 'Next'를 누릅니다
+4. 다음과 같이 설정합니다.
+ - **Single sign on URL**: <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/</code>
+ - **Audience URI (SP Entity ID)**: <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code>
+ - **Name ID format**: `EmailAddress`
+5. 'Next'를 누르고 'This is an internal app that we have created'를 선택한 다음 'Finish'를 누릅니다
+6. Sign On 탭에서 아래로 스크롤하여 'Show legacy configuration'을 누른 다음 'Edit'를 누릅니다
+7. 'Profile Attribute Statements'에서 아래 필드를 정의합니다.
+ - **tenantKey**: 형식은 `Basic`, 값은 <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>로 설정합니다. 이 값은 OpenReplay 대시보드의 'Preferences' > 'Account'에서 확인할 수 있습니다 (Cloud Dedicated 플랜을 사용하는 경우 이 속성을 추가하지 마세요)
+ - **firstName**: 형식은 `Basic`, 값은 `user.firstName`으로 설정합니다
+ - **lastName**: 형식은 `Basic`, 값은 `user.lastName`으로 설정합니다
+ - **internalId**: 형식은 `Basic`, 값은 `user.email`로 설정합니다
+8. 'Group Attribute Statement'에서 아래 필드를 정의합니다(선택 사항).
+ - **groups**: 형식 `Basic`, 필터 `Match Regex`, 값 `OpenReplay-*` (필요에 따라 다른 필터와 정규식을 지정할 수도 있습니다)
+9. 'save'를 누르고 오른쪽 위로 스크롤하여 'View Setup Instructions'를 누르면 SAML2 구성을 확인할 수 있습니다
+
+Cloud dedicated 플랜을 사용하는 경우 [Console](https://console.openreplay.com)로 이동하여 인스턴스를 클릭한 다음 SSO 섹션에서 변수를 설정합니다.
+
+그렇지 않고 Enterprise Edition을 실행하는 경우:
+
+9.  OpenReplay가 설치된 서버에 SSH로 접속하여 `openreplay -e`를 실행합니다
+10.  `chalice` 섹션 아래에서 다음 환경 변수의 주석을 해제하고 값을 설정합니다.
+   - **idp_entityId**: Identity Provider Issuer
+   - **idp_sso_url**: Identity Provider Single Sign-On URL
+   - **idp_x509cert**: X.509 Certificate이며, 줄 바꿈이 없는 한 줄 문자열이어야 합니다(값의 형식을 맞추려면 <a href="https://www.samltool.com/format_x509cert.php" title="X509 인증서 형식 변환" target="_blank">이 도구</a>를 사용할 수 있습니다)
+   - **idp_name**: Okta
+11.  마지막으로 `:wq`를 입력해 저장하고 종료하면 변경 사항이 적용됩니다
+
+## Azure Active Directory 사용 예시
+
+1. Azure 포털에 로그인하여 'Azure Active Directory'로 이동합니다
+2. '+ Add'를 누르고 'Enterprise application'을 선택한 다음 'Create your own application'을 클릭합니다
+3. 'App Name'을 OpenReplay로 설정하고 'Integrate any other application you don't find in the gallery (Non-gallery)'를 선택한 다음 'Create'를 누릅니다
+4. 왼쪽 메뉴에서 'Single sign-on'으로 이동하여 'Basic SAML Configuration' 블록에 아래 값을 설정합니다.
+ - **Identifier (Entity ID)**: <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code>
+ - **Reply URL (Assertion Consumer Service URL)**: <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/</code>
+ - **Logout URL**: <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/sls/</code>
+5. 'Attribute & Claims' 블록에 아래 클레임을 추가하고, 각 클레임의 'Namespace' 필드는 비워 둡니다.
+ - **tenantKey**: 값을 <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>로 설정합니다. 이 값은 OpenReplay 대시보드의 'Preferences' > 'Account'에서 확인할 수 있습니다 (Cloud Dedicated 플랜을 사용하는 경우 이 속성/클레임을 추가하지 마세요)
+ - **firstName**: 값을 `user.givenname`으로 설정합니다
+ - **lastName**: 값을 `user.surname`으로 설정합니다
+ - **internalId**: 값을 `user.mail`로 설정합니다
+6. 'Users and groups'로 이동하여 선택한 사용자를 애플리케이션에 할당합니다
+
+Cloud dedicated 플랜을 사용하는 경우 [Console](https://console.openreplay.com)로 이동하여 인스턴스를 클릭한 다음 SSO 섹션에서 변수를 설정합니다(값은 'Azure Active Directory' > 'OpenReplay' > 'Single sign-on'에서 확인할 수 있습니다).
+
+그렇지 않고 Enterprise Edition을 실행하는 경우:
+
+7. OpenReplay가 설치된 서버에 SSH로 접속하여 `openreplay -e`를 실행합니다
+8. `chalice` 섹션 아래에서 다음 환경 변수의 주석을 해제하고 값을 설정합니다(값은 'Azure Active Directory' > 'OpenReplay' > 'Single sign-on'에서 확인할 수 있습니다).
+- **idp_entityId**: Azure AD Identifier
+- **idp_sso_url**: Login URL
+- **idp_sls_url**: Logout URL
+- **idp_x509cert**: X.509 Certificate이며, 줄 바꿈이 없는 한 줄 문자열이어야 합니다(값의 형식을 맞추려면 <a href="https://www.samltool.com/format_x509cert.php" title="X509 인증서 형식 변환" target="_blank">이 도구</a>를 사용할 수 있습니다)
+- **idp_name**: Active Directory
+9.  마지막으로 `:wq`를 입력해 저장하고 종료하면 변경 사항이 적용됩니다
+
+## Google Workspace(구 G Suite) 사용 예시
+
+#### 사용자 지정 속성 추가:
+
+1. Google Admin 콘솔에서 'Directory' > 'Users' > 'More options' > 'Manage custom attributes'로 이동합니다.
+2. 'Add Custom Attribute'를 클릭합니다.
+3. 다음 필드를 설정합니다.
+ - **Category**: 'OpenReplay'
+ - **Custom fields**:
+- **Name**: 'role'
+- **Info type**: 'Text'
+- **Visibility**: 'Visible to user and admin'
+- **No. of values**: 'Single-value'
+ - **Custom fields**:
+- **Name**: 'adminPrivileges'
+- **Info type**: 'Yes or No'
+- **Visibility**: 'Visible to user and admin'
+- **No. of values**: 'Single-value'
+4. 'Add'를 클릭합니다
+5. 새 사용자 지정 속성에 값을 추가하려면 'Users'로 이동합니다
+6. 원하는 사용자를 선택합니다
+7. 'User information'을 클릭한 다음 'OpenReplay' 섹션을 편집합니다
+8. **role** 값을 'OpenReplay'에서 사용할 역할로 변경합니다(해당 역할은 OpenReplay 대시보드의 'Preferences' > 'Roles'에서 생성한 역할과 일치해야 합니다)
+9. 사용자에게 OpenReplay 관리자 권한을 부여하려면 **adminPrivileges** 값을 'Yes'로 변경합니다
+10. 'Save'를 클릭합니다
+
+#### 구성:
+
+1. Google Admin 콘솔에 로그인하여 'Apps'로 이동합니다
+2. 'Web and mobile apps'를 누른 다음 'Add app' > 'Add custom SAML app'을 클릭합니다
+3. 'App name'을 OpenReplay로 설정하고('App icon'에는 이 <a href="https://docs.openreplay.com/static/OpenReplay.png" target="_blank">아이콘</a>을 업로드할 수 있습니다) 'Continue'를 누릅니다
+4. 'SSO URL', 'Entity ID', 'Certificate'를 복사한 다음 'Continue'를 클릭합니다(이 값들은 11단계에서 사용합니다)
+5. 다음과 같이 설정합니다.
+ - **ACS URL**: <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/>/</code> (<code>{initialValues.tenantKey}</code>는 OpenReplay 대시보드의 'Preferences' > 'Account'에서 확인할 수 있지만, Cloud Dedicated 플랜을 사용하는 경우 tenantKey 값은 비워 둡니다)
+ - **Entity ID**: <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code>
+ - **Name ID format**: `Email`
+ - **Name ID**: `Basic information > Primary Email`
+6. 'Continue'를 클릭한 다음 'Add Mapping'을 눌러 아래 속성을 추가합니다.
+ - `Basic information > First Name` -> **firstName**
+ - `Basic information > Last Name` -> **lastName**
+ - `Basic information > Primary Email` -> **internalId**
+ - `OpenReplay > groups` -> **groups**
+7. 'Finish'를 클릭합니다
+8.  Google Admin 콘솔에서 'Apps' > 'Web and mobile apps'로 이동하여 'OpenReplay'를 선택합니다
+9.  'User access'를 클릭하고 'ON for everyone'을 선택한 다음 'Save'를 누릅니다
+
+Cloud dedicated 플랜을 사용하는 경우 [Console](https://console.openreplay.com)로 이동하여 인스턴스를 클릭한 다음 SSO 섹션에서 변수를 설정합니다.
+
+그렇지 않고 Enterprise Edition을 실행하는 경우:
+
+10. OpenReplay가 설치된 서버에 SSH로 접속하여 `openreplay -e`를 실행합니다
+11. `chalice > env` 섹션 아래에서 4단계에서 확인한 값을 사용하여 다음 속성의 주석을 해제하고 값을 설정합니다.
+   - **idp_sso_url**: 'SSO URL' 값을 붙여넣습니다
+   - **idp_entityId**: 'Entity ID' 값을 붙여넣습니다
+   - **idp_x509cert**: 복사했거나 다운로드한 인증서는 <a href="https://www.samltool.com/format_x509cert.php" title="X509 인증서 형식 변환" target="_blank">이 도구</a>를 사용하여 형식을 맞춥니다
+   - **idp_name**: 값을 `G-Suite`로 설정합니다
+   - **idp_tenantKey**: <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> (OpenReplay 대시보드의 'Preferences' > 'Account'에서 확인할 수 있습니다)
+12. 마지막으로 `:wq`를 입력해 저장하고 종료하면 변경 사항이 적용됩니다
+
+## JumpCloud 사용 예시
+
+1. JumpCloud 관리 대시보드에 로그인하여 왼쪽 메뉴에서 'SSO'로 이동합니다
+2. '+ Add New Application'을 누른 다음 'Custom SAML App'을 선택합니다
+3. 'Display Label'을 OpenReplay로 설정하고(애플리케이션용으로 이 <a href="https://docs.openreplay.com/static/OpenReplay150x150.png" target="_blank">아이콘</a>을 업로드할 수 있습니다) 'SSO' 탭으로 이동합니다
+4. 다음과 같이 설정합니다.
+- **IdP Entity ID**: <code>openreplay/<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> (<code>{initialValues.tenantKey}</code>는 OpenReplay 대시보드의 'Preferences' > 'Account'에서 확인할 수 있지만, Cloud Dedicated 플랜을 사용하는 경우 tenantKey 값은 비워 둡니다)
+- **SP Entity ID**: <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/metadata/</code>
+- **ACS URL**: <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/>/api/sso/saml2/acs/</code>
+- **SAMLSubject NameID**: `email`
+- **SAMLSubject NameID Format:** `urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress`
+- **Signature Algorithm**: `RSA-SHA256`
+- **Sign Assertion** 옵션을 선택합니다
+- **IDP URL**: <code>openreplay-<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>로 끝나도록 설정합니다(이 값은 나중에 변경할 수 없습니다. Cloud Dedicated 플랜을 사용하는 경우 tenantKey 부분은 비워 둡니다)
+5. <a href="#openreplay-certificate">OpenReplay 인증서</a> 안내를 따랐다면 'Upload SP Certificate'를 눌러 생성된 'openreplay-sso.crt' 파일을 업로드할 수 있으며, 그렇지 않다면 이 단계는 건너뜁니다
+6. 'add attribute' 버튼을 눌러 'USER ATTRIBUTE MAPPING'에서 아래 필드를 정의합니다.
+- **firstName**: 값을 `firstname`으로 설정합니다
+- **lastName**: 값을 `lastname`으로 설정합니다
+- **internalId**: 값을 `email`로 설정합니다
+- **groups**: 선택 사항이며, OpenReplay에서 사용자의 역할과 관리자 권한을 나타냅니다. 모든 사용자에게 동일한 상수 값이라면 다음 단계에서 정의해야 하고, 그렇지 않다면 JumpCloud의 그룹에 새 문자열 속성을 추가하여 이름을 `OpenReplay-groups`로 지정하고 값을 역할 이름으로 설정한 다음, SSO 구성에서 'Custom User or Group Attribute'를 선택하고 값을 `OpenReplay-groups`로 설정해야 합니다.
+7. 'add attribute' 버튼을 눌러 'CONSTANT ATTRIBUTES'에서 아래 필드를 정의합니다.
+- **tenantKey**: 값을 <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>로 설정합니다. 이 값은 OpenReplay 대시보드의 'Preferences' > 'Account'에서 확인할 수 있습니다 (Cloud Dedicated 플랜을 사용하는 경우 이 속성을 추가하지 마세요)
+- **groups**: 선택 사항입니다. 이전 단계에서 정의했다면 무시하세요. OpenReplay에서 사용자의 역할과 관리자 권한을 나타내며, OpenReplay에 이미 정의된 역할 이름과 일치해야 합니다 (기본값 = 관리자 권한이 없는 `member`)
+8. 이 단계에서 'User Groups' 탭으로 이동하여 OpenReplay에 접근할 사용자 그룹을 선택할 수 있으며, 나중에 해도 됩니다
+9. 'activate'를 누른 다음 확인 팝업에서 'continue'를 누릅니다
+10. 새로 만든 OpenReplay 애플리케이션 아이콘을 누른 다음 왼쪽 드롭다운 'IDP Certificate Valid'에서 'Download certificate'를 선택합니다
+
+Cloud dedicated 플랜을 사용하는 경우 [Console](https://console.openreplay.com)로 이동하여 인스턴스를 클릭한 다음 SSO 섹션에서 변수를 설정합니다.
+
+그렇지 않고 Enterprise Edition을 실행하는 경우:
+
+11. OpenReplay가 설치된 서버에 SSH로 접속하여 `openreplay -e`를 실행합니다
+12. `chalice` 섹션 아래에서 다음 환경 변수의 주석을 해제하고 값을 설정합니다.
+- **idp_entityId**: <code>openreplay/<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>
+- **idp_sso_url**: <code>{ignoreValues.jumpcloud}/saml2/openreplay-<ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>
+- **idp_x509cert**: 다운로드한 인증서이며, 줄 바꿈이 없는 한 줄 문자열이어야 합니다(값의 형식을 맞추려면 <a href="https://www.samltool.com/format_x509cert.php" title="X509 인증서 형식 변환" target="_blank">이 도구</a>를 사용할 수 있습니다)
+- **idp_name**: JumpCloud
+13.  마지막으로 `:wq`를 입력해 저장하고 종료하면 변경 사항이 적용됩니다
+
+## SCIM(System for Cross-domain Identity Management) 프로비저닝
+
+OpenReplay는 Enterprise Edition에서 사용자 ID를 프로비저닝하는 기능을 지원합니다.
+
+OpenReplay의 SCIM 서비스와 연동하려면 Identity Provider 대시보드에서 SCIM 프로비저닝을 활성화하기만 하면 됩니다. 원활한 연동을 위해 다음 값을 반드시 설정하세요.
+
+| 변수 | 설명 |
+|----------|-------------|
+| SCIM connector base URL | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/></code>/api/sso/scim/v2/ |
+| User unique identifier field name | `email` |
+| Support provisioning actions | Push new users, Push profile updates, Push groups |
+| Authentication mode | OAuth2 |
+| Access token endpoint | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/></code>/api/sso/scim/v2/token/ |
+| Authorization endpoint | <code><ORDynamicCode id="domain" initialValue={initialValues.domain} client:idle/></code>/api/sso/scim/v2/authorize/ |
+| Client id | <code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code> 이 값은 대시보드의 'Preferences' > 'Account'에서 확인할 수 있습니다 |
+| Client secret | 이 값은 Postgres 데이터베이스에서 다음 쿼리를 실행하여 확인할 수 있습니다: <code>SELECT tenant_secret FROM tenants WHERE tenant_key = '<code><ORDynamicCode id="tenantKey" initialValue={initialValues.tenantKey} client:idle/></code>';</code> |
+
+이 값들을 설정한 후에는 Identity Provider 대시보드의 안내에 따라 연동을 테스트하고 애플리케이션을 승인합니다.
+
+[선택 사항] `openreplay -e`를 실행하고 `chalice/environment`를 찾아 변수 `SCIM_ALLOWED_REDIRECT_HOSTS`에 IdP의 호스트를 정의합니다. 기본값은 `.okta.com`입니다. 호스트를 잘 모르거나 더 엄격한 값을 사용하고 싶다면 IdP 인증을 시도한 다음 chalice 로그에 출력된 값을 확인하세요.
+{/*
+OpenReplay는 유효한 프로젝트와 권한을 가진 사용자와 그룹을 제대로 설정하기 위해 사용자 지정 속성을 사용해야 합니다. Identity Provider 대시보드에서 다음 속성을 추가해야 합니다.
+- `projectKeys`. 이 속성은 `string array` 유형으로 사용자 스키마에 추가되지만, 그룹 리소스에 의해 제어됩니다. 이 속성에 사용할 수 있는 모든 값은 OpenReplay 애플리케이션의 'Projects' 페이지에서 확인할 수 있습니다.
+- `permissions`. 이 속성은 `string array` 유형으로 사용자 스키마에 추가되지만, 그룹 리소스에 의해 제어됩니다. 이 속성에 사용할 수 있는 값은 아래와 같습니다.
+- SESSION_REPLAY
+- DEV_TOOLS
+- METRICS
+- ASSIST_LIVE
+- ASSIST_CALL
+- SPOT
+- SPOT_PUBLIC
+*/}
+
+이후에는 OpenReplay를 SCIM Service Provider로 사용하여 사용자 ID를 프로비저닝할 수 있습니다.
+
+> **참고:** OpenReplay는 SCIM Service Provider로 동작하지만, 사용자를 여러 그룹으로 나누는 것은 지원하지 않습니다(즉, 각 사용자는 하나의 그룹에만 속할 수 있습니다). 이를 지키지 않으면 사용자가 예상보다 적거나 많은 프로젝트에 할당되거나, OpenReplay 애플리케이션에서 예상보다 적거나 많은 권한을 가질 수 있습니다.
+
+### Okta 사용 예시
+
+SAML 2.0 애플리케이션에서 다음을 수행합니다.
+
+#### SCIM 프로비저닝 추가
+
+1. **General** 탭을 클릭합니다
+2. **App Settings** 섹션에서 **Edit**을 클릭합니다
+3. **Provisioning** 필드에서 **SCIM**을 선택하고 **Save**를 클릭합니다
+
+#### 프로비저닝 옵션 선택
+
+1. **Provisioning** 탭을 클릭합니다. SCIM 연결 설정은 **Settings > Integration** 아래에 표시됩니다.
+2. **Settings > Integration**에서 **Edit**을 클릭합니다.
+3. 위에서 설명한 **SCIM connector base URL**과 사용자 고유 식별자의 필드 이름을 지정합니다.
+4. **Supported provisioning actions**에서 위에서 설명한 프로비저닝 작업을 선택합니다.
+5. **Authentication Mode** 드롭다운을 위에서 설명한 값으로 설정합니다.
+6. 위에서 설명한 대로 **Access token endpoint**, **Authorization endpoint**, **Client id**, **Client secret**을 설정합니다.
+7. **Save**를 클릭합니다.
+8. **Authenticate application**을 클릭합니다.
+9. **Provisioning** 탭에서 **To App**을 클릭합니다.
+10. **Edit**을 클릭하고 `Create Users`, `Update User Attributes`, `Deactivate Users`를 활성화한 다음 변경 사항을 저장합니다(저장 후에도 이 옵션들이 선택되어 있는지 확인하세요. 선택되어 있지 않다면 페이지를 새로 고치고 이 단계를 다시 수행하세요).
+- 다음 단계를 시작하기 전에 Okta에서 새 그룹을 만드는 것을 권장합니다. OpenReplay에서 관리자 권한을 가진 사용자를 나열하는 `OpenReplay-admin` 그룹과, OpenReplay에서 `member` 역할을 가진 사용자를 나열하는 `OpenReplay-members` 그룹을 만들면 됩니다. ...    
+11. **Push Groups** 탭으로 이동하여 **+ Push Groups**(by name 또는 by rule)를 클릭하고, OpenReplay로 푸시할 그룹을 선택한 다음 **save**를 누릅니다
+- 이 시점에서 푸시된 그룹은 OpenReplay의 역할과 관리자 권한을 나타내며, OpenReplay용으로 프로비저닝된 사용자 목록은 포함하지 않습니다.
+12. **Assignmets** 탭으로 이동하여 편한 방법(사용자 또는 그룹)으로 사용자를 추가합니다
+
+{/*
+#### 추가 속성 추가
+
+위에서 설명한 속성을 추가해야 합니다.
+
+1. **Provisioning** 탭을 클릭합니다.
+2. **Settings > To App**에서 아래로 스크롤하여 **Add attribute**를 클릭합니다.
+
+`projectKeys`에는 다음 값을 사용합니다.
+
+| 변수 | 설명 |
+|----------|-------------|
+| Data type | string array |
+| Variable name | projectKeys |
+| External name | projectKeys |
+| External namespace | urn:ietf:params:scim:schemas:extension:openreplay:2.0:User |
+| Enum | checked |
+| Attribute members | 프로젝트 이름을 **Display name**에, 프로젝트 키를 **Value**에 사용합니다. 이 값들은 OpenReplay 애플리케이션의 'Projects' 페이지에서 확인할 수 있습니다 |
+| Attribute type | Group |
+| Group priority | Use group priority |
+
+`permissions`에는 다음 값을 사용합니다.
+
+| 변수 | 설명 |
+|----------|-------------|
+| Data type | string array |
+| Variable name | permissions |
+| External name | permissions |
+| External namespace | urn:ietf:params:scim:schemas:extension:openreplay:2.0:User |
+| Enum | checked |
+| Attribute members | **Display name**과 **Value**에는 위에서 설명한 값을 사용합니다 |
+| Attribute type | Group |
+| Group priority | Use group priority |
+*/}
+## 오류
+
+### 응답이 https가 아닌 http로 수신됨
+
+이는 매우 흔한 문제이며, 요청에 'X-Forwarded-Proto' 헤더가 없기 때문에 발생합니다. 이를 해결하려면 로드 밸런서가 해당 헤더를 OpenReplay 백엔드로 올바르게 전달하는지 확인하고, `openreplay -e`를 실행한 다음 `ingress-nginx > config` 섹션에서 `use-forwarded-headers: true` 줄의 주석을 해제합니다.

@@ -1,0 +1,168 @@
+---
+title: "Usare il plugin VueX per acquisire le modifiche di stato"
+metaTitle: "Usare il plugin VueX per acquisire le modifiche di stato"
+metaDescription: "Scopri come acquisire le modifiche di stato con il plugin VueX e visualizzarle nei session replay"
+---
+Se usi VueX per gestire lo stato delle tue app basate su Vue, integrare [il plugin di OpenReplay](https://docs.openreplay.com/plugins/vuex) per tracciare gli aggiornamenti dello stato è molto semplice.
+
+Se vuoi seguire il tutorial passo dopo passo, usa [il codice pubblicato](https://github.com/deleteman/openreplay-vuex-example) qui.
+
+## Integrare il tracker nel tuo codice
+
+La prima cosa di cui occuparci è integrare il tracker di OpenReplay nel progetto. Abbiamo a che fare con un progetto basato su Vue, il che significa che il nostro punto di ingresso sarà il file `main.js`. Per prima cosa installa il tracker con:
+
+```tsx
+yarn add @openreplay/tracker
+```
+
+Oppure usa npm, se preferisci:
+
+```tsx
+npm install @openreplay/tracker
+```
+
+Fatto questo, una volta configurato il progetto nella piattaforma, ottieni la KEY del progetto e salvala in un file `.env` situato nella radice del progetto.
+
+```bash
+VUE_APP_OPENREPLAY_PROJECT_KEY=<your project key here>
+```
+
+Nota il nome della variabile d'ambiente. Inizia con `VUE_APP_` perché, facendo così, WebPack sostituirà il suo valore ovunque usiamo il codice `process.env.VUE_APP_OPENREPLAY_PROJECT_KEY`, evitandoci di dover distribuire al client il vero file di configurazione.
+
+Ora, all'interno della cartella `src`, crea una cartella `tracker` e al suo interno un file `index.js`. Questo file esporterà una sola funzione: `startTracker`, che configurerà tutto e avvierà il tracker.
+
+```jsx
+import Tracker from '@openreplay/tracker';
+
+import {v4 as uuidV4} from 'uuid'
+
+function defaultGetUserId() {
+   return uuidV4() 
+}
+
+export function startTracker(config) {
+
+    console.log("Starting tracker...")
+
+    const getUserId = (config?.userIdEnabled && config?.getUserId) ? config.getUserId : defaultGetUserId
+    let userId = null;
+
+    const trackerConfig = {
+        projectKey: config.projectKey
+    }
+
+    const tracker = new Tracker(trackerConfig);
+
+    const pluginReturns = {}
+    Object.keys(config?.plugins).forEach( pk => {
+        pluginReturns[pk] = tracker.use(config?.plugins[pk]())
+    })
+ 
+    if(config?.userIdEnabled) {
+        userId = getUserId()
+        tracker.setUserID(userId)
+    }
+    console.log("tracker: user id: ", userId)
+
+    tracker.start();
+    return {
+        tracker,
+        userId,
+        ...pluginReturns
+    }
+}
+```
+
+Ora ti basta sapere che questa funzione fa tutto ciò che ti serve. Devi solo passarle la chiave del progetto quando la chiami. Così (dal file `main.js`):
+
+```jsx
+import {startTracker} from './tracker/index'
+
+let {vuexTracker} = startTracker({
+    projectKey: process.env.VUE_APP_OPENREPLAY_PROJECT_KEY,
+})
+```
+
+Come abbiamo già visto, la riga `process.env.VUE_APP_OPENREPLAY_PROJECT_KEY` verrà sostituita dalla tua vera chiave del progetto durante il rendering della pagina.
+
+Ora aggiungiamo il plugin VueX, così potremo iniziare a tracciare anche le modifiche di stato.
+
+## Aggiungere il plugin VueX
+
+Il plugin si installa facilmente con una sola riga:
+
+```jsx
+yarn add @openreplay/tracker-vuex
+```
+
+Dopodiché possiamo importarlo nel nostro codice e passarlo come parte dell'oggetto di configurazione alla funzione `startTracker`.
+
+Torna alla definizione di quella funzione e nota come abbiamo già il codice per gestire i plugin. In effetti, l'elemento `plugins` della configurazione è una mappa che riceve i plugin (con una chiave a nostra scelta) e restituisce ciò che otteniamo dalla chiamata al metodo `use`, anch'esso con la stessa chiave che abbiamo usato per il plugin.
+
+Lascia che ti mostri come, sempre nel file `main.js`:
+
+```jsx
+//your other imports go here...
+import trackerVuex from '@openreplay/tracker-vuex';
+import store from './store'
+
+let {vuexTracker} = startTracker({
+    userIdEnabled: true,
+    projectKey: process.env.VUE_APP_OPENREPLAY_PROJECT_KEY,
+    plugins:{
+      'vuexTracker': trackerVuex
+    } 
+})
+
+new Vue({
+  router,
+  store: store([vuexTracker]),
+  render: h => h(App)
+}).$mount('#app')
+```
+
+Nota come stiamo:
+
+1. Chiamando la funzione `startTracker` con la mappa `plugins`. La stringa “vuexTracker” è un nome che mi sono inventato in quel momento, ma qui puoi usare qualsiasi stringa.
+2. Destrutturando la risposta e ottenendo la chiave “vuexTracker” (la stessa chiave che abbiamo usato per la mappa). Finché le due chiavi corrispondono, puoi usare qualsiasi stringa.
+3. Passando la funzione `vuexTracker` come parametro alla funzione `store`.
+
+La variabile vuexTracker contiene essenzialmente il nostro plugin VueX; questo plugin verrà collegato allo store VueX e per farlo usiamo il codice seguente:
+
+```jsx
+import Vue from 'vue'
+import Vuex from 'vuex'
+
+import account from './account'
+import product from './product'
+
+Vue.use(Vuex)
+
+export default function (plugins = []) {
+  return function() {
+    const Store = new Vuex.Store({
+      modules: {
+        account,
+        product
+      },
+
+      strict: process.env.DEV,
+      plugins
+    })
+
+    return Store
+  }
+}
+```
+
+Lo snippet qui sopra è il codice standard per configurare uno store; abbiamo solo aggiunto la possibilità di configurare i plugin, per poter tracciare ciò che accade allo stato nella nostra applicazione.
+
+Una volta pronto tutto, dovresti vedere una nuova opzione VueX all'interno dei session replay, in questo modo:
+
+![Tracciare le modifiche di stato con VueX](/using-or/vuex-ss.png)
+
+## Hai domande?
+
+Puoi [dare un'occhiata a questo repository](https://github.com/deleteman/openreplay-vuex-example) per il **codice sorgente completo** di un'applicazione funzionante che usa VueX con il tracker.
+
+Se hai problemi a configurare il tracker o il plugin VueX nel tuo progetto, contattaci nella nostra [community Slack](https://slack.openreplay.com/) e chiedi direttamente ai nostri sviluppatori!

@@ -1,0 +1,64 @@
+---
+title: "OpenReplay mit Electron verwenden"
+metaTitle: "Electron-App mit OpenReplay aufzeichnen"
+metaDescription: "So zeichnen Sie eine Electron-App mit OpenReplay auf."
+---
+import Aside from '~/components/Aside.astro'
+
+<Aside type="caution">
+	Für die Unterstützung von Co-Browsing sind Tracker@11.0.0 und Tracker-assist@7.0.0 oder höher erforderlich.
+</Aside>
+
+Es gibt zwei verschiedene Ansätze, OpenReplay in eine Electron-App zu integrieren.
+
+Unabhängig davon, für welchen Sie sich entscheiden, müssen Sie Ihre CSP-Einstellungen prüfen, damit die folgenden APIs zugelassen sind:
+- WebWorkers (zum Speichern, Kodieren und Senden von Nachrichtenstapeln)
+- Websockets (im Assist-Plugin zur Echtzeitübertragung von Sitzungen)
+- Peers (im Assist-Plugin für Anrufe)
+
+## Snippet-Code hinzufügen
+
+Sie können den OpenReplay-Snippet-Code direkt im Stammverzeichnis der HTML-Datei Ihrer App einfügen.
+Das ist der einfachste Weg, er bringt aber auch alle Einschränkungen des JS-Snippets mit sich.
+
+## NPM-Bibliothek verwenden
+
+Wenn Sie React, Angular oder Vue verwenden, können Sie genau denselben Ansatz nutzen und die Tracker-Instanz im Rendering-Prozess
+Ihrer App erstellen. So können Sie alle Funktionen von OpenReplay einschließlich aller Plugins verwenden.
+
+Um die Tracker-API außerhalb des Rendering-Kontexts zu verwenden, müssen Sie per IPC Aktionen über Ereignisse auslösen,
+die Sie aus dem Hauptprozess senden.
+
+## Mit dem Assist-Plugin verwenden
+
+
+Beim Tracker-Assist-Plugin müssen Sie die Eigenschaft `socketHost` hinzufügen, die auf Ihren Ingest Point
+ohne das Suffix `/ingest` verweist, um das standardmäßige WS-Routing zu korrigieren.
+
+Für die NPM-Bibliothek:
+```js
+new Tracker({ ingestPoint: 'https://mywebsite.com/ingest' })
+
+// ...
+
+// or https://app.openreplay.com if you're using SaaS version
+tracker.use(trackerAssist({ socketHost: 'https://mywebsite.com' }))
+```
+
+Für das Code-Snippet:
+```js
+  var initOpts = {
+    projectKey: "...",
+		ingestPoint: "https://mywebsite.com/ingest",
+    assistSocketHost: "https://mywebsite.com"
+  };
+```
+
+Andernfalls versucht WS, eine Verbindung zu `ws://file/ingest` aufzubauen, was fehlschlägt.
+
+<Aside type="tip">
+	Dieser Artikel basiert auf unserer hauseigenen Proof-of-Concept-App, die mit Electron@26.2.1 und React@16.13.1 erstellt und für
+	ESM-Bundling konfiguriert wurde. Wenn Ihr Setup anders aussieht oder Sie Anregungen oder Fragen haben, melden Sie sich bitte in
+	unserer
+	[Slack-Community](https://slack.openreplay.com/)
+</Aside>

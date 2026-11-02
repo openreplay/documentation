@@ -1,0 +1,227 @@
+---
+title: "스토리지 정리"
+metaTitle: "스토리지 정리"
+metaDescription: "데이터베이스에서 녹화를 일괄 삭제하고 스토리지를 정리합니다."
+---
+import Aside from '~/components/Aside.astro'
+
+각 녹화는 파일과 데이터베이스 항목의 형태로 존재합니다. OpenReplay는 세션을 재생하는 데 필요한 정보(DOM 변경, 마우스 좌표, 콘솔 로그, 네트워크 활동 등)를 3개의 파일(리플레이 자체에 2개, DevTools 데이터에 1개)로 덤프합니다. 이 파일은 기본적으로 인스턴스에 저장되므로 인스턴스 스토리지의 대부분을 차지합니다. 세션 메타데이터는 PostgreSQL 데이터베이스에 영구적으로 저장되지만, 180일이 지나면 녹화가 담긴 파일은 minio 수명 주기 정책에 따라 만료/삭제됩니다.
+
+## 임시 스토리지 정리
+
+OpenReplay는 임시 데이터를 처리하여 오브젝트 스토리지 서비스(minIO 또는 S3)에 업로드하기 전까지 파일 시스템에 저장합니다. 처리가 완료되면 해당 데이터는 더 이상 필요하지 않게 되며, 크론잡이 매주 두 번째 요일에 이 파일들을 삭제합니다. 
+
+크론잡을 수정하려면 다음 단계를 따르세요.
+1. 구성을 편집합니다.
+
+```bash
+openreplay -e
+```
+
+2. 다음 줄을 추가하여 크론잡 실행 시간을 변경합니다.
+
+```yaml
+utilities:
+  # Cleanup data everyday morning 3:05 am, server time.
+	cron: "5 3 * * *"
+```
+
+
+OpenReplay 인스턴스의 스토리지를 정리하는 방법은 자동(CLI)과 수동의 두 가지입니다.
+
+## 데이터 정리 (CLI)
+
+이 과정은 CLI를 통해 완전히 자동화되어 있습니다. 아래 명령을 실행하면 Postgres(이벤트가 저장된 곳)와 minio(녹화가 저장된 곳) 양쪽에서 데이터를 제거하여 스토리지를 정리합니다.
+
+```bash
+# To clean data older than 14 days
+openreplay --cleanup 14
+```
+
+## 데이터 정리 (수동)
+
+데이터는 데이터베이스(이벤트가 저장된 곳)와 minio(녹화가 저장된 곳) 양쪽에서 제거할 수 있습니다.
+
+### 녹화 정리
+
+공간을 확보해야 한다면 OpenReplay 인스턴스에 로그인하여 아래 단계를 따르세요.
+
+1. `k9s -n db`를 실행합니다.
+2. 키보드 화살표로 목록을 탐색하여 `minio-*` 컨테이너로 이동합니다.
+3. `s`를 눌러 Minio(오브젝트 스토리지) 컨테이너의 셸에 접속합니다.
+4. `mc alias set minio http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD`를 실행합니다.
+5. `mc rm --recursive --dangerous --force --older-than 7d minio/mobs`를 실행합니다(예: 7일보다 오래된 파일 삭제).
+6. `exit`를 사용하여 Minio 컨테이너에서 나옵니다.
+7. `:quit`를 실행하여 Kubernetes CLI를 종료합니다.
+
+#### 기본 수명 주기 정책 변경
+
+minio(기본 설치)를 사용 중이라면 다음과 같이 기본 수명 주기 정책을 변경할 수 있습니다.
+
+1. `k9s -n db`를 실행합니다.
+2. 키보드 화살표로 목록을 탐색하여 `minio-*` 컨테이너로 이동합니다.
+3. `s`를 눌러 Minio(오브젝트 스토리지) 컨테이너의 셸에 접속합니다.
+6. `mc alias set minio http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD`를 실행합니다.
+7. 녹화를 생성 14일 후에 자동으로 정리하려면 다음을 실행합니다.
+
+```bash
+export EXPIRATION_DAYS=14
+export DELETE_JOB_DAYS=$((EXPIRATION_DAYS>30 ? 30 : EXPIRATION_DAYS))
+cat <<EOF > /tmp/lifecycle.json
+{
+  "Rules": [
+    {
+      "Expiration": {
+        "Days": $EXPIRATION_DAYS
+      },
+      "ID": "Delete old mob files",
+      "Status": "Enabled"
+    },
+    {
+      "Expiration": {
+        "Days": $DELETE_JOB_DAYS
+      },
+      "ID": "Delete flagged mob files after ${DELETE_JOB_DAYS} days",
+      "Filter": {
+        "Tag": {
+          "Key": "to_delete_in_days",
+          "Value": "${DELETE_JOB_DAYS}"
+        }
+      },
+      "Status": "Enabled"
+    }
+  ]
+}
+EOF
+mc ilm import minio/mobs < /tmp/lifecycle.json
+```
+
+8. `exit`를 사용하여 Minio 컨테이너에서 나옵니다.
+9. `:quit`를 실행하여 Kubernetes CLI를 종료합니다.
+
+### 데이터베이스 정리 (PostgreSQL)
+
+사용 방식에 따라 여러 테이블에서 다양한 방법으로 데이터를 제거할 수 있습니다. 
+
+#### PostgreSQL에 연결
+
+OpenReplay 인스턴스에 접속한 후 다음을 진행합니다.
+
+1. `k9s -n db`를 실행합니다.
+2. 키보드 화살표로 목록을 탐색하여 `postgresql-*` 컨테이너로 이동합니다.
+3. `s`를 눌러 Postgres 컨테이너의 셸에 접속합니다.
+4. `PGPASSWORD=MY_PG_PASSWORD psql -U postgres`를 실행합니다(`MY_PG_PASSWORD`를 `/var/lib/openreplay/vars.yaml` 파일의 `postgresqlPassword` 변수 값으로 바꾸세요).
+5. 삭제(또는 기타) 쿼리를 실행합니다.
+6. `exit`를 입력하여 postgresql-client를 종료합니다.
+7. `exit`를 사용하여 Postgres 컨테이너에서 나옵니다.
+8. `:quit`를 실행하여 Kubernetes CLI를 종료합니다.
+
+#### 테이블 크기 확인
+
+테이블 크기를 확인하려면 다음 쿼리를 실행하면 됩니다.
+
+```sql
+SELECT nspname AS "name_space",
+       relname AS "relation",
+       pg_size_pretty(
+               pg_total_relation_size(C.oid)
+           )   AS "total_size"
+FROM pg_class C
+         LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+WHERE nspname NOT IN ('pg_catalog','information_schema')
+  AND C.relkind <> 'i'
+  AND nspname !~ '^pg_toast'
+ORDER BY pg_total_relation_size(C.oid) DESC
+LIMIT 20;
+```
+
+#### 특정 이벤트 삭제
+
+저희가 확인한 바로는 대부분의 OpenReplay 사용자가 이전 섹션의 결과를 확인한 후 세션을 정리하는 대신 특정 이벤트를 삭제하기로 결정했습니다(특히 `events.resources`와 `events_common.requests`).
+
+모든 이벤트 데이터를 삭제하려면 다음 쿼리 중 하나를 실행하면 되지만, 이 작업은 카드 값, 클릭 맵, 이벤트 목록 등 다른 기능에 영향을 준다는 점에 유의하세요.
+
+<Aside type="caution">
+	이 작업은 사용자의 책임하에 수행하는 것이며, 데이터베이스에서 이러한 작업은 되돌릴 수 없고 여러 OpenReplay 기능에 영향을 줄 수 있으므로 각별히 주의하세요.
+</Aside>
+
+```sql
+--- To delete all data related to a specific event
+
+-- The next 2 tables are usually the biggest ones, and they affect some cards only
+TRUNCATE TABLE events.resources;
+TRUNCATE TABLE events_common.requests;
+
+-- The next table will affect click-maps and events list of session's replay
+TRUNCATE TABLE events.clicks;
+TRUNCATE TABLE events.errors;
+TRUNCATE TABLE events.graphql;
+TRUNCATE TABLE events.inputs;
+TRUNCATE TABLE events.pages;
+TRUNCATE TABLE events.performance;
+TRUNCATE TABLE events.state_actions;
+TRUNCATE TABLE events_common.customs;
+TRUNCATE TABLE events_common.issues;
+```
+
+#### 특정 시간 기준으로 특정 세션 삭제
+
+모든 세션을 정리하려면 더 빠르고 저장 공간이 즉시 확보되므로 [다음 부분](#delete-all-sessions)으로 건너뛰세요.
+
+데이터베이스(PostgreSQL)의 데이터를 정리하려면 아래 SQL 쿼리를 사용하세요. `2021-01-01`을 녹화를 유지할 시작 날짜로 바꾸세요. 연쇄 삭제이므로 모든 녹화와 해당 이벤트가 데이터베이스에서 제거됩니다.
+
+<Aside type="caution">
+	이 작업은 사용자의 책임하에 수행하는 것이며, 데이터베이스에서 이러한 작업은 되돌릴 수 없으므로 각별히 주의하세요.
+</Aside>
+
+```sql
+--- Cascade delete all sessions and their related events captured before Jan 1st, 2021
+DELETE FROM public.sessions WHERE start_ts < extract(epoch from '2021-01-01'::date) * 1000;
+```
+
+앞의 쿼리를 실행한 후에도 데이터베이스는 저장 공간을 즉시 해제하지 않고 나중에 정리하도록 예약합니다. 수동으로 저장 공간 해제를 강제하려면 다음 쿼리를 실행하면 됩니다.
+
+<Aside type="note">
+	이 쿼리는 각 테이블을 잠그므로 해당 테이블을 사용할 수 없게 되며, 데이터베이스에 따라 완료까지 몇 시간이 걸릴 수 있습니다.
+	여유 저장 공간이 충분하다면 정리를 PostgreSQL Auto-Vacuum에 맡겨 두어도 됩니다.
+	
+	또한 작동하려면 어느 정도의 여유 저장 공간이 필요하므로, [테이블 크기](#check-tables-size)가 작은 순서대로 이 쿼리를 실행하는 것을 강력히 권장합니다.
+</Aside>
+
+```sql
+--- Recreate indexes and free unused storage
+VACUUM FULL public.sessions;
+VACUUM FULL events_common.customs;
+VACUUM FULL events_common.issues;
+VACUUM FULL events_common.requests;
+VACUUM FULL events.pages;
+VACUUM FULL events.state_actions;
+VACUUM FULL events.errors;
+VACUUM FULL events.graphql;
+VACUUM FULL events.performance;
+VACUUM FULL events.resources;
+VACUUM FULL events.inputs;
+VACUUM FULL events.clicks;
+```
+
+#### 모든 세션 삭제
+
+데이터베이스(PostgreSQL)에서 모든 세션 데이터를 정리하려면 아래 SQL 쿼리를 사용하세요. 연쇄 삭제이므로 모든 녹화와 해당 이벤트가 데이터베이스에서 제거됩니다.
+
+<Aside type="caution">
+	이 작업은 사용자의 책임하에 수행하는 것이며, 데이터베이스에서 이러한 작업은 되돌릴 수 없으므로 각별히 주의하세요.
+	
+	OpenReplay Enterprise Edition에서는 이 쿼리가 vault-sessions도 삭제합니다.
+</Aside>
+
+```sql
+--- Cascade delete all sessions and their related events 
+TRUNCATE TABLE public.sessions CASCADE;
+TRUNCATE TABLE public.errors CASCADE;
+TRUNCATE TABLE public.issues CASCADE;
+TRUNCATE TABLE public.autocomplete;
+```
+
+## 궁금한 점이 있으신가요?
+
+이 과정에 대해 궁금한 점이 있다면 언제든지 [Slack](https://slack.openreplay.com)으로 문의해 주세요.

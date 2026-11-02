@@ -1,0 +1,223 @@
+---
+title: "Custom Events nutzen, um Ihr Tracking zu verbessern"
+metaTitle: "Verbessern Sie Ihre Tracking-Möglichkeiten mit Custom Events und Custom Issues"
+metaDescription: "Erfassen Sie beliebige benutzerdefinierte Ereignisse über die Custom-Events-API"
+---
+Custom Events sind ein einfaches, aber leistungsstarkes Konzept, das unser Tracker ohne zusätzlichen Aufwand bereitstellt.
+Sie können die erfassten Daten um alles erweitern, was Sie benötigen – seien es benutzerdefinierte Fehler im Zusammenhang mit Ihrer Geschäftslogik oder auch einfache Ereignisse, damit Sie wissen, was Ihre Benutzer tun.
+
+Unser Tracker behält standardmäßig viele verschiedene Dinge im Blick, darunter einige [nützliche Fehler](https://docs.openreplay.com/tutorials/issues), aber das reicht Ihnen möglicherweise nicht – dafür gibt es Custom Events.
+
+## Custom Events hinzufügen
+
+Für dieses Beispiel nehmen wir eine generische E-Commerce-Website und fügen einige Events hinzu, um zu verstehen, wann unser Benutzer ein Produkt in den Warenkorb legt.
+
+Standardmäßig erfasst OpenReplay diese Information nicht. Mit Custom Events können Sie sie jedoch ganz einfach verfolgen.
+
+### Den Tracker Provider erstellen
+
+Sie müssen vorerst nur wissen, dass wir hier einen Context Provider erstellen, über den Sie mit dem Tracker über mehrere Funktionen interagieren können.
+
+Besonders wichtig sind für uns `logIssue` und `logEvent`, mit denen Sie ein benutzerdefiniertes Issue oder Event an die Plattform senden.
+
+- **Events** dienen dazu, benutzerspezifische Aktionen zu protokollieren. In unserem Fall protokollieren wir zum Beispiel das Hinzufügen eines Produkts zum Warenkorb.
+- **Issues** dienen dagegen dazu, Fehler zu protokollieren, die unser Tracker nicht automatisch erfasst. In unserem Fall simulieren wir einen Netzwerkfehler, der den Zugriff auf eine API eines Drittanbieters verhindert. Wenn das passiert, protokollieren wir ein Issue auf der Plattform.
+
+```jsx
+import { createContext, useCallback } from 'react'
+import Tracker from '@openreplay/tracker'
+import { v4 as uuidV4 } from 'uuid'
+import { useReducer } from 'react'
+
+export const TrackerContext = createContext()
+function defaultGetUserId() {
+  return uuidV4()
+}
+function newTracker(config) {
+  const getUserId =
+    config?.userIdEnabled && config?.getUserId
+      ? config.getUserId
+      : defaultGetUserId
+  let userId = null
+  const trackerConfig = {
+    projectKey:
+      config?.projectKey || process.env.NEXT_PUBLIC_OPENREPLAY_PROJECT_KEY,
+ 
+  }
+  if (config?.ingestPoint || process.env.NEXT_PUBLIC_OPENREPLAY_INGEST_POINT) {
+    trackerConfig.ingestPoint =
+      config?.ingestPoint || process.env.NEXT_PUBLIC_OPENREPLAY_INGEST_POINT
+  }
+
+  console.log('Tracker configuration: ')
+  console.log(trackerConfig)
+  const tracker = new Tracker(trackerConfig)
+  if (config?.userIdEnabled) {
+    userId = getUserId()
+    tracker.setUserID(userId)
+  }
+  return tracker
+}
+function reducer(state, action) {
+  switch (action.type) {
+    case 'init': {
+      if (!state.tracker) {
+        console.log('Instantiaing the tracker for the first time...')
+        let t = newTracker(state.config)
+        let pluginsReturnedValue = {}
+        if (state.config.plugins) {
+          state.config.plugins.forEach((p) => {
+            console.log('Using plugin...')
+            pluginsReturnedValue[p.name] = t.use(p.fn(p.config))
+          })
+        }
+        return {
+          ...state,
+          pluginsReturnedValue: pluginsReturnedValue,
+          tracker: t,
+        }
+      }
+      return state
+    }
+    case 'start': {
+      console.log('Starting tracker...')
+      state.tracker.start()
+      return state
+    }
+    case 'logEvent': {
+      console.log('Logging event')
+      state.tracker?.event(action.payload?.name, action.payload?.data)
+      return state
+    }
+    case 'logIssue': {
+      console.log('Logging issue')
+      state.tracker?.issue(action.payload?.name, action.payload?.data)
+      return state
+    }
+  }
+}
+export default function TrackerProvider({ children, config = {} }) {
+  let [state, dispatch] = useReducer(reducer, {
+    tracker: null,
+    pluginsReturnedValue: {},
+    config,
+  })
+  let value = {
+    startTracking: () => dispatch({ type: 'start' }),
+    initTracker: () => dispatch({ type: 'init' }),
+    logEvent: (evnt) => dispatch({ type: 'logEvent', payload: evnt }),
+    logIssue: (evnt) => dispatch({ type: 'logIssue', payload: evnt }),
+    pluginsReturnedValues: { ...state.pluginsReturnedValue },
+  }
+  return (
+    <TrackerContext.Provider value={value}>{children}</TrackerContext.Provider>
+  )
+}
+```
+
+Die Funktionen `logEvent` und `logIssue` haben dieselbe Signatur: Wir übergeben ein Objekt mit den Eigenschaften `name` und `data`. Der `name` dient dazu, unseren Eintrag in der Oberfläche von OpenReplay zu identifizieren, und `data` enthält die protokollierten Informationen.
+
+**Denken Sie daran:** Die Eigenschaft `data` muss ein serialisierbares Objekt enthalten.
+
+Diesen Provider können wir dann in unserer Datei `_app.tsx` wie folgt einrichten:
+
+```jsx
+
+//imports here...
+
+export default function MyApp({ Component, pageProps }: AppProps) {
+  const Layout = (Component as any).Layout || Noop
+
+  useEffect(() => {
+    document.body.classList?.remove('loading')
+  }, [])
+
+  return (
+    <TrackerProvider config={{}}>
+      <Head />
+      <ManagedUIContext>
+        <Layout pageProps={pageProps}>
+          <Component {...pageProps} />
+        </Layout>
+      </ManagedUIContext>
+    </TrackerProvider>
+  )
+}
+```
+
+Damit ist das erledigt, und wir können mit dem Auslösen der Events fortfahren.
+
+### Benutzerdefinierte Issues und Events protokollieren
+
+Dafür nutzen wir unsere Oberfläche:
+
+![Die Produktseite](/tutorials/product-ui.png)
+
+Wir zeichnen jedes Mal ein neues Event auf, wenn der Benutzer ein Produkt in unseren Warenkorb legt (im Wesentlichen, wenn er auf die Schaltfläche „ADD TO CART“ klickt).
+
+Und wir protokollieren ein Issue, wenn er das tut, ohne zuvor eine Größe ausgewählt zu haben.
+
+Den vollständigen Quellcode dieser Komponente finden Sie [hier](https://github.com/deleteman/nextjs-commerce-example/blob/redux-store/site/components/product/ProductSidebar/ProductSidebar.tsx), konzentrieren wir uns aber auf die Logik, die wir hinzufügen.
+
+Zu Beginn unserer Komponente verwenden wir den Hook useContext:
+
+```jsx
+//outside the component
+import { TrackerContext } from '../../../context/trackerProvider'
+
+//inside the component
+const { logEvent, logIssue } = useContext(TrackerContext)
+```
+
+In der Funktion `addToCart` fügen wir die folgende Logik hinzu, um zu prüfen, ob keine gültige Größe ausgewählt ist:
+
+```jsx
+const validSizes = product.options
+      .filter((o) => o.id == 'option-size')
+      .map((o) => o.values)[0]
+
+    let pickedSized = validSizes.find((s) => {
+      return selectedOptions.size == s.label.toLowerCase()
+    })
+
+    if (!pickedSized) {
+      logIssue({
+        name: 'Product added without a size',
+        data: {
+          product_id: product.id,
+          added_date: new Date(),
+          available_options: validSizes,
+        },
+      })
+    }
+```
+
+Der entscheidende Teil des Codes ist das letzte `IF`: Sobald wir feststellen, dass keine gültige Größe ausgewählt ist, rufen wir die Funktion `logIssue` auf, die wir zuvor über den Aufruf von `useContext` erhalten haben.
+
+Und für das Event gehen wir tiefer in dieselbe Funktion und fügen Folgendes hinzu:
+
+```jsx
+logEvent({
+        name: 'product_added',
+        data: {
+          id: product.id,
+          date_added: new Date(),
+        },
+      })
+```
+
+Das ist alles, was wir brauchen. Anschließend können wir zu OpenReplay wechseln, unsere Sitzungsaufzeichnung suchen und den Bereich Events prüfen:
+
+![Panel für Custom Events](/tutorials/product-events-section.png)
+
+Und wenn wir die Details sehen möchten, können wir auf den Link „DETAILS“ klicken, der erscheint, wenn man mit der Maus über eine der Zeilen fährt:
+
+![Details eines Custom Events](/tutorials/event-details.png)
+
+Das sind die Details, die wir beim Hinzufügen eines Produkts aufgezeichnet haben.
+
+Und wenn Sie den vollständigen Quellcode dieses Beispiels durchsehen möchten, [finden Sie ihn hier](https://github.com/deleteman/nextjs-commerce-example/tree/redux-store).
+
+## Haben Sie Fragen?
+
+Wenn Sie Probleme mit Custom Events in Ihrem Projekt haben, kontaktieren Sie uns bitte in unserer [Slack-Community](https://slack.openreplay.com/) und fragen Sie unsere Entwickler direkt!

@@ -1,0 +1,71 @@
+---
+title: "Sessions"
+metaTitle: "Sessions"
+metaDescription: "특정 사용자의 모든 세션을 조회하는 방법."
+---
+
+## 사용자 세션 조회
+
+`tracker.setUserID` JavaScript 함수로 식별되는 특정 사용자의 세션 목록을 반환합니다. 결과는 페이지네이션됩니다.
+
+### 메서드
+`POST`
+
+### URL
+`/public/:projectKey/users/:userId/sessions`
+
+### 매개변수
+
+| 이름       | 유형   | 설명                                                     |
+|------------|--------|----------------------------------------------------------|
+| projectKey | string | 프로젝트 키(필수)                                        |
+| userId     | string | `tracker.setUserID`로 설정한 ID(필수, 최대 256)          |
+
+### 페이로드
+
+| 이름           | 유형       | 설명                                                       |
+|----------------|------------|------------------------------------------------------------|
+| startTimestamp | epoch (ms) | 시간 범위의 시작(필수, 최소 946684800000)                  |
+| endTimestamp   | epoch (ms) | 시간 범위의 끝(필수, > startTimestamp)                     |
+| limit          | integer    | 페이지 크기, 1-200(선택 사항, 기본값: 50)                  |
+| page           | integer    | 페이지 번호, 1부터 시작(선택 사항, 기본값: 1)              |
+| sortOrder      | string     | `asc` 또는 `desc`(선택 사항)                               |
+
+### 요청 헤더
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### 상태 코드
+
+`200`: 응답이 본문에 JSON으로 전송됩니다  
+`400`: 잘못된 본문 또는 잘못된 `userId`(비어 있거나 > 256자)
+
+### 요청 예시
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com/sessions \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "startTimestamp": 1623440000000,
+    "endTimestamp":   1623540000000,
+    "limit": 50,
+    "page": 1,
+    "sortOrder": "desc"
+  }'
+```
+
+### 응답 예시
+
+```json
+{
+  "data": {
+    "total": 2,
+    "sessions": [
+      { "sessionId": "4813018042986240", "eventsCount": 1, "startTs": 1623440822825, "endTs": 1623440835604 },
+      { "sessionId": "4813023023591169", "eventsCount": 6, "startTs": 1623440902620, "endTs": 1623440920846 }
+    ]
+  }
+}
+```

@@ -1,0 +1,53 @@
+---
+title: "JavaScript SDK - resanitize 메서드"
+metaTitle: "JavaScript SDK - resanitize 메서드"
+metaDescription: "OpenReplay SDK의 resanitize 메서드에 대한 자세한 설명"
+---
+import Aside from '~/components/Aside.astro'
+
+이 메서드는 현재 DOM을 기준으로 [정제](/sdk/sanitize-data) 규칙을 다시 평가하고, 변경된 내용을 다시 내보내어 세션 도중에 이미 기록된 노드를 업데이트합니다.
+
+정제는 보통 노드가 처음 기록될 때 적용됩니다. 노드가 이미 캡처된 *이후에* 가려지거나 숨겨져야 하는 대상을 변경하면, 그 변경 사항은 리플레이에 저절로 반영되지 않습니다. `resanitize()`를 호출하면 트래커가 이미 녹화에 포함된 노드를 다시 스캔하여 업데이트된 정제 규칙을 적용하도록 강제할 수 있습니다.
+
+다음과 같은 경우에 호출하세요:
+
+- 이미 페이지에 있는 요소에서 `data-openreplay-obscured` / `data-openreplay-hidden` 속성을 켜거나 끄는 경우, 또는
+- [`domSanitizer`](/sdk/sanitize-data#using-the-domsanitizer-function)가 기준으로 삼는 값(클래스, id 등)을 변경하는 경우.
+
+<Aside type="note">
+정제된 요소는 소스(트래커) 수준에서 마스킹/삭제되므로, 가려지거나 숨겨진 항목은 OpenReplay 인스턴스에 전혀 도달하지 않습니다. 모든 정제와 마찬가지로 `resanitize()`는 이 시점 이후에 캡처되는 데이터에만 영향을 미치며, 이미 일반 형태로 백엔드에 전송된 데이터를 소급하여 지울 수는 없습니다.
+</Aside>
+
+## 시그니처
+
+```js
+resanitize(el?: Element): void
+```
+
+## 매개변수
+
+- `el?: Element`: 변경한 가장 상위 노드입니다. 트래커는 이 요소와 그 하위 트리를 다시 스캔합니다. 생략하면 문서 전체를 다시 스캔합니다.
+
+<Aside type="tip">
+가능한 한 가장 구체적인 요소를 전달하세요. 문서 전체를 스캔하는 것은 O(DOM 크기)이므로, 변경된 하위 트리만 전달하면 규모가 큰 페이지에서도 재스캔 비용을 낮게 유지할 수 있습니다.
+</Aside>
+
+## 반환값
+
+이 메서드는 값을 반환하지 않습니다. 다시 평가된 정제 결과는 진행 중인 녹화에 직접 적용되며, 결과는 OpenReplay 플랫폼에서 확인할 수 있습니다.
+
+## 예제
+
+```js
+// Obscure a section after the user opens sensitive content
+const panel = document.getElementById('account-details')
+panel.setAttribute('data-openreplay-obscured', '')
+
+// Tell the tracker to re-apply sanitization to that subtree
+tracker.resanitize(panel)
+```
+
+```js
+// Re-scan the whole document after changing domSanitizer rules
+tracker.resanitize()
+```
