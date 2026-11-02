@@ -1,0 +1,214 @@
+---
+title: "Elastic"
+metaTitle: "Elasticsearch와 OpenReplay 통합"
+metaDescription: "Elasticsearch를 OpenReplay와 통합하여 세션 리플레이와 함께 백엔드 오류를 확인하는 방법을 설명합니다."
+---
+
+[Elastic](https://www.elastic.co/) 백엔드 로그를 [OpenReplay](https://www.openreplay.com/) 세션 리플레이와 통합하여 모니터링 및 디버깅 기능을 확장하는 방법을 알아봅니다.
+
+## 1. 새 API 키 만들기
+
+환경에 따라 Kibana 대시보드 또는 cURL 명령을 사용하여 API 키를 만들 수 있습니다.
+
+**Kibana 대시보드 사용**
+
+1. Kibana 대시보드에 로그인합니다.
+
+2. **Dev Tools**에 접속합니다. **Dev Tools > Console**로 이동합니다.
+
+3. **API Key**를 생성합니다. 다음 코드를 콘솔에 복사하여 실행합니다.
+
+     ```json
+     POST /_security/api_key
+     {
+       "name": "openreplay-api-key",
+       "role_descriptors": {
+         "openreplay-role": {
+           "cluster": ["all"],
+           "index": [
+             {
+               "names": ["*log*"],
+               "privileges": ["read"]
+             }
+           ]
+         }
+       }
+     }
+     ```
+
+#### **cURL 명령 사용**
+
+1. cURL 명령을 실행합니다. 터미널에서 다음 명령을 실행합니다.
+
+     ```shell
+     curl -X POST "https://your-elasticsearch-host:port/_security/api_key" \
+     -H 'Content-Type: application/json' \
+     -d'
+     {
+       "name": "openreplay-api-key",
+       "role_descriptors": {
+         "openreplay-role": {
+           "cluster": ["all"],
+           "index": [
+             {
+               "names": ["*log*"],
+               "privileges": ["read"]
+             }
+           ]
+         }
+       }
+     }' \
+     -u 'username:password'
+     ```
+
+     `https://your-elasticsearch-host:port`를 사용 중인 Elasticsearch 호스트와 포트로, `username:password`를 사용자의 자격 증명으로 바꿉니다.
+
+**참고:**
+
+- 기본적으로 이 통합은 `*log*`와 일치하는 모든 인덱스에서 로그를 검색합니다. 이 패턴과 일치하지 않는 로그 전용 인덱스를 사용하는 경우 API 키 생성 요청의 `names` 필드를 변경하세요.
+- 여러 인덱스를 지정하려면 이름을 쉼표로 구분합니다(예: `"names": ["index1", "index2"]`).
+
+#### **API 키 결과**
+
+명령을 실행하면 다음과 같은 응답을 받게 됩니다.
+
+```json
+{
+  "id": "eQWAIG0Bo0VqB8HXFH9-",
+  "name": "openreplay-api-key",
+  "api_key": "dZ5ycVRJTU-5UW_RYfi1_w"
+}
+```
+
+**중요:** 통합에 필요하므로 `id`와 `api_key`를 반드시 복사해 두세요.
+
+> **참고:** [Elasticsearch - API 키 생성](https://www.elastic.co/guide/en/elasticsearch/reference/master/security-api-create-api-key.html)
+
+## 2. OpenReplay에서 Elasticsearch 통합 구성
+OpenReplay 계정에서 다음 3단계를 따라 세션 리플레이와 Elasticsearch 백엔드 로그의 연결을 완료합니다.
+
+#### Elasticsearch 통합 활성화
+1. OpenReplay에서 **Preferences > Integrations**로 이동합니다.
+2. **Backend Logging** 탭을 선택합니다.
+3. Elasticsearch 통합을 활성화할 프로젝트를 선택합니다. Elasticsearch 통합 카드를 찾아 클릭합니다.
+
+#### Elasticsearch 자격 증명 입력
+Elasticsearch 통합 사이드바에서 다음을 입력합니다.
+   - **API KEY ID**: 생성한 API 키의 `id`입니다.
+   - **API Key**: 생성한 API 키의 `api_key`입니다.
+   - **Indexes**: API 키를 생성할 때 인덱스를 변경한 경우 여기에 해당 이름을 지정합니다.
+
+#### 연결 확인
+   - **Add**를 클릭하여 연결을 테스트합니다.
+
+
+## 3. openReplaySession.id 전달
+
+Elasticsearch 이벤트를 녹화된 사용자 세션과 연결하려면 추적하려는 모든 요청에서 고유한 세션 ID(`openReplaySession.id`)를 프론트엔드에서 백엔드로 전달해야 합니다.
+
+#### a. 프론트엔드 API 요청에 `openReplaySession.id` 포함
+
+**참고:** `tracker.start()`는 비동기 함수이며 Promise를 반환합니다. 세션 ID를 사용할 수 있도록 `tracker.getSessionID()`를 호출하기 전에 Promise가 완료될 때까지 기다려야 합니다.
+
+```javascript
+// JavaScript Example for for Single Page Applications (SPA):
+
+// Import OpenReplay
+import { tracker } from '@openreplay/tracker';
+
+// Initialize the tracker
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+// Start the tracker and wait for it to resolve
+tracker.start().then(() => {
+  // Get the session ID after the tracker has started
+  const sessionId = tracker.getSessionID();
+
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+  if (sessionId) {
+    headers['openReplaySession.id'] = sessionId;
+  }
+
+  // Make the API request
+  fetch('https://www.your-backend.com/api/endpoint', {
+    method: 'GET', // or 'POST', 'PUT', etc.
+    headers,
+    // ...other options
+  })
+    .then(response => {
+      // Handle response
+    })
+    .catch(error => {
+      // Handle error
+    });
+});
+```
+
+#### b. 백엔드 로그에 openReplaySession.id 포함
+
+OpenReplay가 Elasticsearch 로그 항목을 녹화된 사용자 세션과 연결하려면 추적하려는 각 백엔드 오류에 `openReplaySession.id`가 포함되어야 합니다.
+
+
+```python
+import logging
+from flask import Flask, request, g
+
+app = Flask(__name__)
+
+# Configure the root logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
+
+# Create a custom logging filter
+class OpenReplayFilter(logging.Filter):
+    def filter(self, record):
+        session_id = getattr(g, 'openreplay_session_id', None)
+        if session_id:
+            record.msg = f"[openReplaySession.id={session_id}] {record.msg}"
+        return True
+
+# Add the filter to the logger
+logger.addFilter(OpenReplayFilter())
+
+@app.before_request
+def before_request():
+    # Extract the session ID from headers and store it in the Flask `g` object
+    g.openreplay_session_id = request.headers.get('openReplaySession.id')
+
+@app.route('/api/endpoint')
+def api_endpoint():
+    # Your logic here
+
+    # Log an event with the session ID automatically included
+    logger.info("Endpoint accessed")
+
+    return 'Success', 200
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Log the error with the session ID automatically included
+    logger.error(f"Error: {str(e)}")
+    return 'Internal Server Error', 500
+
+if __name__ == '__main__':
+    app.run()
+```
+
+## 4. 참고 사항
+
+기본적으로 OpenReplay는 `message`와 `utc_time` 속성을 사용하여 OpenReplay 세션과 연결된 각 로그를 찾습니다. 오류 로그를 중심으로 확인하며, `tags` 속성에 `error` 값이 포함되어 있는지로 오류 로그를 식별합니다.
+
+**참고:**
+
+- **사용자 지정 로그 구조**: 로그 구조가 다른 경우 로깅 구성을 조정하거나 OpenReplay 지원팀에 문의하여 사용 환경에 맞게 설정해야 할 수 있습니다.
+- **오류 식별**: OpenReplay가 오류 로그를 식별할 수 있도록 오류 로그에 적절한 태그가 지정되어 있는지 확인하세요.
+
+## 질문이 있으신가요?
+
+문제가 발생하면 [Slack](https://slack.openreplay.com)에 접속하여 커뮤니티의 도움을 받으세요.

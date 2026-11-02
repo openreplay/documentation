@@ -1,0 +1,35 @@
+---
+title: "JavaScript SDK - Methode 'startOfflineRecording'"
+metaTitle: "JavaScript SDK - Methode 'startOfflineRecording'"
+metaDescription: "Details zur Methode 'startOfflineRecording' aus dem OpenReplay SDK"
+---
+
+Startet die Sitzungsaufzeichnung im Offline-Modus (es wird nichts gesendet, solange der Upload nicht ausgelöst wird) und gibt Methoden zurück, mit denen Sie den Aufzeichnungsstatus steuern.
+
+> Hinweis: Die Zeitstempel von Sitzung und Ereignissen werden vom Gerät des Benutzers übernommen und nicht mit unserem Backend synchronisiert.
+
+## Signatur
+
+```ts
+startOfflineRecording(
+	startOpts?: Partial<StartOptions>, 
+	onSessionSent: () => void
+): { saveBuffer, getBuffer, setBuffer }
+```
+
+### Parameter
+
+Mit `startOpts` können Sie verschiedene Aspekte der Aufzeichnung anpassen:
+- `userID: string`: Dient dazu, die `userID` manuell festzulegen, um den Benutzer sitzungsübergreifend zu verfolgen. Es ist ein String-Wert und kann beliebig gewählt werden.
+- `metadata: Record<string, string>`: Legt die Metadatenwerte manuell fest. Mehr zu dieser Funktion finden Sie im [Abschnitt Metadaten](/session-replay/metadata).
+- `forceNew: boolean`: Erzwingt nach einem Seiten-Refresh eine neue Sitzung. Standardmäßig ist der Wert `false`, sodass die Sitzung nach einem Refresh erhalten bleibt.
+- `sessionHash: string`: Wird für Sticky Sessions verwendet. Nützlich, wenn Sie eine Multi-Site-Anwendung betreiben oder den Benutzer nach außen und anschließend wieder zurück auf Ihre Website leiten müssen (etwa zu einem Zahlungsanbieter).
+- `onSessionSent`: Callback, der aufgerufen wird, sobald die Sitzung vollständig hochgeladen wurde.
+
+
+### Rückgabewert
+
+- `saveBuffer(): void` - Speichert den aktuellen Puffer im `localStorage`-Objekt (im Konstruktor anpassbar); der Puffer wird automatisch geladen, sobald `startOfflineRecording` aufgerufen wird.
+- `getBuffer(): Messages[]` - Gibt den aktuellen Nachrichtenpuffer zurück.
+- `setBuffer(buffer: Messages[])` - Ersetzt den aktuellen Puffer durch den übergebenen (wenn Sie alternative Methoden zum temporären Speichern verwenden).
+

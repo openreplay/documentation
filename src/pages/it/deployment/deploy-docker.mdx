@@ -1,0 +1,43 @@
+---
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+title: "Deploy con Docker Compose"
+metaTitle: "Deploy con Docker Compose"
+metaDescription: "Guida passo passo per distribuire OpenReplay con Docker Compose."
+---
+import Aside from '~/components/Aside.astro'
+
+<Aside type="tip">
+	Questa è una funzionalità sperimentale e la sua implementazione potrebbe evolvere in futuro. OpenReplay non può essere eseguito in locale, quindi anche con Docker avresti comunque bisogno di un server. Valuta le nostre altre [opzioni di deployment](/deployment).
+</Aside>
+
+Lo stack di OpenReplay può essere installato su una singola macchina con Docker Compose. 
+
+## Prerequisiti
+
+1. Ubuntu 20.04 LTS (si consiglia una versione LTS)
+2. Un IP pubblico associato alla macchina, cioè il tuo server deve essere raggiungibile da Internet.
+3. Dovresti avere un nome di dominio associato all'indirizzo IP.
+4. Scegli il tipo di istanza. Le specifiche minime sono `2 vCPUs, 8 GB of RAM, 50 GB of storage`, con architettura x86, altrimenti i servizi backend di OpenReplay semplicemente non si avvieranno. Ti consigliamo quindi **almeno** una `t3.large` (o equivalente), sufficiente per un volume di traffico basso o moderato. Se prevedi un traffico elevato, dovresti scalare a partire da qui.
+
+## Distribuire OpenReplay
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem #! wherever you've saved the SSH key
+INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
+chmod 400 $SSH_KEY
+ssh -i $SSH_KEY ubuntu@$INSTANCE_IP
+```
+
+2. Installa OpenReplay indicando il dominio su cui verrà eseguito (ad es. DOMAIN_NAME=openreplay.mycompany.com):
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/docker-compose/docker-install.sh)"
+```
+
+Ora è tutto pronto: OpenReplay dovrebbe essere raggiungibile in modo sicuro sul dominio che hai creato all'inizio. Puoi creare un account visitando la pagina `/signup` (ad es. openreplay.mycompany.com/signup).
+
+## Hai domande?
+
+Se riscontri qualche problema, connettiti al nostro [Slack](https://slack.openreplay.com) e ottieni aiuto dalla nostra community.

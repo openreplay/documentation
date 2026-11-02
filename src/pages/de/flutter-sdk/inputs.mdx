@@ -1,0 +1,47 @@
+---
+title: "Flutter SDK - Eingaben verfolgen"
+metaTitle: "Flutter SDK - Eingaben verfolgen"
+metaDescription: "Details zum Verfolgen von Eingaben mit dem Flutter-Tracker"
+---
+import Aside from '~/components/Aside.astro'
+
+Textfelder werden nicht automatisch beobachtet – Flutter hat kein Gegenstück zur Responder Chain von UIKit, in die man sich einklinken könnte. Hängen Sie den Tracker an die Controller, die Sie interessieren; er reagiert dann auf Wertänderungen (mit Debouncing) und sendet den resultierenden Wert an das OpenReplay-Backend.
+
+## Verfolgte Eingaben hinzufügen
+
+Verwenden Sie `observeInput(controller, label:, masked:)`:
+
+- `controller: TextEditingController` — der zu beobachtende Controller
+- `label: String` — Label für die aufgezeichnete Eingabe
+- `masked: bool` — wenn `true`, zeichnet der Tracker das Eingabeereignis auf, sendet aber `****` statt des Werts. Standard: `false`.
+
+Die Methode gibt einen Callback zurück, der den Listener entfernt – binden Sie ihn daher in `dispose()` ein:
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+class _LoginFormState extends State<LoginForm> {
+  final _email = TextEditingController();
+  late final VoidCallback _stopObserving;
+
+  @override
+  void initState() {
+    super.initState();
+    _stopObserving = OpenReplay.instance.observeInput(_email, label: 'Email');
+  }
+
+  @override
+  void dispose() {
+    _stopObserving();
+    _email.dispose();
+    super.dispose();
+  }
+}
+```
+
+<Aside type="note">
+	`masked: true` verbirgt den Wert nur im Ereignisstrom. Das Feld bleibt auf dem aufgezeichneten Bildschirm weiterhin sichtbar – umschließen Sie es mit [`ORSanitizedView`](/flutter-sdk/sanitization), um es auch dort auszublenden.
+</Aside>
+
+## Haben Sie Fragen?
+Wenn Sie Fragen zu diesem Vorgang haben, wenden Sie sich gern über unseren [Slack](https://slack.openreplay.com) an uns.

@@ -1,0 +1,43 @@
+---
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+title: "Deploy with Docker Compose"
+metaTitle: "Deploy with Docker Compose"
+metaDescription: "Schritt-für-Schritt-Anleitung zur Bereitstellung von OpenReplay mit Docker Compose."
+---
+import Aside from '~/components/Aside.astro'
+
+<Aside type="tip">
+	Dies ist eine experimentelle Funktion, deren Implementierung sich künftig noch ändern kann. OpenReplay lässt sich nicht lokal betreiben, Sie benötigen also auch mit Docker weiterhin einen Server. Beachten Sie auch unsere anderen [Bereitstellungsoptionen](/deployment).
+</Aside>
+
+Der OpenReplay-Stack lässt sich mit Docker Compose auf einem einzelnen Rechner installieren. 
+
+## Voraussetzungen
+
+1. Ubuntu 20.04 LTS (eine LTS-Version wird empfohlen)
+2. Eine dem Rechner zugewiesene öffentliche IP-Adresse. Das heißt, Ihr Server ist aus dem Internet erreichbar.
+3. Der IP-Adresse sollte ein Domainname zugeordnet sein.
+4. Wählen Sie Ihren Instanztyp. Die Mindestspezifikationen sind `2 vCPUs, 8 GB of RAM, 50 GB of storage` und eine x86-Architektur, andernfalls starten die OpenReplay-Backend-Dienste schlicht nicht. Wir empfehlen daher **mindestens** `t3.large` (oder ein Äquivalent), das für ein geringes bis mittleres Aufkommen ausreicht. Wenn Sie viel Traffic erwarten, sollten Sie von hier aus skalieren.
+
+## OpenReplay bereitstellen
+
+```bash
+## From your terminal
+SSH_KEY=~/Downloads/openreplay-key.pem #! wherever you've saved the SSH key
+INSTANCE_IP=REPLACE_WITH_INSTANCE_PUBLIC_IP
+chmod 400 $SSH_KEY
+ssh -i $SSH_KEY ubuntu@$INSTANCE_IP
+```
+
+2. Installieren Sie OpenReplay, indem Sie die Domain angeben, unter der es laufen soll (z. B. DOMAIN_NAME=openreplay.mycompany.com):
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/docker-compose/docker-install.sh)"
+```
+
+Damit ist alles erledigt: OpenReplay sollte nun sicher unter der zuerst eingerichteten Domain erreichbar sein. Sie können ein Konto erstellen, indem Sie die Seite `/signup` aufrufen (z. B. openreplay.mycompany.com/signup).
+
+## Haben Sie Fragen?
+
+Wenn Probleme auftreten, verbinden Sie sich mit unserem [Slack](https://slack.openreplay.com) und holen Sie sich Hilfe von unserer Community.

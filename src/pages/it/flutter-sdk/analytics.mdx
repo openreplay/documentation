@@ -1,0 +1,53 @@
+---
+title: "Flutter SDK - Tracciamento di schermate e viste"
+metaTitle: "Flutter SDK - Tracciamento di schermate e viste"
+metaDescription: "Dettagli sul tracciamento di schermate e viste con il tracker Flutter"
+---
+import Aside from '~/components/Aside.astro'
+
+Con `analytics` abilitato (impostazione predefinita), il tracker acquisisce in autonomia tocchi, swipe, modifiche del viewport ed eventi di input. Le schermate e le singole viste vengono segnalate da due widget esportati.
+
+## Schermate
+
+Aggiungi `ORNavigatorObserver` al navigator della tua app per registrare le transizioni tra le route:
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+MaterialApp(
+  navigatorObservers: [ORNavigatorObserver()],
+  // ...
+)
+```
+
+Vengono segnalati tutti i push, i pop, le sostituzioni e le rimozioni. Una route prende il nome da `route.settings.name`; una route senza nome ripiega sulla sua posizione nello stack (`route/2`), perciò assegnare un nome alle route rende le timeline molto più leggibili.
+
+## Viste tracciate
+
+Racchiudi qualsiasi widget in `ORTrackedView` per segnalarlo come vista osservabile con un nome. Un evento di visibilità viene emesso quando il widget viene montato e quando viene smontato, e il suo nome viene usato come etichetta per i tocchi che avvengono al suo interno.
+
+- `screenName: String` — titolo della schermata o della funzionalità
+- `viewName: String` — nome della vista tracciata
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+ORTrackedView(
+  screenName: 'Checkout',
+  viewName: 'Pay button',
+  child: ElevatedButton(onPressed: _pay, child: const Text('Pay')),
+)
+```
+
+## Tocchi
+
+Tocchi e swipe vengono acquisiti tramite la route globale del pointer router, quindi il tracker vede ogni evento del puntatore senza mai competere nella gesture arena — non può "inghiottire" un tocco di cui la tua app aveva bisogno. Un puntatore che percorre più di 10 pixel logici viene registrato come swipe con la sua direzione dominante, qualsiasi movimento più breve come clic.
+
+Le etichette dei tocchi derivano dall'hit-testing del testo sotto il puntatore, oppure dall'`ORTrackedView` che lo contiene.
+
+<Aside type="note">
+	Le etichette non derivano mai dai nomi dei tipi di widget o di render object: `flutter build --obfuscate` li riduce a semplice rumore.
+</Aside>
+
+## Hai domande?
+Se hai domande su questo processo, non esitare a contattarci su [Slack](https://slack.openreplay.com) .

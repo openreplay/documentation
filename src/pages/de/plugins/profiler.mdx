@@ -1,0 +1,68 @@
+---
+title: "Profiler"
+metaTitle: "Profiler"
+metaDescription: "Profiler-Plugin für OpenReplay."
+---
+
+Mit dem Profiler-Plugin können Sie die Performance Ihrer JS-Funktionen messen und für jeden Aufruf sowohl die Argumente als auch das Ergebnis erfassen.
+
+## Installation
+
+```bash
+npm i @openreplay/tracker-profiler
+```
+
+## Verwendung
+
+Initialisieren Sie den Tracker und laden Sie das Plugin hinein. Dekorieren Sie anschließend beliebige Funktionen in Ihrem Code mit der generierten Funktion.
+
+### Wenn Ihre Website eine Single Page Application (SPA) ist
+
+```js
+import trackerProfiler from '@openreplay/tracker-profiler';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+const profiler = tracker.use(trackerProfiler());
+
+tracker.start();
+
+// ...
+const fn = profiler('MyFunction')(() => {
+  // Inspecting function body
+}, thisArg); // thisArg is optional
+```
+
+### Wenn Ihre Web-App serverseitig gerendert wird (SSR)
+
+Orientieren Sie sich am folgenden Beispiel, wenn Ihre App SSR verwendet. Stellen Sie sicher, dass `tracker.start()` aufgerufen wird, sobald die App gestartet ist (in `useEffect` oder `componentDidMount`).
+
+```js
+import trackerProfiler from '@openreplay/tracker-profiler/cjs';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+const profiler = tracker.use(trackerProfiler());
+
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, [])
+}
+//...
+const fn = profiler('MyFunction')(() => {
+  // Inspecting function body
+}, thisArg); // thisArg is optional
+
+```
+
+## Haben Sie Fragen?
+
+Haben Sie Probleme bei der Einrichtung dieses Plugins? Verbinden Sie sich mit unserem [Slack](https://slack.openreplay.com) und holen Sie sich Hilfe von unserer Community.

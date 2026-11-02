@@ -1,0 +1,76 @@
+---
+title: "JS 오류"
+metaTitle: "JS 오류"
+metaDescription: "다양한 종류의 JavaScript 오류를 정리했습니다."
+---
+
+이 섹션에서는 커뮤니티에서 가장 많이 접하고 보고한 JavaScript 오류를 소개합니다.
+
+## Require() of ES module
+
+이 오류(아래 오류도 마찬가지)는 보통 서버 측 컨텍스트(SSR, Nuxt, Next, Remix 앱 등)에서 트래커를 가져오려고 할 때 발생합니다.
+
+해결하려면 동적 import, 클라이언트 컴포넌트 등을 이용해 트래커를 브라우저 컨텍스트 안에서 불러오고 실행하도록 해야 합니다.
+
+## ReferenceError: Navigator is not defined
+
+`tracker-assist` 또는 `tracker-fetch` 플러그인을 import할 때 이 오류가 발생하는 경우가 있습니다. 이는 환경에 `window` API가 없는 상태에서 node가 페이지를 빌드하려고 하기 때문입니다.
+
+해결 방법은 아주 간단합니다. 문제를 일으키는 플러그인의 일반적인 import 문을 바꾸기만 하면 됩니다.
+
+```js
+import trackerAssist from '@openreplay/tracker-assist/cjs';
+```
+
+다음과 같이 `componendDidMount` 또는 대안인 `useEffect` 안에서 동적으로 import합니다.
+
+```js
+import Tracker, { Options } from "@openreplay/tracker";
+const tracker = new Tracker({ /* your options */ });
+
+class TrackerComponent extends React.Component {
+
+  componentDidMount = () => {
+    import(‘@openreplay/tracker-assist/cjs’).then(({ default: trackerAssist }) => {
+      tracker.start(/* your options */)
+      tracker.use(trackerAssist(/* your assist options */))
+    })
+   }
+
+ /* Other code */
+```
+
+이렇게 하면 window API에 의존하는 모든 플러그인이 컴포넌트가 렌더링될 때 import됩니다.
+
+## Critical dependency: the request of a dependency is an expression
+
+`tracker-assist` 플러그인의 이전 버전에서 발생할 수 있습니다. 컴파일할 때 아래와 같은 오류가 발생하면 이 [해결 방법](https://github.com/peers/peerjs/issues/630#issuecomment-910028230)을 적용하세요.
+
+```log
+Failed to compile.
+
+./node_modules/peerjs/dist/peerjs.min.js
+Critical dependency: the request of a dependency is an expression
+```
+
+## Uncaught DOMException: Blocked a frame with origin "X" from accessing a cross-origin frame
+
+OpenReplay 트래커는 기본적으로 **동일 도메인** iFrame을 캡처합니다. 하지만 웹사이트와 동일한 도메인이 아닌 iFrame을 캡처하려고 하면 오류가 발생합니다. 다음 중 하나를 선택할 수 있습니다.
+
+- 아래 예시처럼 `captureIFrames` 속성을 사용하여 이 기능 전체를 비활성화합니다. 
+
+```js
+tracker.configure({
+      projectKey: PROJECT_KEY,
+      captureIFrames: false
+});
+```
+
+- 동일 도메인의 `<iframe>` 태그에 **한해서** `data-openreplay-capture` HTML 속성을 추가하면 iFrame 캡처(기본 동작)를 유지할 수 있습니다. 이렇게 하면 교차 출처(cross-origin) iFrame은 OpenReplay에서 추적되지 않습니다.
+
+## 내 문제가 목록에 없는 경우
+
+이 페이지에 나와 있지 않은 오류가 발생하면 언제든지 [이슈를 등록](https://github.com/openreplay/openreplay/issues/new/choose)하거나 [Slack](https://slack.openreplay.com)에서 커뮤니티의 도움을 받아 보세요.
+
+## 궁금한 점이 있으신가요?
+이 과정에 대해 궁금한 점이 있으시면 언제든지 [Slack](https://slack.openreplay.com)으로 문의해 주세요.

@@ -1,0 +1,215 @@
+---
+title: "Users"
+metaTitle: "Users"
+metaDescription: "So verwalten und kontrollieren Sie Benutzerdaten."
+---
+import Aside from '~/components/Aside.astro'
+
+## Benutzer suchen
+
+Durchsuchen Sie die Benutzer eines Projekts. Filtern Sie nach Attributen (Benutzer-ID, E-Mail-Adresse, Land usw.), grenzen Sie die Ergebnisse optional mit einer Freitext-`query` weiter ein und paginieren Sie sie.
+
+### Methode
+`POST`
+
+### URL
+`/public/:projectKey/users`
+
+### Parameter
+
+| Name       | Typ   | Beschreibung                                            |
+|------------|--------|--------------------------------------------------------|
+| projectKey | string | Der Projektschlüssel (erforderlich)                             |
+| q          | string | Optionale Freitextabfrage (URL-Query-Parameter). Wenn sowohl `q` als auch `query` (Body) angegeben werden, hat `q` Vorrang. |
+
+### Payload
+
+| Name           | Typ       | Beschreibung                                                 |
+|----------------|------------|-------------------------------------------------------------|
+| filters        | array      | Filterliste (optional)                                      |
+| query          | string     | Freitextabfrage über Benutzer-ID / E-Mail-Adresse / Name (max. 100)    |
+| startTimestamp | epoch (ms) | Beginn des Zeitfensters (optional, min. 946684800000)           |
+| endTimestamp   | epoch (ms) | Ende des Zeitfensters (optional, > startTimestamp)             |
+| limit          | integer    | Seitengröße, 1-200 (optional, Standard: 50)                    |
+| page           | integer    | Seitennummer, beginnt bei 1 (optional, Standard: 1)             |
+| sortBy         | string     | Benutzerspalte, nach der sortiert wird (optional)                           |
+| sortOrder      | string     | `asc` oder `desc` (optional)                                  |
+| columns        | array      | Zusätzliche Benutzerspalten, die in die Antwort aufgenommen werden          |
+
+### Anfrage-Header
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Beispielanfrage
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "query": "mickael",
+    "limit": 50,
+    "page":  1,
+    "sortOrder": "desc"
+  }'
+```
+
+### Beispielantwort
+
+```json
+{
+  "data": {
+    "total": 1,
+    "users": [
+      {
+        "$user_id": "mickael@openreplay.com",
+        "$email": "mickael@openreplay.com",
+        "$name": "Mickael",
+        "$first_name": "Mickael",
+        "$last_name": "",
+        "$created_at": 1623440822825,
+        "$last_seen": 1623689478617
+      }
+    ]
+  }
+}
+```
+
+## Benutzer abrufen
+
+Ruft die Identitätsattribute und übergeordnete Statistiken für einen bestimmten Benutzer ab.
+
+### Methode
+`GET`
+
+### URL
+`/public/:projectKey/users/:userId`
+
+### Parameter
+
+| Name       | Typ   | Beschreibung                                                |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | Der Projektschlüssel (erforderlich)                                 |
+| userId     | string | Die über `tracker.setUserID` gesetzte ID (erforderlich, max. 256)     |
+
+### Anfrage-Header
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Statuscodes
+
+`200`: Antwort wird als JSON im Body gesendet  
+`400`: Ungültige `userId` (leer oder > 256 Zeichen)  
+`404`: Benutzer nicht gefunden
+
+### Beispielanfrage
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Beispielantwort
+
+```json
+{
+  "data": {
+    "$user_id": "mickael@openreplay.com",
+    "$email": "mickael@openreplay.com",
+    "$name": "Mickael",
+    "$first_name": "Mickael",
+    "$last_name": "",
+    "$phone": "",
+    "$avatar": "",
+    "$created_at": 1623440822825,
+    "distinct_ids": ["15bd70f6-aedf-4544-8ae6-57eb66398e94"],
+    "$country": "FR",
+    "$state": "",
+    "$city": "",
+    "$first_event_at": 1623440822825,
+    "$last_seen": 1623689478617
+  }
+}
+```
+
+## Benutzer löschen
+
+Löscht einen Benutzer und alle zugehörigen Daten. Plant einen Hintergrundjob; die Antwort enthält die `jobId`, die Sie über die API [Jobs](/api/jobs) abfragen können.
+
+<Aside type="note">
+Der Löschjob entfernt bis zu 1000 Sitzungen, die dem angegebenen Benutzer zugeordnet sind.
+</Aside>
+
+### Methode
+`DELETE`
+
+### URL
+`/public/:projectKey/users/:userId`
+
+### Parameter
+
+| Name       | Typ   | Beschreibung                                                |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | Der Projektschlüssel (erforderlich)                                 |
+| userId     | string | Die über `tracker.setUserID` gesetzte ID (erforderlich, max. 256)     |
+
+### Anfrage-Header
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Statuscodes
+
+`200`: Job geplant, im Body zurückgegeben  
+`400`: Ungültige `userId` (leer oder > 256 Zeichen)  
+`409`: Für diesen Benutzer ist bereits ein Löschjob geplant oder läuft gerade
+
+### Beispielanfrage
+
+```shell
+curl -X DELETE \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users/mickael@example.com \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Beispielantwort
+
+```json
+{
+  "data": {
+    "jobId": 22345,
+    "description": "Delete user sessions of userId = mickael@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mickael@example.com",
+    "createdAt": 1623912962910,
+    "updatedAt": null,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+### Löschzeit der Replay-Dateien ändern?
+
+Der Löschjob ist ein zweistufiger Prozess: Zuerst werden Sitzungen und die zugehörigen Ereignisse über Nacht aus der Datenbank gelöscht. Danach werden die Replay-Dateien im Objektspeicher so vorgemerkt, dass sie nach 30 Tagen ablaufen.
+
+Wenn Sie minio (Standardinstallation) verwenden und die standardmäßige Ablauf- bzw. Lifecycle-Richtlinie ändern möchten, gehen Sie wie folgt vor:
+1. Führen Sie auf Ihrem Server `openreplay -e` aus
+2. Definieren Sie im Abschnitt `chalice` eine neue Umgebungsvariable namens **SCH_DELETE_DAYS** mit einem Wert, der der Anzahl der Tage entspricht, die Sie die Replay-Datei vor dem Löschen aufbewahren möchten (größer oder gleich 0)
+3. Speichern und beenden Sie mit `:wq`
+4. Führen Sie `k9s -n db` aus
+5. Navigieren Sie mit den Pfeiltasten durch die Liste und wechseln Sie zum Container `minio-*`
+6. Drücken Sie `s`, um Shell-Zugriff auf den Minio-Container (Objektspeicher) zu erhalten
+7. Führen Sie `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY` aus
+8. So löschen Sie Replay-Dateien 14 Tage nach der Ausführung des Löschjobs:
+
+```bash
+export EXPIRATION_DAYS=14
+mc ilm add --expiry-days $EXPIRATION_DAYS --tags "to_delete_in_days=${EXPIRATION_DAYS}" minio/mobs
+```
+
+9. Verlassen Sie den Minio-Container mit `exit`
+10. Führen Sie `:quit` aus, um die Kubernetes-CLI zu beenden

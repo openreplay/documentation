@@ -1,0 +1,77 @@
+---
+title: "Usare OpenReplay con Gatsby"
+metaTitle: "Aggiungere il tracker di OpenReplay alla tua applicazione Gatsby"
+metaDescription: "Scopri come far funzionare il tracker nella tua applicazione Gatsby"
+---
+L'installazione del tracker di OpenReplay in un progetto basato su Gatsby è relativamente semplice. Dato che Gatsby usa React sotto il cofano, tutto ciò che dobbiamo fare è aggiungere il codice del tracker nella pagina principale e chiamare il metodo `start` tramite l'hook `useEffect`. 
+
+Vediamo come fare.
+
+## Perché configurare il tracker su un sito statico?
+
+L'assenza di contenuti dinamici nella tua app non significa che tu non voglia sfruttare alcune delle altre funzionalità di OpenReplay.
+
+Anche se non userai i session replay per individuare i bug, potrai raccogliere metriche interessanti e creare [le tue dashboard personalizzate](https://docs.openreplay.com/tutorials/custom-dashboard) basate su di esse.
+
+Puoi usare le metriche di performance, i web vitals e persino quelle relative alle risorse per farti un'idea generale di come i tuoi utenti vivono il tuo sito.
+
+## Configurare il tracker in Gatsby
+
+Dato un sito Gatsby statico il cui punto di ingresso è il file `index.tsx` nella cartella `pages`, dovrai aggiungervi il codice seguente.
+
+Puoi usare il tracker come istanza singleton, che è il modo consigliato di utilizzarlo. 
+In questo modo puoi accedere al tracker da qualsiasi punto della tua app:
+
+```js
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+const Index = ({data, location }) => {
+
+	React.useEffect(() => {
+		tracker.start();
+	}, [])
+
+	 //the rest of your code here...
+}
+```
+
+Oppure puoi usare direttamente la classe `Tracker` per gestirne manualmente l'istanza:
+
+```jsx
+import Tracker from '@openreplay/tracker';
+const tracker = new Tracker({
+  projectKey: process.env.GATSBY_OPENREPLAY_PROJECT_KEY
+});
+
+const Index = ({data, location }) => {
+
+  React.useEffect(() => {
+    tracker.start();
+  }, [])
+
+   //the rest of your code here...
+}
+```
+
+Il tracker viene istanziato quando la pagina viene compilata (sia in SSR sia nel rendering lato client), ma il metodo start può essere chiamato solo dal browser, quindi dobbiamo assicurarci che venga invocato dopo il montaggio del componente (da qui l'hook `useEffect`). L'array vuoto passato come secondo argomento dell'hook `useEffect` garantisce che la callback venga eseguita una sola volta.
+
+💡**Una nota per gli utenti self-hosted:** se usi la versione self-hosted di OpenReplay, dovrai specificare anche la proprietà di configurazione `ingestPoint` quando istanzi il tracker. Questa proprietà indica l'endpoint di ingestione dei dati del tracker. Gli utenti cloud non ne hanno bisogno, perché per impostazione predefinita il tracker sa dove si trova l'endpoint della versione SaaS, ma se lo ospiti in self-hosting devi specificarlo (dovrebbe essere qualcosa come `https://openreplay.mydomain.com/ingest`)
+
+## Gestire la variabile d'ambiente in Gatsby
+
+Per motivi di sicurezza, ti consigliamo di non inserire la chiave del progetto direttamente nel codice. Dovrai quindi esportarla come variabile d'ambiente (ENV) in modo che Gatsby la legga.
+
+La chiave del progetto OpenReplay risiederà quindi in una variabile chiamata `GATSBY_OPENREPLAY_PROJECT_KEY`
+
+Nota come il nome abbia il prefisso `GATSBY_`: questo indica a Gatsby di rendere la variabile disponibile anche nel codice front-end. In caso contrario, non potrai leggerne il valore a meno che tu non stia eseguendo codice Node.js.
+
+## Hai domande?
+
+Puoi [consultare questo repository](https://github.com/deleteman/openreplay-gatsby-example) per il **codice sorgente completo** di un'applicazione basata su Gatsby funzionante con il tracker.
+
+In caso di problemi nella configurazione del tracker nel tuo progetto Gatsby, contattaci nella nostra [community Slack](https://slack.openreplay.com/) e chiedi direttamente ai nostri sviluppatori!

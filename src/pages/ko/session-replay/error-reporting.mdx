@@ -1,0 +1,104 @@
+---
+title: "오류 추적"
+metaTitle: "오류 추적"
+metaDescription: "OpenReplay로 오류를 추적하고 해결하는 방법을 알아봅니다. 웹 애플리케이션 전반의 오류를 자세히 파악하고 전체 컨텍스트로 문제를 해결하세요."
+---
+
+웹 애플리케이션 내 오류를 큰 그림부터 세부 사항까지 파악하세요. OpenReplay를 사용하면 전체 컨텍스트를 바탕으로 문제를 해결하여 더 빠르게 처리할 수 있습니다.
+
+## 다양한 뷰에서 확인하는 오류 추적 인사이트
+
+### 세션 뷰에서
+
+1. 세션 뷰 > **Errors** 탭으로 이동합니다
+2. **Omnisearch 사용**: **“Error Message”** 이벤트를 선택하고 특정 오류 메시지를 입력합니다.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+    <img src="/installation/error-tracking/errors_sessions_view.gif" alt="세션 뷰의 오류" style={{ width: '600px', height: 'auto' }} />
+</div>
+
+### 단일 세션 내부
+
+1. **Console > Errors Tab**으로 이동합니다
+2. 오류를 열어 전체 소스 맵을 확인합니다.
+3. **"Find all sessions with this error"** 버튼을 클릭하여 해당 오류가 발생한 세션 목록을 확인합니다.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+    <img src="/installation/error-tracking/errors_session_view.gif" alt="세션 오류" style={{ width: '600px', height: 'auto' }} />
+</div>
+
+### Cards 뷰에서
+
+1. Cards > Add Card > Monitors로 이동합니다
+2. **Table of Errors** 카드를 선택합니다
+
+{/* <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+    <img src="/installation/error-tracking/errors_cards_view.gif" alt="오류 테이블" style={{ width: '600px', height: 'auto' }} />
+</div> */}
+
+## 예외 수동 로깅
+
+OpenReplay 트래커는 세 가지 유형의 오류 로깅을 지원합니다.
+
+1. **처리된 예외** - [Error](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error)
+2. **거부된 Promise** - [PromiseRejectionEvent](https://developer.mozilla.org/en-US/docs/Web/API/PromiseRejectionEvent)
+3. **오류 이벤트(onError)** - [ErrorEvent](https://developer.mozilla.org/en-US/docs/Web/API/ErrorEvent)
+
+이 모든 오류는 하나의 메서드로 보고할 수 있습니다.
+
+```javascript
+tracker.handleError(error, metaObject); // metaObject is optional and is a flat object
+```
+
+각 유형의 오류에 대한 예시를 살펴보겠습니다.
+
+### 처리된 예외 (Error)
+
+기본적으로 처리된 예외는 ‘Console’ 탭에 기록되지 않습니다. 오류를 보고하려면 다음 패턴을 사용하세요.
+
+```javascript
+try {
+    // application code
+} catch (err) {
+    // application code that handles the error
+    tracker.handleError(err, metaObject); // metaObject is optional and is a flat object
+}
+```
+
+### 거부된 Promise (PromiseRejectionEvent)
+
+Promise가 거부되었고 이를 OpenReplay에 보고해야 하는 경우 다음 방식을 사용하세요.
+
+```javascript
+function myFunc() {
+    doSomeAsyncStuff()
+        .then((result) => {
+            // application code
+        })
+        .catch(promiseRejectionErr => {
+            // application code to handle the error
+            tracker.handleError(promiseRejectionErr, metaObject); // metaObject is optional and is a flat object
+        });
+}
+```
+
+### onError (ErrorEvent)
+
+`<img>` 요소가 로드되지 못하는 경우처럼 이벤트로 발생한 오류를 보고합니다.
+
+```javascript
+<img id="myImg" src="image.gif">
+<p id="demo"></p>
+
+<script>
+document.getElementById("myImg").addEventListener("error", myFunction);
+
+function myFunction(errorEvent) {
+    document.getElementById("demo").innerHTML = "The image could not be loaded.";
+    tracker.handleError(errorEvent, { context: "demo" });
+}
+</script>
+```
+
+## 질문이 있으신가요?
+이 과정에 대해 궁금한 점이 있다면 언제든지 [Slack](https://slack.openreplay.com)으로 문의해 주세요.

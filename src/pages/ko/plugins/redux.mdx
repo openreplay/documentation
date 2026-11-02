@@ -1,0 +1,100 @@
+---
+title: "Redux"
+metaTitle: "Redux"
+metaDescription: "OpenReplay용 Redux 플러그인입니다."
+---
+import Aside from '~/components/Aside.astro'
+
+이 플러그인을 사용하면 `Redux` 액션/상태를 캡처하여 세션 녹화를 재생하면서 나중에 확인할 수 있습니다. 문제를 파악하고 해결하는 데 매우 유용합니다.
+
+<Aside type="tip">
+  Redux 플러그인으로 이 라이브러리를 사용하는 애플리케이션의 상태를 캡처하는 방법을 자세히 설명한 튜토리얼도 준비되어 있습니다. [여기](/tutorials/redux)에서 확인해 보세요.
+</Aside>
+
+
+
+## 설치
+
+```bash
+npm i @openreplay/tracker-redux --save
+```
+
+## 사용법
+
+트래커를 초기화한 다음 생성된 미들웨어를 Redux 체인에 추가합니다.
+
+### 웹사이트가 싱글 페이지 애플리케이션(SPA)인 경우
+
+```js
+import { applyMiddleware, createStore } from 'redux';
+import trackerRedux from '@openreplay/tracker-redux';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+tracker.start();
+const openReplayMiddleware = tracker.use(trackerRedux(<options>)); // check list of available options below
+
+//...
+const store = createStore(
+  reducer,
+  applyMiddleware(openReplayMiddleware) 
+);
+```
+
+### 웹 앱이 서버 사이드 렌더링(SSR)인 경우
+
+앱이 SSR인 경우 아래 예시를 따르세요. 
+앱이 브라우저 환경에 있을 때 트래커가 실행되도록 하세요.
+
+```js
+'use client'
+import { applyMiddleware, createStore } from 'redux';
+import trackerRedux from '@openreplay/tracker-redux/cjs';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+const openReplayMiddleware = tracker.use(trackerRedux(<options>)); // check list of available options below
+
+const store = createStore( // You can define/use it anywhere in response handlers
+  reducer,
+  applyMiddleware(openReplayMiddleware)
+);
+
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, []);
+  //... Use store here
+}
+
+```
+
+## 옵션
+
+옵션을 사용해 미들웨어 동작을 커스터마이징하여 데이터를 정제할 수 있습니다.
+
+```js
+trackerRedux({
+  actionFilter: action => action.type !== 'DRAW', // only actions which pass this test will be recorded
+  actionTransformer: action => action.type === 'LOGIN' ? null : action,
+  actionType: action => action.type // action type for search, that's the default one
+  stateTransformer: state => {
+    const { jwt, ..._state } = state;
+    return _state;
+  },
+})
+```
+## 튜토리얼
+이 플러그인을 사용해 세션 리플레이에서 상태 변경을 캡처하는 실용적인 예제를 찾고 계신다면 [자세한 튜토리얼](/tutorials/redux)을 확인해 보세요.
+
+## 질문이 있으신가요?
+
+이 플러그인 설정에 문제가 있나요? [Slack](https://slack.openreplay.com)에 접속하여 커뮤니티의 도움을 받으세요.

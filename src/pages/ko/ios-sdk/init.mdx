@@ -1,0 +1,110 @@
+---
+title: "iOS SDK - SDK 초기화"
+metaTitle: "iOS SDK - SDK 초기화"
+metaDescription: "iOS 트래커 생성자 메서드의 설정 옵션"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	iOS SDK는 베타 버전입니다. 의견이나 발생한 문제는 [Slack](https://slack.openreplay.com)으로 알려 주세요.
+</Aside>
+
+## 설치
+
+다음 코드는 트래커와 SDK를 설치하여 모든 트래커 기능을 활용할 수 있게 해 줍니다.
+
+### Cocoapods
+
+```ruby
+  pod 'OpenReplay', '~> 1.0.17'
+```
+
+### Swift Package Manager
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/openreplay/ios-tracker.git", from: "1.0.17"),
+]
+```
+
+## 초기화
+
+OpenReplay의 트래커를 인스턴스화할 때 다양한 설정 옵션을 지정하여 녹화와 녹화 환경의 여러 측면을 사용자 지정할 수 있습니다. 생성자에서 `projectKey` 옵션을 반드시 설정해야 합니다. 이 값은 OpenReplay 대시보드의 'Preferences > Projects'에서 확인할 수 있습니다.
+
+<Aside type="tip">
+	프로젝트가 여러 개인 경우 올바른 프로젝트 키를 선택하도록 주의하세요.
+</Aside>
+
+
+### 트래킹 코드 추가
+
+`AppDelegate.swift` 파일에 다음 코드를 추가합니다.
+
+```swift
+// AppDelegate.swift
+import OpenReplay
+
+//...
+
+class AppDelegate: UIResponder, UIApplicationDelegate {
+
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+
+			  // not required if you're using our SaaS version
+        OpenReplay.shared.serverURL = "https://your.instance.com/ingest"
+				// check out our SDK docs to see available options
+        OpenReplay.shared.start(projectKey: "projectkey", options: .defaults)
+
+        // ...
+        return true
+			}
+```
+
+### 터치 리스너 설정
+
+```swift
+// SceneDelegate.Swift
+import OpenReplay
+
+// ...
+func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+	let contentView = ContentView()
+	.environmentObject(TodoStore())
+
+	if let windowScene = scene as? UIWindowScene {
+		let window = TouchTrackingWindow(windowScene: windowScene) // <<<< here
+		window.rootViewController = UIHostingController(rootView: contentView)
+		self.window = window
+		window.makeKeyAndVisible()
+	}
+}
+```
+
+### 데이터 정제
+
+자세한 내용은 [iOS 리플레이에서 데이터를 정제하는 방법](/ios-sdk/sanitization)을 참조하세요.
+
+## 초기화 옵션
+
+- `crashes: Bool` 크래시 분석(crashlytics)을 활성화합니다.
+- `analytics: Bool` 표시된 뷰의 분석 추적을 활성화합니다.
+- `performances: Bool` 성능 리스너를 활성화합니다.
+- `logs: Bool` 로그 리스너를 활성화합니다.
+- `screen: Bool` 화면 녹화기를 활성화합니다.
+- `wifiOnly: Bool` 사용자가 Wi-Fi에 연결된 경우에만 트래커가 시작되도록 합니다.
+- `isBlur: Bool` 민감한 뷰를 블러 처리하거나(`true`) 단색 상자로 가립니다(`false`). 기본값은 `true`입니다.
+
+## 모듈
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="iOS SDK 모듈 알아보기" url="/ios-sdk/modules" hideIcon={true} width="100"/>
+</div>
+
+## 메서드
+
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="iOS SDK 메서드 알아보기" url="/ios-sdk/methods" hideIcon={true} width="100"/>
+</div>
+
+## 질문이 있으신가요?
+이 과정에 대해 궁금한 점이 있으면 언제든지 [Slack](https://slack.openreplay.com)으로 문의해 주세요.

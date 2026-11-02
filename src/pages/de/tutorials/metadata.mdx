@@ -1,0 +1,152 @@
+---
+title: "Session-Aufzeichnungen mit Metadaten anreichern"
+metaTitle: "Metadaten zu Ihren Session Replays hinzufügen, um bessere Erkenntnisse zu gewinnen"
+metaDescription: "So fügen Sie Ihren Session Replays Metadaten hinzu und nutzen sie, um die Erkenntnisse aus der Plattform zu verbessern"
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="Sehen Sie, wie Sie Metadaten aus Ihrer Next.js-Anwendung senden"
+  description="Wenn Sie nicht gerne lesen, folgen Sie diesem Video-Tutorial, das zeigt, wie Sie Metadaten aus Ihrer Anwendung an die OpenReplay-Plattform senden"
+  videoURL="https://www.youtube.com/watch?v=ITcJCeKWQGU"
+  />
+
+Standardmäßig sendet unser Tracker viele nützliche Informationen an unsere Plattform, aber all diese Informationen sind Standard. Sobald ein Datenpunkt Teil der Web-API ist, ist die Wahrscheinlichkeit groß, dass wir ihn erfassen.
+
+Was aber, wenn Sie Ihre Session-Aufzeichnungen zusätzlich mit Daten anreichern möchten, die spezifisch für Ihre Anwendung sind?
+
+Zum Beispiel, um zu verstehen, in welchem bezahlten Tarif sich Ihr Benutzer befindet, wenn Sie sich sein Replay ansehen? Diese Information kann Ihren Entwicklern zusätzlichen Kontext liefern. Nur weil sie nicht standardmäßig erfasst wird, sollten wir sie also nicht ignorieren, oder?
+
+Hier kommen Metadaten ins Spiel.
+
+**Beachten Sie**, dass es auf unserem YouTube-Kanal eine [Videoversion dieses Tutorials](https://www.youtube.com/watch?v=ITcJCeKWQGU) gibt. Schauen Sie ruhig dort vorbei, wenn Sie eher ein visueller Lerntyp sind.
+
+## Was sind Metadaten?
+
+Im Kontext eines Session Replays sind Metadaten alle Informationen, die nicht vom Benutzer erzeugt werden, aber in irgendeiner Weise mit diesem Benutzer zusammenhängen.
+
+Mit anderen Worten: Wenn der Benutzer auf einen bestimmten Link klickt oder eine bestimmte Aktion ausführt, sind das keine Metadaten, sondern ein Custom Event (mehr dazu finden Sie in [der Dokumentation zu Custom Events](/product-analytics/data-management)).
+
+Wie sieht es aber mit einem Flag aus, das Ihnen sagt, ob ein Benutzer den kostenlosen oder den bezahlten Tarif nutzt? Oder mit einem Tracking-Code, der zeigt, woher dieser Benutzer kam? Das alles sind Metadaten, und Sie können sie ganz einfach zu Ihren Sitzungen hinzufügen.
+
+## Wie fügt man einer Sitzung Metadaten hinzu?
+
+Als Erstes richten Sie die Metadatenfelder direkt in der Plattform ein. 
+
+Wenn Sie diesen Schritt überspringen, können Sie keine Informationen aufzeichnen, überspringen Sie ihn also nicht!
+
+Öffnen Sie dazu die Konfigurationsseite Ihres Projekts, indem Sie in der oberen Menüleiste oben rechts auf das Zahnrad klicken:
+
+![Das Symbol für die Projekteinstellungen](/tutorials/metadata/metadata1.png)
+
+Klicken Sie dort ganz links auf dem Bildschirm auf den Menüpunkt Metadata:
+
+![Die Option Metadata im linken Menü](/tutorials/metadata/metadata2.png)
+
+Dadurch gelangen Sie zum Konfigurationsbildschirm für Metadaten. Wählen Sie im Dropdown-Menü das richtige Projekt aus und legen Sie so viele Felder an, wie Sie benötigen.
+
+![Neue Metadaten hinzufügen](/tutorials/metadata/metadata3.png)
+
+In diesem Beispiel haben wir für das Projekt „e-commerce test“ drei Felder angelegt:
+
+- Das Feld „plan“, das den aktuellen Tarif des Benutzers enthält.
+- Das Feld „utm_source“, das einen Code enthält, der angibt, woher der Benutzer kommt.
+- Und schließlich das Feld „items_in_cart“, das die Gesamtzahl der Artikel im Warenkorb des Benutzers enthält.
+
+Das letzte Feld ist ein Datenpunkt, der von Benutzeraktionen abhängt, was von unserer Empfehlung abweicht. In diesem Beispiel sehen Sie jedoch die Grenzen von Metadatenfeldern und warum diese Information besser ein Custom Event gewesen wäre.
+
+Sobald diese Einrichtung steht, besteht der nächste Schritt darin, den erforderlichen Code hinzuzufügen, der die Daten tatsächlich als Teil Ihrer Sitzung sendet.
+
+### Den Code zum Senden von Metadaten hinzufügen
+
+Um die Metadaten zur Sitzung hinzuzufügen, verwenden wir die Methode `setMetadata` des Trackers. Sie können diese Methode jederzeit während der Benutzersitzung aufrufen, sollten aber die folgenden beiden Punkte beachten:
+
+1. Wenn Sie demselben Metadatenfeld mehrere Werte zuweisen, wird nur der letzte als Teil der Sitzung gespeichert.
+2. Alle Werte müssen Strings sein. Andernfalls werden sie nicht gespeichert. Der Tracker wandelt die Werte nicht in Strings um, seien Sie hier also vorsichtig.
+
+![Hinzugefügter Code](/tutorials/metadata/metadata4.png)
+
+Die roten Pfeile zeigen, wo die relevanten Änderungen vorgenommen wurden. Dieser Context Provider exportiert eine Funktion namens `setMetadata`, die ihrerseits die Methode `setMetadata` des Trackers aufruft.
+
+Wenn Sie ein funktionierendes Beispiel möchten, sehen Sie sich [dieses Repository](https://github.com/deleteman/nextjs-commerce-example/tree/redux_metadata/site) an.     
+
+Jetzt müssen wir nur noch die exportierte Funktion verwenden, wann immer wir die Metadatenfelder konfigurieren möchten.
+
+### Die Metadaten aus unserem Code setzen
+
+Für dieses Beispiel setzen wir die Felder `utm_source` und `plan` direkt auf der Startseite, und jedes Mal, wenn der Benutzer einen Artikel in den Warenkorb legt, aktualisieren wir das letzte verbleibende Feld.
+
+In der Datei `pages/index.tsx` fügen wir den folgenden Code hinzu:
+
+```jsx
+// inside the main component
+const { startTracking, setMetadata } = useContext(TrackerContext)
+//...
+useEffect(() => {
+    async function getProds() {
+      await startTracking()
+      setMetadata('plan', getPlan()) //addition 
+      setMetadata('utm_source', getUTMSource()) //addition
+      dispatch(getMakeUpProducts() as any)
+    }
+
+    getProds()
+  }, [dispatch])
+```
+
+Der Großteil dieses Hooks war bereits vorhanden, wir haben jedoch den Verweis auf die Funktion `setMetadata` und die beiden Aufrufe hinzugefügt. Beide Funktionen, `getPlan` und `getUTMSource`, geben in diesem Beispiel zufällige Daten zurück. Für Ihren konkreten Anwendungsfall müssen Sie sie entsprechend implementieren.
+
+Dieser Code setzt diese Metadatenwerte, sobald die Startseite geladen wird.
+
+Nun müssen wir noch den letzten Wert hinzufügen, die Anzahl der Artikel im Warenkorb. Dazu gehen wir zur Komponente `ProductSidebar`, die dafür zuständig ist, was beim Klick auf „Add to cart“ passiert, und fügen einen weiteren Hook hinzu, der auf Änderungen der Artikelanzahl im Warenkorb reagiert.
+
+```jsx
+useEffect(() => {
+    setMetadata('items_in_cart', productsInCart)
+  }, [productsInCart])
+```
+
+Natürlich müssen Sie die Funktion `setMetadata` wie zuvor aus dem Context Provider beziehen, aber danach sind Sie fertig.
+
+Jetzt werden die Daten gespeichert. Wir können dies auch in der Plattform in der Sitzungsliste sehen.
+
+## Die Metadaten verwenden
+
+Nachdem die Metadaten nun in allen Session Replays gespeichert werden, was können Sie damit tun?
+
+Zunächst einmal können Sie sie direkt im Replay anzeigen:
+
+![Die Metadaten im Player ansehen](/tutorials/metadata/metadata5.png)
+
+Sie sollten die Metadatenfelder oben rechts auf dem Player-Bildschirm sehen. In diesem Beispiel sehen wir, dass der Benutzer einen Enterprise-Edition-Tarif hat, von Reddit kommt und nur einen Artikel in den Warenkorb gelegt hat.
+
+### Nach Metadatenfeldern suchen
+
+Die andere leistungsstarke Möglichkeit ist, Metadaten als Suchparameter zu verwenden. Über die Omnisearch-Leiste können Sie die von Ihnen erstellten benutzerdefinierten Metadatenfelder als Suchparameter auswählen:
+
+![Mit Ihren Metadatenfeldern suchen](/tutorials/metadata/metadata6.png)
+
+Wenn Sie sich also nur Replays der Enterprise Edition ansehen möchten, wählen Sie einfach das Feld Plan aus und filtern es nach „ee“, etwa so:
+
+![Nach dem Benutzertarif suchen](/tutorials/metadata/metadata7.png)
+
+Dieselbe Omnisearch-Leiste können Sie auch beim Erstellen eines Widgets für Ihr Dashboard verwenden. Um beim EE-Beispiel zu bleiben: Wenn Sie ein Dashboard nur für Enterprise-Kunden erstellen möchten, könnten Sie jedes benutzerdefinierte Widget mit dem Attribut „Plan“ filtern.
+
+Das folgende Widget zeigt zum Beispiel, wie viele Enterprise-Kunden auf die Schaltfläche „Add to cart“ klicken:
+
+![Eine Zeitreihe mit Metadaten erstellen](/tutorials/metadata/metadata8.png)
+
+Das Ergebnis ist ein Widget, das so aussieht:
+
+![Die Ergebnisse](/tutorials/metadata/metadata9.png)
+
+Mit Metadatenfeldern können Sie die Erkenntnisse aus Ihren Session Replays beliebig anpassen und erweitern.
+
+---
+
+Metadaten können die Erkenntnisse aus Ihren Session Replays erheblich verbessern, und ihre Einrichtung ist vergleichsweise einfach.
+
+Denken Sie daran: Alle Informationen, die Sie speichern möchten, müssen immer als Strings vorliegen, andernfalls werden sie ignoriert.
+
+Den vollständigen Quellcode des [Beispielprojekts mit Metadaten finden Sie hier](https://github.com/deleteman/nextjs-commerce-example/tree/redux_metadata/site).
+
+Wenn bei einem der Schritte dieses Vorgangs Probleme auftreten, wenden Sie sich an unsere [Slack-Community](https://slack.openreplay.com/) und fragen Sie unsere Entwickler direkt!

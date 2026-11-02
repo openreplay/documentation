@@ -1,0 +1,37 @@
+---
+title: "React Native SDK - metodo patchNetwork"
+metaTitle: "React Native SDK - metodo patchNetwork"
+metaDescription: "Dettagli sul metodo patchNetwork dello SDK React Native di OpenReplay"
+---
+
+Questo metodo applica una patch alle API XHR e Fetch per intercettare le richieste di rete.
+
+## Firma
+
+```js
+import OR from '@openreplay/react-native'
+
+OR.patchNetwork(
+    global,
+		(url) => url.includes('openreplaydomain'),
+    { mode: 'fetch' }
+)
+```
+
+## Parametri
+
+- `context: globalThis`: il contesto corrente dell'app (da cui ottenere fetch/xhr)
+- `isServiceURL: (url: string) => boolean`: funzione che verifica se la richiesta corrente deve essere tracciata (false) o ignorata (true)
+- `options: Partial<Options>`: oggetto delle opzioni
+
+## Opzioni
+
+- `ignoreHeaders: Array<string> | boolean`: header da ignorare (predefinito: `['cookie', 'set-cookie', 'authorization']`)
+- `capturePayload: boolean`: indica se acquisire il payload della richiesta (predefinito: `false`)
+- `sanitizer: data: RequestResponseData) => RequestResponseData`: funzione che sanifica la richiesta/risposta (predefinito: `undefined`)
+- `mode: 'fetch' | 'xhr' | 'all'`: quale API sottoporre a patch (predefinito: `'fetch'`)
+
+> Nota: Al momento della scrittura, il fetch di React-Native usa XHR internamente, quindi usare "all" può causare richieste duplicate nella registrazione
+
+## Hai domande?
+Se hai domande su questo processo, non esitare a contattarci sul nostro [Slack](https://slack.openreplay.com).

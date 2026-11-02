@@ -1,0 +1,47 @@
+---
+title: "Externe Datenbank (Postgres)"
+metaTitle: "Externe Datenbank (Postgres)"
+metaDescription: "So ändern Sie das Standardziel der OpenReplay-Datenbank und verwenden stattdessen eine externe Datenbank."
+---
+
+Unser Datenbankdienst Postgres wird standardmäßig mit OpenReplay installiert und läuft für geringere Bereitstellungskosten in einem eigenen Container auf Ihrer Instanz. Wenn Sie mehr Skalierbarkeit oder einen einfacheren Betrieb suchen, können Sie dennoch ein externes Postgres verwenden (z. B. AWS RDS oder GCP Cloud SQL).
+
+## Bestehendes Schema und Daten exportieren
+
+> **Hinweis:** Wenn Sie neu beginnen und OpenReplay noch nicht installiert haben, fahren Sie einfach mit der Einrichtung fort und ignorieren Sie die folgenden Schritte.
+
+Das lokale Schema und die aufgezeichneten Daten müssen nun in das externe Postgres exportiert werden:
+
+1. Sichern Sie zunächst die lokale Datenbank:
+
+```bash
+kubectl exec -n db postgresql-0 -- bash -c 'PGPASSWORD=<postgresPassword from vars.yaml> pg_dumpall -U postgres '  > ~/path/to/dump.sql
+```
+
+2. Installieren Sie den Postgres-Client auf Ihrer OpenReplay-Instanz und stellen Sie sicher, dass diese Zugriff auf die externe Datenbank hat:
+
+```bash
+sudo apt install postgresql-client
+```
+   
+3. Spielen Sie das Backup in das neue externe Postgres ein:
+
+```bash
+PGPASSWORD=PG_PASSWORD psql -U PG_USERNAME -h {RDS_URL} -d postgres < /path/to/dump.sql
+```
+
+4. Aktualisieren Sie abschließend alle `postgres`-Variablen in `openreplay -e` und verweisen Sie sie auf die externe Datenbank:
+
+```yaml
+  postgresqlPassword: "changeMePassword"
+  postgresqlHost: "postgresql.db.svc.cluster.local"
+  postgresqlPort: "5432"
+  postgresqlUser: "postgres"
+  postgresqlDatabase: "postgres"
+```
+
+5. Speichern Sie und beenden Sie den Editor mit `:wq`, damit die Änderungen wirksam werden
+
+## Haben Sie Fragen?
+
+Wenn Sie auf Probleme stoßen, melden Sie sich in unserem [Slack](https://slack.openreplay.com) und holen Sie sich Hilfe von unserer Community.

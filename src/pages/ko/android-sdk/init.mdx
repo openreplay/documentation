@@ -1,0 +1,87 @@
+---
+title: "Android SDK - SDK 초기화"
+metaTitle: "Android SDK - SDK 초기화"
+metaDescription: "Android 트래커 생성자 메서드의 구성 옵션"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	Android SDK는 베타 버전입니다. 피드백이나 문제가 있다면 [Slack](https://slack.openreplay.com)으로 자유롭게 알려 주세요.
+</Aside>
+
+## 설치
+
+다음 줄은 트래커를 설치하며, 이와 함께 모든 트래커 기능을 활용할 수 있는 SDK도 설치합니다.
+
+### Gradle 구성
+루트 build.gradle 파일의 repositories 끝에 다음을 추가합니다.
+```javascript
+dependencyResolutionManagement {
+		repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+		repositories {
+			mavenCentral()
+			maven { url 'https://jitpack.io' }
+		}
+}
+```
+
+앱 build.gradle 파일에 다음 의존성을 추가합니다.
+```javascript
+dependencies {
+		implementation("com.github.openreplay:android:v1.1.7")
+}
+```
+
+## 초기화
+
+OpenReplay의 트래커를 인스턴스화할 때, 녹화 및 녹화 환경의 여러 측면을 사용자 지정할 수 있는 다양한 구성 옵션을 제공할 수 있습니다. 생성자에서 `projectKey` 옵션은 반드시 설정해야 합니다. 이 값은 OpenReplay 대시보드의 'Preferences > Projects'에서 확인할 수 있습니다.
+
+<Aside type="tip">
+	여러 프로젝트가 있는 경우 어떤 프로젝트 키를 선택하는지 주의해야 합니다.
+</Aside>
+
+
+### 트래킹 코드 추가하기
+
+`MainActivity.kt` 파일에 다음 코드를 추가합니다.
+
+```kotlin
+// MainActivity.kt
+import com.openreplay.tracker.OpenReplay
+
+//...
+
+class MainActivity : AppCompatActivity() {
+	override fun onCreate(savedInstanceState: Bundle?) {
+		// not required if you're using our SaaS version
+		OpenReplay.serverURL = "https://your.instance.com/ingest"
+		// check out our SDK docs to see available options
+		OpenReplay.start(
+			applicationContext,
+			"projectkey",
+			OpenReplay.Options.defaults(),
+			onStarted = {
+				println("OpenReplay Started")
+			})
+
+		// ...
+	}
+}
+```
+
+### 데이터 정제
+
+자세한 내용은 [Android 리플레이에서 데이터를 정제하는 방법](/android-sdk/sanitization)을 참고하세요.
+
+## 초기화 옵션
+
+- `crashes: Bool` 크래시 리포트 수집(crashlytics)을 활성화합니다.
+- `analytics: Bool` 표시한 뷰의 분석 추적을 활성화합니다.
+- `performances: Bool` 성능 리스너를 활성화합니다.
+- `logs: Bool` 로그 리스너를 활성화합니다.
+- `screen: Bool` 화면 녹화기를 활성화합니다.
+- `wifiOnly: Bool` 사용자가 Wi-Fi에 연결된 경우에만 트래커가 시작되도록 합니다.
+
+## 궁금한 점이 있으신가요?
+이 과정에 대해 궁금한 점이 있다면 언제든지 [Slack](https://slack.openreplay.com)으로 문의해 주세요.

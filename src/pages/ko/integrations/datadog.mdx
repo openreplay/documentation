@@ -1,0 +1,114 @@
+---
+title: "Datadog"
+metaTitle: "Datadog과 OpenReplay 통합"
+metaDescription: "Datadog을 OpenReplay와 통합하여 세션 리플레이와 함께 백엔드 오류를 확인하는 방법을 설명합니다."
+---
+
+[Datadog](https://www.datadoghq.com/) 백엔드 오류를 [OpenReplay](https://www.openreplay.com/) 세션 리플레이와 통합하여 모니터링 및 디버깅 기능을 확장하는 방법을 알아봅니다.
+
+## 1. Datadog API Key 및 Application Key 생성
+
+1. **[Datadog > Integrations > APIs](https://app.datadoghq.com/account/settings#api)** 페이지로 이동하여 API Key를 생성하거나 기존 키를 사용합니다.
+2. 같은 페이지에서 **Application Keys**를 클릭하고 새 Application Key를 생성합니다.
+
+## 2. OpenReplay에서 Datadog 통합 구성
+OpenReplay 계정에서 다음 3단계를 따라 세션 리플레이와 Datadog 백엔드 오류의 연관 설정을 완료합니다.
+
+#### Datadog 통합 활성화
+1. OpenReplay에서 **Preferences > Integrations**로 이동합니다.
+2. **Backend Logging** 탭을 선택합니다.
+3. Datadog 통합을 활성화할 프로젝트를 선택합니다. Datadog 통합 카드를 찾아 클릭합니다.
+
+#### Datadog 자격 증명 입력
+Datadog 통합 사이드바에서 다음을 입력합니다.
+
+1. Datadog API Key
+2. Application Key
+
+#### 연결 확인
+1. **Add**를 클릭하여 연결을 테스트합니다.
+
+## 3. openReplaySession.id 전달
+
+Datadog 이벤트를 녹화된 사용자 세션과 연결하려면, 추적하려는 각 요청마다 고유한 세션 ID인 `openReplaySession.id`를 프론트엔드에서 백엔드로 전달해야 합니다. 사용자 지정 HTTP 헤더를 사용하면 됩니다.
+
+#### 프론트엔드: API 요청에 openReplaySession.id 포함
+
+```javascript
+// JavaScript Example for for Single Page Applications (SPA):
+const sessionId = tracker.getSessionID(); 
+
+const headers = {
+  'Content-Type': 'application/json',
+};
+
+if (sessionId) {
+  headers['openReplaySession.id'] = sessionId;
+}
+
+// Make the API request
+fetch('https://www.your-backend.com/api/endpoint', {
+  method: 'GET', // or 'POST', 'PUT', etc.
+  headers,
+  // ...other options
+})
+  .then(response => {
+    // Handle response
+  })
+  .catch(error => {
+    // Handle error
+  });
+
+```
+#### 백엔드: 로그에 openReplaySession.id 포함
+
+아래는 Python의 logging 모듈을 사용하여 로그에 openReplaySession.id를 자동으로 포함하는 예제입니다.
+
+```python
+import logging
+from flask import Flask, request, g
+
+app = Flask(__name__)
+
+# Configure the root logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
+
+# Create a custom logging filter
+class OpenReplayFilter(logging.Filter):
+    def filter(self, record):
+        session_id = getattr(g, 'openreplay_session_id', None)
+        if session_id:
+            record.msg = f"[openReplaySession.id={session_id}] {record.msg}"
+        return True
+
+# Add the filter to the logger
+logger.addFilter(OpenReplayFilter())
+
+@app.before_request
+def before_request():
+    # Extract the session ID from headers and store it in the Flask `g` object
+    g.openreplay_session_id = request.headers.get('openReplaySession.id')
+
+@app.route('/api/endpoint')
+def api_endpoint():
+    # Your logic here
+
+    # Log an event with the session ID automatically included
+    logger.info("Endpoint accessed")
+
+    return 'Success', 200
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Log the error with the session ID automatically included
+    logger.error(f"Error: {str(e)}")
+    return 'Internal Server Error', 500
+
+if __name__ == '__main__':
+    app.run()
+```
+
+## 질문이 있으신가요?
+
+문제가 발생하면 [Slack](https://slack.openreplay.com)에 접속하여 커뮤니티의 도움을 받으세요.

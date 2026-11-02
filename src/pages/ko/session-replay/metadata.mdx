@@ -1,0 +1,115 @@
+---
+title: "메타데이터 전송"
+metaTitle: "메타데이터"
+metaDescription: "사용자 메타데이터를 OpenReplay에 전달하는 방법을 설명합니다. 다른 플랫폼에서는 트레이트(traits) 또는 사용자 변수라고도 부릅니다."
+---
+import Aside from '~/components/Aside.astro'
+
+메타데이터를 사용하면 키-값 쌍 형태로 사용자에 대한 추가 정보를 세션 리플레이에 덧붙일 수 있습니다. 이 기능 덕분에 세션 녹화를 더 쉽게 필터링하고 검색할 수 있어 필요한 세션을 빠르게 찾을 수 있습니다.  메타데이터를 전송하는 방법에 대한 자세한 내용은 이 [튜토리얼](/tutorials/metadata)을 참고하세요.
+
+<Aside type="caution">
+
+메타데이터 키는 프로젝트별로 정의되며, 메타데이터를 전송하기 전에 해당 키를 먼저 설정해야 합니다.
+
+</Aside>
+
+## 프로젝트에 메타데이터 키 추가
+
+메타데이터 키를 설정하려면 다음과 같이 하세요.
+
+1. OpenReplay에서 **Preferences > Projects**로 이동합니다.
+2. 메타데이터를 추가할 프로젝트를 선택합니다.
+3. Metadata 탭으로 이동합니다
+4. **Add Metadata**를 클릭합니다.
+5. **Field Name** 입력란에 사용할 키 이름을 입력합니다.
+6. **Add**를 클릭하여 메타데이터 키를 저장합니다.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/send-metadata/send_metadata.gif" alt="메타데이터 전송" style={{ width: '700px', height: 'auto' }} />
+</div>
+
+
+> **제한:** 프로젝트당 최대 10개의 메타데이터 키를 추가할 수 있습니다.
+
+## 세션 리플레이에 메타데이터 주입
+
+메타데이터 키를 정의한 후에는 세션을 녹화할 때 메타데이터를 전송할 수 있습니다. 사용할 수 있는 구현 방법은 다음과 같습니다.
+
+### 1. NPM 사용
+
+트래커를 시작할 때 메타데이터를 주입합니다.
+
+```js
+tracker.start({
+  userID: "john@doe.com",
+  metadata: {
+    balance: "10M",
+    plan: "free"
+  }
+});
+```
+
+트래커가 시작된 후에야 메타데이터를 알 수 있다면 `setMetadata` 메서드를 사용하세요.
+
+```javascript
+tracker.setMetadata('plan', 'free'); // after tracker.start()
+```
+
+### 2. JavaScript 스니펫 사용
+
+스니펫에 메타데이터를 포함하려면 `startOpts` 변수를 수정합니다.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+  var initOpts = {
+    projectKey: "project_key",
+    defaultInputMode: 2,
+    obscureTextNumbers: false,
+    obscureTextEmails: true,
+  };
+  const yourMetadata = { yourKey: 'yourValue' };
+  var startOpts = { userID: "", metadata: yourMetadata };
+  (function(A,s,a,y,e,r){
+    r=window.OpenReplay=[e,r,y,[s-1, e]];
+    s=document.createElement('script');s.src=A;s.async=!a;
+    ...
+  })("//static.openreplay.com/latest/openreplay.js",1,0,initOpts,startOpts);
+
+</script>
+```
+
+메타데이터를 나중에 알게 되는 경우:
+
+```html
+<script>
+  OpenReplay.setMetadata("plan", "free");
+</script>
+```
+
+### 3. iOS SDK 사용
+
+iOS 앱에서 메타데이터를 주입합니다.
+
+```swift
+import ORTracker
+
+ORTracker.shared.setMetadata(key: String, value: String)
+```
+
+## 메타데이터로 세션 필터링 및 검색
+
+메타데이터 키를 사용하면 OpenReplay에서 세션을 필터링하고 검색할 수 있습니다.
+
+1. Sessions 보기에서 **Omni-Search**를 엽니다.
+2. 메타데이터 키(예: `plan`)를 선택합니다.
+3. 메타데이터 값(예: `free`)을 입력하여 세션 녹화를 필터링합니다.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/send-metadata/filter_metadata.gif" alt="메타데이터 필터링" style={{ width: '700px', height: 'auto' }} />
+</div>
+
+이 기능을 사용하면 사용자별 세부 정보를 기준으로 세션을 빠르고 정확하게 찾을 수 있습니다.
+
+## 궁금한 점이 있으신가요?
+이 과정에 대해 궁금한 점이 있으시면 언제든지 [Slack](https://slack.openreplay.com)으로 문의해 주세요.

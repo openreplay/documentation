@@ -1,0 +1,214 @@
+---
+title: "Elastic"
+metaTitle: "Elasticsearch mit OpenReplay integrieren"
+metaDescription: "So integrieren Sie Elasticsearch in OpenReplay und sehen Backend-Fehler neben Ihren Session Replays."
+---
+
+Erfahren Sie, wie Sie die Backend-Logs von [Elastic](https://www.elastic.co/) mit den Session Replays von [OpenReplay](https://www.openreplay.com/) integrieren, um Ihre Möglichkeiten beim Monitoring und Debugging zu erweitern.
+
+## 1. Neuen API-Schlüssel erstellen
+
+Je nach Setup können Sie einen API-Schlüssel über das Kibana-Dashboard oder mit cURL-Befehlen erstellen.
+
+**Über das Kibana-Dashboard**
+
+1. Melden Sie sich bei Ihrem Kibana-Dashboard an.
+
+2. Öffnen Sie **Dev Tools**: Navigieren Sie zu **Dev Tools > Console**.
+
+3. Erstellen Sie den **API Key**: Kopieren Sie den folgenden Code in die Konsole und führen Sie ihn aus:
+
+     ```json
+     POST /_security/api_key
+     {
+       "name": "openreplay-api-key",
+       "role_descriptors": {
+         "openreplay-role": {
+           "cluster": ["all"],
+           "index": [
+             {
+               "names": ["*log*"],
+               "privileges": ["read"]
+             }
+           ]
+         }
+       }
+     }
+     ```
+
+#### **Über cURL-Befehle**
+
+1. cURL-Befehl ausführen: Führen Sie den folgenden Befehl in Ihrem Terminal aus:
+
+     ```shell
+     curl -X POST "https://your-elasticsearch-host:port/_security/api_key" \
+     -H 'Content-Type: application/json' \
+     -d'
+     {
+       "name": "openreplay-api-key",
+       "role_descriptors": {
+         "openreplay-role": {
+           "cluster": ["all"],
+           "index": [
+             {
+               "names": ["*log*"],
+               "privileges": ["read"]
+             }
+           ]
+         }
+       }
+     }' \
+     -u 'username:password'
+     ```
+
+     Ersetzen Sie `https://your-elasticsearch-host:port` durch Ihren Elasticsearch-Host und Port sowie `username:password` durch Ihre Zugangsdaten.
+
+**Hinweis:**
+
+- Standardmäßig durchsucht diese Integration Logs in allen Indizes, die dem Muster `*log*` entsprechen. Wenn Sie einen speziellen Index für Logs haben, der nicht zu diesem Muster passt, ändern Sie bitte das Feld `names` in der Anfrage zur Erstellung des API-Schlüssels.
+- Um mehrere Indizes anzugeben, trennen Sie die Namen durch Kommas, z. B. `"names": ["index1", "index2"]`.
+
+#### **Ergebnis des API-Schlüssels**
+
+Nach dem Ausführen des Befehls erhalten Sie eine Antwort wie diese:
+
+```json
+{
+  "id": "eQWAIG0Bo0VqB8HXFH9-",
+  "name": "openreplay-api-key",
+  "api_key": "dZ5ycVRJTU-5UW_RYfi1_w"
+}
+```
+
+**Wichtig:** Kopieren Sie unbedingt die `id` und den `api_key`, da Sie beides für die Integration benötigen.
+
+> **Referenz:** [Elasticsearch - Create API Key](https://www.elastic.co/guide/en/elasticsearch/reference/master/security-api-create-api-key.html)
+
+## 2. Elasticsearch-Integration in OpenReplay konfigurieren
+Führen Sie in Ihrem OpenReplay-Konto diese 3 Schritte aus, um die Zuordnung der Session Replays zu den Elasticsearch-Backend-Logs abzuschließen.
+
+#### Elasticsearch-Integration aktivieren
+1. Gehen Sie in OpenReplay zu **Preferences > Integrations**.
+2. Wählen Sie den Tab **Backend Logging**.
+3. Wählen Sie das Projekt aus, für das Sie die Elasticsearch-Integration aktivieren möchten: Suchen Sie die Elasticsearch-Integrationskarte und klicken Sie darauf.
+
+#### Elasticsearch-Zugangsdaten eingeben
+Geben Sie in der Seitenleiste der Elasticsearch-Integration Folgendes ein:
+   - **API KEY ID**: Die `id` aus dem von Ihnen generierten API-Schlüssel.
+   - **API Key**: Der `api_key` aus dem von Ihnen generierten API-Schlüssel.
+   - **Indexes**: Wenn Sie beim Generieren des API-Schlüssels den Index geändert haben, geben Sie hier den oder die Namen an.
+
+#### Verbindung überprüfen:
+   - Klicken Sie auf **Add**, um die Verbindung zu testen.
+
+
+## 3. openReplaySession.id weitergeben
+
+Um ein Elasticsearch-Ereignis mit der aufgezeichneten Benutzersitzung zu verknüpfen, muss bei jeder Anfrage, die Sie nachverfolgen möchten, eine eindeutige Sitzungs-ID (`openReplaySession.id`) von Ihrem Frontend an Ihr Backend weitergegeben werden.
+
+#### a. `openReplaySession.id` in Frontend-API-Anfragen einbinden
+
+**Hinweis:** `tracker.start()` ist asynchron und gibt ein Promise zurück. Sie müssen warten, bis es aufgelöst ist, bevor Sie `tracker.getSessionID()` aufrufen, damit die Sitzungs-ID verfügbar ist.
+
+```javascript
+// JavaScript Example for for Single Page Applications (SPA):
+
+// Import OpenReplay
+import { tracker } from '@openreplay/tracker';
+
+// Initialize the tracker
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+// Start the tracker and wait for it to resolve
+tracker.start().then(() => {
+  // Get the session ID after the tracker has started
+  const sessionId = tracker.getSessionID();
+
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+  if (sessionId) {
+    headers['openReplaySession.id'] = sessionId;
+  }
+
+  // Make the API request
+  fetch('https://www.your-backend.com/api/endpoint', {
+    method: 'GET', // or 'POST', 'PUT', etc.
+    headers,
+    // ...other options
+  })
+    .then(response => {
+      // Handle response
+    })
+    .catch(error => {
+      // Handle error
+    });
+});
+```
+
+#### b. openReplaySession.id in Backend-Logs einbinden
+
+Damit OpenReplay einen Elasticsearch-Logeintrag der aufgezeichneten Benutzersitzung zuordnen kann, muss die `openReplaySession.id` in jedem Backend-Fehler enthalten sein, den Sie nachverfolgen möchten.
+
+
+```python
+import logging
+from flask import Flask, request, g
+
+app = Flask(__name__)
+
+# Configure the root logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
+
+# Create a custom logging filter
+class OpenReplayFilter(logging.Filter):
+    def filter(self, record):
+        session_id = getattr(g, 'openreplay_session_id', None)
+        if session_id:
+            record.msg = f"[openReplaySession.id={session_id}] {record.msg}"
+        return True
+
+# Add the filter to the logger
+logger.addFilter(OpenReplayFilter())
+
+@app.before_request
+def before_request():
+    # Extract the session ID from headers and store it in the Flask `g` object
+    g.openreplay_session_id = request.headers.get('openReplaySession.id')
+
+@app.route('/api/endpoint')
+def api_endpoint():
+    # Your logic here
+
+    # Log an event with the session ID automatically included
+    logger.info("Endpoint accessed")
+
+    return 'Success', 200
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Log the error with the session ID automatically included
+    logger.error(f"Error: {str(e)}")
+    return 'Internal Server Error', 500
+
+if __name__ == '__main__':
+    app.run()
+```
+
+## 4. Besondere Hinweise
+
+Standardmäßig sucht OpenReplay jeden zu einer OpenReplay-Sitzung gehörenden Log anhand der Attribute `message` und `utc_time`. Der Fokus liegt auf Fehler-Logs, die daran erkannt werden, dass das Attribut `tags` den Wert `error` enthält.
+
+**Hinweis:**
+
+- **Benutzerdefinierte Log-Struktur**: Wenn Ihre Logs eine andere Struktur haben, müssen Sie gegebenenfalls Ihre Logging-Konfiguration anpassen oder den OpenReplay-Support informieren, damit Ihr Setup berücksichtigt werden kann.
+- **Fehlererkennung**: Stellen Sie sicher, dass Fehler-Logs entsprechend getaggt sind, damit OpenReplay sie erkennen kann.
+
+## Haben Sie Fragen?
+
+Falls Probleme auftreten, treten Sie unserem [Slack](https://slack.openreplay.com) bei und holen Sie sich Hilfe von unserer Community.

@@ -1,0 +1,154 @@
+---
+title: "GraphQL"
+metaTitle: "GraphQL"
+metaDescription: "OpenReplay용 GraphQL 플러그인입니다."
+---
+
+import Aside from '~/components/Aside.astro'
+
+이 플러그인을 사용하면 `GraphQL` 요청을 캡처하여 세션 녹화를 재생하면서 나중에 확인할 수 있습니다. 문제를 파악하고 해결하는 데 매우 유용합니다. `GraphQL` 플러그인은 Apollo 및 Relay 구현과 호환됩니다.
+
+<Aside type="tip">
+  GraphQL 플러그인으로 요청을 캡처하고 수정하는 방법을 자세히 설명한 튜토리얼도 준비되어 있습니다. [여기](/tutorials/graphql)에서 확인해 보세요.
+</Aside>
+
+## 설치
+
+```bash
+npm i @openreplay/tracker-graphql
+```
+
+## 사용법
+
+`@openreplay/tracker` 패키지를 평소처럼 초기화하고 플러그인을 로드합니다. `plugin` 호출은 함수를 반환하며, 이 함수는 `operationKind`, `operationName`, `variables`, `result`, `duration`(기본값 0)을 받아 `result`를 변경 없이 그대로 반환합니다.
+
+```js
+import Tracker from '@openreplay/tracker';
+import { createGraphqlMiddleware } from '@openreplay/tracker-graphql';
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+export const recordGraphQL = tracker.use(createGraphqlMiddleware());
+```
+
+### Relay
+
+[Relay network tools](https://github.com/relay-tools/react-relay-network-modern)를 사용하고 있다면 간단히 [미들웨어를 생성](https://github.com/relay-tools/react-relay-network-modern/tree/master?tab=readme-ov-file#example-of-injecting-networklayer-with-middlewares-on-the-client-side)하면 됩니다.
+
+```js
+import { createRelayMiddleware } from '@openreplay/tracker-graphql';
+
+const trackerMiddleware = tracker.use(createRelayMiddleware());
+const network = new RelayNetworkLayer([
+  // your middleware
+  // ,
+  trackerMiddleware,
+]);
+```
+
+`createRelayMiddleware`에 Sanitizer 함수를 전달하면 OpenReplay로 전송하기 전에 변수와 데이터를 정제할 수 있습니다.
+
+```js
+const trackerLink = tracker.use(
+  createRelayMiddleware((variables) => {
+    return {
+      ...variables,
+      password: '***',
+    };
+  }),
+);
+```
+
+또는 `recordGraphQL` 호출을 `NetworkLayer` 구현에 직접 넣을 수도 있습니다. 표준 `Network.create` 방식으로 구현했다면 아래와 같이 하면 됩니다.
+
+```js
+import { createGraphqlMiddleware } from '@openreplay/tracker-graphql'; // see above for recordGraphQL definition
+import { Environment } from 'relay-runtime';
+
+const handler = tracker.use(createGraphqlMiddleware());
+
+function fetchQuery(operation, variables, cacheConfig, uploadables) {
+  return fetch('www.myapi.com/resource', {
+    // ...
+  })
+    .then((response) => response.json())
+    .then((result) =>
+      handler(
+        // op kind, name, variables, response, duration (default 0)
+        operation.operationKind,
+        operation.name,
+        variables,
+        result,
+        duration,
+      ),
+    );
+}
+
+const network = Network.create(fetchQuery);
+```
+
+자세한 내용은 [Relay Network Layer](https://relay.dev/docs/en/network-layer)를 참고하세요.
+
+### Apollo
+
+[Apollo](https://www.apollographql.com/)의 경우 새 `ApolloLink`를 만들어야 합니다.
+
+```js
+import { createTrackerLink } from '@openreplay/tracker-graphql';
+
+const trackerLink = tracker.use(createTrackerLink());
+const yourLink = new ApolloLink(trackerLink);
+```
+
+`createRelayMiddleware`에 Sanitizer 함수를 전달하면 OpenReplay로 전송하기 전에 변수와 데이터를 정제할 수 있습니다.
+
+```js
+const trackerLink = tracker.use(
+  createTrackerLink((variables) => {
+    return {
+      ...variables,
+      password: '***',
+    };
+  }),
+);
+```
+
+또는 범용 graphql 핸들러를 사용할 수도 있습니다.
+
+```js
+import { createGraphqlMiddleware } from '@openreplay/tracker-graphql'; // see above for recordGraphQL definition
+import { ApolloLink } from 'apollo-link';
+
+const handler = tracker.use(createGraphqlMiddleware());
+
+const trackerApolloLink = new ApolloLink((operation, forward) => {
+  operation.setContext({ start: performance.now() });
+  return forward(operation).map((result) => {
+    const time = performance.now() - operation.getContext().start;
+    return handler(
+      // op kind, name, variables, response, duration (default 0)
+      operation.query.definitions[0].operation,
+      operation.operationName,
+      operation.variables,
+      result,
+      time,
+    );
+  });
+});
+
+const link = ApolloLink.from([
+  trackerApolloLink,
+  // ...
+]);
+```
+
+자세한 내용은 [Apollo Link](https://www.apollographql.com/docs/link/)와 [Apollo Networking](https://www.apollographql.com/docs/react/networking/network-layer/)을 참고하세요.
+
+## 튜토리얼
+이 플러그인을 사용해 세션 리플레이에서 작업(뮤테이션과 쿼리) 데이터를 캡처하는 실용적인 예제를 찾고 계신다면 [자세한 튜토리얼](/tutorials/graphql)을 확인해 보세요.
+
+## 질문이 있으신가요?
+
+이 플러그인 설정에 문제가 있나요? [Slack](https://slack.openreplay.com)에 접속하여 커뮤니티의 도움을 받으세요.

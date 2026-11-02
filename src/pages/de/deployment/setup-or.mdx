@@ -1,0 +1,115 @@
+---
+title: "OpenReplay einrichten"
+metaTitle: "OpenReplay einrichten"
+metaDescription: "So richten Sie OpenReplay schnell ein und beginnen mit der Aufzeichnung von Sitzungen und Metriken."
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+import LinkRow from '~/components/LinkRow.astro'
+
+<YoutubeVideo title="So starten Sie mit OpenReplay"
+  description="Wenn Sie nicht gern lesen, können Sie dieser Video-Anleitung folgen, die zeigt, wie Sie in 3 Minuten oder weniger mit OpenReplay loslegen"
+  videoURL="https://www.youtube.com/watch?v=EWbtMK3qK30"
+  />
+
+
+Der Einstieg in OpenReplay ist unkompliziert. 
+
+Wenn Sie sich ein kurzes Tutorial zum Einstieg ansehen möchten, nutzen Sie [dieses YouTube-Video](https://www.youtube.com/watch?v=EWbtMK3qK30). Andernfalls lesen Sie einfach weiter, um mehr Details zu erfahren.
+
+Es gibt zwei Möglichkeiten, OpenReplay in Betrieb zu nehmen: über das Skript oder über das npm-Paket.
+
+## Das Skript verwenden
+
+Kopieren Sie das Code-Snippet direkt in das `</head>` Ihrer Web-App. Das Skript finden Sie im OpenReplay-Dashboard unter 'Preferences > Projects'; es ist für jedes Projekt individuell.
+
+Wenn Ihre Website Google Tag Manager unterstützt, können Sie der [GTM-Schritt-für-Schritt-Anleitung](/integrations/google-tag-manager) folgen.
+
+## NPM verwenden
+
+Installieren Sie zunächst das npm-Paket.
+
+```bash
+npm i @openreplay/tracker
+```
+
+Initialisieren Sie das Paket anschließend im Einstiegspunkt Ihrer Codebasis und starten Sie den Tracker. Sie müssen die Option `projectKey` im Konstruktor setzen. Ihren Wert finden Sie in Ihrem OpenReplay-Dashboard unter 'Preferences > Projects'.
+
+### Wenn Ihre Website eine Single Page Application (SPA) ist
+
+Sie können den Tracker als Singleton-Instanz verwenden, was die empfohlene Vorgehensweise ist. 
+So können Sie von überall in Ihrer App auf den Tracker zugreifen:
+
+```js
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+	projectKey: PROJECT_KEY,
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+})
+
+tracker.start() // returns a promise with session info (sessionID, sessionHash, userUUID)
+```
+
+Oder Sie verwenden die Klasse `Tracker` direkt, um ihre Instanz manuell zu verwalten:
+
+```js
+import OpenReplay from '@openreplay/tracker';
+//...
+const tracker = new OpenReplay({
+  projectKey: PROJECT_KEY,
+  ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
+});
+
+tracker.start();
+```
+
+### Wenn Ihre Web-App serverseitig gerendert wird (SSR)
+
+Verwenden Sie das folgende Snippet, wenn Ihre Web-App serverseitig gerendert wird (SSR) (z. B. NextJS, NuxtJS). 
+Stellen Sie sicher, dass der Tracker in einer Browserumgebung läuft und `tracker.start()` aufgerufen wird, sobald die App an den Client ausgeliefert wurde (z. B. in `useEffect` oder `componentDidMount`).
+
+```js
+import OpenReplay from '@openreplay/tracker/cjs';
+//...
+const tracker = new OpenReplay({
+      projectKey: PROJECT_KEY
+});
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, []);
+}
+```
+
+Wenn Sie den Tracker noch weiter konfigurieren möchten, finden Sie im [JavaScript SDK](/sdk/constructor#initialization-options) die Liste der verfügbaren Optionen.
+
+## Integration mit anderen Frameworks
+Wenn Sie OpenReplay nicht in einer einfachen Anwendung einsetzen, verwenden Sie wahrscheinlich ein Web-Entwicklungs-Framework wie Next.js, Nuxt oder ein anderes.
+Sehen Sie sich unsere individuellen Tutorials für jedes der unterstützten Frameworks an:
+
+<div class="or-feature">
+  <div class="or-chips" style="margin:0;">
+    <a class="or-chip" href="/sdk/using-or/react"><img src="/redesign/frameworks/react.svg" alt="" />React</a>
+    <a class="or-chip" href="/sdk/using-or/vue"><img src="/redesign/frameworks/vue.svg" alt="" />Vue</a>
+    <a class="or-chip" href="/sdk/using-or/angular"><img src="/redesign/frameworks/angular.svg" alt="" />Angular</a>
+    <a class="or-chip" href="/sdk/using-or/next"><img src="/redesign/frameworks/nextjs.svg" alt="" />NextJS</a>
+    <a class="or-chip" href="/sdk/using-or/nuxt"><img src="/redesign/frameworks/nuxt.svg" alt="" />Nuxt</a>
+  </div>
+</div>
+
+## Nächste Schritte
+
+Nachdem Sie den Tracker installiert und Ihre Web-App bereitgestellt haben, sollten Sitzungsaufzeichnungen innerhalb weniger Minuten erscheinen. Gut gemacht!
+
+In der Zwischenzeit können Sie mit der Einrichtung fortfahren, um das Beste aus OpenReplay herauszuholen. Je mehr Sie erfassen, desto schneller lassen sich Probleme reproduzieren und beheben:
+
+<div class="or-rowlist">
+  <LinkRow href="/session-replay/identify-user" title="Identify a User" icon="user" desc="Ordnen Sie Ihre interne Benutzer-ID der aufgezeichneten Sitzung zu." />
+  <LinkRow href="/session-replay/metadata" title="Metadata" icon="metadata" desc="Metadaten, auch Traits oder Benutzervariablen genannt, liefern zusätzliche Informationen über Benutzer, während Sitzungen aufgezeichnet werden." />
+  <LinkRow href="/product-analytics/data-management" title="Custom Events" icon="api" desc="Machen Sie Ihre Analysen aussagekräftiger, indem Sie domänenspezifische Ereignisse zusammen mit Session Replays aufzeichnen." />
+  <LinkRow href="/session-replay/error-reporting" title="Error Reporting" icon="error" desc="Melden Sie Fehler und Ausnahmen und sehen Sie sie im Tab ERRORS." />
+  <LinkRow href="/deployment/upload-sourcemaps" title="Upload Source-Maps" icon="highlight" desc="Sehen Sie den aus Stacktraces gewonnenen Quellcode-Kontext in seiner ursprünglichen Form." />
+  <LinkRow href="/plugins" title="Plugins" icon="settings" desc="Verstehen Sie, was im Hintergrund passiert, indem Sie den Store Ihrer Anwendung erfassen und Ihre HTTP- und GraphQL-Abfragen überwachen." />
+  <LinkRow href="/integrations" title="Integrations" icon="data" desc="Verbinden Sie OpenReplay mit Ihren Logging-Tools und synchronisieren Sie Backend-Fehler mit Session Replays." />
+</div>

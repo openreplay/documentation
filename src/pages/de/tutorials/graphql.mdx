@@ -1,0 +1,192 @@
+---
+title: "Das GraphQL-Plugin verwenden"
+metaTitle: "Das GraphQL-Plugin verwenden, um Operationsinformationen zu erfassen und zu bereinigen"
+metaDescription: "So richten Sie das GraphQL-Plugin in Ihrer React-Anwendung ein"
+---
+Wenn Sie in Ihrer Anwendung GraphQL als Abfragesprache für Ihre APIs einsetzen, kann Ihnen das [GraphQL-Plugin](https://docs.openreplay.com/plugins/graphql) dabei helfen, sowohl Mutationen als auch Abfragen zu erfassen, die an Ihren GraphQL-Server gesendet werden.
+
+In diesem Tutorial verwenden wir den Apollo-Boost-Client. Solange Ihr Client jedoch die Einrichtung einer Middleware erlaubt, können Sie das Plugin in Ihrem Code verwenden.
+
+Wenn Sie dem Tutorial folgen möchten, können Sie [dieses Repository ansehen](https://github.com/deleteman/openreplay-graphql-example), das sowohl den GraphQL-Server als auch die Client-App enthält. 
+
+## Zuerst den Tracker einrichten
+
+Bevor Sie das GraphQL-Plugin installieren, muss der Tracker installiert sein. Wenn Sie bereits wissen, wie das geht, springen Sie zum nächsten Abschnitt, andernfalls lesen Sie einfach weiter.
+
+Wir speichern diesen Code in einem separaten Modul, das zwei Funktionen exportiert: `init` und `start`.
+
+Die erste Funktion instanziiert den Tracker und richtet alle Plugins ein; die zweite ruft nur die Methode `start` auf. 
+
+```jsx
+import { tracker } from '@openreplay/tracker';
+
+export function init({plugins}) {
+
+    tracker.configure({
+        projectKey: process.env.OPENREPLAY_PROJECT_KEY
+    });
+
+    
+    let pluginResults = {}
+    if(plugins) {
+        Object.keys(plugins).forEach( pk => {
+            pluginResults[pk] = tracker.use(plugins[pk]())
+        })
+    }
+    return pluginResults
+}
+
+export function start() {
+    return tracker.start()
+}
+```
+
+Interessant an der Funktion init ist, dass sie ein Objekt zurückgibt, das aus den Rückgabewerten aller Plugins besteht. Einige unserer Plugins geben eine Funktion zurück, die Sie später verwenden müssen (so wie beim GraphQL-Plugin). Mit diesem Ansatz können Sie den Tracker mit allen Plugins auf einmal initialisieren und die zurückgegebenen Werte dann jederzeit nutzen.
+
+## Das Plugin verwenden
+
+Nachdem Sie das Plugin mit npm i @openreplay/tracker-graphql installiert haben, rufen Sie mit dem folgenden Code die zuvor definierte Funktion init auf:
+
+```jsx
+import trackerGraphQL from '@openreplay/tracker-graphql';
+import {init} from './tracker/index'
+
+const {graphqlTracker} = init({
+  plugins: { 
+    graphqlTracker: trackerGraphQL
+  }
+})
+```
+
+Der hier verwendete Schlüssel `graphqlTracker` kann beliebig gewählt werden. Solange der Schlüssel im Abschnitt `plugins` mit dem übereinstimmt, den Sie aus dem Ergebnis der Funktion `init` destrukturieren, ist alles in Ordnung.
+
+## Das Plugin mit dem Apollo-Client einrichten
+
+In diesem Tutorial verwenden wir die Bibliothek Apollo Boost, mit der Sie den Datenfluss jeder Anfrage über sogenannte „Links“ verändern können.
+
+Diese Links funktionieren wie Middleware-Funktionen, mit denen Sie den Datenfluss einer Anfrage abfangen und in unserem Fall aufzeichnen können.
+
+Der folgende Code erstellt mit der Funktion `ApolloLink` einen neuen Link. Dieser Link erfasst die Daten und Ergebnisse der Operation und ruft unsere Funktion `graphqlTracker` auf (die Funktion, die der obige Aufruf von `init` zurückgegeben hat).
+
+```jsx
+const trackerApolloLink = new ApolloLink((operation, forward) => {
+
+  const operationDefinition = operation.query.definitions[0];
+  let {operationName, variables} = operation
+  const {kind, operation: op} = operationDefinition
+  const opKind = kind === 'OperationDefinition' ? op : 'unknown?'
+
+  let results = forward(operation).map((result) => {
+    return graphqlTracker(opKind, operationName, variables, result);
+  });
+  if(results.length === 0) { //if there are no results, then we've not tracked anything so far...
+    graphqlTracker(opKind, operationName, variables, {});
+  }
+  return results
+});
+```
+
+Damit ist das erledigt, und wir können den neu erstellten Link wie folgt verwenden:
+
+```jsx
+import {ApolloClient,  HttpLink } from 'apollo-boost';
+import { ApolloProvider } from '@apollo/react-hooks';
+import { InMemoryCache } from 'apollo-cache-inmemory';
+import { ApolloLink, from } from '@apollo/client';
+
+const link = from([
+  trackerApolloLink,
+  new HttpLink({uri: () => 'http://localhost:4000/graphql'}),
+]);
+
+const client = new ApolloClient({
+  link,
+  cache: new InMemoryCache()
+});
+
+ReactDOM.render(<ApolloProvider client={client}>
+  <App />
+</ApolloProvider>, document.getElementById('root'));
+```
+
+Der obige Code stammt aus der Apollo-Dokumentation. An dieser Stelle sind Tracker und Plugin bereits eingerichtet, sodass Sie sich um nichts weiter kümmern müssen.
+
+Anschließend zeigen Ihre Replays einen neuen Bereich, der alle GraphQL-Operationen auflistet.
+
+![Die GraphQL-Oberfläche im Session Replay](/using-or/graphql-ui.png)
+
+Allerdings werden sensible Informationen, die der Tracker automatisch bereinigt (wie E-Mail-Adressen), vom Plugin nicht bereinigt. Es kann daher zu Situationen wie der folgenden kommen, in der das DOM die bereinigten Daten enthält, die Operationsdetails aber die tatsächlichen Daten anzeigen.
+
+![Bereinigte und nicht bereinigte Daten im Vergleich](/using-or/sanitized-vs-not-sanitized.png)
+
+Das Plugin selbst bietet zwar keine Bereinigungsfunktion, aber wir können trotzdem Code hinzufügen, der personenbezogene und private Informationen im Replay ausblendet und so die Privatsphäre Ihrer Benutzer schützt.
+
+## Die aufgezeichneten Daten bereinigen
+
+Wenn Sie sich das Codebeispiel ansehen, in dem ich das Objekt trackerApolloLink erstelle, werden Sie feststellen, dass ich lediglich die Tracker-Funktion aufrufe, die Informationen im Tracker speichert.
+
+Wenn ich die Daten nicht verändere, wird alles unverändert gespeichert. Um also die Daten im Replay zu bereinigen **und die Operation selbst unverändert zu lassen**, müssen wir die wichtigsten Variablen klonen, bevor wir den Tracker aufrufen. Das bedeutet, dass wir die Variablen und die Ergebnisse der Operation klonen, und mehr brauchen wir nicht. 
+
+Hier ist also ein Code-Ausschnitt, der den ApolloLink erstellt und die Daten innerhalb der Replay-Daten geheim hält:
+
+```jsx
+/**
+ * Sanitize the result from a GraphQL operation
+ * @returns Returns the result object but with the sanitized fields changed.
+ */
+function sanitizeResult(res) {
+  //deep clonning needs to happen to make sure this only affects the new object and not
+  //the original object.
+  let sanitized = JSON.parse(JSON.stringify(res))
+
+  let ops = Object.keys(sanitized.data)
+  ops.forEach( o => {
+    if(Array.isArray(sanitized.data[o])) { //mutations don't really return arrays
+      sanitized.data[o] = sanitized.data[o].map( sanitizeData )
+    }
+  })
+  return sanitized
+}
+
+// We only want to hide the content of othe "email" field for now.
+function sanitizeData(vars) {
+  let newVars = {...vars}
+  if(newVars.email) {
+    newVars.email = "****@***.***"
+  }
+  return newVars
+}
+
+const trackerApolloLink = new ApolloLink((operation, forward) => {
+
+  const operationDefinition = operation.query.definitions[0];
+  let {operationName, variables} = operation
+  const {kind, operation: op} = operationDefinition
+  const opKind = kind === 'OperationDefinition' ? op : 'unknown?'
+
+  let trackedVariables = sanitizeData({...variables})
+  let results = forward(operation).map((result) => {
+    let trackeresults = sanitizeResult(result)
+    graphqlTracker(opKind, operationName, trackedVariables, trackeresults);
+    return result //we have to return the original "result" object here, not the sanitized one
+  });
+  if(results.length === 0) { //if there are no results, then we've not tracked anything so far...
+    graphqlTracker(opKind, operationName, trackedVariables, {});
+  }
+  return results
+});
+```
+
+Die wichtigsten Punkte dieses Codes sind:
+
+1. Wir haben zwei Funktionen hinzugefügt: eine, die die `email` aus einem Objekt bereinigt, und eine, die die Ergebnisse einer GraphQL-Operation bereinigt.
+2. Innerhalb des `map`-Callbacks (aus der Link-Funktion) geben wir jetzt nicht mehr die Ausgabe von graphqlTracker zurück, weil diese Funktion den erhaltenen Ergebniswert unverändert zurückgibt. 1. Dieses Ergebnis würde aber an die Client-App zurückgegeben, und wenn wir das Ergebnis bereinigen, würde der Benutzer die bereinigte Version des Datensatzes sehen. Stattdessen müssen wir das Ergebnis klonen, um das erfasste Ergebnis zu verändern und das Original zurückzugeben.
+3. Die Funktion `sanitizeResult` erstellt eine tiefe Kopie des Objekts, denn eine direkte Änderung würde das Ergebnis selbst verändern.
+
+![Überall bereinigte Daten](/using-or/sanitized.png)
+
+## Haben Sie Fragen?
+
+Im [Repository](https://github.com/deleteman/openreplay-graphql-example) finden Sie den **vollständigen Quellcode** einer funktionierenden GraphQL-basierten Anwendung mit dem Tracker.
+
+Wenn Sie beim Einrichten des Trackers in Ihrem GraphQL-Projekt Probleme haben, wenden Sie sich an unsere [Slack-Community](https://slack.openreplay.com/) und fragen Sie unsere Entwickler direkt!

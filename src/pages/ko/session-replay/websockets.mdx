@@ -1,0 +1,36 @@
+---
+title: "WebSocket 캡처"
+metaTitle: "WebSocket 캡처"
+metaDescription: "세션 리플레이에서 WebSocket을 녹화하는 방법을 설명합니다."
+---
+
+OpenReplay는 선택한 WebSocket 채널을 녹화하여 세션 리플레이에 표시할 수 있습니다. 추가적인 맥락을 제공하므로 특정 상황을 문제 해결할 때 유용합니다.
+
+## WebSocket 녹화 활성화
+
+WebSocket 녹화를 활성화하려면 메시지를 수신 대기하는 훅(hook)을 만들어야 합니다.
+
+```ts
+const wsHook = tracker.trackWs('my_ws_channel')
+
+myWsChannel.on('important_message', (data) => {
+  wsHook('important_message', data, 'down')
+  /** your code */
+})
+myWsChannel.onAnyOutgoing((event, data) => {
+  wsHook(event, data, 'up')
+})
+```
+
+[socket-io 문서](https://socket.io/docs/v4/listening-to-events/)를 참고하여 만든 예시입니다
+
+> 참고: 이는 기본적인 예시일 뿐입니다. 메시지 이벤트를 수신하는 방법을 반드시 확인하고, 실제로 캡처해야 할 항목을 그에 맞게 계획하세요. 트래픽이 많거나 무거우면 리플레이 크기도 커집니다.
+
+### 데이터 정제
+
+훅을 통해 전송하기 전에 데이터를 정제할 수 있습니다.
+
+## 궁금한 점이 있으신가요?
+
+이 과정에 대해 궁금한 점이 있으시면 언제든지 [Slack](https://slack.openreplay.com)으로 문의해 주세요.
+

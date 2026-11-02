@@ -1,0 +1,43 @@
+---
+title: "Android SDK - 입력 추적"
+metaTitle: "Android SDK - 입력 추적"
+metaDescription: "Android 트래커로 입력을 추적하는 방법에 대한 상세 정보"
+---
+
+트래커는 값 변경 이벤트를 감지(디바운스 적용)하여 그 결과 값을 OpenReplay 백엔드로 전송합니다.
+
+## 추적할 입력 추가하기
+
+### EditText
+
+`.trackTextInput(label:masked)`을 사용하여 입력 이벤트를 관찰합니다.
+- `label: String` - 기록되는 입력의 레이블
+- `masked: Bool` - `true`이면 트래커는 값이 아닌 입력 이벤트 자체만 기록합니다.
+
+```kotlin
+import com.opnereplay.tracker.OpenReplay
+
+val passwordEditText = binding.password
+passwordEditText.trackTextInput(label = "password", masked = true)
+```
+
+### View
+
+```kotlin
+import com.opnereplay.listeners.Analytics
+
+Analytics.addObservedInput(inputEl)
+```
+
+### Jetpack Compose
+
+```kotlin
+import com.openreplay.tracker.listeners.trackTextInputChanges
+
+OutlinedTextField(
+        modifier = Modifier
+            .fillMaxWidth()
+            .trackTextInputChanges("Email Field", emailState.text),
+        ...,
+    )
+```

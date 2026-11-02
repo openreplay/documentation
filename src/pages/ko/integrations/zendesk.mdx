@@ -1,0 +1,109 @@
+---
+title: "Zendesk 통합"
+metaTitle: "Zendesk와 OpenReplay 통합"
+metaDescription: "Zendesk를 OpenReplay와 통합하는 방법을 설명합니다."
+---
+
+Zendesk를 OpenReplay와 통합하는 방법을 설명합니다.
+
+## 설치
+
+Zendesk를 OpenReplay와 통합하는 가장 쉬운 방법은 [Zendesk Apps Framework (ZAF)](https://developer.zendesk.com/documentation/apps/getting-started/zendesk-app-quick-start/)로 작은 비공개 사이드바 앱을 만드는 것입니다. 이 앱은 모든 티켓 안에 요청자의 OpenReplay 사용자 프로필로 연결되는 직접 링크를 추가하며, 여기에서 해당 사용자의 이벤트와 세션을 확인할 수 있습니다(세션에 이메일을 사용자 ID로 태그한 경우).
+
+### 1. 앱 파일 만들기
+
+다음과 같은 구조로 폴더를 만듭니다.
+
+```
+openreplay-zendesk-app/
+├── manifest.json
+└── assets/
+    └── iframe.html
+```
+
+**`manifest.json`**
+
+```json
+{
+  "name": "OpenReplay",
+  "author": {
+    "name": "Your Name",
+    "email": "you@example.com"
+  },
+  "defaultLocale": "en",
+  "private": true,
+  "version": "1.0.0",
+  "frameworkVersion": "2.0",
+  "location": {
+    "support": {
+      "ticket_sidebar": {
+        "url": "assets/iframe.html",
+        "flexible": true
+      }
+    }
+  }
+}
+```
+
+**`assets/iframe.html`**
+
+`OPENREPLAY_DOMAIN`과 `PROJECT_ID`를 올바른 값으로 바꿔야 합니다. 어떤 값을 사용해야 할지 모르겠다면 기존 녹화의 URL을 확인하세요. 첫 번째 부분이 도메인이고 그 뒤에 오는 숫자가 Project ID입니다.
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://static.zdassets.com/zendesk_app_framework_sdk/2.0/zaf_sdk.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 12px; margin: 0; }
+    a { color: #1f73b7; text-decoration: none; font-size: 14px; }
+    a:hover { text-decoration: underline; }
+    #status { color: #999; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <p id="content">Loading...</p>
+  <script>
+    const client  = ZAFClient.init();
+    const DOMAIN  = '<OPENREPLAY_DOMAIN>';
+    const PROJECT = '<PROJECT_ID>';
+
+    client.get('ticket.requester.email').then(data => {
+      const userId = data['ticket.requester.email'];
+
+      if (!userId) {
+        document.getElementById('content').innerHTML =
+          '<span id="status">No OpenReplay user ID found for this requester.</span>';
+        return;
+      }
+
+      const url = `https://${DOMAIN}/${PROJECT}/data-management/user/${encodeURIComponent(userId)}`;
+      document.getElementById('content').innerHTML =
+        `<a href="${url}" target="_blank">👤 View User in OpenReplay</a>`;
+
+      client.invoke('resize', { width: '100%', height: '50px' });
+    }).catch(() => {
+      document.getElementById('content').innerHTML =
+        '<span id="status">Could not load requester data.</span>';
+    });
+  </script>
+</body>
+</html>
+```
+
+### 2. 앱 패키징 및 설치
+
+1. `openreplay-zendesk-app/` 폴더를 zip으로 압축합니다(`manifest.json`이 하위 폴더 안이 아니라 zip의 루트에 있어야 합니다).
+2. Zendesk에서 **Admin Center → Apps and Integrations → Support Apps**로 이동합니다.
+3. 오른쪽 위 모서리의 **Upload private app**을 클릭합니다.
+4. 앱 이름(예: "OpenReplay")을 지정하고 zip 파일을 업로드합니다.
+5. **Install**을 클릭합니다.
+
+### 3. 링크 확인
+
+아무 티켓으로 이동하여 오른쪽 위 모서리의 Apps 버튼을 클릭해 **Apps panel**을 엽니다. OpenReplay에서 요청자의 사용자 프로필로 연결되는 직접 링크가 표시됩니다.
+
+## 질문이 있으신가요?
+
+문제가 발생하면 [Slack](https://slack.openreplay.com)에 접속하여 커뮤니티의 도움을 받으세요.

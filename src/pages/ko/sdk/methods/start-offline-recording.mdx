@@ -1,0 +1,35 @@
+---
+title: "JavaScript SDK - 'startOfflineRecording' 메서드"
+metaTitle: "JavaScript SDK - 'startOfflineRecording' 메서드"
+metaDescription: "OpenReplay SDK의 'startOfflineRecording' 메서드에 대한 자세한 설명"
+---
+
+오프라인 모드로 세션 녹화를 시작합니다(업로드를 트리거하기 전까지는 아무것도 전송되지 않음). 녹화 상태를 제어하는 메서드들을 반환합니다.
+
+> 참고: 세션과 이벤트의 타임스탬프는 사용자의 기기에서 가져오며, 백엔드와 동기화되지 않습니다.
+
+## 시그니처
+
+```ts
+startOfflineRecording(
+	startOpts?: Partial<StartOptions>, 
+	onSessionSent: () => void
+): { saveBuffer, getBuffer, setBuffer }
+```
+
+### 매개변수
+
+`startOpts`를 사용하면 녹화의 여러 측면을 사용자 지정할 수 있습니다:
+- `userID: string`: `userID`를 수동으로 설정하여 세션 간에 사용자를 추적할 때 사용합니다. 원하는 어떤 문자열 값이든 사용할 수 있습니다.
+- `metadata: Record<string, string>`: 메타데이터 값을 수동으로 설정합니다. 이 기능에 대한 자세한 내용은 [메타데이터 섹션](/session-replay/metadata)을 확인하세요.
+- `forceNew: boolean`: 페이지를 새로 고친 후에도 새 세션을 강제로 시작할 때 사용합니다. 기본값은 `false`이므로 새로 고침 후에도 세션이 유지됩니다.
+- `sessionHash: string`: 고정 세션(sticky session)에 사용합니다. 멀티 사이트 애플리케이션이 있거나 사용자를 외부(예: 결제 게이트웨이)로 리디렉션했다가 다시 사이트로 돌아오게 해야 할 때 유용합니다.
+- `onSessionSent`: 세션이 완전히 업로드되면 호출되는 콜백입니다.
+
+
+### 반환값
+
+- `saveBuffer(): void` - 현재 버퍼를 `localStorage` 객체에 저장합니다(생성자에서 사용자 지정 가능). `startOfflineRecording`을 호출하면 버퍼가 자동으로 로드됩니다.
+- `getBuffer(): Messages[]` - 현재 메시지 버퍼를 반환합니다.
+- `setBuffer(buffer: Messages[])` - 현재 버퍼를 지정한 버퍼로 교체합니다(다른 임시 저장 방식을 사용하는 경우).
+

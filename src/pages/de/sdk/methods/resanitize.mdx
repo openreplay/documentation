@@ -1,0 +1,53 @@
+---
+title: "JavaScript SDK - Methode resanitize"
+metaTitle: "JavaScript SDK - Methode resanitize"
+metaDescription: "Details zur Methode resanitize aus dem OpenReplay SDK"
+---
+import Aside from '~/components/Aside.astro'
+
+Diese Methode wertet die [Bereinigung](/sdk/sanitize-data) erneut anhand des aktuellen DOM aus und gibt alles, was sich geändert hat, erneut aus. So werden bereits aufgezeichnete Knoten mitten in der Sitzung aktualisiert.
+
+Die Bereinigung wird normalerweise angewendet, wenn ein Knoten zum ersten Mal aufgezeichnet wird. Wenn Sie ändern, was verschleiert oder ausgeblendet werden soll, *nachdem* ein Knoten bereits erfasst wurde, wirkt sich diese Änderung nicht von selbst auf das Replay aus. Rufen Sie `resanitize()` auf, damit der Tracker die aktualisierten Bereinigungsregeln erneut auf Knoten anwendet, die bereits Teil der Aufzeichnung sind.
+
+Rufen Sie die Methode auf, nachdem Sie:
+
+- die Attribute `data-openreplay-obscured` / `data-openreplay-hidden` bei Elementen umgeschaltet haben, die sich bereits auf der Seite befinden, oder
+- das geändert haben, wonach Ihr [`domSanitizer`](/sdk/sanitize-data#using-the-domsanitizer-function) filtert (Klasse, ID usw.).
+
+<Aside type="note">
+Bereinigte Elemente werden bereits an der Quelle (im Tracker) maskiert bzw. geschwärzt, sodass verschleierte oder ausgeblendete Inhalte nie Ihre OpenReplay-Instanz erreichen. Wie jede Bereinigung wirkt sich `resanitize()` nur auf Daten aus, die ab diesem Zeitpunkt erfasst werden – bereits im Klartext an das Backend gesendete Daten lassen sich damit nicht nachträglich entfernen.
+</Aside>
+
+## Signatur
+
+```js
+resanitize(el?: Element): void
+```
+
+## Parameter
+
+- `el?: Element`: Der oberste Knoten, den Sie geändert haben. Der Tracker durchsucht dieses Element und seinen Teilbaum erneut. Lassen Sie den Parameter weg, um das gesamte Dokument erneut zu durchsuchen.
+
+<Aside type="tip">
+Übergeben Sie das möglichst spezifische Element. Das Durchsuchen des gesamten Dokuments hat einen Aufwand von O(DOM-Größe); wenn Sie nur den geänderten Teilbaum übergeben, bleibt der erneute Scan auf umfangreichen Seiten günstig.
+</Aside>
+
+## Rückgabewert
+
+Diese Methode gibt keinen Wert zurück. Die neu ausgewertete Bereinigung wird direkt auf die laufende Aufzeichnung angewendet, und die Ergebnisse sind in der OpenReplay-Plattform sichtbar.
+
+## Beispiel
+
+```js
+// Obscure a section after the user opens sensitive content
+const panel = document.getElementById('account-details')
+panel.setAttribute('data-openreplay-obscured', '')
+
+// Tell the tracker to re-apply sanitization to that subtree
+tracker.resanitize(panel)
+```
+
+```js
+// Re-scan the whole document after changing domSanitizer rules
+tracker.resanitize()
+```

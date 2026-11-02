@@ -1,0 +1,53 @@
+---
+title: "Flutter SDK - 화면 및 뷰 추적"
+metaTitle: "Flutter SDK - 화면 및 뷰 추적"
+metaDescription: "Flutter 트래커로 화면과 뷰를 추적하는 방법에 대한 자세한 설명"
+---
+import Aside from '~/components/Aside.astro'
+
+`analytics`가 활성화되어 있으면(기본값) 트래커가 탭, 스와이프, 뷰포트 변경, 입력 이벤트를 자동으로 캡처합니다. 화면과 개별 뷰는 내보내는 두 개의 위젯으로 보고됩니다.
+
+## 화면
+
+앱의 내비게이터에 `ORNavigatorObserver`를 추가하면 라우트 전환이 기록됩니다.
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+MaterialApp(
+  navigatorObservers: [ORNavigatorObserver()],
+  // ...
+)
+```
+
+푸시, 팝, 교체, 제거가 모두 보고됩니다. 라우트 이름은 `route.settings.name`으로 정해지며, 이름이 없는 라우트는 스택에서의 위치(`route/2`)로 대체됩니다. 따라서 라우트에 이름을 지정하면 타임라인을 훨씬 읽기 쉽게 만들 수 있습니다.
+
+## 추적 뷰
+
+위젯을 `ORTrackedView`로 감싸면 이름이 있는 관찰 가능한 뷰로 보고됩니다. 뷰가 마운트될 때와 언마운트될 때 가시성 이벤트가 발생하며, 뷰 안에서 일어난 터치의 레이블로 이 이름이 사용됩니다.
+
+- `screenName: String` — 화면 또는 기능의 제목
+- `viewName: String` — 추적할 뷰의 이름
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+ORTrackedView(
+  screenName: 'Checkout',
+  viewName: 'Pay button',
+  child: ElevatedButton(onPressed: _pay, child: const Text('Pay')),
+)
+```
+
+## 터치
+
+탭과 스와이프는 포인터 라우터의 전역 라우트를 통해 캡처됩니다. 따라서 트래커는 제스처 아레나에서 경쟁하지 않고도 모든 포인터 이벤트를 볼 수 있으며, 앱에 필요한 탭을 가로챌 일도 없습니다. 포인터가 10 논리 픽셀보다 멀리 이동하면 주된 방향의 스와이프로, 그보다 짧으면 클릭으로 기록됩니다.
+
+터치 레이블은 포인터 아래에 있는 텍스트를 히트 테스트하여 얻거나, 이를 감싸는 `ORTrackedView`에서 가져옵니다.
+
+<Aside type="note">
+	레이블은 위젯이나 렌더 객체의 타입 이름에서 가져오지 않습니다. `flutter build --obfuscate`를 사용하면 그 이름들이 의미 없는 문자열로 바뀌기 때문입니다.
+</Aside>
+
+## 질문이 있으신가요?
+이 과정에 대해 궁금한 점이 있으시면 언제든지 [Slack](https://slack.openreplay.com)으로 문의해 주세요.

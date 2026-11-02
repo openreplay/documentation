@@ -1,0 +1,114 @@
+---
+title: "React Native SDK - SDK 초기화"
+metaTitle: "React Native SDK - SDK 초기화"
+metaDescription: "iOS React Native 트래커의 생성자 메서드에 사용하는 구성 옵션"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	React Native SDK는 베타 버전입니다. 피드백을 보내 주시거나 문제가 발생하면 [Slack](https://slack.openreplay.com)으로 알려 주세요.
+</Aside>
+
+## 설치
+
+다음 명령어를 실행하면 트래커와 함께 SDK가 설치되어 모든 트래커 기능을 활용할 수 있습니다.
+
+```bash
+npm i @openreplay/react-native
+```
+
+## 초기화
+
+OpenReplay의 트래커를 인스턴스화할 때 다양한 구성 옵션을 제공하여 녹화와 녹화 환경의 여러 측면을 사용자 지정할 수 있습니다. 생성자에서 `projectKey` 옵션을 반드시 설정해야 합니다. 이 값은 OpenReplay 대시보드의 'Preferences > Projects'에서 확인할 수 있습니다.
+
+<Aside type="tip">
+	프로젝트가 여러 개인 경우 올바른 프로젝트 키를 선택하도록 주의하세요.
+</Aside>
+
+
+### 트래킹 코드 추가하기
+
+루트 파일에 다음 코드를 추가합니다.
+
+```js
+import Openreplay from '@openreplay/react-native';
+
+// ...
+useEffect(() => {
+	Openreplay.tracker.startSession(
+		'yourProjectKey',
+		options, // explained below, set {} if empty
+		'https://local.openreplay.instance/ingest' // if you're using our Serverless/SaaS plan then 'https://api.openreplay.com/ingest'
+	);
+}, [])
+```
+
+### 향상된 컴포넌트 추가하기
+
+앱 내 사용자 상호작용을 추적하려면 애플리케이션에 다음 컴포넌트를 추가해야 합니다.
+
+- `ORTouchTrackingView` - 터치 상호작용을 추적하기 위해 루트 수준에 추가합니다
+- `ORTrackedInput` - 사용자가 입력을 마칠 때마다 신호를 보내는 React-Native Input의 래퍼입니다
+- `ORSanitizedView` - 내부 콘텐츠를 흐리게 처리합니다
+
+```js
+// App.tsx
+import Openreplay from '@openreplay/react-native';
+
+function App() {
+	const start = () => {
+	    Openreplay.tracker.startSession(
+	      process.env.REACT_APP_KEY!,
+	      {},
+	      process.env.REACT_APP_INGEST
+	    );
+	    Openreplay.tracker.setMetadata('key', 'value');
+	    Openreplay.tracker.setUserID('user-id');
+	    Openreplay.patchNetwork(global, () => false, {});
+	};
+	
+	React.useEffect(() => start(), []);
+	
+	return (
+		// this top-level view is required to track touch interactions
+		<Openreplay.ORTouchTrackingView style={styles.container}> 
+		      <View style={styles.container}>
+		         <Openreplay.ORTrackedInput
+		          style={styles.input}
+		          onChangeText={onChangeNumber}
+		          value={number}
+		          placeholder="Trackable input"
+		          numberOfLines={1}
+		        />
+		
+		        <Openreplay.ORSanitizedView style={styles.sanitizedView}>
+		          <Text>Contents of this view are sanitized and invisible on the recording</Text>
+		        </Openreplay.ORSanitizedView>
+		      </View>
+		</Openreplay.ORTouchTrackingView>
+	)
+}
+```
+
+
+### 데이터 정제
+
+자세한 내용은 [React Native 리플레이에서 데이터를 정제하는 방법](/rn-sdk/sanitization)을 참고하세요.
+
+## 초기화 옵션
+
+기본적으로 모든 옵션은 `true`로 설정되어 있습니다.
+
+- `crashes: Bool` 크래시 리포팅(crashlytics)을 활성화합니다.
+- `analytics: Bool` 표시된 뷰의 분석 추적을 활성화합니다.
+- `performances: Bool` 성능 리스너를 활성화합니다.
+- `logs: Bool` 로그 리스너를 활성화합니다.
+- `screen: Bool` 화면 녹화기를 활성화합니다.
+
+## 메서드
+
+<a class="or-card2 or-card-wide" href="/rn-sdk/modules"><span class="or-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg></span><div><h4>React Native SDK의 모듈 알아보기</h4></div></a>
+
+## 궁금한 점이 있으신가요?
+이 과정에 대해 궁금한 점이 있다면 언제든지 [Slack](https://slack.openreplay.com)으로 문의해 주세요.

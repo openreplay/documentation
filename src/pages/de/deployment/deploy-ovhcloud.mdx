@@ -1,0 +1,81 @@
+---
+title: "Deploy to OVHcloud"
+metaTitle: "Deploy to OVHcloud"
+metaDescription: "Schritt-für-Schritt-Anleitung zur Bereitstellung von OpenReplay auf OVHcloud (Dedicated Server, VPS, virtuelle Maschine in Private Cloud oder Public-Cloud-Instanz)."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+
+Der OpenReplay-Stack lässt sich auf einem einzelnen Rechner installieren, und ein OVHcloud Dedicated Server, ein VPS, eine virtuelle Maschine in Private Cloud oder eine Public-Cloud-Instanz sind dafür bestens geeignet. So gehen Sie vor.
+
+## Server bestellen oder Instanz starten
+
+Sie können jedes der folgenden OVHcloud-Produkte verwenden, um OpenReplay bereitzustellen:
+
+- Dedicated Server
+- VPS
+- Private Cloud (innerhalb einer virtuellen Maschine)
+- Public-Cloud-Instanz
+
+Voraussetzungen:
+
+- Wählen Sie *Ubuntu Server 24.04 LTS* als Betriebssystem.
+- Die Mindestspezifikationen für den Rechner, auf dem OpenReplay läuft, sind `2 vCPUs, 8 GB of RAM, 50 GB of storage` auf einer x86-Architektur, andernfalls starten die OpenReplay-Backend-Dienste schlicht nicht. Das sollte für ein geringes bis mittleres Aufkommen ausreichen. Wenn Sie viel Traffic erwarten, sollten Sie von hier aus skalieren.
+- Eine öffentliche IP-Adresse, die auf Ihren Server bzw. Ihre Instanz zeigt.
+
+## OpenReplay bereitstellen
+
+1. Stellen Sie sicher, dass Ihr Server bzw. Ihre Instanz gestartet ist, und verbinden Sie sich dann per SSH als root
+
+2. Installieren Sie OpenReplay, indem Sie die Domain angeben, unter der es laufen soll (z. B. DOMAIN_NAME=openreplay.mycompany.com):
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## TLS/SSL konfigurieren
+
+OpenReplay verarbeitet sensible Benutzerdaten und setzt daher HTTPS voraus. Das ist zwingend erforderlich, sonst würde der Tracker schlicht keine Aufzeichnung starten. Dasselbe gilt für das Dashboard: Ohne HTTPS können Sie keine Benutzersitzungen wiedergeben.
+
+Sie müssen daher ein eigenes SSL-Zertifikat mitbringen (oder erzeugen).
+
+1. Öffnen Sie zunächst Ihr OVHcloud-Kundencenter unter 'Web cloud' > 'Domain names' > Ihre Domain (z. B. mycompany.com) > 'DNS zone' (oder Ihren anderen DNS-Anbieter) und legen Sie einen `A Record` an. Verwenden Sie die Domain, die Sie zuvor im Installationsschritt angegeben haben, und lassen Sie sie über die öffentliche IP-Adresse auf den Server bzw. die Instanz zeigen.
+
+2. Wenn Sie ein eigenes Zertifikat mitbringen, erstellen Sie mit dem folgenden Befehl ein SSL-Secret: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
+
+> **Hinweis:** Wenn Sie kein Zertifikat haben, erzeugen Sie mit Let's Encrypt ein sich automatisch erneuerndes Zertifikat für Ihre Subdomain (die bei der Installation angegebene). Verbinden Sie sich dazu einfach mit dem OpenReplay-Server bzw. der OpenReplay-Instanz, führen Sie `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` aus und folgen Sie den Schritten.
+
+3. Wenn Sie die Weiterleitung von HTTP auf HTTPS aktivieren möchten (empfohlen), entfernen Sie in `/var/lib/openreplay/vars.yaml` die Kommentarzeichen vor dem folgenden Block im Abschnitt `ingress-nginx`:
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+Beachten Sie, dass unser `ingress-nginx` standardmäßig auf den Ports `80|443` läuft. Das lässt sich bei Bedarf jedoch einfach in `vars.yaml` ändern:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. Installieren Sie abschließend OpenReplay NGINX neu:
+
+```bash
+openreplay -R
+```
+
+Damit ist alles erledigt: OpenReplay sollte nun unter Ihrer Subdomain erreichbar sein. Sie können ein Konto erstellen, indem Sie die Seite `/signup` aufrufen (z. B. openreplay.mycompany.com/signup).
+
+## Haben Sie Fragen?
+
+Wenn Probleme auftreten, verbinden Sie sich mit unserer  [Slack-Community](https://slack.openreplay.com/) und holen Sie sich Hilfe von unseren Entwicklern.

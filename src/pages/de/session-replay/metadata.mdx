@@ -1,0 +1,115 @@
+---
+title: "Metadaten senden"
+metaTitle: "Metadaten"
+metaDescription: "So übergeben Sie Benutzer-Metadaten an OpenReplay. Auf anderen Plattformen auch als Traits oder Benutzervariablen bekannt."
+---
+import Aside from '~/components/Aside.astro'
+
+Mit Metadaten können Sie Session Replays zusätzliche Informationen über Benutzer in Form von Schlüssel-Wert-Paaren hinzufügen. Dadurch lassen sich Sitzungsaufzeichnungen besser filtern und durchsuchen, sodass relevante Sitzungen leichter zu finden sind.  Weitere Details zum Senden von Metadaten finden Sie in diesem [Tutorial](/tutorials/metadata).
+
+<Aside type="caution">
+
+Metadaten-Schlüssel sind projektspezifisch und müssen eingerichtet sein, bevor sie gesendet werden.
+
+</Aside>
+
+## Metadaten-Schlüssel zu einem Projekt hinzufügen
+
+So richten Sie Metadaten-Schlüssel ein:
+
+1. Öffnen Sie in OpenReplay **Preferences > Projects**.
+2. Wählen Sie das Projekt aus, dem Sie Metadaten hinzufügen möchten.
+3. Öffnen Sie den Tab „Metadata“
+4. Klicken Sie auf **Add Metadata**.
+5. Geben Sie den gewünschten Schlüsselnamen in das Feld **Field Name** ein.
+6. Klicken Sie auf **Add**, um den Metadaten-Schlüssel zu speichern.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/send-metadata/send_metadata.gif" alt="Metadaten senden" style={{ width: '700px', height: 'auto' }} />
+</div>
+
+
+> **Limit:** Sie können pro Projekt bis zu 10 Metadaten-Schlüssel hinzufügen.
+
+## Metadaten in Session Replays einfügen
+
+Sobald Ihre Metadaten-Schlüssel definiert sind, können Sie beim Aufzeichnen von Sitzungen Metadaten senden. Dafür stehen die folgenden Implementierungsmethoden zur Verfügung:
+
+### 1. Mit NPM
+
+Übergeben Sie die Metadaten beim Start des Trackers:
+
+```js
+tracker.start({
+  userID: "john@doe.com",
+  metadata: {
+    balance: "10M",
+    plan: "free"
+  }
+});
+```
+
+Sind die Metadaten erst nach dem Start des Trackers verfügbar, verwenden Sie die Methode `setMetadata`:
+
+```javascript
+tracker.setMetadata('plan', 'free'); // after tracker.start()
+```
+
+### 2. Mit dem JavaScript-Snippet
+
+Um Metadaten über das Snippet zu übergeben, passen Sie die Variable `startOpts` an:
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+  var initOpts = {
+    projectKey: "project_key",
+    defaultInputMode: 2,
+    obscureTextNumbers: false,
+    obscureTextEmails: true,
+  };
+  const yourMetadata = { yourKey: 'yourValue' };
+  var startOpts = { userID: "", metadata: yourMetadata };
+  (function(A,s,a,y,e,r){
+    r=window.OpenReplay=[e,r,y,[s-1, e]];
+    s=document.createElement('script');s.src=A;s.async=!a;
+    ...
+  })("//static.openreplay.com/latest/openreplay.js",1,0,initOpts,startOpts);
+
+</script>
+```
+
+Wenn die Metadaten erst später verfügbar werden:
+
+```html
+<script>
+  OpenReplay.setMetadata("plan", "free");
+</script>
+```
+
+### 3. Mit dem iOS SDK
+
+Übergeben Sie die Metadaten in Ihrer iOS-App:
+
+```swift
+import ORTracker
+
+ORTracker.shared.setMetadata(key: String, value: String)
+```
+
+## Sitzungen mit Metadaten filtern und durchsuchen
+
+Mit Metadaten-Schlüsseln können Sie Sitzungen in OpenReplay filtern und durchsuchen:
+
+1. Öffnen Sie die **Omni-Search** in der Ansicht „Sessions“.
+2. Wählen Sie Ihren Metadaten-Schlüssel aus (z. B. `plan`).
+3. Geben Sie den Metadatenwert ein (z. B. `free`), um die Sitzungsaufzeichnungen zu filtern.
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/installation/send-metadata/filter_metadata.gif" alt="Metadaten filtern" style={{ width: '700px', height: 'auto' }} />
+</div>
+
+Mit dieser Funktion lassen sich Sitzungen schnell und präzise anhand benutzerspezifischer Details identifizieren.
+
+## Haben Sie Fragen?
+Wenn Sie Fragen zu diesem Vorgang haben, wenden Sie sich gerne über unseren [Slack](https://slack.openreplay.com) an uns.

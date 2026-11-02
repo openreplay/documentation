@@ -1,0 +1,109 @@
+---
+title: "Integrazione con Zendesk"
+metaTitle: "Integrazione di Zendesk con OpenReplay"
+metaDescription: "Come integrare Zendesk con OpenReplay."
+---
+
+Come integrare Zendesk con OpenReplay.
+
+## Installazione
+
+Il modo più semplice per integrare Zendesk con OpenReplay è creare una piccola app privata per la barra laterale usando lo [Zendesk Apps Framework (ZAF)](https://developer.zendesk.com/documentation/apps/getting-started/zendesk-app-quick-start/). Questa app aggiunge, all'interno di ogni ticket, un collegamento diretto al profilo utente OpenReplay di chi ha aperto la richiesta, dove puoi osservarne gli eventi e le sessioni (a condizione che tu tagghi le sessioni usando l'email come ID utente).
+
+### 1. Crea i file dell'app
+
+Crea una cartella con la struttura seguente:
+
+```
+openreplay-zendesk-app/
+├── manifest.json
+└── assets/
+    └── iframe.html
+```
+
+**`manifest.json`**
+
+```json
+{
+  "name": "OpenReplay",
+  "author": {
+    "name": "Your Name",
+    "email": "you@example.com"
+  },
+  "defaultLocale": "en",
+  "private": true,
+  "version": "1.0.0",
+  "frameworkVersion": "2.0",
+  "location": {
+    "support": {
+      "ticket_sidebar": {
+        "url": "assets/iframe.html",
+        "flexible": true
+      }
+    }
+  }
+}
+```
+
+**`assets/iframe.html`**
+
+Assicurati di sostituire `OPENREPLAY_DOMAIN` e `PROJECT_ID` con i valori corretti. Se non sei sicuro di quali valori usare, controlla l'URL di una registrazione esistente: la prima parte è il dominio e il numero che la segue è il Project ID.
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://static.zdassets.com/zendesk_app_framework_sdk/2.0/zaf_sdk.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 12px; margin: 0; }
+    a { color: #1f73b7; text-decoration: none; font-size: 14px; }
+    a:hover { text-decoration: underline; }
+    #status { color: #999; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <p id="content">Loading...</p>
+  <script>
+    const client  = ZAFClient.init();
+    const DOMAIN  = '<OPENREPLAY_DOMAIN>';
+    const PROJECT = '<PROJECT_ID>';
+
+    client.get('ticket.requester.email').then(data => {
+      const userId = data['ticket.requester.email'];
+
+      if (!userId) {
+        document.getElementById('content').innerHTML =
+          '<span id="status">No OpenReplay user ID found for this requester.</span>';
+        return;
+      }
+
+      const url = `https://${DOMAIN}/${PROJECT}/data-management/user/${encodeURIComponent(userId)}`;
+      document.getElementById('content').innerHTML =
+        `<a href="${url}" target="_blank">👤 View User in OpenReplay</a>`;
+
+      client.invoke('resize', { width: '100%', height: '50px' });
+    }).catch(() => {
+      document.getElementById('content').innerHTML =
+        '<span id="status">Could not load requester data.</span>';
+    });
+  </script>
+</body>
+</html>
+```
+
+### 2. Crea il pacchetto e installa l'app
+
+1. Comprimi in un file zip la cartella `openreplay-zendesk-app/` (assicurati che `manifest.json` si trovi nella radice dello zip, non dentro una sottocartella).
+2. In Zendesk, vai su **Admin Center → Apps and Integrations → Support Apps**.
+3. Fai clic su **Upload private app** nell'angolo in alto a destra.
+4. Assegna un nome all'app (ad esempio "OpenReplay") e carica il file zip.
+5. Fai clic su **Install**.
+
+### 3. Visualizza il collegamento
+
+Vai a un qualsiasi ticket e apri il **Apps panel** facendo clic sul pulsante Apps nell'angolo in alto a destra. Vedrai un collegamento diretto al profilo utente del richiedente in OpenReplay.
+
+## Hai domande?
+
+Se riscontri dei problemi, collegati al nostro [Slack](https://slack.openreplay.com) e ricevi aiuto dalla nostra community.

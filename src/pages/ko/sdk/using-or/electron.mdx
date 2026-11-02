@@ -1,0 +1,64 @@
+---
+title: "Electron에서 OpenReplay 사용하기"
+metaTitle: "OpenReplay로 Electron 앱 녹화하기"
+metaDescription: "OpenReplay로 Electron 앱을 녹화하는 방법을 알아봅니다."
+---
+import Aside from '~/components/Aside.astro'
+
+<Aside type="caution">
+	코브라우징을 지원하려면 Tracker@11.0.0 및 Tracker-assist@7.0.0 이상이 필요합니다.
+</Aside>
+
+Electron 앱에 OpenReplay를 통합하는 방법은 두 가지가 있습니다.
+
+어떤 방법을 선택하든 CSP 설정에서 다음 API를 허용하는지 확인해야 합니다.
+- WebWorkers (메시지 배치를 저장, 인코딩, 전송하는 데 사용)
+- Websockets (Assist 플러그인에서 세션을 실시간으로 전송하는 데 사용)
+- Peers (Assist 플러그인에서 통화에 사용)
+
+## 스니펫 코드 추가
+
+앱의 HTML 파일 루트에 OpenReplay 스니펫 코드를 직접 추가할 수 있습니다.
+가장 쉬운 방법이지만, JS 스니펫의 모든 제약 사항도 그대로 적용됩니다.
+
+## NPM 라이브러리 사용
+
+React, Angular 또는 Vue를 사용한다면 똑같은 방식으로 앱 안의 렌더링 프로세스에서 트래커 인스턴스를 만들 수 있습니다.
+이렇게 하면 모든 플러그인을 포함해 OpenReplay의 모든 기능을 사용할 수 있습니다.
+
+렌더링 컨텍스트 밖에서 트래커 API를 사용하려면 IPC를 사용해
+메인 프로세스에서 보내는 이벤트로 동작을 실행해야 합니다.
+
+## Assist 플러그인과 함께 사용
+
+
+Tracker-Assist 플러그인을 사용하는 경우 기본 WS 라우팅이 올바르게 동작하도록 `socketHost` 속성을 추가하고,
+`/ingest` 접미사를 제외한 수집 지점을 지정해야 합니다.
+
+NPM 라이브러리의 경우:
+```js
+new Tracker({ ingestPoint: 'https://mywebsite.com/ingest' })
+
+// ...
+
+// or https://app.openreplay.com if you're using SaaS version
+tracker.use(trackerAssist({ socketHost: 'https://mywebsite.com' }))
+```
+
+코드 스니펫의 경우:
+```js
+  var initOpts = {
+    projectKey: "...",
+		ingestPoint: "https://mywebsite.com/ingest",
+    assistSocketHost: "https://mywebsite.com"
+  };
+```
+
+그렇지 않으면 WS가 `ws://file/ingest`로 연결을 시도하다가 실패합니다.
+
+<Aside type="tip">
+	이 문서는 Electron@26.2.1과 React@16.13.1로 만든 자체 개념 증명(PoC) 앱을 기반으로 하며, ESM 번들링을 처리하도록
+	구성되어 있습니다. 설정이 다르거나 제안 또는 질문이 있다면
+	저희
+	[Slack 커뮤니티](https://slack.openreplay.com/)로 문의해 주세요.
+</Aside>

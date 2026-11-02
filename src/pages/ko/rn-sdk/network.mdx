@@ -1,0 +1,77 @@
+---
+title: "React Native SDK - 네트워크 가로채기"
+metaTitle: "React Native SDK - 네트워크 가로채기"
+metaDescription: "React Native 트래커의 네트워크 가로채기에 대한 자세한 설명"
+---
+
+## 네트워크 가로채기
+
+ORTracker는 작업(task)과 요청(request)을 모두 받을 수 있는 `NetworkListener`를 내보냅니다. 사용 방법은 다음과 같습니다:
+
+```swift
+import ORTracker
+
+func fetchPokemonData(for name: String) {
+    let networkListener = NetworkListener()
+    let url = URL(string: "https://pokeapi.co/api/v2/pokemon/ditto")!
+    var request = URLRequest(url: url)
+    request.httpMethod = "GET" // This is the default, so it's optional in this case.
+
+    // Start the network listener with the request
+    networkListener.start(request: request)
+
+    // Create a data task
+    let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        if let error = error {
+            print("Error: \(error.localizedDescription)")
+            return
+        }
+
+        if let data = data {
+            do {
+                let json = try JSONSerialization.jsonObject(with: data, options: [])
+								print(json)
+            } catch {
+                print("Error deserializing JSON: \(error)")
+            }
+        }
+        networkListener.finish(response: response, data: data)
+    }
+
+    task.resume()
+	}
+```
+
+## 요청 정제하기
+
+요청/응답 데이터를 자동으로 잘라 내기 위해 두 개의 키가 제공됩니다. 본문에는 `ignoredKeys`를, 헤더에는 `ignoredHeaders`를 사용합니다. 요청과 응답 모두 정제되지만, 본문은 유효한 JSON인 경우에만 영향을 받습니다.
+
+정제하려는 문자열 목록을 간단히 지정하면 됩니다.
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+리스너에 전달하기 전에 응답 데이터를 변경할 수도 있습니다.
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```
+
+## 궁금한 점이 있으신가요?
+이 과정에 대해 궁금한 점이 있다면 언제든지 [Slack](https://slack.openreplay.com)으로 문의해 주세요.

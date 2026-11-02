@@ -1,0 +1,68 @@
+---
+title: "Profiler"
+metaTitle: "Profiler"
+metaDescription: "Plugin Profiler per OpenReplay."
+---
+
+Il plugin profiler ti consente di misurare le prestazioni delle tue funzioni JS e di catturare sia gli argomenti sia il risultato di ogni chiamata.
+
+## Installazione
+
+```bash
+npm i @openreplay/tracker-profiler
+```
+
+## Utilizzo
+
+Inizializza il tracker e carica al suo interno il plugin. Poi decora qualsiasi funzione del tuo codice con la funzione generata.
+
+### Se il tuo sito web è una Single Page Application (SPA)
+
+```js
+import trackerProfiler from '@openreplay/tracker-profiler';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+const profiler = tracker.use(trackerProfiler());
+
+tracker.start();
+
+// ...
+const fn = profiler('MyFunction')(() => {
+  // Inspecting function body
+}, thisArg); // thisArg is optional
+```
+
+### Se la tua web app usa il Server-Side Rendering (SSR)
+
+Segui l'esempio qui sotto se la tua app usa l'SSR. Assicurati che `tracker.start()` venga chiamato una volta avviata l'app (in `useEffect` o `componentDidMount`).
+
+```js
+import trackerProfiler from '@openreplay/tracker-profiler/cjs';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+const profiler = tracker.use(trackerProfiler());
+
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, [])
+}
+//...
+const fn = profiler('MyFunction')(() => {
+  // Inspecting function body
+}, thisArg); // thisArg is optional
+
+```
+
+## Hai domande?
+
+Hai difficoltà a configurare questo plugin? Unisciti al nostro [Slack](https://slack.openreplay.com) e ricevi aiuto dalla nostra community.

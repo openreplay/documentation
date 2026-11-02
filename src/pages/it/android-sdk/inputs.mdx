@@ -1,0 +1,43 @@
+---
+title: "Android SDK - tracciamento degli input"
+metaTitle: "Android SDK - tracciamento degli input"
+metaDescription: "Dettagli sul tracciamento degli input con il tracker Android"
+---
+
+Il tracker rimane in ascolto dell'evento di cambio di valore (con debounce) e invia il valore risultante al backend di OpenReplay.
+
+## Aggiungere gli input da tracciare
+
+### EditText
+
+usa `.trackTextInput(label:masked)` per osservare gli eventi di input,
+- `label: String` - etichetta dell'input registrato
+- `masked: Bool` - se `true`, il tracker registrerà solo l'evento di input in sé, non il valore.
+
+```kotlin
+import com.opnereplay.tracker.OpenReplay
+
+val passwordEditText = binding.password
+passwordEditText.trackTextInput(label = "password", masked = true)
+```
+
+### View
+
+```kotlin
+import com.opnereplay.listeners.Analytics
+
+Analytics.addObservedInput(inputEl)
+```
+
+### Jetpack Compose
+
+```kotlin
+import com.openreplay.tracker.listeners.trackTextInputChanges
+
+OutlinedTextField(
+        modifier = Modifier
+            .fillMaxWidth()
+            .trackTextInputChanges("Email Field", emailState.text),
+        ...,
+    )
+```

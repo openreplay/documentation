@@ -1,0 +1,329 @@
+---
+title: "So erstellen Sie Ihr erstes OpenReplay-Plugin"
+metaTitle: "Zusätzliche Funktionen im Tracker durch eigene Plugins ergänzen"
+metaDescription: "Erfahren Sie, wie Sie Ihre eigenen OpenReplay-Plugins erstellen"
+---
+Wenn Sie Ihre Version von OpenReplay selbst hosten, haben Sie den zusätzlichen Vorteil, benutzerdefinierte Plugins entwickeln und installieren zu können. So können Sie Funktionen und Kompatibilität ergänzen, die OpenReplay von Haus aus nicht bietet.
+
+Derzeit gibt es einige Plugins, die vom OpenReplay-Team entwickelt und gepflegt werden, etwa das [Redux-Plugin](/plugins/redux), mit dem Sie Zustandsänderungen verfolgen können, oder das [Fetch-Plugin](/plugins/fetch), mit dem Sie Request- und Response-Daten aufzeichnen können. Wenn Sie mehr wissen möchten, sehen Sie sich die [vollständige Liste der Plugins hier](/plugins) an.
+
+In diesem Tutorial lernen Sie, wie Sie Ihr eigenes Plugin erstellen. Konkret bauen wir ein Plugin, das die GET-Methode von JQuery verfolgt.
+
+## Ein Plugin von Grund auf erstellen
+
+Wir empfehlen, zunächst den Ordner eines Plugins zu kopieren, das etwas Ähnliches tut wie das, was Sie vorhaben – so haben Sie die gesamte Logik und den Setup-Code bereits zur Hand.
+
+Da sich das Plugin, das wir hier bauen, ähnlich verhalten wird wie das Fetch-Plugin, duplizieren wir dieses Plugin.
+
+Trotzdem müssen Sie weiterhin einige Dinge selbst erledigen, zum Beispiel:
+
+- Das Backend anpassen.
+- Neue Nachrichten zum Nachrichtenprotokoll hinzufügen.
+- Einige Backend-Dienste aus dem Quellcode bauen.
+
+Wenn Sie noch nicht durchgespielt haben, wie man [OpenReplay aus dem Quellcode baut](/deployment/deploy-source), empfehle ich Ihnen, diesen Vorgang zuerst mit der aktuellen Version von OpenReplay durchzugehen, denn Sie werden ihn beim Testen Ihres neuen Codes mehrfach durchlaufen.
+
+Wenn Sie diesen Teil dagegen schon beherrschen, lesen Sie einfach weiter!
+
+## Was benötigen Sie, um ein neues Plugin zu erstellen?
+
+Der Bau eines neuen Plugins besteht aus drei Teilen:
+
+1. Zuerst müssen Sie den Nachrichtentyp definieren, den Ihr Plugin an die Plattform sendet. Diese Nachricht muss alle Telemetriedaten enthalten, die Sie erfassen möchten.
+2. Dann müssen Sie das Frontend aktualisieren und eine Komponente erstellen, die die Daten des Plugins anzeigen kann. In unserem Fall fügen wir dem Replayer einen Tab hinzu, der alle mit JQuery ausgeführten Anfragen auflistet.
+3. Zuletzt müssen Sie auch das Plugin selbst erstellen! Denn darum geht es hier. Das Plugin ist der einzige Teil, den Sie außerhalb von OpenReplay entwickeln können und der anderswo (in Ihrer App) installiert wird.
+
+Beachten Sie, dass der Rest des Tutorials davon ausgeht, dass Sie unser GitHub-Repository geforkt haben und es irgendwo einsatzbereit vorliegt. Falls nicht, lesen Sie bitte zuerst den [Bereitstellungsabschnitt unserer Dokumentation](/deployment).
+
+## Schritt 1: Die neue Nachricht erstellen
+
+Als Erstes müssen Sie verstehen, welche Daten Sie mit Ihrem Plugin erfassen und darstellen möchten. Da wir etwas zum Verfolgen von GET-Anfragen bauen, sollten wir sicherstellen, dass wir die folgenden Elemente erfassen:
+
+- URL: natürlich die URL der Anfrage
+- Response: wir versuchen, auch einige der Antworten zu erfassen
+- Status: der vom Server empfangene Statuscode
+
+Außerdem fügen wir eine Eigenschaft „duration“ hinzu, um zu erfassen, wie lange es dauert, die Anfrage auszuführen und Daten zu erhalten; dafür benötigen wir den „timestamp“ der Anfrage.
+
+Dazu müssen wir die Datei `mob/messages.rb` ändern. Das ist eine Ruby-Datei, aber keine Sorge, falls Sie kein Ruby kennen: Sie müssen lediglich einen neuen Eintrag hinzufügen, der Ihre neue Nachricht beschreibt, etwa so:
+
+```jsx
+message 112, 'JQueryGET' do
+  string 'Method'
+  string 'url'
+  string 'response'
+  string 'status'
+  string 'duration'
+  int  'timestamp'
+end
+```
+
+Beachten Sie, dass ich außerdem Folgendes definiert habe:
+
+- Eine Nachrichten-ID (112): Das ist eine beliebige Zahl, die noch nicht verwendet wird (Sie können sich die anderen Nachrichten in der Datei ansehen) und kleiner als 200 ist.
+- Einen Nachrichtennamen: Der ist ganz Ihnen überlassen, er sollte nur Ihren Nachrichtentyp beschreiben.
+- Ein Feld „method“, damit wir die Nachricht künftig möglicherweise für andere Methoden wiederverwenden können.
+- Die Typen der Eigenschaften als „string“ und „int“, weil unser Encoder Arrays und Objekte in Strings umwandelt.
+
+
+Danach müssen Sie sicherstellen, dass die Nachricht überall verfügbar ist. Führen Sie dazu 2 Skripte in diesem Ordner aus:
+
+```jsx
+$ ruby run.rb
+$ sh format.sh
+```
+
+Sobald das erledigt ist, werden die Nachricht und ihre ID überall im Backend repliziert und hinzugefügt, wo sie benötigt werden.
+
+Wechseln wir nun ins Frontend und schauen wir, was dort geändert werden muss.
+
+## Schritt 2: Das Frontend aktualisieren
+
+Wenn die Nachricht bereit ist, aktualisieren Sie die Funktion `messageDistributor` (in der Datei `frontend/app/player/MessageDistributor/MessageDistributor.ts`), die alle Nachrichten empfängt und entscheidet, was mit ihnen geschieht.
+
+Innerhalb der Funktion sehen Sie eine große `switch`-Anweisung und darin bereits einen neuen Case für Ihre Nachricht (Sie werden feststellen, dass der verwendete Name anders geschrieben ist als der, den Sie verwendet haben). In diesem Beispiel erhalten Sie für den Nachrichtentyp „JQueryGET“ den Typ „j_query_get“.
+
+Als Nächstes fügen Sie die Nachricht einer Liste hinzu, die die Frontend-Komponenten verwenden. Das tun Sie mit der Funktion `listAppend`.
+
+Der Case sollte so aussehen:
+
+```jsx
+case 'j_query_get': 
+    listAppend("jquery", Resource({
+      method: msg.method,
+      url: msg.url,
+      payload: {},
+      response: msg.response,
+      status: msg.status,
+      type: TYPES.JQUERY,
+      time: msg.timestamp - this.sessionStart,
+      duration: msg.duration,
+      index
+    }))
+  break;
+```
+Nun müssen wir noch einige Dinge erledigen, damit das funktioniert:
+
+- Wir müssen die Liste „jquery“ hinzufügen. Dazu ändern wir die Datei `frontend/app/player/lists/index.js` und fügen „jquery“ zum Array `entityNamesWithRed` hinzu.
+- Wir müssen `TYPES.JQUERY` hinzufügen, was Sie durch Ändern dieser Datei tun können: `frontend/app/types/session/resource.js`
+
+Danach erstellen wir die eigentliche Komponente, die die Daten im Player darstellt. Etwa so:
+
+![Das Endergebnis](/tutorials/build-plugins/1.png)
+
+Dazu greifen wir auf eine bestehende Komponente zurück und kopieren die Fetch-Komponente. Wir duplizieren den Ordner `frontend/app/components/Session_/Fetch` und nennen ihn „JQuery“.
+
+Wir aktualisieren jeden Verweis auf fetch im neu erstellten Ordner so, dass dort „jquery“ steht (hier bietet sich wahrscheinlich Suchen & Ersetzen an).
+
+Dadurch entsteht die Visualisierungskomponente, die Sie anschließend manuell einbinden müssen. Zuerst bearbeiten Sie die Datei `frontend/app/components/Session_/Player/Controls/Controls.js`, um die Schaltfläche „JQuery“ in der unteren rechten Ecke des Bildschirms hinzuzufügen, wo alle Steuerelemente angezeigt werden.
+
+Suchen Sie den JSX-Code und fügen Sie einen Block wie diesen hinzu:
+
+```jsx
+{showJQuery && (
+  <ControlButton
+    disabled={disabled && !inspectorMode}
+    onClick={() => toggleBottomTools(JQUERY)}
+    active={bottomBlock === JQUERY && !inspectorMode}
+    hasErrors={jqueryRedCount > 0}
+    count={jqueryCount}
+    label="JQUERY"
+    noIcon
+    labelClassName="!text-base font-semibold"
+    containerClassName="mx-2"
+  />
+)}
+```
+
+Stellen Sie dabei sicher, dass Sie alle relevanten Variablen wie `showJQuery`, `jqueryCount`, `JQUERY` und `jqueryRedCount` definieren. Wenn Sie nicht sicher sind, wie das geht, suchen Sie nach den entsprechenden Fetch-Gegenstücken – Sie werden sie schnell finden.
+
+Sobald die Schaltfläche hinzugefügt ist, können Sie die Datei `frontend/app/components/Session_/Player/Player.js` bearbeiten und die eigentliche Komponente hinzufügen.
+
+Fügen Sie dazu nach dem Import einen Block wie den folgenden im JSX-Bereich ein:
+
+```jsx
+{ bottomBlock === JQUERY &&
+  <JQuery />
+}
+```
+
+Außerdem müssen Sie die Konstante `JQUERY` ergänzen, damit sie aus der Datei `frontend/app/duck/components/player.js` exportiert wird.
+
+Damit ist alles erledigt.
+
+Jetzt ist Ihr Frontend bereit, die Informationen anzuzeigen, und wir müssen einen Weg finden, sie zu erzeugen. Schauen wir uns also den Code des eigentlichen Plugins an!
+
+## Schritt 3: Das Plugin erstellen
+
+Sie können dieses Projekt an einem beliebigen Ort anlegen. Es kommt darauf an, ein installierbares Paket bereitzustellen, das in anderen Projekten verwendet werden kann.
+
+Stellen Sie also sicher, dass die Datei `package.json` so aussieht:
+
+```jsx
+{
+  "name": "tracker-jquery",
+  "version": "1.0.0",
+  "description": "jquery openreplay tracker",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "peerDependencies": {
+    "@openreplay/tracker": ">=3.6.0"
+  },
+  "devDependencies": {
+    "@openreplay/tracker": "<latest version of the tracker>",
+    "prettier": "^1.18.2",
+    "replace-in-files-cli": "^1.0.0"
+  }
+}
+```
+
+Und wir fügen im Ordner `src` des Projekts eine Datei `index.js` hinzu. Sie können dieses Projekt beliebig strukturieren, solange Ihre exportierten Funktionen bestimmten vordefinierten Kriterien entsprechen.
+
+Der Aufbau eines Plugins ist einfach: Sie definieren eine Funktion, die beim Aufruf eine neue Funktion zurückgibt, die ein Attribut `app` erwartet. Dieses Attribut `app` enthält die Instanz des Trackers. In der zurückgegebenen Funktion können Sie alles tun, was Sie möchten, solange Sie eine Nachricht über das Objekt `app` senden. Diese Nachricht wird von der Plattform empfangen und nach einem festgelegten Regelwerk verarbeitet.
+
+Das Nachrichtenformat entspricht dem, das wir zu Beginn dieses Tutorials definiert haben.
+
+Ich zeige Ihnen, wie der Code unseres JQuery-Plugins aussieht:
+
+```jsx
+import { App, Messages } from '@openreplay/tracker';
+
+export default function($) {
+
+    const oldGET = $.get;
+
+    return (app) => {
+
+        const newGET = async (settingsObj) => {
+
+            const startTime = performance.now();
+            let resp = await fetch(settingsObj.url, {
+                method: 'GET'
+            })
+            const duration = performance.now() - startTime;
+
+            let valueResp = null;
+
+            if(settingsObj.json) {
+                valueResp = await resp.json()
+            } else {
+                valueResp = await resp.text()
+            }
+            const getStj = (res) => {
+                let r = {...res}
+                if (r && typeof r.body !== 'string') {
+	                try {
+	                    r.body = JSON.stringify(r.body)
+	                } catch {
+	                    r.body = "<unable to stringify>"
+	                }
+                }
+                return JSON.stringify(r)
+            }
+
+            const msg = Messages.JQueryGET(
+                    'GET',
+                    String(settingsObj.url),
+                    getStj(resp),
+                    resp.status,
+                    duration,
+                    (new Date()).getTime()
+                )
+            console.log("Sending a message to the tracker....", msg)
+
+            app.send(msg, true)   
+            return valueResp;
+
+        }
+
+        $.get = newGET;
+
+    }
+}
+```
+
+Im Wesentlichen ersetze ich die Methode `.get` von JQuery durch eine eigene, die hinter den Kulissen tatsächlich `fetch` verwendet (das ist völlig optional, Sie könnten auch die GET-Methode von JQuery verwenden). Nachdem alle Anfragen ausgeführt wurden, sendet der Code über die Methode `app.send` eine Nachricht. Die Nachricht wird mit der Methode `Messages.JQueryGET` erzeugt, die das Ruby-Skript von vorhin für uns erstellt hat.
+
+Die Attribute, die diese Nachricht erhält, sind natürlich die, die wir in **Schritt 1** als Struktur der Nachricht selbst definiert haben. Und vor allem sind sie alle obligatorisch: Wenn Sie mit einem leeren Wert arbeiten müssen, übergeben Sie das leere Array/Objekt/den leeren String oder was auch immer, aber **lassen Sie den Schlüssel niemals weg**.
+
+### Das Plugin veröffentlichen
+
+Sobald Sie Ihre lokalen Tests abgeschlossen haben und sicher sind, dass das Plugin bereit ist, müssen Sie es auf NPM veröffentlichen.
+
+Wie das geht, erfahren Sie in dieser Anleitung: [https://docs.npmjs.com/creating-and-publishing-unscoped-public-packages](https://docs.npmjs.com/creating-and-publishing-unscoped-public-packages)
+
+## Das Plugin testen
+
+Nach der Veröffentlichung möchten Sie Ihr Plugin einsetzen. Die Funktionsweise von Plugins mit dem OpenReplay-Tracker ist immer dieselbe.
+
+1. Zuerst müssen Sie den Tracker instanziieren.
+2. Dann rufen Sie die Methode `use` auf und übergeben ihr die Funktion, die der Aufruf Ihres Plugins zurückgibt.
+3. Starten Sie den Tracker schließlich mit der Methode `start`.
+
+Hier ein Codebeispiel, wie die Verwendung dieses Plugins in einer React-Anwendung aussieht:
+
+```jsx
+import logo from './logo.svg';
+import './App.css';
+import tracker from 'openreplay-tracker'
+import jqueryTracker from 'tracker-jquery'
+import { useEffect } from 'react';
+import $ from 'jquery'
+
+const t = new tracker({
+  __DISABLE_SECURE_MODE: true, //only if you're testing locally
+  ingestPoint: "openreplay.<your custom domain>/ingest",
+  projectKey: "<your project key>",
+})
+
+function App() {
+  useEffect(()=> {
+    t.use(jqueryTracker($))
+    t.start()
+    async function doGet() {
+      let resp = await $.get({
+        url: "http://localhost:3000"
+      })
+      console.log(resp)
+    }
+
+    doGet()
+  }, [])
+  return (
+    <div className="App">
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+        <p>
+          Edit <code>src/App.js</code> and save to reload.
+        </p>
+        <a
+          className="App-link"
+          href="https://reactjs.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn React
+        </a>
+      </header>
+    </div>
+  );
+}
+
+export default App;
+```
+
+Der Code führt beim Laden der Seite eine GET-Anfrage mit der Methode `get` von JQuery aus, und da wir unseren kleinen, praktischen Tracker eingerichtet haben, können wir diese Anfrage tatsächlich verfolgen.
+
+So sollte das Endergebnis bei Ihnen aussehen:
+
+![Anzeige von JQuery-Anfragen](/tutorials/build-plugins/2.png)
+
+---
+
+Den **vollständigen Quellcode** dieses Tutorials finden Sie in [diesem Repository](https://github.com/deleteman/openreplay).
+
+Wenn bei einem der Schritte dieses Vorgangs Probleme auftreten, kontaktieren Sie uns bitte in unserer [Slack-Community](https://slack.openreplay.com/) und fragen Sie unsere Entwickler direkt!

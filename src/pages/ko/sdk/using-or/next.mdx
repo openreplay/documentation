@@ -1,0 +1,219 @@
+---
+title: "Next.js에서 OpenReplay 사용하기"
+metaTitle: "Next.js 애플리케이션에 OpenReplay 트래커 추가하기"
+metaDescription: "Next.js 애플리케이션에서 트래커를 동작시키는 방법을 알아봅니다."
+---
+import Aside from '~/components/Aside.astro'
+
+Next.js 애플리케이션에서 트래커를 동작시키는 일은 꽤 간단합니다. Next.js는 React 위에서 동작하므로 과정이 매우 비슷하며, 주된 어려움은 Next.js의 서버 사이드 렌더링 기능에서 비롯됩니다.
+
+하지만 서버 사이드 렌더링이 어떻게 동작하는지, 클라이언트 전용 코드를 어떻게 구성해야 하는지 이해하고 나면 금방 사용자를 추적할 수 있습니다.
+
+## 트래킹 코드 추가하기
+
+새 프로젝트를 만들 때 플랫폼에서 복사해 붙여넣을 수 있는 코드를 바로 받을 수 있지만, 그 코드는 지나치게 기본적이어서 팀이나 회사가 기대하는 모범 사례를 따르지 않을 수 있습니다.
+
+### 트래커 컴포넌트
+
+이 방법은 트래커를 컴포넌트로 앱에 주입하고, 이 컴포넌트가 라이브러리를 동적으로 로드하는 최소한의 접근 방식입니다.
+ 
+#### App Router (v14+) - use client
+
+```jsx
+'use client'
+import { useEffect } from "react"
+// note that you can manually import Tracker class if you want to handle the instance manually
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+  projectKey: PROJECT_KEY,
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+})
+
+const Openreplay = () => {
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      tracker.start()
+    }
+  }, [])
+
+  return null
+}
+
+export default Openreplay 
+```
+##### App Router - 루트 레이아웃에 Openreplay 컴포넌트 인스턴스를 동적으로 가져오기
+```jsx
+import dynamic from "next/dynamic";
+
+const OpenReplayNoSSR = dynamic(() => import('//import the Openreplay instance'), {
+  ssr: false, //disables Server-side pre-rendering so window won't be undefined
+})
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en" >
+      <body>
+        {children}
+        <OpenReplayNoSSR />
+      </body>
+    </html >
+  );
+}
+
+```
+
+
+#### 일반 컴포넌트 (Next v13 이하)
+
+```jsx
+[...]
+
+function TrackerComponent() {
+const [tracker, setTracker] = React.useState(null);
+
+  React.useEffect(() => {
+    (async function () {
+      const { tracker } = await import("@openreplay/tracker");
+      tracker.configure({
+        projectKey: PROJECT_KEY,
+        ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+        __DISABLE_SECURE_MODE: true,
+      });
+
+      setTracker(tracker);
+    })();
+  }, []);
+[...]
+```
+
+### 트래커 컨텍스트
+
+이 방법은 컨텍스트를 만들어 트래커 상태를 제어하고 다양한 API를 더 쉽게 호출할 수 있게 해 줍니다.
+
+```jsx
+import { createContext } from "react"
+import {v4 as uuidV4} from 'uuid'
+import { useReducer } from "react"
+
+export const TrackerContext = createContext()
+
+function defaultGetUserId() {
+   return uuidV4() 
+}
+
+async function newTracker(config) {
+    // we use dynamic import to make sure that tracker is started inside browser env
+    const { tracker } = await import("@openreplay/tracker");
+    const getUserId = (config?.userIdEnabled && config?.getUserId) ? config.getUserId : defaultGetUserId
+    let userId = null;
+
+    const trackerConfig = {
+        projectKey: config?.projectKey || process.env.NEXT_PUBLIC_OPENREPLAY_PROJECT_KEY
+    }
+
+    tracker.configure(trackerConfig);
+    
+    if(config?.userIdEnabled) {
+        userId = getUserId()
+        tracker.setUserID(userId)
+    }
+    return tracker
+
+}
+
+function reducer(state, action) {
+        switch(action.type) {
+            case 'init': {
+                if(!state.tracker) {
+                    console.log("Instantiaing the tracker for the first time...")
+                    return {...state, tracker: newTracker(state.config)}
+                }
+                return state
+            }
+            case 'start': {
+                console.log("Starting tracker...")
+                state.tracker.start()
+                return state
+            }
+        }
+    }
+
+export default function TrackerProvider({children, config = {}}) {
+    let [state, dispatch] = useReducer(reducer, {tracker: null, config})
+    let value = {
+        startTracking: () => dispatch({type: 'start'}),
+        initTracker: () => dispatch({type: 'init'})
+    }
+
+    return <TrackerContext.Provider value={value}>{children}</TrackerContext.Provider>
+}
+```
+
+이 프로바이더는 사용자에게 2개의 메서드를 제공합니다.
+
+- `initTracker`: 제공된 설정으로 트래커를 인스턴스화합니다.
+- `startTracking`: 트래킹 프로세스를 시작합니다.
+
+이 프로바이더는 향후 기능을 위해 확장할 수 있는 “설정” 객체도 받습니다. 이 예시는 사용자를 고유하게 식별하는 기능을 선택적으로 활성화하는 방법을 보여 줍니다. 기본 UUID를 사용하면 사용자가 페이지를 방문할 때마다 매번 고유한 값이 만들어집니다. 또는 설정의 일부로 사용자 정의 `getUserId` 함수를 제공할 수도 있습니다.
+
+사용자 정의 함수로 스토어의 고객 ID나 사용자의 이메일 주소, 혹은 앱 내에서 사용자를 고유하게 식별할 수 있는 어떤 값이든 제공할 수 있습니다. 이렇게 하면 다른 사용자는 보고하지 않는 특정 문제를 겪는 사용자의 세션 리플레이를 시간에 걸쳐 추적할 수 있습니다.
+
+<Aside type="tip">
+셀프 호스팅 버전의 OpenReplay를 사용한다면 2단계에서 `ingestPoint` 설정 속성도 지정해야 합니다(`https://openreplay.mydomain.com/ingest`처럼 사용자의 도메인을 가리켜야 합니다). 이 속성은 트래커 데이터의 수집 엔드포인트를 지정합니다.
+</Aside>
+
+### 코드에서 "projectKey" 처리하기
+
+참고로 설정하는 `projectKey`는 OpenReplay 플랫폼에서 제공하는 값입니다. 보안상 이 값은 코드에 하드코딩하지 말고 설정 파일이나 시스템 등에 보관해야 합니다.
+
+이 예시에서는 Next의 `.env` 파일을 활용합니다. 환경 변수 이름 앞에 `NEXT_PUBLIC` 접두사를 붙이지 않으면 클라이언트 코드(트래커)에서 해당 변수에 접근할 수 없다는 점을 이해해야 합니다.
+
+이 방식이 곤란하다면 사용자가 처음 방문하는 페이지에서 `getStaticProps`를 사용해 트래커를 인스턴스화하기 전에 값을 가져올 수 있습니다. 아래에서 두 가지 예시를 모두 볼 수 있습니다.
+
+## 트래커 컨텍스트 사용하기
+
+앞에서 만든 `TrackerProvider`를 가져와 다음과 같이 애플리케이션을 감쌉니다.
+
+```jsx
+import '../styles/globals.css'
+import TrackerProvider from '../context/trackerContext'
+
+function MyApp({ Component, pageProps }) {
+
+  return <TrackerProvider>
+        <Component {...pageProps} />
+    </TrackerProvider>
+}
+
+export default MyApp
+```
+
+이 파일은 `_app.js`로, 전체 애플리케이션의 진입점 역할을 합니다.  
+
+그런 다음 원하는 컴포넌트에서 다음과 같이 트래킹을 시작할 수 있습니다.
+
+```jsx
+import { useContext, useEffect } from 'react'
+import { TrackerContext } from '../context/trackerContext'
+import styles from '../styles/Home.module.css'
+
+export default function YourComponent({projectKey}) {
+    
+    const {initTracker, startTracking} = useContext(TrackerContext)
+    
+    useEffect( () => {
+       initTracker()
+       startTracking()
+    }, [])
+//.... rest of your code
+}
+```
+
+제어가 그렇게까지 필요하지 않다면 “init 메시지”와 “start tracking 메시지”를 하나로 합쳐서, 함수 하나만 호출해도 트래킹이 시작되도록 할 수 있습니다.
+
+## 질문이 있으신가요?
+
+Next 기반 애플리케이션의 **전체 코드**는 [이 저장소](https://github.com/deleteman/openreplay-next-example)에서 확인할 수 있습니다.
+
+Next 기반 프로젝트에 트래커를 설정하는 중 문제가 있다면 [Slack 커뮤니티](https://slack.openreplay.com/)로 문의하여 개발자에게 직접 질문하세요!

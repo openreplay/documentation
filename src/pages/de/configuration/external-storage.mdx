@@ -1,0 +1,92 @@
+---
+title: "Externer Speicher"
+metaTitle: "Externer Speicher"
+metaDescription: "So ändern Sie den Standardspeicherort Ihrer Aufzeichnungen."
+---
+
+OpenReplay-[Sitzungsaufzeichnungen](/configuration/cleanup-storage#recordings-cleanup) werden standardmäßig auf Ihrer Instanz gespeichert. Das Ziel lässt sich jedoch auf jeden S3-kompatiblen Objektspeicherdienst ändern, was eine bessere Skalierbarkeit und niedrigere Bereitstellungskosten ermöglicht.
+
+## Speicherziel der Aufzeichnungen ändern
+
+Aufzeichnungen können in jedem Objektspeicher abgelegt werden, solange dieser S3-kompatibel ist. Dadurch ist OpenReplay mit allen großen Public-Cloud-Diensten kompatibel. Im Folgenden finden Sie die Schritte, um ein anderes Ziel für Ihre Aufzeichnungen zu konfigurieren:
+
+### Erforderliche Buckets erstellen
+
+Sie müssen in Ihrem Objektspeicherdienst die folgenden Buckets erstellen. Ihre Namen können abweichen, im weiteren Verlauf dieses Abschnitts verwenden wir jedoch die folgenden Bezeichnungen:
+- `openreplay-recordings`: hier werden die Aufzeichnungen gespeichert
+- `openreplay-assets`: hierhin werden Assets (wie CSS und Schriftarten) kopiert
+- `openreplay-sourcemaps`: zum Speichern von Source Maps (siehe [so laden Sie sie hoch](/deployment/upload-sourcemaps))
+- `openreplay-spots`: zum Speichern von Spot-Aufzeichnungen
+
+Sobald die Buckets erstellt sind: 
+
+1. Aktivieren Sie CORS für jeden der oben genannten Buckets. Bei AWS finden Sie die Einstellung unter 'Permissions > Cross-origin resource sharing (CORS)'; verwenden Sie dort die folgende Konfiguration:
+
+```json
+[
+    {
+        "AllowedHeaders": [
+            "*"
+        ],
+        "AllowedMethods": [
+            "GET"
+        ],
+        "AllowedOrigins": [
+            "*"
+        ],
+        "ExposeHeaders": []
+    }
+]
+```
+
+2. Aktivieren Sie den öffentlichen Zugriff **ausschließlich** für den Bucket `openreplay-assets`. Dieser enthält nur Stylesheets, Symbole und Schriftarten, die für ein korrektes Session Replay erforderlich sind. Bei AWS navigieren Sie zunächst zu 'Permissions > Block public access (bucket settings)' und deaktivieren die Sperre, wechseln dann zu 'Permissions > Bucket policy' und verwenden die folgende Konfiguration:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AddPerm",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::openreplay-assets/*"
+        }
+    ]
+}
+```
+
+3. Erzeugen Sie schließlich die passenden Zugriffsschlüssel **nur für diese 4 Buckets**, damit das OpenReplay-Backend programmgesteuert darauf zugreifen und Dateien hochladen kann. Die erforderlichen S3-Berechtigungen sind:
+
+```json
+"s3:PutObject",
+"s3:GetObjectAcl",
+"s3:GetObject",
+"s3:GetObjectTagging",
+"s3:ListBucket",
+"s3:PutObjectTagging",
+"s3:GetBucketLocation"
+```
+
+### Backend-Dienste aktualisieren
+
+1. Melden Sie sich bei Ihrer OpenReplay-Instanz an und führen Sie `openreplay -e` aus, um die folgenden Umgebungsvariablen im Abschnitt `s3` anzupassen:
+
+| Variable | Beschreibung |
+|----------|-------------|
+| accessKey | Der Zugriffsschlüssel Ihres Objektspeichers (bei AWS Ihre [IAM-Zugriffsschlüssel-ID](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey), bei Google Cloud Ihr [HMAC-Schlüssel für das Dienstkonto](https://cloud.google.com/storage/docs/authentication/managing-hmackeys)) |
+| secretKey | Das Secret Ihres Objektspeichers |
+| endpoint | Die URL (**beginnend mit `https`**) Ihres Objektspeicherdienstes (z. B. finden Sie bei AWS die Liste der [S3-Endpunkte](https://docs.aws.amazon.com/general/latest/gr/s3.html); bei Google Cloud Storage wäre dies `https://storage.googleapis.com`) |
+| region | Die Region (falls zutreffend) Ihrer Buckets (z. B. wäre dies bei AWS S3 etwas wie `us-east-1`) |
+| assetsBucket | Der Name des Assets-Buckets (z. B. `openreplay-assets`)  |
+| recordingsBucket | Der Name des Aufzeichnungs-Buckets (z. B. `openreplay-recordings`) |
+| sourcemapsBucket | Der Name des Source-Maps-Buckets (z. B. `openreplay-sourcemaps`) |
+| spotsBucket | Der Name des Spot-Buckets (z. B. `openreplay-spots`) |
+
+2. Speichern Sie und beenden Sie den Editor mit `:wq`, damit die Änderungen wirksam werden
+
+Neu aufgezeichnete Sitzungen sollten nun in Ihrem neuen Ziel bzw. Objektspeicherdienst gespeichert und von dort (bei der Wiedergabe) abgerufen werden.
+
+## Haben Sie Fragen?
+
+Falls Probleme auftreten, melden Sie sich in unserem [Slack](https://slack.openreplay.com) und holen Sie sich Hilfe von unserer Community.

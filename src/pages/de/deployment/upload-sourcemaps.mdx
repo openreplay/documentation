@@ -1,0 +1,49 @@
+---
+title: "Source Maps hochladen"
+metaTitle: "Source Maps hochladen"
+metaDescription: "Laden Sie Source Maps zu OpenReplay hoch."
+---
+
+OpenReplay unterstützt das Entminifizieren von JavaScript über Source Maps. Wenn Sie diese zu OpenReplay hochladen, sehen Sie den aus Stacktraces gewonnenen Quellcode-Kontext in seiner ursprünglichen Form. Das ist beim Debuggen von minifiziertem Code (UglifyJS) oder transpiliertem Code (TypeScript, ES6) sehr hilfreich.
+
+## Einrichtung
+
+Installieren Sie das NPM-Modul sourcemap-uploader:
+
+```bash
+npm i -g @openreplay/sourcemap-uploader
+```
+
+## Voraussetzungen
+
+Stellen Sie sicher, dass Ihr Build separate Source-Map-Dateien (.map) erzeugt. Wenn Sie zum Beispiel webpack verwenden, sollte Ihre Konfiguration die folgende `devtool`-Option enthalten:
+
+```js
+{ devtool: ‘source-map’ }
+```
+
+## Source Maps zu OpenReplay hochladen
+
+Anschließend müssen Sie Ihren Build-Prozess so einrichten, dass die verschiedenen Quelldateien erzeugt werden. Source Maps können für eine **einzelne Datei** hochgeladen werden:
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY file -m ./dist/index.js.map -u https://myapp.com/index.js
+```
+
+Oder für ein **Verzeichnis** mit mehreren Dateien. In diesem Fall muss die URL (exakter Pfad) dem Stammverzeichnis entsprechen, aus dem Sie die JS-Dateien des Verzeichnisses hochladen. Anders gesagt: Liegt Ihre `app-42.js` zusammen mit der `app-42.js.map` im Ordner `./build` und möchten Sie sie so in Ihre OpenReplay-Instanz hochladen, dass sie über den Link `https://myapp.com/static/app-42.js` erreichbar ist, dann sollte der Befehl wie folgt lauten:
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY dir -m ./build -u https://myapp.com/static
+```
+
+## Parameter
+
+- `-s`: Die URL Ihrer OpenReplay-Instanz. Hängen Sie unbedingt /api an. Geben Sie diesen Parameter nicht an, wenn Sie OpenReplay Cloud verwenden.
+- `-k`: API-Schlüssel (zu finden unter 'Preferences' > 'Account' > 'Organization API Key').
+- `-p`: Projektschlüssel (zu finden unter 'Preferences' > 'Projects').
+- `-m`: Pfad zu den Source-Map-Dateien (kann auch ein Verzeichnis sein).
+- `-u`: URL zum JavaScript-Asset (bei einer einzelnen Datei) bzw. Basis-URL (bei einem Verzeichnis).
+- `-l`: Zeigt die Upload-Protokolle an.
+
+## Haben Sie Fragen?
+Wenn Sie Fragen zu diesem Vorgang haben, wenden Sie sich gern über unseren [Slack](https://slack.openreplay.com) an uns.

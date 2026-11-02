@@ -1,0 +1,171 @@
+---
+title: "MCP 기능"
+metaTitle: "OpenReplay MCP 앱에 요청할 수 있는 것들"
+metaDescription: "OpenReplay MCP 앱의 모든 기능을 살펴보세요. 세션 검색, 시계열 및 퍼널 렌더링, 사용자 여정 분석, 리플레이 시청, 그리고 이 모든 것을 자연어로 연결하는 방법을 소개합니다."
+---
+
+import Aside from '~/components/Aside.astro';
+
+MCP 앱을 [설정](/mcp/setup)하고 로그인하고 나면 Claude(또는 다른 MCP 호스트)에게 일상적인 언어로 OpenReplay 데이터를 조회하도록 요청할 수 있습니다. 이 페이지에서는 MCP가 현재 제공하는 기능을 각각의 예시 프롬프트와 함께 소개합니다.
+
+<Aside type="tip" title="팁" >
+  모든 프롬프트는 프로젝트를 **이름**(예: *"MyApp"*)으로 지정하든 **사이트 ID**(예: *"site 1"*)로 지정하든 동일하게 작동합니다. 지정하지 않으면 MCP는 가장 최근에 언급한 프로젝트를 사용합니다.
+</Aside>
+
+## 세션 검색 및 필터링
+
+MCP는 OpenReplay UI에서 사용할 수 있는 것과 동일한 필터를 지원합니다. 브라우저, OS, 디바이스, 국가, URL 경로, 클릭, 입력, 네트워크 요청, 오류, 메타데이터, 사용자 ID, 지속 시간입니다.
+
+```
+Show me 20 recent sessions in MyApp
+```
+
+```
+Sessions from Chrome users in France or Tunisia
+```
+
+```
+Sessions with failed requests to /api/users in MyApp
+```
+
+```
+Sessions where the user visited the signup page then clicked "Subscribe"
+```
+
+```
+Sessions longer than 20 minutes for user tahay@asayer.io
+```
+
+결과는 채팅 안에서 인터랙티브 목록으로 렌더링되므로 원하는 세션을 클릭해 들어갈 수 있습니다.
+
+<img src="/mcp/sessions.png" alt="Claude Desktop 안에 표시된 세션 목록" style={{ width: '700px', height: 'auto' }} />
+
+## 시계열 차트로 시각화
+
+```
+Show me the sessions chart for last week in MyApp
+```
+
+```
+Session trend for the past 30 days from France
+```
+
+```
+Chart of sessions from mobile users this month
+```
+
+```
+Timeseries of users who visited /signup last week
+```
+
+<img src="/mcp/timeseries.png" alt="Claude Desktop 안에 렌더링된 시계열 차트" style={{ width: '700px', height: 'auto' }} />
+
+## 퍼널
+
+퍼널은 일련의 URL, 클릭, 입력 또는 사용자 지정 이벤트 전반의 전환율을 측정합니다. 이탈은 단계별로 표시됩니다.
+
+```
+Show me the checkout funnel last week: /cart → /checkout → /confirm
+```
+
+```
+Conversion from /pricing to /signup this month
+```
+
+```
+Visited /pricing then clicked Subscribe
+```
+
+```
+Page view /checkout followed by a JS exception
+```
+
+<img src="/mcp/funnel.png" alt="Claude Desktop 안에 렌더링된 퍼널 차트" style={{ width: '700px', height: 'auto' }} />
+
+## 상위 항목(Top of X)
+
+가장 많이 방문한 페이지, 상위 브라우저, 상위 국가, 상위 OS, 상위 디바이스 또는 상위 네트워크 요청을 찾아볼 수 있습니다.
+
+```
+What are the top visited pages this week?
+```
+
+```
+Show browser distribution this month
+```
+
+```
+Most popular countries last 30 days
+```
+
+```
+Top 5 network requests today in MyApp
+```
+
+## 사용자 여정
+
+사용자가 제품 안에서 어떻게 이동하는지 확인할 수 있습니다. 어떤 페이지로 진입하는지, 다음에 어디로 이동하는지, 어디에서 이탈하는지를 볼 수 있습니다.
+
+```
+Show me user journeys this month
+```
+
+```
+Where do users drop off after the pricing page last week?
+```
+
+```
+What pages do users visit after /signup?
+```
+
+```
+Navigation paths for mobile users from France this week
+```
+
+## 웹 바이탈 및 성능
+
+핵심 웹 바이탈(LCP, FID, CLS)과 성능 지표를 세그먼트별로 나누어 볼 수 있습니다.
+
+```
+Show me web vitals for this week
+```
+
+```
+How is my site performance past month?
+```
+
+```
+Core web vitals for mobile users
+```
+
+```
+Performance metrics for Chrome on Windows for user tahay@asayer.io
+```
+
+## 세션 리플레이 시청
+
+리플레이는 채팅 안의 내장 플레이어에서 렌더링됩니다. OpenReplay UI에서와 마찬가지로 탐색하고, 일시 중지하고, 세부 내용을 확인할 수 있습니다.
+
+```
+Show me the replay of session 7891234567890
+```
+
+```
+Replay the last session in the list above
+```
+
+<img src="/mcp/replay.png" alt="Claude Desktop 안에 인라인으로 렌더링된 세션 리플레이" style={{ width: '700px', height: 'auto' }} />
+
+## 조합하여 사용하기
+
+진정한 가치는 여러 도구를 연결해서 사용할 때 나옵니다. 몇 가지 예를 소개합니다.
+
+- *"이번 주 /checkout에서 JS 예외가 발생한 세션을 찾은 다음, 가장 최근 세션의 리플레이를 보여 주고 무슨 일이 있었는지 알려 줘."*
+- *"/pricing → /signup → /dashboard 퍼널을 가져온 다음, 이탈이 가장 큰 단계에서 이탈한 세션 5개를 보여 줘."*
+- *"이번 달 프랑스에서 발생한 세션의 시계열을 그려 줘. 급증 구간이 있으면 그날의 세션 몇 개를 찾아서 사용자들이 무엇을 했는지 요약해 줘."*
+
+Claude는 도구 호출 사이에 결과를 바탕으로 추론할 수 있으므로, 대시보드 사이를 오가지 않고 대화 수준에서 작업을 이어갈 수 있습니다.
+
+## 질문이 있으신가요?
+
+문제가 발생하면 [Slack](https://slack.openreplay.com)에 참여해 주세요.

@@ -1,0 +1,110 @@
+---
+title: "iOS SDK - Inizializzazione dell'SDK"
+metaTitle: "iOS SDK - Inizializzazione dell'SDK"
+metaDescription: "Opzioni di configurazione per il metodo costruttore del tracker iOS"
+---
+import Aside from '~/components/Aside.astro'
+import ORCard from '~/components/Card/ORCard.astro'
+
+<Aside type="caution">
+	L'SDK iOS è in versione Beta. Puoi inviarci un feedback o segnalare qualsiasi problema tu riscontri sul nostro [Slack](https://slack.openreplay.com) .
+</Aside>
+
+## Installazione
+
+La riga seguente installa il tracker e, insieme ad esso, l'SDK, così potrai sfruttare tutte le funzionalità del tracker.
+
+### Cocoapods
+
+```ruby
+  pod 'OpenReplay', '~> 1.0.17'
+```
+
+### Swift Package Manager
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/openreplay/ios-tracker.git", from: "1.0.17"),
+]
+```
+
+## Inizializzazione
+
+Quando istanzi il tracker di OpenReplay, puoi fornire diverse opzioni di configurazione per personalizzare molti aspetti della registrazione e della sua esperienza. Devi impostare l'opzione `projectKey` nel costruttore. Puoi ottenere questo valore dalla dashboard di OpenReplay, in 'Preferences > Projects'.
+
+<Aside type="tip">
+	Nota: se hai più progetti, fai attenzione alla chiave del progetto che scegli.
+</Aside>
+
+
+### Aggiungere il codice di tracciamento
+
+Aggiungi il codice seguente al tuo file `AppDelegate.swift`:
+
+```swift
+// AppDelegate.swift
+import OpenReplay
+
+//...
+
+class AppDelegate: UIResponder, UIApplicationDelegate {
+
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+
+			  // not required if you're using our SaaS version
+        OpenReplay.shared.serverURL = "https://your.instance.com/ingest"
+				// check out our SDK docs to see available options
+        OpenReplay.shared.start(projectKey: "projectkey", options: .defaults)
+
+        // ...
+        return true
+			}
+```
+
+### Configurare il listener dei tocchi
+
+```swift
+// SceneDelegate.Swift
+import OpenReplay
+
+// ...
+func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+	let contentView = ContentView()
+	.environmentObject(TodoStore())
+
+	if let windowScene = scene as? UIWindowScene {
+		let window = TouchTrackingWindow(windowScene: windowScene) // <<<< here
+		window.rootViewController = UIHostingController(rootView: contentView)
+		self.window = window
+		window.makeKeyAndVisible()
+	}
+}
+```
+
+### Sanificare i dati
+
+Consulta [come sanificare i dati nei replay iOS](/ios-sdk/sanitization) per maggiori dettagli.
+
+## Opzioni di inizializzazione
+
+- `crashes: Bool` Abilita crashlytics.
+- `analytics: Bool` Abilita il tracciamento analitico delle view contrassegnate.
+- `performances: Bool` Abilita il listener delle prestazioni.
+- `logs: Bool` Abilita il listener dei log.
+- `screen: Bool` Abilita la registrazione dello schermo.
+- `wifiOnly: Bool` Forza il tracker ad avviarsi solo se l'utente è connesso al wifi.
+- `isBlur: Bool` Sfoca le view sensibili (se `true`) oppure le copre con un riquadro pieno (se `false`). Il valore predefinito è `true`.
+
+## Moduli
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="Scopri i moduli dell'SDK iOS" url="/ios-sdk/modules" hideIcon={true} width="100"/>
+</div>
+
+## Metodi
+
+<div class="grid grid-cols-12 md:grid-cols-12 gap-3 md:gap-4">
+	<ORCard title="Scopri i metodi dell'SDK iOS" url="/ios-sdk/methods" hideIcon={true} width="100"/>
+</div>
+
+## Hai domande?
+Se hai domande su questa procedura, contattaci sul nostro [Slack](https://slack.openreplay.com) .

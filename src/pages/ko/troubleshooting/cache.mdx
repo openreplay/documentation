@@ -1,0 +1,21 @@
+---
+title: "캐시 지우기"
+metaTitle: "캐시 지우기"
+metaDescription: "OpenReplay의 캐시(CSS, 글꼴, 아이콘)를 지우고 초기화하는 방법을 설명합니다."
+---
+
+OpenReplay가 리플레이를 재생하려면 스타일시트, 아이콘, 글꼴과 같은 리소스에 접근할 수 있어야 합니다. 실제로 이러한 파일은 백엔드에서 복사된 후 캐시되므로, 웹 앱이 변경된 이후에도 이전 녹화를 볼 수 있습니다. 캐시를 지우려면 아래 단계를 따르세요.
+
+1. `k9s -n db` 명령을 실행합니다
+2. 키보드 방향키로 목록을 탐색하여 `minio-*` 컨테이너를 선택합니다
+3. s를 눌러 Minio(오브젝트 스토리지) 컨테이너의 셸에 접속합니다
+4. `export MINIO_ACCESS_KEY=<accessKey from vars.yaml>` 명령을 실행합니다
+5. `export MINIO_SECRET_KEY=<secretKey from vars.yaml>` 명령을 실행합니다
+6. `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY` 명령을 실행합니다
+7. `mc rm --recursive --dangerous --force minio/sessions-assets` 명령을 실행하여 캐시된 모든 파일(CSS, 글꼴, 아이콘)을 삭제합니다
+8. `exit`를 사용하여 Minio 컨테이너를 종료합니다
+9. `:quit` 명령을 실행하여 Kubernetes CLI를 종료합니다
+10. `openreplay -R` 명령을 실행하여 `assets` 서비스를 다시 시작합니다
+
+## 궁금한 점이 있으신가요?
+이 과정에 대해 궁금한 점이 있으시면 언제든지 [Slack](https://slack.openreplay.com)으로 문의해 주세요.

@@ -1,0 +1,118 @@
+---
+title: "배포 문제"
+metaTitle: "배포 문제"
+metaDescription: "배포와 관련된 문제 또는 자주 묻는 질문"
+---
+
+## 설치
+
+### Error: release openreplay failed, and has been uninstalled due to atomic being set
+
+helm 설치가 실패했기 때문일 수 있습니다. 디버깅하려면 아래 단계를 따르세요.
+
+```bash
+openreplay -s
+
+# If you see any failed pods, check the log. it should shed some light.
+openreplay -l <pod name>
+
+# If there is no pods in running/error/crashloop status, then check the status of pod using following command
+kubectl describe po -n app -n db <pod name>
+```
+
+## 회원 가입이 작동하지 않는 경우
+
+### 상태 점검에서 SSL 점검 실패가 표시되는 경우
+  
+자체 서명 인증서를 사용하고 있다면 다음 명령으로 해결할 수 있습니다.
+
+```bash
+openreplay -e
+
+# Add following line to skip the SSL health check
+chalice:
+  env:
+    ...
+    # append the following line under env section
+    SKIP_H_SSL: true
+```
+
+`:wq`를 사용하여 설정 파일을 저장하고 종료합니다
+
+## 설치한 인스턴스가 갑자기 작동하지 않는 경우
+   
+여러 가지 원인이 있을 수 있습니다. 다음과 같이 상황을 디버깅할 수 있습니다.
+
+### `openreplay -s`로 설치 상태 확인
+
+디스크 사용량 섹션을 확인하세요. 80%를 넘으면 서비스가 실행되지 않습니다.
+
+## 특별한 오류 없이 업그레이드가 실패한 경우
+   
+### "helm or another operation (install/upgrade/rollback) is in progress" 메시지가 표시되는 경우
+
+이는 보통 설치/업그레이드 작업을 여러 번 재시도했다는 뜻입니다. 아래 명령을 실행하여 해결하세요.
+
+```bash
+helm rollback -n app openreplay
+```
+
+### 오류는 보이지 않고 "installation failed"만 표시되는 경우
+
+```bash
+# Check for failed pods
+kubectl get pods -n app --field-selector="status.phase!=Succeeded,status.phase!=Running" -o custom-columns="POD:metadata.name"
+        
+# Check for the err logs
+openreplay -l `pod name from above`
+ ```
+
+## 셀프 호스팅 오류
+
+### Error: You must be logged in to the server (Unauthorized)
+
+`openreplay -s` 또는 `kubectl get po`를 실행하면 `error: You must be logged in to the server (Unauthorized)` 오류가 발생합니다. k3s가 클러스터에 로그인하기 위한 클라이언트 인증서를 다시 생성했지만 kubectl이 이를 인식하지 못했을 수 있습니다. `cp /etc/rancher/k3s/k3s.yaml ~/.kube/config` 명령으로 새 설정을 복사하면 해결됩니다.
+
+## 데이터베이스
+
+### pg-cleanup을 실행해도 Postgres가 데이터를 정리하지 않는 경우
+
+Postgres 정리는 PG가 처리합니다. 즉, OpenReplay는 지정한 날짜 이전의 데이터를 삭제하고, PG는 해당 데이터를 삭제 대상으로 표시합니다. PG는 AutoVacuum이라는 프로세스에서 데이터를 실제로 삭제하며, 이 프로세스가 실행되는 시점을 결정하는 로직은 내부적으로 관리됩니다. 따라서 디스크에서 데이터가 정리되는 시점은 알 수 없습니다. 어떤 테이블에 데이터가 있는지 확인하고, 데이터 손실을 감수할 수 있다면 테이블을 비울(truncate) 수도 있습니다. 예를 들어 네트워크 요청 관련 데이터가 저장된 `requests` 테이블을 비우면 요청 URL로 세션을 검색할 수 없게 됩니다.
+
+테이블 크기를 확인하는 방법은 다음과 같습니다.
+
+```sql
+SELECT nspname AS "name_space",
+       relname AS "relation",
+       pg_size_pretty(
+               pg_total_relation_size(C.oid)
+           )   AS "total_size"
+FROM pg_class C
+         LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+WHERE nspname NOT IN ('pg_catalog','information_schema')
+  AND C.relkind <> 'i'
+  AND nspname !~ '^pg_toast'
+ORDER BY pg_total_relation_size(C.oid) DESC
+LIMIT 20;
+```
+
+## SSL
+
+### 외부 프록시/LB로 SSL 오프로드
+
+```bash
+openreplay -e
+
+# Under ingress-nginx block disable ssl redirection
+ingress-nginx: &ingress-nginx
+  ...
+  controller:
+    ...
+    config:
+      ...
+      ssl-redirect: false
+      force-ssl-redirect: false
+```
+## 궁금한 점이 있으신가요?
+
+이 과정에 대해 궁금한 점이 있으시면 언제든지 [Slack](https://slack.openreplay.com)으로 문의해 주세요.

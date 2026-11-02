@@ -1,0 +1,99 @@
+---
+title: "Events"
+metaTitle: "Events"
+metaDescription: "So rufen Sie alle Ereignisse einer bestimmten Aufzeichnung ab."
+---
+
+## Ereignisse abrufen
+
+Gibt die Liste der Ereignisse (Klicks, Seitenaufrufe, Eingaben, Custom Events usw.) zurück, die in einer bestimmten Sitzung erfasst wurden. Der Sitzungsbezug wird vom Server erzwungen – der Pfadparameter `sessionID` wird automatisch als Ereignisfilter hinzugefügt.
+
+### Methode
+<p><span class="or-method post">POST</span></p>
+
+### URL
+`/public/:projectKey/sessions/:sessionId/events`
+
+### Parameter
+
+| Name       | Typ    | Beschreibung                                                |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | Der Projektschlüssel (erforderlich)                                 |
+| sessionId  | string | Die ID der Sitzung (erforderlich, max. 256)                  |
+
+### Payload
+
+| Name           | Typ        | Beschreibung                                                          |
+|----------------|------------|----------------------------------------------------------------------|
+| startTimestamp | epoch (ms) | Beginn des Zeitfensters (erforderlich, min. 946684800000)                    |
+| endTimestamp   | epoch (ms) | Ende des Zeitfensters (erforderlich, > startTimestamp)                      |
+| limit          | integer    | Seitengröße, 1-200 (erforderlich)                                          |
+| page           | integer    | Seitennummer, beginnt bei 1 (erforderlich)                                  |
+| sortBy         | string     | Ereignisspalte, nach der sortiert wird (optional)                                   |
+| sortOrder      | string     | `asc` oder `desc` (optional)                                           |
+| filters        | array      | Zusätzliche Ereignisfilter (optional) – siehe Filterstruktur unten     |
+| columns        | array      | Ereignisspalten, die in die Antwort aufgenommen werden (optional)                  |
+
+Filterobjekt:
+
+| Name     | Typ      | Beschreibung                                                   |
+|----------|----------|---------------------------------------------------------------|
+| name     | string   | Name des Filterattributs (erforderlich, max. 256)                     |
+| operator | string   | Vergleichsoperator (z. B. `is`, `contains`)                   |
+| value    | string[] | Bis zu 10 Werte, jeweils max. 256 Zeichen                           |
+| isEvent  | boolean  | Gibt an, ob sich der Filter auf eine Ereigniseigenschaft bezieht                  |
+| dataType | string   | Einer von `string`, `number`, `boolean`, `integer`, `timestamp`  |
+
+### Anfrage-Header
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Statuscodes
+
+<p><span class="or-method ok">200</span> Antwort wird als JSON im Body gesendet<br/>
+<span class="or-method err">400</span> Ungültiger Body oder ungültige <code>sessionID</code> (leer oder &gt; 256 Zeichen)</p>
+
+### Beispielanfrage
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/sessions/4813023023591169/events \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "startTimestamp": 1623440000000,
+    "endTimestamp":   1623441000000,
+    "limit": 100,
+    "page":  1,
+    "sortOrder": "asc"
+  }'
+```
+
+### Beispielantwort
+
+```json
+{
+  "data": {
+    "total": 3,
+    "events": [
+      {
+        "event_id": "01H7Z...",
+        "$event_name": "$pageview",
+        "created_at": 1623440905732,
+        "distinct_id": "mickael@openreplay.com",
+        "session_id": "4813023023591169",
+        "properties": { "path": "/my-account/" }
+      },
+      {
+        "event_id": "01H7Z...",
+        "$event_name": "$click",
+        "created_at": 1623440915126,
+        "distinct_id": "mickael@openreplay.com",
+        "session_id": "4813023023591169",
+        "$properties": { "label": "Shop" },
+        "$auto_captured": true
+      }
+    ]
+  }
+}
+```

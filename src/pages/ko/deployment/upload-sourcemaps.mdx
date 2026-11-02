@@ -1,0 +1,49 @@
+---
+title: "소스 맵 업로드"
+metaTitle: "소스 맵 업로드"
+metaDescription: "OpenReplay에 소스 맵을 업로드합니다."
+---
+
+OpenReplay는 소스 맵을 통한 JavaScript 압축 해제(un-minify)를 지원합니다. 소스 맵을 OpenReplay에 업로드하면 스택 트레이스에서 얻은 소스 코드 컨텍스트를 원본 형태로 볼 수 있어, 압축된 코드(UglifyJS)나 트랜스파일된 코드(TypeScript, ES6)를 디버깅할 때 매우 유용합니다.
+
+## 설정
+
+sourcemap-uploader NPM 모듈을 설치합니다.
+
+```bash
+npm i -g @openreplay/sourcemap-uploader
+```
+
+## 사전 요구 사항
+
+빌드 시 별도의 소스 맵 파일(.map)이 생성되는지 확인하세요. 예를 들어 webpack을 사용한다면 설정에 아래 `devtool` 옵션이 포함되어야 합니다.
+
+```js
+{ devtool: ‘source-map’ }
+```
+
+## OpenReplay에 소스 맵 업로드
+
+그다음 빌드 프로세스에서 각종 소스 파일을 생성하도록 설정해야 합니다. 소스 맵은 **단일 파일**로 업로드할 수 있습니다.
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY file -m ./dist/index.js.map -u https://myapp.com/index.js
+```
+
+또는 여러 파일이 들어 있는 **디렉터리** 전체를 업로드할 수도 있습니다. 이 경우 URL은 디렉터리의 JS 파일을 업로드하는 루트와 정확한 경로까지 일치해야 합니다. 다시 말해, `./build` 폴더에 `app-42.js`와 `app-42.js.map`이 함께 있고, 이를 OpenReplay 인스턴스에 업로드하여 `https://myapp.com/static/app-42.js` 링크로 접근할 수 있게 하려면 명령은 다음과 같아야 합니다.
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY dir -m ./build -u https://myapp.com/static
+```
+
+## 매개변수
+
+- `-s`: OpenReplay 인스턴스의 URL입니다. 끝에 /api를 붙여야 합니다. OpenReplay Cloud를 사용 중이라면 이 매개변수를 지정하지 마세요.
+- `-k`: API 키('Preferences' > 'Account' > 'Organization API Key'에서 확인할 수 있습니다).
+- `-p`: 프로젝트 키('Preferences' > 'Projects'에서 확인할 수 있습니다).
+- `-m`: 소스 맵 파일의 경로입니다(디렉터리도 가능합니다).
+- `-u`: JavaScript 에셋의 URL(단일 파일인 경우) 또는 기본 URL(디렉터리인 경우)입니다.
+- `-l`: 업로드 로그를 표시합니다.
+
+## 질문이 있으신가요?
+이 과정에 대해 궁금한 점이 있으시면 언제든지 [Slack](https://slack.openreplay.com)으로 문의해 주세요.

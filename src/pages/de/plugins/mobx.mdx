@@ -1,0 +1,63 @@
+---
+title: "MobX"
+metaTitle: "MobX"
+metaDescription: "MobX-Plugin für OpenReplay."
+---
+
+Mit diesem Plugin können Sie `MobX`-Mutationen erfassen und später beim Abspielen von Sitzungsaufzeichnungen untersuchen. Das ist hilfreich, um Probleme zu verstehen und zu beheben.
+
+
+## Installation
+
+```bash
+npm i @openreplay/tracker-mobx
+```
+
+## Verwendung
+
+Initialisieren Sie das Paket `@openreplay/tracker` wie gewohnt und laden Sie das Plugin hinein.
+Verwenden Sie anschließend den zurückgegebenen Wert, um MobX-Observables zu erfassen.
+
+```js
+import { observable, observe } from 'mobx';
+import Tracker from '@openreplay/tracker';
+import trackerMobX from '@openreplay/tracker-mobx';
+
+const tracker = new Tracker({
+  projectKey: YOUR_PROJECT_KEY,
+});
+
+// this instance can be exported and used for multiple stores
+const mobxObserver = tracker.use(trackerMobX({ ...options }));
+
+const myArray = observable(['foo', 'bar', 42]);
+
+observe(myArray, mobxObserver)
+
+myArray.push("Hello world"); // This mutation will be tracked
+```
+
+## Optionen
+
+Sie können das Verhalten der Middleware anpassen, um Ihre Daten zu bereinigen.
+
+```js
+interface Options {
+    predicate?: (observeEvent: { type: string; name: string; object: any; debugObjectName: string }) => boolean;
+    sanitize?: (resultAction: { state: any; type: string; property: string }) => { state: any; type: string; property: string };
+    update?: boolean;
+    add?: boolean;
+    delete?: boolean;
+}
+
+trackerMobX({
+  predicate: () => true,
+  sanitize: (event) => event
+})
+```
+
+Mit predicate lässt sich die Erfassung dynamisch deaktivieren, mit sanitize können Sie die Nutzdaten ändern, bevor sie an das Backend gesendet werden. Die meisten Aktionen fallen unter den Typ update; Details zu add und delete (hauptsächlich für Maps) finden Sie in der MobX-Dokumentation.
+
+## Haben Sie Fragen?
+
+Haben Sie Probleme bei der Einrichtung dieses Plugins? Verbinden Sie sich mit unserem [Slack](https://slack.openreplay.com) und holen Sie sich Hilfe von unserer Community.

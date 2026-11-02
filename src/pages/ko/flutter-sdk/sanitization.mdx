@@ -1,0 +1,59 @@
+---
+title: "Flutter SDK - 민감한 데이터 정제"
+metaTitle: "Flutter SDK - 민감한 데이터 정제"
+metaDescription: "Flutter 트래커에서 녹화 및 네트워크 데이터를 정제하는 방법에 대한 자세한 설명"
+---
+import Aside from '~/components/Aside.astro'
+
+## UI 컴포넌트
+
+리플레이에 나타나서는 안 되는 모든 요소를 `ORSanitizedView`로 감싸세요. 해당 영역은 iOS SDK와 마찬가지로 녹화에서 흐리게 처리되고 빗금이 표시되며, 위젯이 트리에서 제거되는 즉시 스스로 등록을 해제합니다.
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+ORSanitizedView(
+  child: TextField(
+    controller: _cardNumber,
+    decoration: const InputDecoration(labelText: 'Card number'),
+  ),
+)
+```
+
+마스킹은 캡처된 프레임 위에 두 번째 래스터 패스로 적용되므로, 사용자가 화면에서 보는 모습은 전혀 바뀌지 않습니다.
+
+<Aside type="note">
+	`ORSanitizedView`는 녹화된 화면에서 위젯을 숨깁니다. 입력의 *값*도 이벤트 스트림에서 제외하려면 [`observeInput`](/flutter-sdk/inputs)에 `masked: true`를 전달하세요.
+</Aside>
+
+## 플랫폼 뷰
+
+WebView, 지도, 카메라 미리보기 같은 플랫폼 뷰는 Flutter가 다시 읽어 올 수 없는 별도의 네이티브 레이어에서 렌더링되므로, 그대로 두면 빈 영역으로 나타납니다. 트래커는 기본적으로 이를 플레이스홀더로 덮습니다. 이 동작을 끄려면 `maskPlatformViews: false`를 지정하세요.
+
+```dart
+await OpenReplay.instance.start(
+  projectKey: 'YOUR_PROJECT_KEY',
+  options: const OROptions(maskPlatformViews: false),
+);
+```
+
+## 네트워크 요청
+
+`capturePayload: true`를 설정하지 않으면 본문은 버려지며, `cookie`, `set-cookie`, `authorization` 헤더도 기본적으로 제외됩니다. 그 밖의 내용은 `sanitizer`가 캡처된 모든 호출에 대해 최종 결정권을 가집니다.
+
+```dart
+OpenReplay.instance.patchNetwork(ORNetworkOptions(
+  capturePayload: true,
+  ignoreHeaders: ['cookie', 'set-cookie', 'authorization', 'x-api-key'],
+  sanitizer: (record) {
+    final body = record.requestBody;
+    if (body is Map) body.remove('password');
+    return record; // return null to drop the call entirely
+  },
+));
+```
+
+전체 필드 목록은 [네트워크 옵션](/flutter-sdk/network)을 참고하세요.
+
+## 질문이 있으신가요?
+이 과정에 대해 궁금한 점이 있으시면 언제든지 [Slack](https://slack.openreplay.com)으로 문의해 주세요.

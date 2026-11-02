@@ -1,0 +1,96 @@
+---
+title: "Flutter SDK - 네트워크 가로채기"
+metaTitle: "Flutter SDK - 네트워크 가로채기"
+metaDescription: "Flutter 트래커의 네트워크 가로채기에 대한 자세한 설명"
+---
+import Aside from '~/components/Aside.astro'
+
+## 네트워크 가로채기
+
+트래커를 시작한 뒤 `patchNetwork()`를 한 번 호출합니다.
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+OpenReplay.instance.patchNetwork();
+```
+
+이 메서드는 `HttpOverrides`를 설치하면서 이전에 설치된 것이 있으면 이어서 호출하고, 모든 `dart:io` `HttpClient` 호출을 캡처합니다. 여기에는 `package:http`의 `IOClient`와 Dio의 기본 어댑터도 포함됩니다. 이 메서드는 멱등성을 가지며, `unpatchNetwork()`는 이전 오버라이드를 복원합니다.
+
+트래커 자체의 수집 트래픽은 캡처되지 않습니다. 트래커의 `HttpClient`는 오버라이드를 거치지 않고 직접 생성되기 때문입니다.
+
+## 네트워크 옵션
+
+`ORNetworkOptions`는 웹 트래커의 네트워크 옵션과 대응됩니다.
+
+- `capturePayload: bool` 요청 및 응답 본문을 기록합니다. 기본값: `false` — 직접 활성화하지 않으면 본문은 버려집니다.
+- `ignoreHeaders: List<String>` 제외할 헤더 이름으로, 대소문자를 구분하지 않고 비교합니다. 기본값: `['cookie', 'set-cookie', 'authorization']`.
+- `ignoreAllHeaders: bool` 모든 헤더를 제외합니다. (웹 트래커에서는 이를 `ignoreHeaders: true`로 표현하지만 Dart에는 이러한 유니온 타입이 없으므로 별도의 플래그로 제공합니다.) 기본값: `false`.
+- `failuresOnly: bool` 2xx 범위를 벗어난 응답만 기록합니다. 기본값: `false`.
+- `sessionTokenHeader: String?` 설정하면 세션 토큰을 담은 이 이름의 헤더가 나가는 요청에 추가되어, 백엔드 로그를 리플레이와 연관 지을 수 있습니다. 기본값: `null`.
+- `sanitizer: ORRequestResponse? Function(ORRequestResponse)?` 무엇을 기록할지에 대한 최종 결정권을 가집니다. 기본값: `null`.
+
+```dart
+OpenReplay.instance.patchNetwork(const ORNetworkOptions(
+  capturePayload: true,
+  failuresOnly: true,
+  sessionTokenHeader: 'X-OpenReplay-Session',
+));
+```
+
+## 요청 정제
+
+sanitizer는 캡처된 호출마다 `ORRequestResponse` 하나를 받아서, 원하는 대로 수정하여 반환하거나 호출을 완전히 버리려면 `null`을 반환합니다.
+
+```dart
+OpenReplay.instance.patchNetwork(ORNetworkOptions(
+  capturePayload: true,
+  sanitizer: (record) {
+    if (record.url.contains('/internal/')) return null; // drop it
+
+    record.url = record.url.replaceAll(RegExp(r'token=[^&]+'), 'token=***');
+    record.requestHeaders.remove('x-api-key');
+
+    final body = record.requestBody;
+    if (body is Map) body.remove('password');
+
+    return record;
+  },
+));
+```
+
+`ORRequestResponse`에는 `url`, `method`, `status`, `duration`, `requestHeaders`, `responseHeaders`, `requestBody`, `responseBody`가 들어 있습니다. 본문은 JSON으로 파싱되면 디코딩되므로, sanitizer는 문자열이 아닌 객체를 받습니다. 이는 웹 트래커의 동작과 같습니다.
+
+## 호출 수동 기록
+
+커스텀 Dio 어댑터(또는 `HttpOverrides`를 우회하는 모든 클라이언트)에는 직접 인터셉터가 필요합니다.
+
+```dart
+OpenReplay.instance.networkRequest(
+  url: 'https://api.example.com/cart',
+  method: 'POST',
+  requestJson: '{"sku":"A1"}',
+  responseJson: '{"ok":true}',
+  status: 200,
+  duration: 132, // ms
+);
+```
+
+GraphQL 작업에는 별도의 메시지가 있으며, OpenReplay gql 플러그인과 함께 사용합니다.
+
+```dart
+OpenReplay.instance.graphQL(
+  operationKind: 'query',
+  operationName: 'GetCart',
+  variables: '{"id":"42"}',
+  response: '{"data":{...}}',
+  duration: 87,
+);
+```
+
+<Aside type="note">
+	화면 자체를 마스킹하는 방법은 [데이터 정제](/flutter-sdk/sanitization)를 참고하세요.
+</Aside>
+
+## 질문이 있으신가요?
+이 과정에 대해 궁금한 점이 있으시면 언제든지 [Slack](https://slack.openreplay.com)으로 문의해 주세요.

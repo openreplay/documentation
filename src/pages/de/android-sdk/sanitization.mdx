@@ -1,0 +1,71 @@
+---
+title: "Android SDK - Sensible Daten bereinigen"
+metaTitle: "Android SDK - Sensible Daten bereinigen"
+metaDescription: "Details zum Bereinigen von Aufzeichnungen und Netzwerkdaten im Android-Tracker"
+---
+
+## UI-Komponenten
+
+Bereinigte Views werden im resultierenden Replay unscharf dargestellt. Sie können beliebige UI-Komponenten hinzufügen; sie werden automatisch entfernt (um Speicher zu sparen), sobald sie nicht mehr auf dem Bildschirm sind.
+
+### View
+
+```kotlin
+import com.openreplay.tracker.OpenReplay
+
+OpenReplay.addIgnoredView(view)
+```
+
+#### Jetpack Compose
+```kotlin
+import com.openreplay.tracker.Sanitize
+
+Sanitize {
+		Button(
+				modifier = Modifier
+						.fillMaxWidth()
+						.padding(top = 28.dp, bottom = 3.dp)
+						.trackTouchEvents("Continue Button"),
+				onClick = onSubmit,
+		) {
+				Text(
+						text = "Submit",
+						style = MaterialTheme.typography.titleSmall
+				)
+		}
+}
+```
+
+## Netzwerkanfragen
+
+Zwei Schlüssel stehen zur Verfügung, um die Anfrage-/Antwortdaten automatisch zu kürzen: `ignoredKeys` für den Body und `ignoredHeaders` für die Header. Sowohl die Anfrage als auch die Antwort werden bereinigt; der Body ist jedoch nur betroffen, wenn er gültiges JSON ist.
+
+Weisen Sie einfach eine Liste von Strings zu, die Sie bereinigen möchten:
+
+```kotlin
+val networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+Sie können die Antwortdaten auch ändern, bevor Sie sie an den Listener übergeben:
+
+```kotlin
+// ... request
+
+var sanitizedData: Any? = null
+data?.let {
+    try {
+        val json = JSONTokener(it).nextValue()
+        sanitizedData = customSanitizeFunction(it)
+        println(json)
+    } catch (error: JSONException) {
+        println("Error deserializing JSON: $error")
+    }
+}
+
+networkListener.finish(response, sanitizedData)
+```
+
+## Haben Sie Fragen?
+Wenn Sie Fragen zu diesem Vorgang haben, melden Sie sich gern bei uns im [Slack](https://slack.openreplay.com).

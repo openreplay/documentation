@@ -1,0 +1,96 @@
+---
+title: "Flutter SDK - Intercettare la rete"
+metaTitle: "Flutter SDK - Intercettare la rete"
+metaDescription: "Dettagli sull'intercettazione della rete per il tracker Flutter"
+---
+import Aside from '~/components/Aside.astro'
+
+## Intercettare la rete
+
+Chiama `patchNetwork()` una sola volta, dopo aver avviato il tracker:
+
+```dart
+import 'package:openreplay/openreplay.dart';
+
+OpenReplay.instance.patchNetwork();
+```
+
+Questo installa un `HttpOverrides`, concatenandolo a quanto era stato installato in precedenza, e acquisisce ogni chiamata `HttpClient` di `dart:io` — il che copre `IOClient` di `package:http` e l'adapter predefinito di Dio. È idempotente; `unpatchNetwork()` ripristina gli override precedenti.
+
+Il traffico di ingestione del tracker stesso non viene mai acquisito: il suo `HttpClient` viene costruito direttamente, aggirando gli override.
+
+## Opzioni di rete
+
+`ORNetworkOptions` rispecchia le opzioni di rete del tracker web:
+
+- `capturePayload: bool` Registra i body di richieste e risposte. Valore predefinito: `false` — i body vengono scartati a meno che tu non lo attivi esplicitamente.
+- `ignoreHeaders: List<String>` Nomi degli header da scartare, confrontati senza distinguere maiuscole e minuscole. Valore predefinito: `['cookie', 'set-cookie', 'authorization']`.
+- `ignoreAllHeaders: bool` Scarta tutti gli header. (Il tracker web lo esprime come `ignoreHeaders: true`; Dart non ha un tipo unione di questo genere, quindi è un flag separato.) Valore predefinito: `false`.
+- `failuresOnly: bool` Registra solo le risposte al di fuori dell'intervallo 2xx. Valore predefinito: `false`.
+- `sessionTokenHeader: String?` Se impostato, alle richieste in uscita viene aggiunto un header con questo nome che contiene il token di sessione, in modo da poter correlare i log del tuo backend con il replay. Valore predefinito: `null`.
+- `sanitizer: ORRequestResponse? Function(ORRequestResponse)?` Ha l'ultima parola su ciò che viene registrato. Valore predefinito: `null`.
+
+```dart
+OpenReplay.instance.patchNetwork(const ORNetworkOptions(
+  capturePayload: true,
+  failuresOnly: true,
+  sessionTokenHeader: 'X-OpenReplay-Session',
+));
+```
+
+## Sanificare la richiesta
+
+Il sanitizer riceve un `ORRequestResponse` per ogni chiamata acquisita e lo restituisce — modificato a tuo piacimento — oppure restituisce `null` per scartare completamente la chiamata.
+
+```dart
+OpenReplay.instance.patchNetwork(ORNetworkOptions(
+  capturePayload: true,
+  sanitizer: (record) {
+    if (record.url.contains('/internal/')) return null; // drop it
+
+    record.url = record.url.replaceAll(RegExp(r'token=[^&]+'), 'token=***');
+    record.requestHeaders.remove('x-api-key');
+
+    final body = record.requestBody;
+    if (body is Map) body.remove('password');
+
+    return record;
+  },
+));
+```
+
+`ORRequestResponse` contiene `url`, `method`, `status`, `duration`, `requestHeaders`, `responseHeaders`, `requestBody` e `responseBody`. I body vengono decodificati quando sono analizzabili come JSON, quindi il sanitizer riceve un oggetto anziché una stringa — in linea con il comportamento del tracker web.
+
+## Registrare le chiamate manualmente
+
+Un adapter Dio personalizzato (o qualsiasi client che aggira `HttpOverrides`) richiede un proprio interceptor:
+
+```dart
+OpenReplay.instance.networkRequest(
+  url: 'https://api.example.com/cart',
+  method: 'POST',
+  requestJson: '{"sku":"A1"}',
+  responseJson: '{"ok":true}',
+  status: 200,
+  duration: 132, // ms
+);
+```
+
+Le operazioni GraphQL hanno un proprio messaggio, da usare con i plugin gql di OpenReplay:
+
+```dart
+OpenReplay.instance.graphQL(
+  operationKind: 'query',
+  operationName: 'GetCart',
+  variables: '{"id":"42"}',
+  response: '{"data":{...}}',
+  duration: 87,
+);
+```
+
+<Aside type="note">
+	Consulta [sanificare i dati](/flutter-sdk/sanitization) per mascherare lo schermo stesso.
+</Aside>
+
+## Hai domande?
+Se hai domande su questo processo, non esitare a contattarci su [Slack](https://slack.openreplay.com) .

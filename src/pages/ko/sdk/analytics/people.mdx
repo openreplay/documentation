@@ -1,0 +1,223 @@
+---
+title: "People"
+metaTitle: "OpenReplay Analytics SDK — People"
+metaDescription: "OpenReplay 트래커 Analytics People 모듈로 사용자를 식별하고 사용자 속성을 관리합니다."
+---
+
+## People
+
+이 모듈은 사용자를 식별하고 사용자 프로필 속성을 변경(설정, 한 번만 설정, 추가, 증가, 삭제)하는 데 사용됩니다.
+
+OpenReplay UI에서 사용자 데이터를 관리하는 방법을 더 알아보려면 [데이터 관리](/product-analytics/data-management)를 참고하세요.
+
+다음 위치에서 사용할 수 있습니다:
+
+`tracker.analytics.people`
+
+최상위 별칭: `tracker.analytics.identify(...)` → `tracker.analytics.people.identify(...)`와 동일
+
+## 시그니처
+
+```ts
+// Identify a user (required before other operations except reset)
+tracker.analytics.people.identify(user_id: string, options?: { fromTracker: boolean }): void
+
+// Reset local user context & properties (optionally, destroy device id)
+// should be called on logout and session end
+tracker.analytics.people.reset(hard?: boolean): void
+
+// Delete user on backend, then reset local properties
+tracker.analytics.people.deleteUser(): void
+
+// Set properties (overwrite existing values)
+tracker.analytics.people.setProperties(properties: Record<string, string | number>): void
+tracker.analytics.people.setProperties(key: string, value: string | number): void
+
+// Set properties only if they don't exist yet
+tracker.analytics.people.setPropertiesOnce(properties: Record<string, string | number>): void
+
+// Append values to an existing property (string becomes array)
+tracker.analytics.people.appendValues(key: string, value: string | number): void
+
+// Append value only if it’s not already present (requires property to exist locally)
+tracker.analytics.people.appendUniqueValues(key: string, value: string | number): void
+
+// Increment (or decrement) a numeric property
+tracker.analytics.people.increment(key: string, value: number): void
+
+// Read current user id
+tracker.analytics.people.user_id: string | null | undefined
+```
+
+## identify
+
+문자열 ID(이메일, 사용자 이름, 내부 ID 등)로 현재 사용자를 식별하고 식별 이벤트를 큐에 추가합니다.
+
+```ts
+tracker.analytics.people.identify("nikita@openreplay.com")
+```
+
+### 참고:
+
+이미 다른 사용자가 식별된 경우, SDK는 새 ID로 전환하기 전에 로컬 people 속성을 초기화합니다.
+
+`user_id`는 비어 있지 않은 문자열이어야 하며, 그 외의 값을 전달하면 예외가 발생합니다.
+
+`options.fromTracker`는 트래커 수준의 ID 훅이 중복 호출되는 것을 방지하기 위해 내부적으로 사용되며, 일반적으로는 필요하지 않습니다. `tracker.setUserID()`가 이미 `identify`를 대신 호출합니다.
+
+## reset
+
+현재 사용자 ID와 모든 로컬 people 속성을 초기화합니다.
+
+```ts
+// soft reset
+tracker.analytics.people.reset()
+
+// hard reset (also clears persistent device id)
+tracker.analytics.people.reset(true)
+```
+
+## deleteUser
+
+백엔드에서 현재 식별된 사용자를 삭제(삭제 뮤테이션 전송)한 다음 로컬 상태를 지웁니다.
+
+```ts
+tracker.analytics.people.deleteUser()
+```
+
+### 참고:
+
+식별된 사용자가 없으면 아무 동작도 하지 않습니다(no-op).
+
+이 메서드를 호출하면 `user_id`가 지워지고 로컬 속성이 모두 삭제됩니다.
+
+## setProperties
+
+사용자 속성을 설정하며, 기존 값을 덮어씁니다.
+
+```ts
+tracker.analytics.people.setProperties({
+	plan: "pro",
+	seats: 5,
+})
+
+// or key/value
+tracker.analytics.people.setProperties("plan", "enterprise")
+```
+
+### 참고:
+
+SDK가 수집하는 [기본 속성](/sdk/analytics/events#reserved-keys)은 SDK의 로컬 캐시에서 무시됩니다.
+
+키/값 형식은 두 인수가 모두 truthy여야 합니다. `setProperties("plan", "")` 또는 `setProperties("seats", 0)`은 `invalid user properties provided to set` 예외를 발생시킵니다. falsy 값에는 객체 형식을 사용하세요.
+
+전달한 전체 `properties` 페이로드와 함께 이벤트가 큐에 추가됩니다.
+
+## setPropertiesOnce
+
+속성이 (SDK의 로컬 관점에서) 아직 존재하지 않는 경우에만 설정합니다.
+
+```ts
+tracker.analytics.people.setPropertiesOnce({
+	signup_source: "docs",
+	first_seen_at: Date.now(),
+})
+```
+
+### 참고:
+
+로컬 people 캐시에 아직 없는 속성만 로컬에 기록됩니다.
+
+전달한 속성과 함께 `setPropertyOnce` 뮤테이션 이벤트는 여전히 큐에 추가됩니다.
+
+## appendValues
+
+기존 속성에 값을 추가합니다. 속성이 현재 문자열/숫자인 경우 배열로 바뀝니다.
+
+```ts
+// start with something
+tracker.analytics.people.setProperties({ tags: "new" })
+
+// append
+tracker.analytics.people.appendValues("tags", "beta-user")
+```
+
+### 참고:
+
+SDK는 해당 속성이 로컬에 이미 존재하는 경우에만 로컬 캐시를 업데이트합니다.
+
+추가(append) 뮤테이션 이벤트는 항상 큐에 추가됩니다.
+
+## appendUniqueValues
+
+값이 아직 존재하지 않는 경우에만 추가합니다.
+
+```ts
+tracker.analytics.people.setProperties({ tags: ["new"] })
+tracker.analytics.people.appendUniqueValues("tags", "new") // no change
+tracker.analytics.people.appendUniqueValues("tags", "beta-user") // appended
+```
+
+### 참고:
+
+속성이 아직 로컬에 존재하지 않으면 이 호출은 아무 동작도 하지 않습니다(바로 반환). 먼저 `setProperties` / `setPropertiesOnce`로 설정하세요.
+
+## increment
+
+숫자 속성에 숫자(음수 포함)를 더합니다.
+
+```ts
+tracker.analytics.people.increment("logins", 1)
+tracker.analytics.people.increment("credits", -10)
+```
+
+### 참고:
+
+속성이 로컬에 존재하지 않으면 증가시키기 전에 `0`으로 초기화됩니다.
+
+속성이 존재하지만 숫자가 아닌 경우 SDK는 오류를 발생시킵니다.
+
+## Mixpanel 호환 별칭
+
+모든 메서드는 익숙하게 사용할 수 있도록 제공되는 호환 계층을 지원합니다:
+
+```ts
+tracker.analytics.people.set // setProperties
+tracker.analytics.people.set_once // setPropertiesOnce
+tracker.analytics.people.append // appendValues
+tracker.analytics.people.union // appendUniqueValues
+tracker.analytics.people.incrementBy // increment
+```
+
+## 예제
+일반적인 흐름
+
+```ts
+tracker.analytics.people.identify("user_123")
+
+tracker.analytics.people.setProperties({
+	email: "user@example.com",
+	plan: "pro",
+})
+
+tracker.analytics.people.increment("sessions", 1)
+tracker.analytics.people.appendUniqueValues("features_used", "analytics")
+```
+
+### 사용자 전환
+
+OpenReplay 세션은 1.24.0 기준으로 단일 사용자만 지원하므로, 새 사용자가 세션에서 이전 사용자를 덮어쓴다는 점에 유의하세요.
+사용자를 전환할 때는 `forceNew` 옵션으로 트래커도 다시 시작하세요.
+
+```ts
+tracker.analytics.people.identify("user_a")
+tracker.analytics.people.setProperties({ plan: "free" })
+
+// switching user resets local people properties automatically
+tracker.analytics.people.identify("user_b")
+```
+
+
+## 궁금한 점이 있으신가요?
+
+문제가 발생하면 [Slack](https://slack.openreplay.com)에 접속하여 커뮤니티의 도움을 받으세요.

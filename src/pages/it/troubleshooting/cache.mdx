@@ -1,0 +1,21 @@
+---
+title: "Svuotare la cache"
+metaTitle: "Svuotare la cache"
+metaDescription: "Come svuotare e reimpostare la cache (CSS, font e icone) in OpenReplay."
+---
+
+OpenReplay ha bisogno di accedere a risorse come i fogli di stile, le icone e i font per far funzionare i replay. Questi file vengono infatti copiati e poi memorizzati nella cache dal nostro backend, in modo da poter vedere le vecchie registrazioni anche se la tua web app è cambiata. Segui i passaggi riportati di seguito per svuotare la cache:
+
+1. Esegui `k9s -n db`
+2. Usa le frecce della tastiera per scorrere l'elenco e raggiungere il container `minio-*`
+3. Premi s per ottenere l'accesso shell al container Minio (object storage)
+4. Esegui `export MINIO_ACCESS_KEY=<accessKey from vars.yaml>`
+5. Esegui `export MINIO_SECRET_KEY=<secretKey from vars.yaml>`
+6. Esegui `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
+7. Esegui `mc rm --recursive --dangerous --force minio/sessions-assets` per rimuovere tutti i file in cache (CSS, font e icone)
+8. Usa `exit` per uscire dal container Minio
+9. Esegui `:quit` per uscire dalla CLI di Kubernetes
+10. Riavvia il servizio `assets` eseguendo `openreplay -R`
+
+## Hai domande?
+Se hai domande su questa procedura, non esitare a contattarci su [Slack](https://slack.openreplay.com).

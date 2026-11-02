@@ -1,0 +1,52 @@
+---
+title: "Configurare SMTP"
+metaTitle: "Configurare SMTP"
+metaDescription: "Configura SMTP per ricevere avvisi e report settimanali, invitare nuovi utenti in OpenReplay e reimpostare le password."
+---
+
+Alcune funzionalità, come `alerts`, `weekly reports`, `password reset` e `inviting new users`, **richiedono** l'invio di email. Quindi, finché non configuri SMTP, queste funzioni non saranno disponibili. Ti consigliamo vivamente di usare un Email Service Provider (ESP), come Mailgun o SendGrid, per ottenere la massima affidabilità e recapitabilità. Qui sotto trovi una guida passo passo per configurare Mailgun, ma qualsiasi altro provider va bene.
+
+## Configurazione di SMTP
+
+Per abilitare SMTP, esegui `openreplay -e` e aggiorna le seguenti variabili d'ambiente nella sezione `email`:
+
+| Variabile | Predefinito | Descrizione |
+|----------|-------------|-------------|
+| emailHost |  | Hostname SMTP (ad es. smtp.mailgun.org) |
+| emailPort | 587 | Porta SMTP |
+| emailUser |  | Nome utente SMTP|
+| emailPassword |  | Password SMTP |
+| emailUseTls | true | Per usare TLS nella connessione all'host SMTP |
+| emailUseSsl | false | Per usare SSL nella connessione all'host SMTP |
+| emailSslKey |  | Percorso della tua chiave SSL (se applicabile) |
+| emailSslCert |  | Percorso del tuo certificato SSL (se applicabile) |
+| emailFrom | do-not-reply@openreplay.com | L'email del mittente |
+
+Poi salva ed esci con `:wq` affinché le modifiche abbiano effetto. A questo punto puoi verificare la configurazione invitando te stesso (con un altro indirizzo email) come nuovo membro del team (in 'Preferences' > 'Users').
+
+## Mailgun
+
+1. Vai su 'Sending' > 'Domains' e fai clic su 'Add New Domain'
+2. Inserisci il tuo sottodominio (ad es. m.mycompany.com) in 'Domain name' e assicurati che 'Create DKIM Authority' sia selezionato, preferibilmente con una chiave da 2048 bit
+3. Vai al tuo provider DNS (Mailgun fornisce istruzioni specifiche) e aggiungi **tutti i record mostrati**
+4. Una volta aggiunti tutti i record, fai clic su 'Verify DNS Settings'
+5. Ora vai su 'Sending' > 'Domains settings' > 'SMTP credentials' e fai clic su 'Add new SMTP user'. Inserisci 'Login' (ad es. openreplay), poi fai clic su 'Create SMTP credentials'. Dovrebbe comparire un popup: premi 'Copy' per copiare la password generata.
+6. Usa le impostazioni e le credenziali SMTP mostrate per configurare SMTP in OpenReplay.  Esegui `openreplay -e` e aggiorna le seguenti variabili d'ambiente nella sezione `email`:
+
+```yaml
+emailHost: 'smtp.eu.mailgun.org' # from SMTP settings section
+emailPort: '587'
+emailUser: 'openreplay@mycompany.com' # from SMTP credentials section
+emailPassword: 'password' # the one copied when you created SMTP credentials
+emailUseTls: 'true'
+emailUseSsl: 'false'
+emailSslKey: ''
+emailSslCert: ''
+emailFrom: 'openreplay@mycompany.com' # sender email, use your domain'
+```
+
+7. Salva ed esci con `:wq` affinché le modifiche abbiano effetto.
+8. Puoi verificare la configurazione invitando te stesso (con un altro indirizzo email) come nuovo membro del team (in 'Preferences' > 'Users').
+
+## Hai domande?
+Se hai domande su questa procedura, scrivici pure sul nostro [Slack](https://slack.openreplay.com) .

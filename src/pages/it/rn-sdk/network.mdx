@@ -1,0 +1,77 @@
+---
+title: "React Native SDK - Intercettare la rete"
+metaTitle: "React Native SDK - Intercettare la rete"
+metaDescription: "Dettagli sull'intercettazione della rete per il tracker React Native"
+---
+
+## Intercettare la rete
+
+ORTracker esporta `NetworkListener`, che accetta sia task sia richieste. Ecco come usarlo:
+
+```swift
+import ORTracker
+
+func fetchPokemonData(for name: String) {
+    let networkListener = NetworkListener()
+    let url = URL(string: "https://pokeapi.co/api/v2/pokemon/ditto")!
+    var request = URLRequest(url: url)
+    request.httpMethod = "GET" // This is the default, so it's optional in this case.
+
+    // Start the network listener with the request
+    networkListener.start(request: request)
+
+    // Create a data task
+    let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        if let error = error {
+            print("Error: \(error.localizedDescription)")
+            return
+        }
+
+        if let data = data {
+            do {
+                let json = try JSONSerialization.jsonObject(with: data, options: [])
+								print(json)
+            } catch {
+                print("Error deserializing JSON: \(error)")
+            }
+        }
+        networkListener.finish(response: response, data: data)
+    }
+
+    task.resume()
+	}
+```
+
+## Sanificare la richiesta
+
+Vengono esportate due chiavi per rimuovere automaticamente i dati di richiesta/risposta: `ignoredKeys` per il body e `ignoredHeaders` per gli header. Sia la richiesta sia la risposta verranno sanificate, ma il body sarà interessato solo se è un JSON valido.
+
+Assegna semplicemente un elenco di stringhe che vuoi sanificare:
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+È anche possibile modificare i dati della risposta prima di passarli al listener:
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```
+
+## Hai domande?
+Se hai domande su questo processo, non esitare a contattarci sul nostro [Slack](https://slack.openreplay.com).

@@ -1,0 +1,111 @@
+---
+title: "Deploy su Google Cloud"
+metaTitle: "Deploy su Google Cloud"
+metaDescription: "Guida passo passo per distribuire OpenReplay su Google Cloud."
+layout: ~/layouts/MainLayout.astro
+i18nReady: true
+---
+import YoutubeVideo from '~/components/YoutubeVideo.astro'
+
+<YoutubeVideo title="Guarda come distribuire OpenReplay nella tua infrastruttura GCP"
+  description="Se non ti piace leggere, puoi seguire questo video tutorial che mostra come distribuire OpenReplay su GCP"
+  videoURL="https://youtu.be/t31fj-0t3Dw"
+  />
+
+
+Lo stack di OpenReplay può essere installato su una singola macchina e Google Cloud è un candidato ideale. 
+
+
+## Avviare una VM
+
+1. Vai alla dashboard 'Compute Engine' e seleziona 'VM Instances' dal menu laterale sinistro
+2. Fai clic su 'Create Instance'
+3. Seleziona la 'region' e la 'zone' che preferisci
+4. Scegli il tipo di macchina. Le specifiche minime sono `2 vCPUs, 8 GB of RAM, 50 GB of storage`, su un'architettura x86, altrimenti i servizi backend di OpenReplay semplicemente non si avvieranno. Ti consigliamo quindi **almeno** una `n2-standard-2` (o equivalente; tieni presente che la `e2-standard-2` è nota per creare problemi durante il deployment), sufficiente per un volume di traffico basso o moderato. Se prevedi un traffico elevato, dovresti scalare a partire da qui.
+5. Cambia il disco di avvio in *Ubuntu 24.04 LTS* o successivo, poi scegli *SSD persistent disk* come tipo di disco di avvio e imposta la dimensione a 50 GB.
+6. Seleziona sia 'Allow HTTP traffic' sia 'Allow HTTPS traffic' nel Firewall
+7. Fai clic su 'Create'
+
+## Distribuire OpenReplay
+
+Quando la tua istanza è `Running`, connettiti ad essa facendo clic sul pulsante `SSH`, quindi installa OpenReplay indicando il dominio su cui verrà eseguito (ad es. DOMAIN_NAME=openreplay.mycompany.com):
+
+```bash
+sudo wget https://raw.githubusercontent.com/openreplay/openreplay/main/scripts/helmcharts/openreplay-cli -O /bin/openreplay 
+sudo chmod +x /bin/openreplay
+openreplay -i DOMAIN_NAME
+```
+
+## Configurare TLS/SSL
+
+OpenReplay gestisce dati sensibili degli utenti e richiede quindi HTTPS per funzionare. Questo è obbligatorio, altrimenti il tracker semplicemente non inizierebbe a registrare. Lo stesso vale per la dashboard: senza HTTPS non potrai riprodurre le sessioni degli utenti.
+
+Il modo più semplice per gestire SSL in Google Cloud è configurare un load balancer (Google Load Balancing) ed eseguire OpenReplay dietro di esso. Un'altra opzione è generare o usare un tuo certificato SSL e far puntare il tuo sottodominio (ad es. openreplay.mycompany.com) all'istanza di OpenReplay. Qui sotto trovi maggiori dettagli su entrambe le opzioni.
+
+### Configurare il load balancer di Google (opzione 1)
+
+Il primo passo è aggiungere un instance group, necessario in seguito per il load balancer:
+
+1. Vai su 'Compute Engine' > 'Instance Groups'
+2. Fai clic su 'Create Instance Group' e seleziona *New unmanaged instance group*
+3. Scegli la 'Location' che preferisci, poi seleziona la 'Network' e scegli l'istanza VM di OpenReplay
+4. Fai clic su 'Create'
+
+Ora è il momento di creare il load balancer:
+
+1. Vai su 'Network Services' > 'Load Balancing'
+2. Fai clic su 'Create Load Balancer' e scegli *HTTP(S) Load Balancing*
+3. Scegli 'From Internet to my VMs', quindi fai clic su 'Continue'
+4. Inizia da 'Backend configuration' e fai clic su 'Backend services' > 'Create a backend service'
+5. Seleziona *Instance group* per 'Backend type'. In 'Backends' > 'New backend', scegli l'instance group creato in precedenza, imposta la porta su `80`, quindi fai clic su 'Done'.
+6. Scorri fino a 'Health Check' e fai clic su 'Create a health check'. Scegli HTTP per il 'Protocol', imposta la 'Port' su `80`, quindi cambia il 'Request path' in `/healthz`. Mantieni gli altri valori predefiniti, quindi fai clic su 'Save'.
+7. Fai clic su 'Create'
+8.  In 'Frontend configuration', scegli HTTPS per il 'Protocol', poi in 'Certificate' crea un nuovo certificato (gestito da Google) oppure importa il tuo. Fai clic su 'Done'.
+9. Controlla tutto, quindi fai clic su 'Create'
+
+Una volta creato, vai su Cloud DNS (o sul tuo provider DNS) e crea un `A Record` che punti al load balancer tramite il suo IP (che trovi nella dashboard di Load Balancing).
+
+Ora è tutto pronto: OpenReplay dovrebbe essere raggiungibile in modo sicuro sul sottodominio che hai appena configurato. Puoi creare un account visitando la pagina `/signup` (ad es. openreplay.mycompany.com/signup).
+
+### Importare/generare il tuo certificato SSL (opzione 2)
+
+In alternativa alla creazione di un load balancer, puoi importare (o generare) un tuo certificato SSL.
+
+1. Per prima cosa, vai su Cloud DNS (o sul tuo altro provider DNS) e crea un `A Record`. Usa il dominio che hai indicato in precedenza durante la fase di installazione e fallo puntare alla VM tramite il suo IP pubblico (che trovi nella dashboard di Compute Engine).
+
+2. Se importi un tuo certificato, crea un secret SSL con il seguente comando: `kubectl create secret tls openreplay-ssl -n app --key="private_key_file.pem" --cert="certificate.crt"`.
+
+> **Nota:** Se non hai un certificato, generane uno con rinnovo automatico per il tuo sottodominio (quello indicato durante l'installazione) usando Let's Encrypt. Basta connettersi all'istanza di OpenReplay, eseguire `cd /var/lib/openreplay/openreplay/scripts/helmcharts && bash certmanager.sh` e seguire i passaggi.
+
+3. Se vuoi abilitare il reindirizzamento da http a https (consigliato), rimuovi il commento dal blocco seguente, nella sezione `ingress-nginx`, in `/var/lib/openreplay/vars.yaml`:
+   
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    config:
+      ssl-redirect: true
+      force-ssl-redirect: true
+```
+
+Vale la pena ricordare che il nostro `ingress-nginx` viene eseguito per impostazione predefinita sulle porte `80|443`, ma questo può essere facilmente modificato, se necessario, in `vars.yaml`:
+
+```yaml
+ingress-nginx: &ingress-nginx
+  controller:
+    service:
+      ports:
+        http: 80
+        https: 443
+```
+
+4. Infine, reinstalla l'NGINX di OpenReplay:
+
+```bash
+openreplay -R
+```
+
+Ora è tutto pronto: OpenReplay dovrebbe essere raggiungibile sul tuo sottodominio. Puoi creare un account visitando la pagina `/signup` (ad es. openreplay.mycompany.com/signup).
+
+## Hai domande?
+
+Se riscontri qualche problema, connettiti al nostro [Slack](https://slack.openreplay.com) e ottieni aiuto dalla nostra community.

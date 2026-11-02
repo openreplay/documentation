@@ -1,0 +1,342 @@
+---
+title: "Assist"
+metaTitle: "Assist"
+metaDescription: "OpenReplay Assist를 설정하고 라이브 화면과 WebRTC로 최종 사용자를 지원하는 방법을 안내합니다."
+---
+
+import Aside from '~/components/Aside.astro'
+
+OpenReplay Assist를 사용하면 별도의 서드파티 화면 공유 소프트웨어 없이도 사용자의 라이브 화면을 확인하고 즉시 통화(WebRTC)를 시작하여 사용자를 지원할 수 있습니다.
+
+<Aside type="tip">
+  Assist를 활용해 사용자와 실시간으로 소통하는 방법을 자세히 설명한 튜토리얼도 준비되어 있습니다. [여기](/tutorials/assist)에서 확인해 보세요.
+</Aside>
+
+## 설치
+
+```bash
+npm i @openreplay/tracker-assist
+```
+
+## 사용법
+
+### JavaScript 스니펫 사용
+
+OpenReplay 트래커를 JS 스니펫으로 설정했다면 `.../openreplay.js`로 되어 있는 부분을 `.../openreplay-assist.js`로 바꾸기만 하면 됩니다. 변경 후 스크립트가 어떻게 보여야 하는지 아래 예시를 참고하세요.
+
+```js
+<!-- OpenReplay Tracking Code -->
+<script>
+var initOpts = { projectKey: "GxPpaDARdn2345fgt321" };
+var startOpts = { userID: "" };
+(function(A,s,a,y,e,r){
+  r=window.OpenReplay=[e,r,y,[s-1, e]];
+  s=document.createElement('script');s.src=A;s.async=!a;
+  ...
+})("//static.openreplay.com/latest/openreplay-assist.js", 1, 0, initOpts, startOpts);
+</script>
+```
+
+### NPM 사용
+
+트래커를 초기화한 다음 `@openreplay/tracker-assist` 플러그인을 로드합니다.
+
+#### 웹사이트가 싱글 페이지 애플리케이션(SPA)인 경우
+
+```js
+import trackerAssist from '@openreplay/tracker-assist';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+tracker.use(trackerAssist(options)); // check the list of available options below
+
+tracker.start();
+
+```
+
+#### 웹 앱이 서버 사이드 렌더링(SSR)인 경우
+
+앱이 SSR인 경우 아래 예시를 따르세요. `tracker.start()`가
+브라우저 환경에서 앱이 시작된 후(예: `useEffect` 또는 `componentDidMount`를 통해) 호출되도록 하세요.
+
+```js
+import trackerAssist from '@openreplay/tracker-assist';
+import { tracker } from '@openreplay/tracker';
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+tracker.use(trackerAssist(options)); // check the list of available options below
+
+//...
+function MyApp() {
+  useEffect(() => { // use componentDidMount in case of React Class Component
+    tracker.start();
+  }, [])
+//...
+}
+```
+
+## 옵션
+
+Assist 플러그인은 아래 옵션을 지원합니다.
+
+```js
+trackerAssist({
+  callConfirm?: string|ConfirmOptions;
+  controlConfirm?: string|ConfirmOptions;
+  config?: object;
+  onAgentConnect?: () => (()=>void | void);
+  onCallStart?: () => (()=>void | void);
+  onRemoteControlStart?: () => (()=>void | void);
+  onCallDeny?: () => any;
+  onRemoteControlDeny?: (agentInfo: Record<string, any>) => any;
+  onRecordingDeny?: (agentInfo: Record<string, any>) => any;
+  onDragCamera?: (dx: number, dy: number) => any;
+  callUITemplate?: string
+  /** 
+   * enables gzip compression for big batches on client side
+   * */
+  compressionEnabled: boolean;
+  /**
+   * Minimum amount of MESSAGES in a batch to trigger compression run
+   * @default 5000
+   * */
+  compressionMinBatchSize: number;
+  /**
+   * Show only the first part of an agent's name in the call popup
+   * (e.g. "One Two" -> "One").
+   * @default false
+   */
+  agentShortNames: boolean;
+  /**
+   * Postpone assist start until a userID is set on the session.
+   * @default false
+   */
+  ignoreAnonymous: boolean;
+  /**
+   * When assist connects to the server:
+   * - Autostart.Auto (default): always on tracker start.
+   * - Autostart.Disabled: only via an explicit start() call.
+   * - Autostart.Continuation: only via assist.start(), but the choice is remembered
+   *   in sessionStorage so it auto-continues across page reloads until assist.stop().
+   * @default Autostart.Auto
+   */
+  autostart: Autostart;
+  /**
+   * Require explicit user confirmation before anything is shared with an
+   * agent: assist starts and opens the socket as usual, but no messages are
+   * sent through it until the user approves the confirmation popup, which is
+   * shown as soon as the first agent connects to the session. The approval
+   * is remembered per-tab (sessionStorage) until stop() is called.
+   * @default false
+   */
+  requestConfirm: boolean;
+  /** Text/style customization for the session view confirmation popup. */
+  sessionConfirm?: ConfirmOptions;
+  /** Called when the user approves session viewing (requestConfirm mode). */
+  onSessionConfirmApprove?: (agentInfo: Record<string, any>) => any;
+  /** Called when the user denies session viewing (requestConfirm mode). */
+  onSessionConfirmDeny?: (agentInfo: Record<string, any>) => any;
+})
+```
+
+### 위젯 커스터마이징
+
+최종 사용자에게 표시되는 라이브 뷰, 원격 제어, 통화 위젯은 모두 자유롭게 커스터마이징할 수 있습니다.
+
+#### 라이브 뷰 위젯
+
+`requestConfirm: true`를 설정하면 에이전트가 사용자의 세션을 실시간으로 보기 전에 사용자의 허가를 요구합니다. Assist는 평소처럼 시작되어 연결되지만, 첫 번째 에이전트가 연결되는 즉시 표시되는 확인 팝업을 사용자가 승인하기 전까지는 에이전트에게 세션이 보이지 않습니다. 승인하면 트래킹이 다시 시작되고, 에이전트가 사용자의 세션을 실시간으로 볼 수 있게 됩니다. 승인 상태는 [`stop()`](#methods)이 호출될 때까지 유지되며, 호출 시 승인이 취소되므로 다음 [`start()`](#methods) 때 다시 확인 팝업이 표시됩니다.
+
+```js
+tracker.use(trackerAssist({
+  requestConfirm: true,
+  sessionConfirm: { text: 'A support agent would like to view your screen. Allow?' },
+  onSessionConfirmApprove: ({ email, name, query }) => console.log("Session viewing approved"),
+  onSessionConfirmDeny: ({ email, name, query }) => console.log("Session viewing denied"),
+}));
+```
+
+팝업의 텍스트와 스타일은 `sessionConfirm` 옵션으로 커스터마이징할 수 있으며, 이 옵션은 아래의 `ConfirmOptions` 객체를 받습니다.
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
+
+#### 원격 제어 위젯
+
+팝업의 텍스트와 스타일은 `controlConfirm` 옵션으로 커스터마이징할 수 있으며, 이 옵션은 아래의 `ConfirmOptions` 객체를 받습니다.
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
+
+#### 통화 위젯
+
+팝업의 텍스트와 스타일은 `callConfirm` 옵션으로 커스터마이징할 수 있으며, 이 옵션은 아래의 `ConfirmOptions` 객체를 받습니다.
+
+```js
+type ConfirmOptions = {
+  text?:string,
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+  confirmBtn?: ButtonOptions, 
+  declineBtn?: ButtonOptions
+}
+
+type ButtonOptions = HTMLButtonElement | string | {
+  innerHTML?: string, // to pass an svg string or text
+  style?: StyleObject, // style object (i.e {color: 'red', borderRadius: '10px'})
+}
+```
+
+아래의 `ids`와 `classes` 집합을 사용하면 이 위젯의 모든 요소를 커스터마이징할 수도 있습니다. `Ids`는 개별 버튼/요소를 지정하는 앵커 역할을 하고, `classes`는 그룹 컨테이너에 사용할 수 있습니다.
+
+| HTML 유형 | 이름 | 설명 |
+|----------|-------------|-------------|
+|id | `or-assist` | 위젯 컨테이너 |
+|class | `card`, `border-dark`, `shadow`, `drag-area` | 카드의 테두리와 그림자 스타일 |
+|id | `controls`  | 위젯 내부의 통화 영역 컨테이너 |
+|class | `card-header` | 통화 위젯의 카드 헤더(에이전트 이름과 타이머가 나란히 표시되는 부분) 스타일 |
+|id | `agent-name` | 에이전트 이름 컨테이너 |
+|id | `duration` | 타이머 컨테이너 |
+|id | `video-container` | 사용자 본인의 비디오 피드 컨테이너 |
+|id | `remote-stream` | 에이전트의 비디오 피드 |
+|class | `card-footer` | Mute, Video, End Call 버튼의 컨테이너 |
+|id | `audio-btn` | 음소거 버튼 |
+|id | `video-btn` | 비디오 버튼 |
+|id | `end-call-btn` | 통화 종료 버튼 |
+|id | `remote-control-row` | 원격 제어 행 |
+|id | `end-control-btn` | 제어 종료 버튼의 ID |
+
+### 콜백
+
+사용 가능한 모든 콜백 목록은 다음과 같습니다.
+
+- `callConfirm`: 통화 요청 팝업의 텍스트와 레이아웃을 커스터마이징합니다.
+- `controlConfirm`: 원격 제어 요청 팝업의 텍스트와 레이아웃을 커스터마이징합니다.
+- `config`: 사용자 지정 ICE/TURN 서버 구성을 담습니다. 기본값은 `{ 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }], 'sdpSemantics': 'unified-plan' }`입니다.
+- `onAgentConnect: () => (()=>void | void)`: 라이브 세션이 시작되는 즉시 호출되며, 에이전트의 정보(이메일, 이름, 쿼리)를 전달합니다. 세션 연결이 끊어질 때 호출되는 `onAgentDisconnect`를 반환할 수도 있습니다. 연결이 불안정한 경우 여러 번 호출될 수 있습니다. 예시는 다음과 같습니다.
+
+```js
+onAgentConnect = ({ email, name, query }) => {
+  console.log("Live session started")
+  const onAgentDisconnect =  () => console.log("Live session stopped")
+  return onAgentDisconnect
+}
+```
+
+- `onCallStart: ({ email, name, query }) => (()=>void | void)`: 통화(WebRTC)가 시작되는 즉시 호출되며, 에이전트의 정보(이메일, 이름, 쿼리)를 전달합니다. 통화가 끝날 때 호출되는 `onCallEnd`를 반환할 수도 있습니다. 연결이 불안정한 경우 여러 번 호출될 수 있습니다. 예시는 다음과 같습니다.
+
+```js
+onCallStart: () => {
+  console.log("Call started")
+  const onCallEnd = () => console.log("Call ended")
+  return onCallEnd
+}
+```
+
+- `onRemoteControlStart: ({ email, name, query }) => (()=>void | void)`: 원격 제어 세션이 시작되는 즉시 호출되며, 에이전트의 정보(이메일, 이름, 쿼리)를 전달합니다. 원격 제어 권한이 취소될 때 호출되는 `onRemoteControlEnd`를 반환할 수도 있습니다. 예시는 다음과 같습니다.
+
+```js
+onRemoteControlStart: () => {
+  console.log("Remote control started")
+  const onControlEnd = () => console.log("Remote control ended")
+  return onControlEnd
+}
+```
+
+- `onCallDeny?: () => any;`: 요청 단계에서 사용자가 통화를 거부했을 때 호출됩니다.
+
+```js
+onCallDeny: () => {
+  console.log("Call denied")
+}
+```
+
+- `onRemoteControlDeny?: (agentInfo: Record<string, any>) => any;`: 요청 단계에서 사용자가 원격 제어 세션을 거부했을 때 호출되며, 에이전트의 정보(이메일, 이름, 쿼리)를 전달합니다.
+
+```js
+onRemoteControlDeny: ({ email, name, query }) => {
+  console.log("Remote control request denied for", email)
+}
+```
+
+- `onRecordingDeny?: (agentInfo: Record<string, any>) => any;`: 요청 단계에서 사용자가 녹화 세션을 거부했을 때 호출되며, 에이전트의 정보(이메일, 이름, 쿼리)를 전달합니다.
+
+```js
+onRecordingDeny: ({ email, name, query }) => {
+  console.log("Recording session denied")
+ 
+}
+```
+
+- `onSessionConfirmApprove?: (agentInfo: Record<string, any>) => any;`: 사용자가 세션 보기를 승인했을 때([`requestConfirm`](#live-view-widget) 모드) 호출되며, 에이전트의 정보(이메일, 이름, 쿼리)를 전달합니다.
+
+```js
+onSessionConfirmApprove: ({ email, name, query }) => {
+  console.log("Session viewing approved for", email)
+}
+```
+
+- `onSessionConfirmDeny?: (agentInfo: Record<string, any>) => any;`: 사용자가 세션 보기를 거부했을 때([`requestConfirm`](#live-view-widget) 모드) 호출되며, 에이전트의 정보(이메일, 이름, 쿼리)를 전달합니다.
+
+```js
+onSessionConfirmDeny: ({ email, name, query }) => {
+  console.log("Session viewing denied")
+}
+```
+
+- `onDragCamera?: (dx: number, dy: number) => any;`: 원격 제어 시 Three.js 캔버스 안에서 마우스 버튼을 누른 채 움직일 때의 동작을 정의하는 핸들러를 받는 함수입니다. 핸들러는 마우스 이동량을 나타내는 dx와 dy를 전달받습니다.
+
+```js
+onDragCamera: (dx, dy) => {
+  moveCamera(dx, dy)
+}
+```
+
+## 메서드
+
+`tracker.use()`는 assist 인스턴스를 반환하며, 이 인스턴스는 런타임에 assist를 제어하는 메서드를 제공합니다.
+
+```js
+const assist = tracker.use(trackerAssist(options));
+
+assist.stop();
+assist.start();
+```
+
+- `start()`: assist를 (다시) 시작합니다. 트래커 자체가 아직 활성화되지 않았다면 아무 동작도 하지 않으며(assist는 트래커와 함께 시작됩니다), `Autostart.Continuation` 모드에서는 페이지를 새로고침해도 assist가 자동으로 이어지도록 `sessionStorage`에 플래그를 저장합니다. 명시적인 `start()` 호출은 `ignoreAnonymous`로 인한 시작 보류도 무효로 합니다.
+- `stop()`: 소켓 연결을 끊고 모든 연결을 정리하여 assist를 중지합니다. `start()`가 호출되기 전에는 assist가 자동으로 다시 시작되지 않습니다. `Autostart.Continuation` 모드에서는 저장된 플래그도 함께 삭제되므로 새로고침해도 자동으로 이어지지 않습니다. [`requestConfirm`](#live-view-widget) 모드에서는 사용자의 승인도 취소되므로 다음 `start()` 때 다시 확인 팝업이 표시됩니다.
+
+<Aside type="caution">
+  `tracker.use()`는 assist를 로드할 수 없는 환경(예: 미디어 장치를 지원하지 않거나 iframe 내부인 경우)에서 `undefined`를 반환하므로, 반환된 인스턴스를 사용하기 전에 적절히 처리하세요.
+</Aside>
+
+## 질문이 있으신가요?
+
+이 플러그인 설정에 문제가 있나요? [Slack](https://slack.openreplay.com)에 접속하여 커뮤니티의 도움을 받으세요.

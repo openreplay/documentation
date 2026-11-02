@@ -1,0 +1,227 @@
+---
+title: "커스텀 휴리스틱"
+metaTitle: "커스텀 휴리스틱"
+metaDescription: "직접 만든 알고리즘으로 휴리스틱 서비스를 확장하는 방법"
+---
+휴리스틱은 높은 CPU 사용량이나 클릭 레이지(click rage)와 같은 문제를 감지하는 데 사용하는 단순하고 견고한 알고리즘을 가리킵니다. 여기서는 하나의 예제를 통해 휴리스틱이 어떻게 동작하는지, 그리고 직접 감지기를 만들고 그 결과를 DevTools에서 확인하는 방법을 알아봅니다.
+
+## 템플릿
+
+휴리스틱 템플릿은 `openreplay/backend/pkg/handlers/custom` 경로에 있습니다.
+
+```tsx
+package custom
+
+import . "openreplay/backend/pkg/messages"
+
+type CustomHandler struct {
+	lastTimestamp uint64
+}
+
+func (h *CustomHandler) Handle(message Message, messageID uint64, timestamp uint64) Message {
+	h.lastTimestamp = timestamp
+	return nil
+}
+
+func (h *CustomHandler) Build() Message {
+	return nil
+}
+```
+
+휴리스틱 메서드를 만들었다면 `main.go` 파일을 수정하여 추가할 수 있습니다. 이 파일의 경로는
+`openreplay/backend/cmd/heuristics`입니다. 이 파일에서 커스텀 모듈을 import하고 메시지 프로세서 핸들러에 커스텀 함수를 추가하세요.
+```tsx
+package main
+
+import (
+        "log"
+        "openreplay/backend/internal/config/heuristics"
+        "openreplay/backend/pkg/handlers"
+        web2 "openreplay/backend/pkg/handlers/web"
+        "openreplay/backend/pkg/intervals"
+        logger "openreplay/backend/pkg/log"
+        "openreplay/backend/pkg/messages"
+        "openreplay/backend/pkg/queue"
+        "openreplay/backend/pkg/queue/types"
+        "openreplay/backend/pkg/sessions"
+        "os"
+        "os/signal"
+        "syscall"
+        "time"
+        // Import custom modules here
+)
+
+func main() {
+        log.SetFlags(log.LstdFlags | log.LUTC | log.Llongfile)
+
+        // Load service configuration
+        cfg := heuristics.New()
+
+        // HandlersFabric returns the list of message handlers we want to be applied to each incoming message.
+        handlersFabric := func() []handlers.MessageProcessor {
+                return []handlers.MessageProcessor{
+                        // web handlers
+                        &web2.ClickRageDetector{},
+                        &web2.CpuIssueDetector{},
+                        &web2.DeadClickDetector{},
+                        &web2.MemoryIssueDetector{},
+                        &web2.NetworkIssueDetector{},
+                        &web2.PerformanceAggregator{},
+                        // Add custom handlers here
+                }
+        }
+        ...
+}
+```
+
+## Quick Return 예제
+
+이 예제에서는 5초 이내에 같은 URL로 돌아올 때마다 신호를 보내는 **Quick Return** 휴리스틱을 만들어 보겠습니다. 이러한 이벤트를 감지하는 메서드는 `SetPageLocation`과 `MouseClick` 이벤트를 활용합니다. 마우스 클릭이 발생할 때마다 현재 타임스탬프를 갱신하고, 이후 5초 이내에 현재 웹 페이지를 가리키는 `SetPageEvent` 메시지가 수신되면 QuickReturn 이벤트를 반환합니다.
+
+먼저 `openreplay/backend/pkg/handlers/custom` 경로에 아래 코드가 담긴 `quickreturn.go` 파일을 만듭니다.
+
+```go
+package custom
+import (
+    "log"
+    "encoding/json"
+    . "openreplay/backend/pkg/messages"
+)
+type QuickReturnDetector struct {
+    timestamp   uint64
+    currentPage string
+    lastPage    string
+}
+
+type CustomPayload struct {
+        Timestamp   uint64 `json:"timestamp"`
+        CurrentPage string `json:"current_page"`
+}
+
+// If received SetPageLocation on same 
+func (h *QuickReturnDetector) HandleSetPageLocation(msg *SetPageLocation, messageID uint64, timestamp uint64) Message {
+    if (h.timestamp + 5000 >= msg.NavigationStart && h.lastPage == msg.URL) {
+        h.timestamp = msg.NavigationStart
+        return h.Build()
+    }
+    h.lastPage = h.currentPage
+    h.currentPage = msg.URL
+    h.timestamp = msg.NavigationStart
+    return nil
+}
+// detect when a button is clicked (selector must have string 'button' in it)
+func (h *QuickReturnDetector) HandleMouseClick(msg *MouseClick, messageID uint64, timestamp uint64) {
+    h.timestamp = timestamp
+}
+func (h *QuickReturnDetector) Handle(message Message, messageID uint64, timestamp uint64) Message {
+    switch msg := message.(type) {
+    case *SetPageLocation:
+        if msg.NavigationStart != 0 {
+            return h.HandleSetPageLocation(msg, messageID, timestamp)
+        }
+    case *MouseClick:
+        h.HandleMouseClick(msg, messageID, timestamp)
+    }
+    return nil
+}
+func (h *QuickReturnDetector) Build() Message {
+    payload := &CustomPayload{
+        CurrentPage: h.currentPage,
+        Timestamp: h.timestamp,
+    }
+    payloadData, err := json.Marshal(payload)
+    if err != nil {
+            log.Println("JSON encoding error", err)
+            return nil
+    }
+    payloadString := string(payloadData)
+    event := &CustomEvent {
+        MessageID: 122,
+        Timestamp: h.timestamp,
+        Name:      "quickreturn",
+        Payload:   payloadString,
+    }
+    return event
+}
+```
+
+이제 휴리스틱을 만들었으니 활성화하기만 하면 됩니다. 이를 위해 `openreplay/backend/cmd/heuristics` 경로의 `main.go` 파일에 다음과 같이 휴리스틱을 추가합니다.
+
+```tsx
+package main
+
+import (
+        "log"
+        "openreplay/backend/internal/config/heuristics"
+        "openreplay/backend/pkg/handlers"
+        web2 "openreplay/backend/pkg/handlers/web"
+        "openreplay/backend/pkg/intervals"
+        logger "openreplay/backend/pkg/log"
+        "openreplay/backend/pkg/messages"
+        "openreplay/backend/pkg/queue"
+        "openreplay/backend/pkg/queue/types"
+        "openreplay/backend/pkg/sessions"
+        "os"
+        "os/signal"
+        "syscall"
+        "time"
+        // Add custom module
+        custom "openreplay/backend/pkg/custom"
+)
+
+func main() {
+        log.SetFlags(log.LstdFlags | log.LUTC | log.Llongfile)
+
+        // Load service configuration
+        cfg := heuristics.New()
+
+        // HandlersFabric returns the list of message handlers we want to be applied to each incoming message.
+        handlersFabric := func() []handlers.MessageProcessor {
+                return []handlers.MessageProcessor{
+                        // web handlers
+                        &web2.ClickRageDetector{},
+                        &web2.CpuIssueDetector{},
+                        &web2.DeadClickDetector{},
+                        &web2.MemoryIssueDetector{},
+                        &web2.NetworkIssueDetector{},
+
+                        // The new handler
+                        &custom.QuickReturnDetector{},
+                }
+        }
+        ...
+}
+```
+
+이제 휴리스틱을 사용할 수 있으며, 메시지는 **Custom Event**로 전송됩니다.
+새로운 휴리스틱을 사용하려면 먼저 백엔드를 다시 배포해야 합니다. 이를 위해 [**소스에서 배포**](https://docs.openreplay.com/deployment/deploy-source) 페이지의 *빌드 및 배포* 섹션에 나와 있는 단계를 따르세요.
+
+## 커스텀 이벤트 활용하기
+커스텀 휴리스틱이 새로운 커스텀 이벤트를 전송하게 되었으니, 이제 그 이벤트를 활용할 차례입니다.
+앞의 예제에서는 두 가지 방법이 있습니다.
+
+1. 커스텀 이벤트로 세션을 필터링하여 해당 "문제"(이 예제에서는 Quick Return 문제)가 발생한 세션만 목록에 표시할 수 있습니다.
+2. 플레이어의 DevTools 섹션에 있는 Events 탭에서 이벤트를 찾을 수 있습니다. 이렇게 하면 이벤트가 트리거된 정확한 시점을 파악할 수 있습니다.
+
+### 커스텀 이벤트로 세션 필터링
+
+새 커스텀 이벤트로 세션을 필터링하려면 [Omnisearch](/session-replay/omnisearch) 기능을 사용하여 검색창을 클릭하고 필터 유형으로 "Custom Events"를 선택하면 됩니다.
+선택한 후 이벤트 이름을 입력하면 됩니다. 입력을 시작하면 이름이 자동 완성되며, 아래 이미지와 같이 표시됩니다.
+
+![커스텀 이벤트 필터](/tutorials/heuristics/custom-events.png)
+
+**참고:** 자동 완성이 작동하지 않거나 찾는 이벤트 이름이 나타나지 않는다면, 해당 이름의 이벤트가 데이터베이스에 없다는 뜻입니다. 이 경우 커스텀 이벤트가 올바르게 전송되도록 로직을 다시 한번 확인하세요.
+
+### DevTools에서 커스텀 이벤트 찾기
+
+커스텀 이벤트가 정확히 언제 트리거되는지 확인하려면 세션을 재생한 후 DevTools의 "Events" 탭을 클릭하세요.
+화면 오른쪽 아래에 있습니다.
+클릭하면 탭이 열리고, 아래 이미지와 같이 직접 만든 커스텀 이벤트를 포함한 이벤트 목록이 표시됩니다.
+
+![DevTools에 표시된 이벤트 목록](/tutorials/heuristics/devtools.png)
+
+이 간단한 과정으로 새로운 감지기를 만들었습니다. 물론 알고리즘을 더 정교하게 만들어 여러 종류의 이벤트를 조합할 수도 있습니다.
+
+## 질문이 있으신가요?
+
+문제가 발생하면 [Slack](https://slack.openreplay.com)에 접속하여 커뮤니티의 도움을 받으세요.

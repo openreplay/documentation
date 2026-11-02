@@ -1,0 +1,63 @@
+---
+title: "iOS SDK - 민감한 데이터 정제"
+metaTitle: "iOS SDK - 민감한 데이터 정제"
+metaDescription: "iOS 트래커에서 녹화 및 네트워크 데이터를 정제하는 방법에 대한 자세한 설명"
+---
+
+## UI 컴포넌트
+
+정제된 뷰는 결과 리플레이에서 블러 처리됩니다. UI 컴포넌트를 자유롭게 추가할 수 있으며, 화면에서 사라지면 (메모리를 절약하기 위해) 자동으로 제거됩니다.
+
+### SwiftUI
+
+원하는 컴포넌트에 `.sensitive()` 수정자를 추가하기만 하면 됩니다.
+
+```swift
+import ORTracker
+
+Text("Very important sensitive text")
+.sensitive()
+
+```
+
+### UIKit
+
+```swift
+import ORTracker
+
+ORTracker.shared.addIgnoredView(view)
+```
+
+## 네트워크 요청
+
+요청/응답 데이터를 자동으로 제거하기 위해 두 가지 키가 제공됩니다. 본문에는 `ignoredKeys`, 헤더에는 `ignoredHeaders`를 사용합니다. 요청과 응답 모두 정제되지만, 본문은 유효한 JSON인 경우에만 영향을 받습니다.
+
+정제할 문자열 목록을 지정하기만 하면 됩니다.
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+리스너에 전달하기 전에 응답 데이터를 변경할 수도 있습니다.
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```
+
+## 질문이 있으신가요?
+이 과정에 대해 궁금한 점이 있으면 언제든지 [Slack](https://slack.openreplay.com)으로 문의해 주세요.

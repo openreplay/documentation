@@ -1,0 +1,189 @@
+---
+title: "Data Management"
+metaTitle: "Data Management - OpenReplay"
+metaDescription: "Erfassen Sie Custom Events und Benutzereigenschaften, um Ihre Product Analytics in OpenReplay zu speisen."
+---
+
+Mit Data Management in OpenReplay können Sie Custom Events und Benutzereigenschaften erfassen, die Ihre Product Analytics speisen. Diese Seite behandelt sowohl die SDK-Integration zum Senden von Daten als auch die Benutzeroberfläche zu deren Verwaltung.
+
+Die vollständige SDK-Dokumentation finden Sie in der [Analytics-SDK-Referenz](/sdk/analytics).
+
+## Übersicht über Ereignisse
+
+OpenReplay erfasst zwei Arten von Ereignissen:
+
+- **Automatisch erfasste Ereignisse**: Automatisch verfolgte Interaktionen wie Seitenaufrufe, Klicks und Formularübermittlungen
+- **Custom Events**: Domänenspezifische Ereignisse, die Sie selbst definieren, etwa „purchase completed“ oder „feature enabled“
+
+Mit Custom Events erfassen Sie die konkreten Benutzeraktionen, die für Ihr Unternehmen wichtig sind, und nutzen sie in Analytics-Funktionen wie [Trends](/product-analytics/trends), [Funnels](/product-analytics/funnels) und [Journeys](/product-analytics/journeys).
+
+## Ereignisse erfassen
+
+Um Custom Events zu erfassen, verwenden Sie das Analytics-Events-Modul des SDK. Die vollständige API-Dokumentation finden Sie in der [Events-SDK-Referenz](/sdk/analytics/events).
+
+### Einfaches Beispiel
+
+```ts
+// Track a simple event
+tracker.analytics.events.sendEvent("Button Clicked", {
+  button_text: "Start",
+  page: "home",
+})
+```
+
+### Super Properties
+
+Super Properties sind persistente Schlüssel-Wert-Paare, die automatisch an jedes erfasste Ereignis angehängt werden:
+
+```ts
+// Set super properties that apply to all events
+tracker.analytics.events.setProperty({
+  app_version: "1.42.0",
+  env: "prod",
+})
+
+// This event will include app_version and env automatically
+tracker.analytics.events.sendEvent("Signup Started", {
+  plan: "pro",
+})
+```
+
+## Benutzer anreichern
+
+Mit Benutzereigenschaften speichern Sie Attribute Ihrer Benutzer für Segmentierung und Analyse. Die vollständige API-Dokumentation finden Sie in der [People-SDK-Referenz](/sdk/analytics/people).
+
+### Benutzer identifizieren
+
+```ts
+// Identify the current user
+tracker.analytics.people.identify("user_123")
+
+// Set user properties
+tracker.analytics.people.setProperties({
+  email: "user@example.com",
+  plan: "pro",
+})
+```
+
+### Eigenschaftstypen
+
+OpenReplay unterstützt mehrere Eigenschaftstypen:
+
+| Typ | Beschreibung | Beispiele |
+|------|-------------|----------|
+| **Auto-tracked** | Wird automatisch vom SDK erfasst | Gerät, Browser, Betriebssystem, UTM-Parameter, Referrer |
+| **Special** | Spezielle Eigenschaften mit definiertem Verhalten | `$user_id`, `$email`, `$name` |
+| **Custom** | Benutzerdefinierte Eigenschaften | `plan type`, `company`, `signup date` |
+
+## Daten in der Benutzeroberfläche verwalten
+
+OpenReplay bietet eine Data-Management-Oberfläche, mit der Sie Ihre Benutzer, Ereignisse und deren Eigenschaften durchsuchen, filtern und organisieren können.
+
+### People
+
+<img src="/data-management/people-page.png" alt="Events-Seite" style={{ width: '700px', height: 'auto' }} />
+
+Der Tab People bietet eine Übersicht Ihrer identifizierten Benutzer:
+
+- Benutzer und deren Eigenschaften durchsuchen
+- Nach Benutzer-ID oder Eigenschaftswerten suchen
+- Benutzeraktivität und Sitzungsverlauf ansehen
+- Auf einzelne Benutzerprofile zugreifen
+
+### Events
+
+<img src="/data-management/events-page.png" alt="Events-Seite" style={{ width: '700px', height: 'auto' }} />
+
+Der Tab Events zeigt alle erfassten Ereignisarten in Ihrem Projekt an:
+
+- Ereignisse durchsuchen und nach Namen suchen
+- Nach Ereignistyp filtern (automatisch erfasst vs. benutzerdefiniert)
+- Ereignis-Metadaten bearbeiten (Anzeigename, Beschreibung)
+- Die Sichtbarkeit von Ereignissen in Dashboards und Filtern steuern
+
+### Properties
+
+<img src="/data-management/props-page.png" alt="Events-Seite" style={{ width: '700px', height: 'auto' }} />
+
+Im Tab Properties verwalten Sie sowohl Benutzer- als auch Ereigniseigenschaften:
+
+- Zwischen Benutzer- und Ereigniseigenschaften wechseln
+- Eigenschaftstypen und Werteverteilungen ansehen
+- Anzeigenamen von Eigenschaften bearbeiten
+- Die Sichtbarkeit von Eigenschaften in Dashboards und Filtern steuern
+
+### Activity
+
+<img src="/data-management/activity-page.png" alt="Events-Seite" style={{ width: '700px', height: 'auto' }} />
+
+Der Tab Activity zeigt einen Echtzeit-Stream von Ereignissen:
+
+- Ereignisse bei der Aufnahme in Echtzeit überwachen
+- Nach Ereignistyp oder Benutzer filtern
+- Überprüfen, ob Ereignisse korrekt erfasst werden
+
+### Segments
+
+Mit Segments fassen Sie mehrere Ereignisse zu einer einzigen, wiederverwendbaren Sammlung mit eigenem Namen und eigener Beschreibung zusammen. Statt jedes Mal einzelne Ereignisse auszuwählen, können Sie ein Segment einmal definieren und in ganz OpenReplay verwenden.
+
+<img src="/data-management/segments-list.png" alt="Liste der Segments" style={{ width: '700px', height: 'auto' }} />
+
+So erstellen Sie ein Segment:
+
+1. Öffnen Sie in Data Management den Tab **Segments**
+2. Klicken Sie auf **Create**
+3. Ändern Sie den Namen und legen Sie die Sichtbarkeit fest
+4. Wählen Sie die Ereignisse und Filter aus, die in die Sammlung aufgenommen werden sollen
+5. Erstellen Sie das Segment
+
+Nach dem Erstellen können Segments an folgenden Stellen verwendet werden:
+
+- **Sessions** — Filtern Sie Sitzungen nach Segment, ähnlich wie bei einer gespeicherten Suche, um relevante Benutzeraktivität schnell zu finden
+- **Cards** — Verwenden Sie ein Segment als Filter in Ihren Karten
+
+<img src="/data-management/segments-search.png" alt="Segments in der Sitzungssuche verwenden" style={{ width: '700px', height: 'auto' }} />
+
+### Features
+
+Mit Features können Sie ein Element in einer Sitzungsaufzeichnung visuell untersuchen und markieren, sodass Sie Klicks leicht verfolgen können, indem Sie es in verschiedenen anderen Teilen der Anwendung wiederverwenden.
+
+<img src="/data-management/features-create.png" alt="Ein Feature erstellen" style={{ width: '700px', height: 'auto' }} />
+
+So erstellen Sie ein Feature:
+
+1. Spielen Sie eine Aufzeichnung ab und klicken Sie oben rechts auf den Tab **Tag**
+2. Wählen Sie mit der Maus ein visuelles Element aus dem Replay aus bzw. markieren Sie es. Sobald das Element ausgewählt ist, wird sein CSS-Selektor automatisch ausgefüllt. Sie können ihn bei Bedarf ändern.
+3. Ignorieren Sie Dead Clicks oder Rage Clicks, wenn sie auftreten
+4. Wählen Sie den Geltungsbereich (Klicks in der gesamten Anwendung erfassen oder nur auf der im Replay gezeigten Seite)
+5. Speichern Sie das Feature
+
+Ihre Features können in einem eigenen Bereich verwaltet werden:
+
+<img src="/data-management/features-list.png" alt="Liste der Features" style={{ width: '700px', height: 'auto' }} />
+
+Nach dem Erstellen können Features an folgenden Stellen verwendet werden:
+
+- **Sessions** — Filtern Sie Sitzungen nach Feature, ähnlich wie bei einer gespeicherten Suche, um relevante Benutzeraktivität schnell zu finden
+- **Cards** — Verwenden Sie ein Feature als Filter in Ihren Karten
+
+<img src="/data-management/features-search.png" alt="Features in der Sitzungssuche verwenden" style={{ width: '700px', height: 'auto' }} />
+
+### Mixpanel-kompatible Aliase
+
+Alle Methoden unterstützen eine Kompatibilitätsschicht, die den Einstieg erleichtert:
+
+```ts
+tracker.analytics.people.set            // setProperties
+tracker.analytics.people.set_once       // setPropertiesOnce
+tracker.analytics.people.append         // appendValues
+tracker.analytics.people.union          // appendUniqueValues
+tracker.analytics.people.incrementBy    // increment
+tracker.analytics.events.register       // setProperty
+tracker.analytics.events.register_once  // setPropertiesOnce
+tracker.analytics.events.unregister     // unsetProperties
+tracker.analytics.events.track          // sendEvent
+```
+
+## Haben Sie Fragen?
+
+Wenn Sie auf Probleme stoßen, verbinden Sie sich mit unserem [Slack](https://slack.openreplay.com) und holen Sie sich Hilfe von unserer Community.

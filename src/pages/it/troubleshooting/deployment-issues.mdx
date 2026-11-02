@@ -1,0 +1,118 @@
+---
+title: "Problemi di deployment"
+metaTitle: "Problemi di deployment"
+metaDescription: "Problemi relativi al deployment o domande frequenti"
+---
+
+## Installazione
+
+### Error: release openreplay failed, and has been uninstalled due to atomic being set
+
+Potrebbe dipendere da un'installazione di helm non riuscita. Per fare il debug, segui i passaggi riportati di seguito:
+
+```bash
+openreplay -s
+
+# If you see any failed pods, check the log. it should shed some light.
+openreplay -l <pod name>
+
+# If there is no pods in running/error/crashloop status, then check the status of pod using following command
+kubectl describe po -n app -n db <pod name>
+```
+
+## La registrazione non funziona
+
+### L'health check mostra che il controllo SSL è fallito
+  
+Se hai un certificato autofirmato, puoi usare il comando seguente per risolvere il problema:
+
+```bash
+openreplay -e
+
+# Add following line to skip the SSL health check
+chalice:
+  env:
+    ...
+    # append the following line under env section
+    SKIP_H_SSL: true
+```
+
+Salva ed esci dal file di configurazione usando `:wq`
+
+## La mia installazione ha smesso improvvisamente di funzionare
+   
+Possono esserci diverse cause. Ecco come puoi fare il debug della situazione:
+
+### Controlla lo stato dell'installazione usando `openreplay -s`
+
+Controlla la sezione sull'utilizzo del disco. Se supera l'80%, i servizi non verranno eseguiti.
+
+## L'aggiornamento è fallito senza alcun errore particolare
+   
+### Vedo "helm or another operation (install/upgrade/rollback) is in progress"
+
+In genere significa che hai ripetuto più volte l'operazione di installazione/aggiornamento. Esegui il comando seguente per risolvere la situazione:
+
+```bash
+helm rollback -n app openreplay
+```
+
+### Non vedo errori, solo "installation failed"
+
+```bash
+# Check for failed pods
+kubectl get pods -n app --field-selector="status.phase!=Succeeded,status.phase!=Running" -o custom-columns="POD:metadata.name"
+        
+# Check for the err logs
+openreplay -l `pod name from above`
+ ```
+
+## Errori in ambiente self-hosted
+
+### Error: You must be logged in to the server (Unauthorized)
+
+`openreplay -s` o `kubectl get po` restituisce l'errore `error: You must be logged in to the server (Unauthorized)`. È possibile che k3s abbia rigenerato il certificato client per accedere al cluster, ma kubectl non lo ha rilevato. Copia la nuova configurazione con `cp /etc/rancher/k3s/k3s.yaml ~/.kube/config` e il gioco è fatto.
+
+## Database
+
+### Postgres non elimina i dati nemmeno dopo pg-cleanup
+
+La pulizia di Postgres è gestita da PG stesso. Cioè, noi eliminiamo i dati precedenti alla data specificata e PG li contrassegna per l'eliminazione. PG elimina i dati con un processo chiamato AutoVacuum, la cui logica di attivazione è interna. Per questo non abbiamo una stima dei tempi per la pulizia dei dati dal disco. Se vuoi vedere in quali tabelle hai dei dati e, se puoi permetterti di perderli, svuotare la tabella, ad esempio la tabella `requests`, che contiene i dati relativi alle richieste di rete: se lì non ci sono dati, non è possibile cercare le sessioni per URL delle richieste.
+
+Per controllare la dimensione delle tabelle
+
+```sql
+SELECT nspname AS "name_space",
+       relname AS "relation",
+       pg_size_pretty(
+               pg_total_relation_size(C.oid)
+           )   AS "total_size"
+FROM pg_class C
+         LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+WHERE nspname NOT IN ('pg_catalog','information_schema')
+  AND C.relkind <> 'i'
+  AND nspname !~ '^pg_toast'
+ORDER BY pg_total_relation_size(C.oid) DESC
+LIMIT 20;
+```
+
+## SSL
+
+### Delegare l'SSL a un proxy/LB esterno
+
+```bash
+openreplay -e
+
+# Under ingress-nginx block disable ssl redirection
+ingress-nginx: &ingress-nginx
+  ...
+  controller:
+    ...
+    config:
+      ...
+      ssl-redirect: false
+      force-ssl-redirect: false
+```
+## Hai domande?
+
+Se hai domande su questa procedura, non esitare a contattarci su [Slack](https://slack.openreplay.com).

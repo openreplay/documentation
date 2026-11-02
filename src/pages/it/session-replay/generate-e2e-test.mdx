@@ -1,0 +1,113 @@
+---
+title: "Convertire gli eventi di sessione in test E2E"
+metaTitle: "Convertire le registrazioni delle sessioni in codice di test E2E automatizzato"
+metaDescription: "Scopri come trasformare le registrazioni delle sessioni di OpenReplay in codice di test E2E automatizzato per Cypress, Playwright e Puppeteer"
+---
+
+La funzione di conversione degli eventi di sessione in test E2E ti permette di trasformare le sessioni utente registrate in codice di test end-to-end automatizzato. Questa potente funzionalità colma il divario tra il comportamento reale degli utenti e l'automazione dei test, consentendoti di replicare rapidamente i percorsi degli utenti nel framework di test che preferisci.
+
+## Come funziona: convertire le sessioni in codice di test E2E
+
+1. Vai alla vista **Sessions** nella dashboard
+2. Seleziona una qualsiasi sessione registrata per aprire la vista **Session Replay**
+3. Fai clic sulla scheda **Activity** per visualizzare la timeline degli eventi
+4. Cerca l'icona **Copy Events** accanto alla barra di ricerca
+5. Fai clic sull'icona per aprire il menu a discesa con le opzioni di esportazione
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/images/products/session-replay/generate-e2e-test.gif" alt="Convertire gli eventi di sessione in test E2E" style={{ width: '700px', height: 'auto' }} />
+</div>
+
+## Utilizzare la conversione degli eventi di sessione in test E2E
+
+### Utilizzo di base
+
+1. Fai clic sull'icona **Copy Events** nella vista Activity
+2. Dal menu a discesa, seleziona il framework di test che desideri (Cypress, Playwright o Puppeteer)
+3. Scegli tra **Events Only** e **Complete Test**
+4. Usa "Select events on the timeline" per scegliere gli eventi da includere
+5. Fai clic su **Copy** per copiare il codice generato negli appunti
+6. Incollalo direttamente nel tuo file di test
+
+### Opzioni di esportazione
+
+#### Framework di test
+
+La funzione supporta l'esportazione verso tre popolari framework di test:
+
+- **Cypress** - Framework di test per il web incentrato sull'esperienza degli sviluppatori e sull'affidabilità
+- **Playwright** - Libreria di test moderna con supporto cross-browser
+- **Puppeteer** - Libreria di automazione del browser headless
+
+<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+  <img src="/images/products/session-replay/test-framework.png" alt="Framework di test" style={{ width: '700px', height: 'auto' }} />
+</div>
+
+#### Tipi di esportazione
+
+Puoi scegliere tra due tipi di esportazione:
+
+- **Events Only** - Genera solo i comandi delle azioni, senza alcuna struttura di test
+- **Complete Test** - Crea un test completamente strutturato, con il boilerplate appropriato
+
+#### Selezione degli eventi
+
+Lo strumento di selezione sulla timeline ti permette di:
+
+- Selezionare un intervallo specifico di eventi da includere nell'esportazione
+- Trascinare le maniglie per regolare i punti di inizio e di fine
+
+## Esempio di output
+
+### Esempio con Cypress
+
+**Events Only:**
+```javascript
+cy.visit('/en/deployment/')
+cy.get('a:nth-of-type(9)').click()
+cy.visit('/en/deployment/deploy-docker/')
+cy.get('.active li:nth-of-type(13) > a').click()
+cy.visit('/en/deployment/upgrade/')
+cy.get('.active > .justify-between').click()
+cy.get('.left-nav-parent > li:nth-of-type(4) > .flex').click()
+cy.get('.active li:nth-of-type(5) > a').click()
+cy.visit('/en/using-or/next/')
+cy.get('.left-nav-parent > li:nth-of-type(5) > .flex').click()
+cy.get('.left-nav-parent > li:nth-of-type(6) > .flex').click()
+cy.visit('/en/installation/')
+cy.get('.active li:nth-of-type(2) > a').click()
+cy.visit('/en/installation/identify-user/')
+cy.get('li:nth-of-type(7) > .flex').click()
+cy.get('.logo-clickarea').click()
+```
+
+**Complete Test:**
+```javascript
+// cypress/e2e/session_replay_test.cy.js
+
+describe('Deployment - OpenReplay Documentation', () => {
+  it('Navigates through /en/deployment/', () => {
+    cy.visit('/en/deployment/')
+    cy.get('a:nth-of-type(9)').click()
+    cy.visit('/en/deployment/deploy-docker/')
+    cy.get('.active li:nth-of-type(13) > a').click()
+    cy.visit('/en/deployment/upgrade/')
+    cy.get('.active > .justify-between').click()
+    cy.get('.left-nav-parent > li:nth-of-type(4) > .flex').click()
+    cy.get('.active li:nth-of-type(5) > a').click()
+    cy.visit('/en/using-or/next/')
+    cy.get('.left-nav-parent > li:nth-of-type(5) > .flex').click()
+    cy.get('.left-nav-parent > li:nth-of-type(6) > .flex').click()
+    cy.visit('/en/installation/')
+    cy.get('.active li:nth-of-type(2) > a').click()
+    cy.visit('/en/installation/identify-user/')
+    cy.get('li:nth-of-type(7) > .flex').click()
+    cy.get('.logo-clickarea').click()
+  })
+})
+```
+
+
+## Hai domande?
+
+Se hai problemi nella creazione di test E2E a partire dalle tue sessioni, contattaci nella nostra [community Slack](https://slack.openreplay.com/) e chiedi direttamente ai nostri sviluppatori!

@@ -1,0 +1,49 @@
+---
+title: "Caricare le source map"
+metaTitle: "Caricare le source map"
+metaDescription: "Carica le source map su OpenReplay."
+---
+
+OpenReplay supporta il ripristino del codice JavaScript minificato tramite le source map. Caricandole su OpenReplay, potrai vedere il contesto del codice sorgente ricavato dagli stack trace nella sua forma originale, cosa molto utile per fare debug di codice minificato (UglifyJS) o transpilato (TypeScript, ES6).
+
+## Configurazione
+
+Installa il modulo NPM sourcemap-uploader:
+
+```bash
+npm i -g @openreplay/sourcemap-uploader
+```
+
+## Prerequisiti
+
+Assicurati che la tua build produca file di source map separati (.map). Ad esempio, se usi webpack, la tua configurazione deve includere l'opzione `devtool` riportata di seguito:
+
+```js
+{ devtool: ‘source-map’ }
+```
+
+## Caricare le source map su OpenReplay
+
+Poi devi configurare il tuo processo di build in modo che generi i vari file sorgente. Le source map possono essere caricate per un **singolo file**:
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY file -m ./dist/index.js.map -u https://myapp.com/index.js
+```
+
+Oppure per una **directory** contenente molti file. In tal caso, l'URL deve corrispondere (percorso esatto) alla radice da cui carichi i file JS della directory. In altre parole, se hai `app-42.js` insieme a `app-42.js.map` nella cartella `./build` e vuoi caricarlo sulla tua istanza di OpenReplay in modo che sia raggiungibile tramite il link `https://myapp.com/static/app-42.js`, il comando deve essere simile a questo:
+
+```bash
+sourcemap-uploader -s https://openreplay.mycompany.com/api -k API_KEY -p PROJECT_KEY dir -m ./build -u https://myapp.com/static
+```
+
+## Parametri
+
+- `-s`: l'URL della tua istanza di OpenReplay. Assicurati di aggiungere /api alla fine. Non specificare questo parametro se utilizzi OpenReplay Cloud.
+- `-k`: la chiave API (si trova in 'Preferences' > 'Account' > 'Organization API Key').
+- `-p`: la chiave del progetto (si trova in 'Preferences' > 'Projects').
+- `-m`: percorso dei file di source map (può essere anche una directory).
+- `-u`: URL dell'asset JavaScript (in caso di file singolo) oppure URL di base (in caso di directory).
+- `-l`: per visualizzare i log di caricamento.
+
+## Hai domande?
+Se hai domande su questo processo, non esitare a contattarci su [Slack](https://slack.openreplay.com) .
