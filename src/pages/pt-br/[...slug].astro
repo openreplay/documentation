@@ -1,0 +1,29 @@
+---
+// Portuguese moved from /pt-br/ to /pt/. Keep every old URL working (it shipped,
+// was indexed and may be linked) with a lightweight redirect to the same page
+// under /pt/. Non-eager glob: only the file list is needed, no page modules load.
+export function getStaticPaths() {
+	const slugs = Object.keys(import.meta.glob('../pt/**/*.mdx')).map((file) =>
+		file.slice('../pt/'.length, -'.mdx'.length)
+	);
+	return [{ params: { slug: undefined } }, ...slugs.map((slug) => ({ params: { slug } }))];
+}
+
+const { slug } = Astro.params;
+const target = slug ? `/pt/${slug}/` : '/pt/home/';
+---
+
+<!doctype html>
+<html lang="pt">
+	<head>
+		<meta charset="utf-8" />
+		<script is:inline define:vars={{ target }}>location.replace(target + location.hash);</script>
+		<meta http-equiv="refresh" content={`0; url=${target}`} />
+		<link rel="canonical" href={target} />
+		<meta name="robots" content="noindex, follow" />
+		<title>Redirecionando…</title>
+	</head>
+	<body>
+		<p>Esta página mudou de endereço: <a href={target}>{target}</a>.</p>
+	</body>
+</html>
