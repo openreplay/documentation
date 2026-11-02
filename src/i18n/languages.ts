@@ -17,7 +17,7 @@ export default {
 	zh: '\u4e2d\u6587',
 	'ar-ae': '\u0627\u0644\u0639\u0631\u0628\u064A\u0629',
 	ja: '\u65E5\u672C\u8A9E',
-	'pt-br': 'Portugu\xEAs do Brasil'
+	'pt-br': 'Portugu\xEAs'
 };
 export const rtlLanguages = new Set(['ar', 'ar-ae']);
 
