@@ -1,0 +1,73 @@
+---
+title: "Android SDK - 拦截网络"
+metaTitle: "Android SDK - 拦截网络"
+metaDescription: "关于 Android 追踪器网络拦截的详细信息"
+---
+
+## 拦截网络
+
+`OpenReplay` 导出了 `NetworkListener`，它同时接受任务和请求，使用方法如下：
+
+```swift
+import com.openreplay.tracker.OpenReplay
+
+fun makeSampleRequest() {
+    Thread {
+        try {
+            val url = URL("https://jsonplaceholder.typicode.com/posts/1")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+
+            // Optionally set request headers
+            connection.setRequestProperty("Content-Type", "application/json")
+
+            // Initialize the network listener for this connection
+            val networkListener = NetworkListener(connection)
+
+            val reader = BufferedReader(InputStreamReader(connection.inputStream))
+            val response = StringBuilder()
+            var line: String?
+            while (reader.readLine().also { line = it } != null) {
+                response.append(line)
+            }
+            reader.close()
+
+            // Using the network listener to log the finish event
+            networkListener.finish(connection, response.toString().toByteArray())
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }.start()
+}
+```
+
+## 清理请求
+
+导出了两个键用于自动裁剪请求/响应数据：`ignoredKeys` 用于请求体，`ignoredHeaders` 用于请求头。请求和响应都会被清理，但请求体只有在它是有效的 JSON 时才会受到影响。
+
+只需分配一个你想要清理的字符串列表：
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+也可以在将响应数据传递给 listener 之前对其进行修改：
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```

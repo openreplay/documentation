@@ -1,0 +1,215 @@
+---
+title: "用户"
+metaTitle: "用户"
+metaDescription: "如何管理和控制用户数据。"
+---
+import Aside from '~/components/Aside.astro'
+
+## 搜索用户
+
+在项目中搜索用户。按属性（用户 id、email、国家/地区等）进行筛选，可选择性地使用自由文本 `query` 进行缩小范围，并对结果进行分页。
+
+### 方法
+`POST`
+
+### URL
+`/public/:projectKey/users`
+
+### 参数
+
+| Name       | Type   | Description                                            |
+|------------|--------|--------------------------------------------------------|
+| projectKey | string | 项目密钥（必填）                                       |
+| q          | string | 可选的自由文本查询（URL 查询参数）。当同时提供 `q` 和 `query`（请求体）时，`q` 优先生效。 |
+
+### Payload
+
+| Name           | Type       | Description                                                 |
+|----------------|------------|-------------------------------------------------------------|
+| filters        | array      | 筛选器列表（可选）                                          |
+| query          | string     | 针对用户 id / email / 名称的自由文本查询（最多 100）        |
+| startTimestamp | epoch (ms) | 时间窗口的起点（可选，最小 946684800000）                   |
+| endTimestamp   | epoch (ms) | 时间窗口的终点（可选，> startTimestamp）                    |
+| limit          | integer    | 每页数量，1-200（可选，默认值：50）                         |
+| page           | integer    | 页码，从 1 开始（可选，默认值：1）                          |
+| sortBy         | string     | 用于排序的用户列（可选）                                    |
+| sortOrder      | string     | `asc` 或 `desc`（可选）                                     |
+| columns        | array      | 要包含在响应中的额外用户列                                  |
+
+### 请求头
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### 请求示例
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "query": "mickael",
+    "limit": 50,
+    "page":  1,
+    "sortOrder": "desc"
+  }'
+```
+
+### 响应示例
+
+```json
+{
+  "data": {
+    "total": 1,
+    "users": [
+      {
+        "$user_id": "mickael@openreplay.com",
+        "$email": "mickael@openreplay.com",
+        "$name": "Mickael",
+        "$first_name": "Mickael",
+        "$last_name": "",
+        "$created_at": 1623440822825,
+        "$last_seen": 1623689478617
+      }
+    ]
+  }
+}
+```
+
+## 获取用户
+
+获取特定用户的身份属性和概要统计信息。
+
+### 方法
+`GET`
+
+### URL
+`/public/:projectKey/users/:userId`
+
+### 参数
+
+| Name       | Type   | Description                                                |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | 项目密钥（必填）                                           |
+| userId     | string | 通过 `tracker.setUserID` 设置的 ID（必填，最多 256）       |
+
+### 请求头
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### 状态码
+
+`200`：响应以 JSON 形式在请求体中发送  
+`400`：无效的 `userId`（为空或 > 256 个字符）  
+`404`：未找到用户
+
+### 请求示例
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### 响应示例
+
+```json
+{
+  "data": {
+    "$user_id": "mickael@openreplay.com",
+    "$email": "mickael@openreplay.com",
+    "$name": "Mickael",
+    "$first_name": "Mickael",
+    "$last_name": "",
+    "$phone": "",
+    "$avatar": "",
+    "$created_at": 1623440822825,
+    "distinct_ids": ["15bd70f6-aedf-4544-8ae6-57eb66398e94"],
+    "$country": "FR",
+    "$state": "",
+    "$city": "",
+    "$first_event_at": 1623440822825,
+    "$last_seen": 1623689478617
+  }
+}
+```
+
+## 删除用户
+
+删除某个用户及其所有关联数据。这会调度一个后台作业；响应中包含 `jobId`，你可以通过 [Jobs](/api/jobs) API 进行轮询。
+
+<Aside type="note">
+删除作业会移除与指定用户关联的最多 1000 个会话。
+</Aside>
+
+### 方法
+`DELETE`
+
+### URL
+`/public/:projectKey/users/:userId`
+
+### 参数
+
+| Name       | Type   | Description                                                |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | 项目密钥（必填）                                           |
+| userId     | string | 通过 `tracker.setUserID` 设置的 ID（必填，最多 256）       |
+
+### 请求头
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### 状态码
+
+`200`：作业已调度，在请求体中返回  
+`400`：无效的 `userId`（为空或 > 256 个字符）  
+`409`：该用户的删除作业已被调度或正在运行
+
+### 请求示例
+
+```shell
+curl -X DELETE \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users/mickael@example.com \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### 响应示例
+
+```json
+{
+  "data": {
+    "jobId": 22345,
+    "description": "Delete user sessions of userId = mickael@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mickael@example.com",
+    "createdAt": 1623912962910,
+    "updatedAt": null,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+### 更改回放文件的删除时间？
+
+删除作业是一个 2 步过程：首先，会话及其级联事件会在夜间从数据库中删除。其次，回放文件会被调度为在对象存储中过期（30 天后）。
+
+如果你使用的是 minio（默认安装），并希望更改默认的过期/生命周期策略，请按照以下说明操作：
+1. 在你的服务器上，运行 `openreplay -e`
+2. 在 `chalice` 部分下，定义一个名为 **SCH_DELETE_DAYS** 的新环境变量，其值等于你希望在删除前保留回放文件的天数（大于或等于 0）
+3. 使用 `:wq` 保存并退出
+4. 运行 `k9s -n db`
+5. 使用键盘方向键浏览列表并定位到 `minio-*` 容器
+6. 按 `s` 以获取对 Minio（对象存储）容器的 shell 访问权限
+7. 运行 `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
+8. 若要在删除作业执行 14 天后删除回放文件
+
+```bash
+export EXPIRATION_DAYS=14
+mc ilm add --expiry-days $EXPIRATION_DAYS --tags "to_delete_in_days=${EXPIRATION_DAYS}" minio/mobs
+```
+
+9. 使用 `exit` 退出 Minio 容器
+10. 运行 `:quit` 退出 Kubernetes CLI

@@ -9,7 +9,8 @@ import kleur from 'kleur';
 
 //capture the new version from the command line parameter
 let params = process.argv
-const [_, __, newVersion] = params
+// Accept both "2.0.0" and "v2.0.0"; the config stores bare numbers.
+const newVersion = params[2]?.replace(/^v/, '')
 
 // Logging utilities.
 const done = (...message) => console.log(kleur.bold().green('✔︎'), ...message);
@@ -128,13 +129,15 @@ class VersionManager {
 	}
 
 
+// Evaluate src/i18n/languages.ts: the default export (language map) plus
+// latestOnlyLanguages (languages that never get vX.Y.Z/ folders).
 async function getLangs() {
-    let content = await readFile('./src/i18n/languages.ts')
-    let __langs = null
-    content = content.toString().replace("export default", "__langs = ")
-    content = content.replace("export", "")
-    eval(content)
-    return __langs
+    const code = (await readFile('./src/i18n/languages.ts'))
+        .toString()
+        .replace('export default', 'const __langs =')
+        .replace(/^export\s+/gm, '')
+    return eval(`${code}
+;({ langs: __langs, latestOnly: typeof latestOnlyLanguages === 'undefined' ? new Set() : latestOnlyLanguages })`)
 }
 
 const _src = "./src/pages/" 
@@ -188,9 +191,9 @@ async function copyNewVersion(vnumber, basePath = "") {
 
     let vm = new VersionManager()
     let currentVersion = vm.getLastVersion()
-    let languages = await getLangs()
+    const { langs: languages, latestOnly } = await getLangs()
     vm.updateVersionList()
-    const langs = Object.keys(languages)
+    const langs = Object.keys(languages).filter((l) => !latestOnly.has(l))
     langs.forEach( async (lang) => {
         await duplicateLang(lang, currentVersion)
     })    
@@ -199,7 +202,7 @@ async function copyNewVersion(vnumber, basePath = "") {
 }
 
 function validateNewVersion(v) {
-    if(!v.match(/[0-9]+\.[0-9]+\.[0-9]+/)) {
+    if(!/^[0-9]+\.[0-9]+\.[0-9]+$/.test(v)) {
         throw new Error("Invalid new version format, it needs to be: <major>.<minor>.<patch>")
     }
 }

@@ -1,0 +1,43 @@
+---
+title: "Android SDK - suivi des champs de saisie"
+metaTitle: "Android SDK - suivi des champs de saisie"
+metaDescription: "Détails sur le suivi des champs de saisie avec le traceur Android"
+---
+
+Le traceur écoutera l'événement de changement de valeur (avec debounce) et enverra la valeur résultante au backend d'OpenReplay.
+
+## Ajouter des champs de saisie suivis
+
+### EditText
+
+utilisez `.trackTextInput(label:masked)` pour observer les événements de saisie,
+- `label: String` - étiquette pour la saisie enregistrée
+- `masked: Bool` - si `true`, le traceur n'enregistrera que l'événement de saisie lui-même, et non la valeur.
+
+```kotlin
+import com.opnereplay.tracker.OpenReplay
+
+val passwordEditText = binding.password
+passwordEditText.trackTextInput(label = "password", masked = true)
+```
+
+### View
+
+```kotlin
+import com.opnereplay.listeners.Analytics
+
+Analytics.addObservedInput(inputEl)
+```
+
+### Jetpack Compose
+
+```kotlin
+import com.openreplay.tracker.listeners.trackTextInputChanges
+
+OutlinedTextField(
+        modifier = Modifier
+            .fillMaxWidth()
+            .trackTextInputChanges("Email Field", emailState.text),
+        ...,
+    )
+```

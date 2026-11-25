@@ -1,0 +1,77 @@
+---
+title: "在 Gatsby 中使用 OpenReplay"
+metaTitle: "将 OpenReplay Tracker 添加到你的 Gatsby 应用"
+metaDescription: "了解如何让 tracker 在你的 Gatsby 应用中运行"
+---
+在基于 Gatsby 的项目中安装 OpenReplay tracker 相对简单。考虑到 Gatsby 底层使用的是 React，我们只需在主页面中添加 tracker 代码，并通过 `useEffect` 钩子调用 `start` 方法即可。 
+
+让我们来看一下。
+
+## 为什么要在静态网站上设置 Tracker？
+
+你的应用中缺少动态内容并不意味着你不想利用 OpenReplay 的其他一些功能。
+
+虽然你不会用会话回放来查找 bug，但你仍然可以捕获有价值的指标，并围绕这些指标创建[属于你自己的自定义仪表盘](https://docs.openreplay.com/tutorials/custom-dashboard)。
+
+你可以使用性能、web vitals 甚至与资源相关的指标，来全面了解用户在使用你网站时的体验。
+
+## 在 Gatsby 中设置 Tracker
+
+假设有一个静态 Gatsby 网站，其入口点是 `pages` 文件夹中的 `index.tsx` 文件，你需要向其中添加以下代码。
+
+你可以将 tracker 作为单例实例使用，这是推荐的使用方式。 
+这样，你就可以从应用中的任何地方访问 tracker：
+
+```js
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+  projectKey: 'YOUR_PROJECT_KEY',
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+});
+
+const Index = ({data, location }) => {
+
+	React.useEffect(() => {
+		tracker.start();
+	}, [])
+
+	 //the rest of your code here...
+}
+```
+
+或者你也可以直接使用 `Tracker` 类来手动管理其实例：
+
+```jsx
+import Tracker from '@openreplay/tracker';
+const tracker = new Tracker({
+  projectKey: process.env.GATSBY_OPENREPLAY_PROJECT_KEY
+});
+
+const Index = ({data, location }) => {
+
+  React.useEffect(() => {
+    tracker.start();
+  }, [])
+
+   //the rest of your code here...
+}
+```
+
+tracker 会在页面编译时（无论是 SSR 还是客户端渲染）被实例化，但 start 方法只能从浏览器中调用，因此我们需要确保它在组件挂载之后被调用（这正是这里使用 `useEffect` 钩子的原因）。`useEffect` 钩子的第二个参数为空数组，可确保回调只执行一次。
+
+💡**给 self-hosted 用户的提示：** 如果你使用的是 self-hosted 版本的 OpenReplay，那么在实例化 tracker 时还需要指定 `ingestPoint` 配置属性。该属性指定了 tracker 数据的接收端点。云端用户不需要它，因为默认情况下 tracker 会知道该端点的 SaaS 版本在哪里，但如果你是自托管，则需要指定它（它应该类似于 `https://openreplay.mydomain.com/ingest`）
+
+## 在 Gatsby 中处理环境变量
+
+作为一项安全措施，我们建议不要将 project key 硬编码在代码中。这意味着你需要将其导出为环境变量，以便 Gatsby 读取它。
+
+这样，OpenReplay 的 project key 就会存放在名为 `GATSBY_OPENREPLAY_PROJECT_KEY` 的变量中。
+
+请注意名称是以 `GATSBY_` 为前缀的，这会告诉 Gatsby 确保该变量在前端代码中也可用。否则，除非你执行的是 Node.js 代码，否则将无法读取该值。
+
+## 有疑问吗？
+
+你可以[查看此代码仓库](https://github.com/deleteman/openreplay-gatsby-example)，获取一个可正常运行、集成了 Tracker 的 Gatsby 应用的**完整源代码**。
+
+如果你在 Gatsby 项目中设置 Tracker 时遇到任何问题，请通过我们的 [Slack 社区](https://slack.openreplay.com/)联系我们，直接向我们的开发人员提问！

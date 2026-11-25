@@ -1,0 +1,63 @@
+---
+title: "استخدام OpenReplay مع Electron"
+metaTitle: "تسجيل تطبيق Electron باستخدام OpenReplay"
+metaDescription: "كيفية تسجيل تطبيق Electron باستخدام OpenReplay."
+---
+import Aside from '~/components/Aside.astro'
+
+<Aside type="caution">
+	لدعم التصفّح المشترك (Cobrowsing) يلزم استخدام Tracker@11.0.0 وTracker-assist@7.0.0 أو إصدار أحدث.
+</Aside>
+
+هناك طريقتان مختلفتان لدمج OpenReplay في تطبيق Electron.
+
+أيًّا كانت الطريقة التي ستختارها، فسيتعيّن عليك التحقق من إعدادات CSP لديك للسماح بواجهات البرمجة (APIs) التالية:
+- WebWorkers (تُستخدم لتخزين دفعات الرسائل وترميزها وإرسالها)
+- Websockets (تُستخدم في الإضافة assist لنقل الجلسات في الوقت الفعلي)
+- Peers (تُستخدم في الإضافة assist لإجراء المكالمات)
+
+## إضافة كود المقتطف (Snippet)
+
+يمكنك إضافة كود مقتطف OpenReplay مباشرةً إلى جذر ملف HTML الخاص بتطبيقك.
+هذه هي الطريقة الأسهل، إلا أنها تحمل أيضًا جميع القيود الخاصة بمقتطف JS.
+
+## استخدام مكتبة NPM
+
+إذا كنت تستخدم React أو Angular أو Vue، فيمكنك اتّباع النهج نفسه تمامًا وإنشاء نسخة من الـ tracker في عملية العرض (rendering)
+داخل تطبيقك. سيتيح لك ذلك استخدام جميع ميزات OpenReplay، بما في ذلك جميع الإضافات.
+
+ولاستخدام واجهة برمجة الـ tracker خارج سياق العرض، سيتعيّن عليك استخدام IPC لتشغيل الإجراءات عبر الأحداث
+التي ترسلها من العملية الرئيسية.
+
+## الاستخدام مع إضافة Assist
+
+
+في حالة إضافة Tracker-Assist، سيتعيّن عليك إضافة الخاصية `socketHost` التي ستشير إلى نقطة الاستيعاب (ingest point) الخاصة بك
+بدون اللاحقة `/ingest` لضمان توجيه WS الافتراضي بشكل صحيح.
+
+لمكتبة NPM:
+```js
+new Tracker({ ingestPoint: 'https://mywebsite.com/ingest' })
+
+// ...
+
+// or https://app.openreplay.com if you're using SaaS version
+tracker.use(trackerAssist({ socketHost: 'https://mywebsite.com' }))
+```
+
+لمقتطف الكود:
+```js
+  var initOpts = {
+    projectKey: "...",
+		ingestPoint: "https://mywebsite.com/ingest",
+    assistSocketHost: "https://mywebsite.com"
+  };
+```
+
+وإلا فسيحاول WS إنشاء اتصال على `ws://file/ingest`، وهو ما سيفشل.
+
+<Aside type="tip">
+	يستند هذا المقال إلى تطبيق إثبات المفهوم الداخلي الخاص بنا والمصمَّم باستخدام Electron@26.2.1 وReact@16.13.1، والمهيّأ
+	للتعامل مع تجميع ESM. إذا كان إعدادك مختلفًا، أو كانت لديك أي اقتراحات أو أسئلة، يُرجى التواصل معنا عبر
+	[مجتمع Slack](https://slack.openreplay.com/) الخاص بنا
+</Aside>

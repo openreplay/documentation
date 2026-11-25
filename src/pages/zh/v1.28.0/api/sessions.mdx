@@ -1,0 +1,71 @@
+---
+title: "会话"
+metaTitle: "会话"
+metaDescription: "如何检索某个特定用户的所有会话。"
+---
+
+## 检索用户会话
+
+返回某个特定用户的会话列表，该用户通过 JavaScript 函数 `tracker.setUserID` 进行标识。结果以分页形式返回。
+
+### 方法
+`POST`
+
+### URL
+`/public/:projectKey/users/:userId/sessions`
+
+### 参数
+
+| Name       | Type   | Description                                              |
+|------------|--------|----------------------------------------------------------|
+| projectKey | string | 项目密钥（必填）                                          |
+| userId     | string | 通过 `tracker.setUserID` 设置的 ID（必填，最多 256）      |
+
+### 请求体
+
+| Name           | Type       | Description                                                |
+|----------------|------------|------------------------------------------------------------|
+| startTimestamp | epoch (ms) | 时间窗口的起点（必填，最小 946684800000）                  |
+| endTimestamp   | epoch (ms) | 时间窗口的终点（必填，> startTimestamp）                   |
+| limit          | integer    | 每页大小，1-200（可选，默认：50）                          |
+| page           | integer    | 页码，从 1 开始（可选，默认：1）                           |
+| sortOrder      | string     | `asc` 或 `desc`（可选）                                    |
+
+### 请求头
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### 状态码
+
+`200`：响应以 JSON 形式在响应体中返回  
+`400`：请求体无效或 `userId` 无效（为空或 > 256 个字符）
+
+### 请求示例
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com/sessions \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "startTimestamp": 1623440000000,
+    "endTimestamp":   1623540000000,
+    "limit": 50,
+    "page": 1,
+    "sortOrder": "desc"
+  }'
+```
+
+### 响应示例
+
+```json
+{
+  "data": {
+    "total": 2,
+    "sessions": [
+      { "sessionId": "4813018042986240", "eventsCount": 1, "startTs": 1623440822825, "endTs": 1623440835604 },
+      { "sessionId": "4813023023591169", "eventsCount": 6, "startTs": 1623440902620, "endTs": 1623440920846 }
+    ]
+  }
+}
+```

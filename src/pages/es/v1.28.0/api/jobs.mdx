@@ -1,0 +1,175 @@
+---
+title: "Trabajos"
+metaTitle: "Trabajos"
+metaDescription: "Cómo gestionar los trabajos de eliminación de datos de usuario."
+---
+
+Valores del estado de un trabajo: `scheduled`, `running`, `completed`, `failed`, `cancelled`.
+
+## Listar todos los trabajos
+
+Recupera todos los trabajos de un proyecto, incluidos los completados y los cancelados. Paginado.
+
+### Método
+`GET`
+
+### URL
+`/public/:projectKey/jobs`
+
+### Parámetros de consulta
+
+| Name  | Type    | Description                                                                 |
+|-------|---------|-----------------------------------------------------------------------------|
+| limit | integer | Tamaño de página, 1-200 (valor por defecto: 50). Los valores fuera del rango vuelven a 50.   |
+| page  | integer | Número de página, comienza en 1 (valor por defecto: 1). Los valores < 1 vuelven a 1.           |
+
+### Encabezados de la solicitud
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Ejemplo de solicitud
+
+```shell
+curl -X GET \
+  '{BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs?limit=50&page=1' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Ejemplo de respuesta
+
+```json
+{
+  "data": [
+    {
+      "jobId": 3451,
+      "description": "Delete user sessions of userId = shekar@example.com",
+      "status": "scheduled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "shekar@example.com",
+      "createdAt": 1623912955277,
+      "updatedAt": null,
+      "startAt": 1623954600000,
+      "errors": null
+    },
+    {
+      "jobId": 3452,
+      "description": "Delete user sessions of userId = mehdi@example.com",
+      "status": "cancelled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "mehdi@example.com",
+      "createdAt": 1623912962910,
+      "updatedAt": 1623913015276,
+      "startAt": 1623954600000,
+      "errors": null
+    }
+  ]
+}
+```
+
+## Obtener los detalles de un trabajo
+
+Devuelve el estado y los metadatos del trabajo.
+
+### Método
+`GET`
+
+### URL
+`/public/:projectKey/jobs/:jobId`
+
+### Parámetros
+
+| Name  | Type    | Description                    |
+|-------|---------|--------------------------------|
+| jobId | integer | El ID del trabajo (obligatorio)          |
+
+### Encabezados de la solicitud
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Códigos de estado
+
+`200`: Respuesta enviada como JSON en el cuerpo  
+`400`: `jobId` no válido (no es un entero)  
+`404`: Trabajo no encontrado
+
+### Ejemplo de solicitud
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs/3451 \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Ejemplo de respuesta
+
+```json
+{
+  "data": {
+    "jobId": 3451,
+    "description": "Delete user sessions of userId = shekar@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "shekar@example.com",
+    "createdAt": 1623912955277,
+    "updatedAt": null,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+## Cancelar un trabajo
+
+Cancela un trabajo que aún no ha comenzado o que todavía está en curso.
+
+### Método
+`DELETE`
+
+### URL
+`/public/:projectKey/jobs/:jobId`
+
+### Parámetros
+
+| Name  | Type    | Description                    |
+|-------|---------|--------------------------------|
+| jobId | integer | El ID del trabajo (obligatorio)          |
+
+### Encabezados de la solicitud
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Códigos de estado
+
+`200`: Trabajo cancelado  
+`400`: El trabajo no se puede cancelar en su estado actual, o `jobId` no válido  
+`404`: Trabajo no encontrado
+
+### Ejemplo de solicitud
+
+```shell
+curl -X DELETE \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs/3452 \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Ejemplo de respuesta
+
+```json
+{
+  "data": {
+    "jobId": 3452,
+    "description": "Delete user sessions of userId = mehdi@example.com",
+    "status": "cancelled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@example.com",
+    "createdAt": 1623912962910,
+    "updatedAt": 1623913015276,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```

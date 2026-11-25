@@ -1,0 +1,43 @@
+---
+title: "Android SDK - seguimiento de entradas"
+metaTitle: "Android SDK - seguimiento de entradas"
+metaDescription: "Detalles sobre el seguimiento de las entradas con el rastreador de Android"
+---
+
+El rastreador escuchará el evento de cambio de valor (con debounce) y enviará el valor resultante al backend de OpenReplay.
+
+## Agregar entradas rastreadas
+
+### EditText
+
+usa `.trackTextInput(label:masked)` para observar los eventos de entrada,
+- `label: String` - etiqueta para la entrada registrada
+- `masked: Bool` - si es `true`, el rastreador solo registrará el evento de entrada en sí, no el valor.
+
+```kotlin
+import com.opnereplay.tracker.OpenReplay
+
+val passwordEditText = binding.password
+passwordEditText.trackTextInput(label = "password", masked = true)
+```
+
+### View
+
+```kotlin
+import com.opnereplay.listeners.Analytics
+
+Analytics.addObservedInput(inputEl)
+```
+
+### Jetpack Compose
+
+```kotlin
+import com.openreplay.tracker.listeners.trackTextInputChanges
+
+OutlinedTextField(
+        modifier = Modifier
+            .fillMaxWidth()
+            .trackTextInputChanges("Email Field", emailState.text),
+        ...,
+    )
+```

@@ -1,0 +1,175 @@
+---
+title: "Задачи"
+metaTitle: "Задачи"
+metaDescription: "Как управлять задачами удаления пользовательских данных."
+---
+
+Значения статуса задачи: `scheduled`, `running`, `completed`, `failed`, `cancelled`.
+
+## Список всех задач
+
+Получение всех задач проекта, включая завершённые и отменённые. С постраничной разбивкой.
+
+### Метод
+`GET`
+
+### URL
+`/public/:projectKey/jobs`
+
+### Параметры запроса
+
+| Name  | Type    | Description                                                                 |
+|-------|---------|-----------------------------------------------------------------------------|
+| limit | integer | Размер страницы, 1-200 (по умолчанию: 50). Значения вне диапазона приводятся к 50.   |
+| page  | integer | Номер страницы, начинается с 1 (по умолчанию: 1). Значения < 1 приводятся к 1.           |
+
+### Заголовки запроса
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Пример запроса
+
+```shell
+curl -X GET \
+  '{BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs?limit=50&page=1' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Пример ответа
+
+```json
+{
+  "data": [
+    {
+      "jobId": 3451,
+      "description": "Delete user sessions of userId = shekar@example.com",
+      "status": "scheduled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "shekar@example.com",
+      "createdAt": 1623912955277,
+      "updatedAt": null,
+      "startAt": 1623954600000,
+      "errors": null
+    },
+    {
+      "jobId": 3452,
+      "description": "Delete user sessions of userId = mehdi@example.com",
+      "status": "cancelled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "mehdi@example.com",
+      "createdAt": 1623912962910,
+      "updatedAt": 1623913015276,
+      "startAt": 1623954600000,
+      "errors": null
+    }
+  ]
+}
+```
+
+## Получить сведения о задаче
+
+Возвращает статус и метаданные задачи.
+
+### Метод
+`GET`
+
+### URL
+`/public/:projectKey/jobs/:jobId`
+
+### Параметры
+
+| Name  | Type    | Description                    |
+|-------|---------|--------------------------------|
+| jobId | integer | ID задачи (обязательно)          |
+
+### Заголовки запроса
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Коды статуса
+
+`200`: Ответ отправлен в виде JSON в теле  
+`400`: Недопустимый `jobId` (не целое число)  
+`404`: Задача не найдена
+
+### Пример запроса
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs/3451 \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Пример ответа
+
+```json
+{
+  "data": {
+    "jobId": 3451,
+    "description": "Delete user sessions of userId = shekar@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "shekar@example.com",
+    "createdAt": 1623912955277,
+    "updatedAt": null,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+## Отменить задачу
+
+Отменяет задачу, которая ещё не началась или всё ещё выполняется.
+
+### Метод
+`DELETE`
+
+### URL
+`/public/:projectKey/jobs/:jobId`
+
+### Параметры
+
+| Name  | Type    | Description                    |
+|-------|---------|--------------------------------|
+| jobId | integer | ID задачи (обязательно)          |
+
+### Заголовки запроса
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Коды статуса
+
+`200`: Задача отменена  
+`400`: Задачу нельзя отменить в её текущем состоянии, либо недопустимый `jobId`  
+`404`: Задача не найдена
+
+### Пример запроса
+
+```shell
+curl -X DELETE \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs/3452 \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Пример ответа
+
+```json
+{
+  "data": {
+    "jobId": 3452,
+    "description": "Delete user sessions of userId = mehdi@example.com",
+    "status": "cancelled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@example.com",
+    "createdAt": 1623912962910,
+    "updatedAt": 1623913015276,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```

@@ -1,0 +1,169 @@
+---
+title: "Assist"
+metaTitle: "Assist"
+metaDescription: "Comment rechercher toutes les sessions en direct d'un projet donné."
+---
+import Aside from '~/components/Aside.astro'
+
+<Aside type="note">
+Disponible uniquement pour l'Enterprise Edition (EE).
+</Aside>
+
+## Récupérer les sessions en direct
+
+Renvoie la liste des sessions en direct d'un projet donné. Vous pouvez éventuellement filtrer par `userId` à l'aide d'un paramètre de requête.
+
+Valeurs par défaut appliquées côté serveur : `sort = timestamp`, `order = desc`, `limit = 10`, `page = 1`.
+
+### Méthode
+
+`GET`
+
+### URL
+
+`/public/:projectKey/assist/sessions`
+
+### Paramètres
+
+| Name       | Type   | Description                                             |
+|------------|--------|---------------------------------------------------------|
+| projectKey | string | La clé du projet (obligatoire)                          |
+| userId     | string | Valeur optionnelle de `tracker.setUserID` (paramètre de requête dans l'URL) |
+
+### En-têtes de la requête
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Exemple de requête
+
+```shell
+curl -X GET \
+  '{BASE_URL}/public/aYYaFHiagqdXKEmVlmvJ/assist/sessions?userId=mickael@openreplay.com' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Exemple de réponse
+
+```json
+{
+  "data": {
+    "total": 1,
+    "sessions": [
+      {
+        "pageTitle": "OpenReplay Blog",
+        "sessionID": "6975518573799938",
+        "metadata": {},
+        "userID": "mickael@openreplay.com",
+        "userUUID": "8998545b-553c-4f41-a39d-d7cba7fac2d1",
+        "projectKey": "aYYaFHiagqdXKEmVlmvJ",
+        "timestamp": 1656437966459,
+        "trackerVersion": "3.5.11",
+        "userOs": "Mac OS",
+        "userBrowser": "Chrome",
+        "userBrowserVersion": "103.0.0.0",
+        "userDeviceType": "desktop",
+        "userCountry": "FR",
+        "live": true,
+        "projectId": 3
+      }
+    ],
+    "live": true
+  }
+}
+```
+
+## Rechercher des sessions en direct
+
+Recherche dans la liste des sessions en direct d'un projet donné à l'aide d'un corps JSON.
+
+Valeurs par défaut appliquées côté serveur lorsqu'elles sont omises : `sort = timestamp`, `order = desc`, `limit = 10`, `page = 1`.
+
+### Méthode
+
+`POST`
+
+### URL
+
+`/public/:projectKey/assist/sessions`
+
+### Paramètres
+
+| Name       | Type   | Description                                             |
+|------------|--------|---------------------------------------------------------|
+| projectKey | string | La clé du projet (obligatoire)                          |
+
+### Charge utile
+
+| Name    | Type            | Description                                          |
+|---------|-----------------|------------------------------------------------------|
+| sort    | string          | L'attribut de tri (par défaut : `timestamp`)         |
+| order   | string          | `asc` ou `desc` (par défaut : `desc`)                |
+| page    | integer         | Numéro de page pour la pagination (par défaut : `1`) |
+| limit   | integer         | Nombre de sessions par page (par défaut : `10`)      |
+| filters | array of filter | La liste des filtres (par défaut : `[]`)             |
+
+Objet filtre :
+
+| Name     | Type       | Description                                                                    |
+|----------|------------|--------------------------------------------------------------------------------|
+| name     | string     | Attribut de filtre (obligatoire, p. ex. `userId`). Utilisez `METADATA` avec `source` ci-dessous |
+| operator | string     | `contains` ou `is` (par défaut : `contains`)                                   |
+| value    | string[]   | La liste des valeurs (par défaut : `[]`)                                       |
+| source   | string     | Nom de l'attribut de métadonnées lorsque `name = METADATA` (par défaut : `""`) |
+
+Si `value = []`, la recherche correspond aux sessions en direct pour lesquelles l'attribut donné est défini (quelle que soit sa valeur).
+
+### En-têtes de la requête
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Exemple de requête
+
+L'exemple suivant recherche les 10 premières sessions en direct (triées par timestamp décroissant) où `userId` contient `openreplay` et `metadata.plan` est `trial` ou `free`.
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/aYYaFHiagqdXKEmVlmvJ/assist/sessions \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "filters": [
+      { "value": ["trial", "free"], "name": "METADATA", "source": "plan", "operator": "is" },
+      { "value": ["openreplay"], "name": "userId", "operator": "contains" }
+    ],
+    "sort": "timestamp",
+    "order": "desc",
+    "limit": 10,
+    "page": 1
+  }'
+```
+
+### Exemple de réponse
+
+```json
+{
+  "data": {
+    "total": 1,
+    "sessions": [
+      {
+        "pageTitle": "OpenReplay Blog",
+        "sessionID": "6975518573799185",
+        "metadata": { "plan": "trial" },
+        "userID": "dev@openreplay.com",
+        "userUUID": "8998545b-553c-4f41-a39d-d7cba7fac2d1",
+        "projectKey": "aYYaFHiagqdXKEmVlmvJ",
+        "timestamp": 1656437966459,
+        "trackerVersion": "3.5.11",
+        "userOs": "Mac OS",
+        "userBrowser": "Chrome",
+        "userBrowserVersion": "103.0.0.0",
+        "userDeviceType": "desktop",
+        "userCountry": "FR",
+        "live": true,
+        "projectId": 3
+      }
+    ],
+    "live": true
+  }
+}
+```

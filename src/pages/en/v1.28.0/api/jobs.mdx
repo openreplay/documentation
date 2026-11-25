@@ -1,0 +1,175 @@
+---
+title: "Jobs"
+metaTitle: "Jobs"
+metaDescription: "How to manage user data deletion jobs."
+---
+
+Job status values: `scheduled`, `running`, `completed`, `failed`, `cancelled`.
+
+## List all jobs
+
+Retrieve all jobs for a project, including completed and cancelled ones. Paginated.
+
+### Method
+`GET`
+
+### URL
+`/public/:projectKey/jobs`
+
+### Query Parameters
+
+| Name  | Type    | Description                                                                 |
+|-------|---------|-----------------------------------------------------------------------------|
+| limit | integer | Page size, 1-200 (default: 50). Values outside the range fall back to 50.   |
+| page  | integer | Page number, starts at 1 (default: 1). Values < 1 fall back to 1.           |
+
+### Request Headers
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Example Request
+
+```shell
+curl -X GET \
+  '{BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs?limit=50&page=1' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Example Response
+
+```json
+{
+  "data": [
+    {
+      "jobId": 3451,
+      "description": "Delete user sessions of userId = shekar@example.com",
+      "status": "scheduled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "shekar@example.com",
+      "createdAt": 1623912955277,
+      "updatedAt": null,
+      "startAt": 1623954600000,
+      "errors": null
+    },
+    {
+      "jobId": 3452,
+      "description": "Delete user sessions of userId = mehdi@example.com",
+      "status": "cancelled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "mehdi@example.com",
+      "createdAt": 1623912962910,
+      "updatedAt": 1623913015276,
+      "startAt": 1623954600000,
+      "errors": null
+    }
+  ]
+}
+```
+
+## Get job details
+
+Return the job's status and metadata.
+
+### Method
+`GET`
+
+### URL
+`/public/:projectKey/jobs/:jobId`
+
+### Parameters
+
+| Name  | Type    | Description                    |
+|-------|---------|--------------------------------|
+| jobId | integer | The job ID (required)          |
+
+### Request Headers
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Status Codes
+
+`200`: Response sent as JSON in body  
+`400`: Invalid `jobId` (not an integer)  
+`404`: Job not found
+
+### Example Request
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs/3451 \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Example Response
+
+```json
+{
+  "data": {
+    "jobId": 3451,
+    "description": "Delete user sessions of userId = shekar@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "shekar@example.com",
+    "createdAt": 1623912955277,
+    "updatedAt": null,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+## Cancel job
+
+Cancel a job that hasn't started or is still in progress.
+
+### Method
+`DELETE`
+
+### URL
+`/public/:projectKey/jobs/:jobId`
+
+### Parameters
+
+| Name  | Type    | Description                    |
+|-------|---------|--------------------------------|
+| jobId | integer | The job ID (required)          |
+
+### Request Headers
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Status Codes
+
+`200`: Job cancelled  
+`400`: Job cannot be cancelled in its current state, or invalid `jobId`  
+`404`: Job not found
+
+### Example Request
+
+```shell
+curl -X DELETE \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs/3452 \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Example Response
+
+```json
+{
+  "data": {
+    "jobId": 3452,
+    "description": "Delete user sessions of userId = mehdi@example.com",
+    "status": "cancelled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@example.com",
+    "createdAt": 1623912962910,
+    "updatedAt": 1623913015276,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```

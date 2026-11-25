@@ -1,0 +1,148 @@
+---
+title: "在 Svelte 中使用 OpenReplay"
+metaTitle: "在 Svelte 项目中使用 tracker"
+metaDescription: "了解如何在你的 Svelte 项目中开始追踪用户"
+---
+import Aside from '~/components/Aside.astro'
+
+将 OpenReplay tracker 安装到基于 Svelte 的项目中相对简单。
+
+让它正常工作的关键在于使用 context（上下文），虽然这听起来与我们在 Next.js 中的做法相似，但实现方式会有所不同。
+
+## SvelteKit 与 SSR 行为
+
+由于我们的 tracker 需要浏览器上下文才能运行，你可能需要按下面所示调整"创建 tracker 上下文"的示例，以确保它在客户端被导入和创建：
+
+```jsx
+<script>
+  import { onMount } from 'svelte';
+
+  onMount(async () => {
+    if (process.browser) {
+			// singleton approach
+			const { tracker } = await import('@openreplay/tracker');
+			tracker.configure({
+				projectKey: "<your project key>", 
+        ingestPoint: "https://openreplay.mydomain.com/ingest" // only required if using the self-hosted version of OpenReplay
+			});
+			tracker.start();
+			
+			// or you can use a class based approach
+      const Tracker = await import('@openreplay/tracker');
+      const tracker = new Tracker({
+	      projectKey: "", // pKey
+	      ingestPoint: "ingestPoint",
+      })
+      
+      tracker.start()
+    }
+  })
+</script>
+```
+
+## 示例仓库
+
+如果你想查看此项目的完整代码，请查看[我们将在本教程中始终使用的仓库](https://github.com/deleteman/openreplay-svelte-example)。
+
+这是一个示例 SvelteKit 应用，你可以按照 Readme 文件中的说明自行克隆和测试。部署并配置完成后，你应该就能够捕获会话回放。
+
+## 使用 Context 共享数据
+
+此方案将使用 Svelte 的 Context，它允许你在父组件及其所有子组件之间共享数据（很像 React 的 Context provider）。
+
+在这个具体示例中，我们将为应用的 Admin 部分添加 tracker，因此我们会在 Admin layout 文件（`src/layout/Admin.svelte`）中设置 context。然后我们会在该部分中渲染的第一个页面上启动它。
+
+## 创建 tracker 上下文
+
+在 `src/layout/Admin.svelte` 文件中的 `script` 标签内，让我们添加以下代码：
+
+```jsx
+import {Tracker, key} from "../context/tracker"
+
+let tracker = new Tracker({
+    projectKey: __myapp.env.OPENREPLAY_PROJECT_KEY
+});
+  
+setContext(key, {
+ getTracker: () => tracker
+} )
+```
+
+当然，这个文件中你会有更多代码，但上面所看到的内容是目前与我们相关的部分。
+
+1. 我们首先从 OpenReplay 导入 Tracker 以及一个 key 变量（稍后会详细介绍这些）。
+2. 然后我们实例化 Tracker。如你所见，我们使用的唯一配置项是项目的 key，你可以在 OpenReplay 中设置好项目后从 UI 获取它。
+3. 我们通过调用 `setContext` 将 tracker 的实例保存到创建的上下文中。`key` 变量稍后将用于从上下文中检索这个特定的值。
+
+<Aside type="tip">
+如果你使用的是自托管版本的 OpenReplay，你还需要在第 2 步中指定 `ingestPoint` 配置属性（它应指向你的域名：`https://openreplay.mydomain.com/ingest`）。此属性指定了 tracker 数据的摄取端点。
+</Aside>
+
+## 使用 tracker 上下文
+
+使用上下文（并调用 `start` 方法）就像通过 Svelte 的 `getContext` 函数获取上下文一样简单。
+
+该上下文包含一个带有名为 getTracker 函数的对象，因此我们将对其进行解构并调用该函数。
+
+```jsx
+import {key} from "../../context/tracker"
+  
+let {getTracker} = getContext(key)
+onMount( () => {
+	let tracker = getTracker()
+	tracker.start()
+})
+```
+
+之后，只需在 `onMount` 回调中调用 `start` 方法即可。我们这样做是为了确保从浏览器中调用此方法，否则 tracker 将无法工作。
+
+## context/tracker 文件
+
+我们在两处都使用了这个文件，所以现在是时候快速看一下它了。
+
+这个文件导出两个主要元素：
+
+1. `Tracker` 类，我们已在 layout 文件中将其实例化。
+2. 我们使用 `key` 变量来保存和检索上下文。
+
+以下是该文件的内容：
+
+```jsx
+import Tracker from '@openreplay/tracker'
+
+const key = Symbol("openreplay tracker")
+
+export {Tracker, key}
+```
+
+这里唯一值得注意的一点是，`key` 变量不是一个简单的字符串，它实际上是一个 `Symbol`。这样做的原因是为了避免与其他同样使用上下文的第三方库发生潜在的命名冲突。
+
+## 处理 ENV 环境变量
+
+这里最后要审视的是我们如何处理项目的 key，因为它不应被硬编码到你的代码中。
+
+通常，你会为此使用环境变量，然而，由于我们需要在浏览器中使用这些数据，而 Svelte 并没有提供实现这一点的简便方法，所以我们将用两个包来解决这个问题：[dotevn](https://www.npmjs.com/package/dotenv) 和 [@rollup/plugin-replace](https://www.npmjs.com/package/@rollup/plugin-replace)。
+
+一方面，我们将使用 dotenv 包，以获得在 `.env` 文件中定义环境变量的能力。我们将定义我们需要的那个变量： 
+
+```jsx
+OPENREPLAY_PROJECT_KEY="<YOUR PROJECT KEY>"
+```
+
+另一方面，由于我们无法在前端代码中使用 `dotenv`（因为它依赖于 `fs` 模块，而该模块显然在浏览器中不可用），我们将为 rollup 使用 replace 插件。这个插件会按照我们的指定替换文件中的代码。因此我们将配置该插件，将字符串 `“__myapp.env.OPENREPLAY_PROJECT_KEY”` 替换为从 `.env` 文件中加载的实际项目 key（这要归功于 dotenv 包）。
+
+要完成这一点，请打开项目根目录中的 `rollup.config.js` 文件，并将以下代码添加到 `plugins` 键中。
+
+```jsx
+replace({
+  "__myapp.env.OPENREPLAY_PROJECT_KEY": `"${process.env.OPENREPLAY_PROJECT_KEY}"`
+})
+```
+
+这个插件将在打包过程中在后端运行，从而使这一切成为可能。如果你想查看此配置文件的完整内容，可以[在此处查看](https://github.com/deleteman/openreplay-svelte-example/blob/main/rollup.config.js)。
+
+## 有疑问？
+
+你可以[查看此仓库](https://github.com/deleteman/openreplay-svelte-example)以获取一个带有 Tracker 的可运行 Svelte 应用的**完整源代码**。
+
+如果你在 Svelte 项目中设置 Tracker 时遇到任何问题，请通过我们的 [Slack 社区](https://slack.openreplay.com/)联系我们，直接向我们的开发人员提问！

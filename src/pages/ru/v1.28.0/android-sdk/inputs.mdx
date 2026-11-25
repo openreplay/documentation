@@ -1,0 +1,43 @@
+---
+title: "Android SDK - отслеживание полей ввода"
+metaTitle: "Android SDK - отслеживание полей ввода"
+metaDescription: "Подробности об отслеживании полей ввода с помощью трекера Android"
+---
+
+Трекер будет слушать событие изменения значения (с debounce) и отправлять полученное значение в бэкенд OpenReplay.
+
+## Добавление отслеживаемых полей ввода
+
+### EditText
+
+используйте `.trackTextInput(label:masked)` для наблюдения за событиями ввода,
+- `label: String` - метка для записываемого поля ввода
+- `masked: Bool` - если `true`, трекер будет записывать только само событие ввода, а не значение.
+
+```kotlin
+import com.opnereplay.tracker.OpenReplay
+
+val passwordEditText = binding.password
+passwordEditText.trackTextInput(label = "password", masked = true)
+```
+
+### View
+
+```kotlin
+import com.opnereplay.listeners.Analytics
+
+Analytics.addObservedInput(inputEl)
+```
+
+### Jetpack Compose
+
+```kotlin
+import com.openreplay.tracker.listeners.trackTextInputChanges
+
+OutlinedTextField(
+        modifier = Modifier
+            .fillMaxWidth()
+            .trackTextInputChanges("Email Field", emailState.text),
+        ...,
+    )
+```

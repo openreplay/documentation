@@ -1,0 +1,215 @@
+---
+title: "Utilisateurs"
+metaTitle: "Utilisateurs"
+metaDescription: "Comment gérer et contrôler les données des utilisateurs."
+---
+import Aside from '~/components/Aside.astro'
+
+## Rechercher des utilisateurs
+
+Recherchez des utilisateurs dans un projet. Filtrez par attributs (id utilisateur, email, pays, etc.), affinez éventuellement avec une `query` en texte libre et paginez les résultats.
+
+### Méthode
+`POST`
+
+### URL
+`/public/:projectKey/users`
+
+### Paramètres
+
+| Name       | Type   | Description                                            |
+|------------|--------|--------------------------------------------------------|
+| projectKey | string | La clé du projet (obligatoire)                         |
+| q          | string | Requête en texte libre facultative (paramètre de requête de l'URL). Lorsque `q` et `query` (corps) sont tous deux fournis, `q` a la priorité. |
+
+### Payload
+
+| Name           | Type       | Description                                                 |
+|----------------|------------|-------------------------------------------------------------|
+| filters        | array      | Liste de filtres (facultatif)                               |
+| query          | string     | Requête en texte libre sur l'id utilisateur / email / nom (max 100) |
+| startTimestamp | epoch (ms) | Début de la fenêtre temporelle (facultatif, min 946684800000) |
+| endTimestamp   | epoch (ms) | Fin de la fenêtre temporelle (facultatif, > startTimestamp) |
+| limit          | integer    | Taille de page, 1-200 (facultatif, par défaut : 50)         |
+| page           | integer    | Numéro de page, commence à 1 (facultatif, par défaut : 1)   |
+| sortBy         | string     | Colonne utilisateur sur laquelle trier (facultatif)         |
+| sortOrder      | string     | `asc` ou `desc` (facultatif)                                |
+| columns        | array      | Colonnes utilisateur supplémentaires à inclure dans la réponse |
+
+### En-têtes de la requête
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Exemple de requête
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "query": "mickael",
+    "limit": 50,
+    "page":  1,
+    "sortOrder": "desc"
+  }'
+```
+
+### Exemple de réponse
+
+```json
+{
+  "data": {
+    "total": 1,
+    "users": [
+      {
+        "$user_id": "mickael@openreplay.com",
+        "$email": "mickael@openreplay.com",
+        "$name": "Mickael",
+        "$first_name": "Mickael",
+        "$last_name": "",
+        "$created_at": 1623440822825,
+        "$last_seen": 1623689478617
+      }
+    ]
+  }
+}
+```
+
+## Récupérer un utilisateur
+
+Récupérez les attributs d'identité et les statistiques générales d'un utilisateur particulier.
+
+### Méthode
+`GET`
+
+### URL
+`/public/:projectKey/users/:userId`
+
+### Paramètres
+
+| Name       | Type   | Description                                                |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | La clé du projet (obligatoire)                             |
+| userId     | string | L'ID défini via `tracker.setUserID` (obligatoire, max 256) |
+
+### En-têtes de la requête
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Codes de statut
+
+`200` : Réponse envoyée au format JSON dans le corps  
+`400` : `userId` non valide (vide ou > 256 caractères)  
+`404` : Utilisateur introuvable
+
+### Exemple de requête
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users/mickael@openreplay.com \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Exemple de réponse
+
+```json
+{
+  "data": {
+    "$user_id": "mickael@openreplay.com",
+    "$email": "mickael@openreplay.com",
+    "$name": "Mickael",
+    "$first_name": "Mickael",
+    "$last_name": "",
+    "$phone": "",
+    "$avatar": "",
+    "$created_at": 1623440822825,
+    "distinct_ids": ["15bd70f6-aedf-4544-8ae6-57eb66398e94"],
+    "$country": "FR",
+    "$state": "",
+    "$city": "",
+    "$first_event_at": 1623440822825,
+    "$last_seen": 1623689478617
+  }
+}
+```
+
+## Supprimer un utilisateur
+
+Supprimez un utilisateur et toutes les données associées. Cela planifie une tâche en arrière-plan ; la réponse contient le `jobId` que vous pouvez interroger via l'API [Jobs](/api/jobs).
+
+<Aside type="note">
+La tâche de suppression supprime jusqu'à 1000 sessions associées à l'utilisateur spécifié.
+</Aside>
+
+### Méthode
+`DELETE`
+
+### URL
+`/public/:projectKey/users/:userId`
+
+### Paramètres
+
+| Name       | Type   | Description                                                |
+|------------|--------|------------------------------------------------------------|
+| projectKey | string | La clé du projet (obligatoire)                             |
+| userId     | string | L'ID défini via `tracker.setUserID` (obligatoire, max 256) |
+
+### En-têtes de la requête
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Codes de statut
+
+`200` : Tâche planifiée, renvoyée dans le corps  
+`400` : `userId` non valide (vide ou > 256 caractères)  
+`409` : Une tâche de suppression pour cet utilisateur est déjà planifiée ou en cours d'exécution
+
+### Exemple de requête
+
+```shell
+curl -X DELETE \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/users/mickael@example.com \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Exemple de réponse
+
+```json
+{
+  "data": {
+    "jobId": 22345,
+    "description": "Delete user sessions of userId = mickael@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mickael@example.com",
+    "createdAt": 1623912962910,
+    "updatedAt": null,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+### Modifier le délai de suppression du fichier de replay ?
+
+La tâche de suppression est un processus en 2 étapes : d'abord, les sessions et leurs événements en cascade sont supprimés de la base de données pendant la nuit. Ensuite, les fichiers de replay sont planifiés pour expirer (sous 30 jours) dans le stockage d'objets.
+
+Si vous utilisez minio (installation par défaut) et que vous souhaitez modifier la politique d'expiration/de cycle de vie par défaut, suivez les instructions ci-dessous :
+1. Sur votre serveur, exécutez `openreplay -e`
+2. Dans la section `chalice`, définissez une nouvelle variable d'environnement appelée **SCH_DELETE_DAYS** avec une valeur égale au nombre de jours pendant lesquels vous souhaitez conserver le fichier de replay avant suppression (supérieur ou égal à 0)
+3. Enregistrez et quittez à l'aide de `:wq`
+4. Exécutez `k9s -n db`
+5. Utilisez les flèches du clavier pour parcourir la liste et atteindre le conteneur `minio-*`
+6. Appuyez sur `s` pour accéder au shell du conteneur Minio (stockage d'objets)
+7. Exécutez `mc alias set minio http://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY`
+8. Pour supprimer les fichiers de replay 14 jours après l'exécution de la tâche de suppression
+
+```bash
+export EXPIRATION_DAYS=14
+mc ilm add --expiry-days $EXPIRATION_DAYS --tags "to_delete_in_days=${EXPIRATION_DAYS}" minio/mobs
+```
+
+9. Utilisez `exit` pour quitter le conteneur Minio
+10. Exécutez `:quit` pour quitter la CLI Kubernetes

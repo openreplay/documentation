@@ -1,0 +1,219 @@
+---
+title: "استخدام OpenReplay مع Next.js"
+metaTitle: "إضافة متعقّب OpenReplay إلى تطبيق Next.js الخاص بك"
+metaDescription: "تعرّف على كيفية تشغيل المتعقّب في تطبيق Next.js الخاص بك"
+---
+import Aside from '~/components/Aside.astro'
+
+تشغيل المتعقّب في تطبيق Next.js أمر بسيط للغاية. وبما أن Next.js يعمل فوق React، فإن العملية متشابهة إلى حد كبير، وتأتي الصعوبة الرئيسية من قدرات التصيير من جانب الخادم (Server Side Rendering) في Next.js.
+
+ولكن بمجرد أن تفهم كيفية عملها وكيفية هيكلة الشيفرة المخصّصة للعميل فقط، ستتمكن من تعقّب مستخدميك في وقت قياسي.
+
+## إضافة شيفرة التعقّب
+
+في حين يمكنك الحصول على نسخة جاهزة للنسخ واللصق من الشيفرة مباشرةً من المنصّة عند إنشاء مشروع جديد، فإن تلك الشيفرة أساسية للغاية وقد لا تتبع الممارسات المثلى التي يتوقّعها فريقك أو شركتك.
+
+### مكوّن المتعقّب (Tracker)
+
+يوفّر هذا الأسلوب نهجًا بسيطًا للغاية حيث نحقن المتعقّب في التطبيق كمكوّن، يقوم بتحميل المكتبة بشكل ديناميكي.
+ 
+#### App Router (v14+) - use client
+
+```jsx
+'use client'
+import { useEffect } from "react"
+// note that you can manually import Tracker class if you want to handle the instance manually
+import { tracker } from '@openreplay/tracker'
+
+tracker.configure({
+  projectKey: PROJECT_KEY,
+  ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+})
+
+const Openreplay = () => {
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      tracker.start()
+    }
+  }, [])
+
+  return null
+}
+
+export default Openreplay 
+```
+##### App Router - استيراد نسخة مكوّن Openreplay ديناميكيًا داخل الـ layout الجذري
+```jsx
+import dynamic from "next/dynamic";
+
+const OpenReplayNoSSR = dynamic(() => import('//import the Openreplay instance'), {
+  ssr: false, //disables Server-side pre-rendering so window won't be undefined
+})
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en" >
+      <body>
+        {children}
+        <OpenReplayNoSSR />
+      </body>
+    </html >
+  );
+}
+
+```
+
+
+#### مكوّن عادي (Next حتى الإصدار v13)
+
+```jsx
+[...]
+
+function TrackerComponent() {
+const [tracker, setTracker] = React.useState(null);
+
+  React.useEffect(() => {
+    (async function () {
+      const { tracker } = await import("@openreplay/tracker");
+      tracker.configure({
+        projectKey: PROJECT_KEY,
+        ingestPoint: "https://openreplay.mydomain.com/ingest", // when dealing with the self-hosted version of OpenReplay
+        __DISABLE_SECURE_MODE: true,
+      });
+
+      setTracker(tracker);
+    })();
+  }, []);
+[...]
+```
+
+### سياق المتعقّب (Tracker Context)
+
+يتيح لك هذا الأسلوب إنشاء سياق (context)، والذي بدوره يسهّل التحكّم في حالة المتعقّب واستدعاء واجهات الـ API المختلفة الخاصة به.
+
+```jsx
+import { createContext } from "react"
+import {v4 as uuidV4} from 'uuid'
+import { useReducer } from "react"
+
+export const TrackerContext = createContext()
+
+function defaultGetUserId() {
+   return uuidV4() 
+}
+
+async function newTracker(config) {
+    // we use dynamic import to make sure that tracker is started inside browser env
+    const { tracker } = await import("@openreplay/tracker");
+    const getUserId = (config?.userIdEnabled && config?.getUserId) ? config.getUserId : defaultGetUserId
+    let userId = null;
+
+    const trackerConfig = {
+        projectKey: config?.projectKey || process.env.NEXT_PUBLIC_OPENREPLAY_PROJECT_KEY
+    }
+
+    tracker.configure(trackerConfig);
+    
+    if(config?.userIdEnabled) {
+        userId = getUserId()
+        tracker.setUserID(userId)
+    }
+    return tracker
+
+}
+
+function reducer(state, action) {
+        switch(action.type) {
+            case 'init': {
+                if(!state.tracker) {
+                    console.log("Instantiaing the tracker for the first time...")
+                    return {...state, tracker: newTracker(state.config)}
+                }
+                return state
+            }
+            case 'start': {
+                console.log("Starting tracker...")
+                state.tracker.start()
+                return state
+            }
+        }
+    }
+
+export default function TrackerProvider({children, config = {}}) {
+    let [state, dispatch] = useReducer(reducer, {tracker: null, config})
+    let value = {
+        startTracking: () => dispatch({type: 'start'}),
+        initTracker: () => dispatch({type: 'init'})
+    }
+
+    return <TrackerContext.Provider value={value}>{children}</TrackerContext.Provider>
+}
+```
+
+يُتيح هذا الـ provider طريقتين للمستخدم:
+
+- `initTracker`: التي تُنشئ نسخة من المتعقّب باستخدام الإعدادات المُقدَّمة.
+- `startTracking`: التي تُطلق بدء عملية التعقّب.
+
+يقبل هذا الـ provider أيضًا كائن "إعدادات" يمكنك توسيعه لميزات مستقبلية. يوضّح لك هذا المثال كيفية تمكين القدرة على تحديد هوية المستخدمين بشكل فريد، بصورة اختيارية. يمكنك استخدام UUID افتراضي يكون فريدًا لكل مستخدم في كل مرة يزور فيها الصفحة. وبدلاً من ذلك، يمكنك تقديم دالة `getUserId` مخصّصة كجزء من الإعدادات. 
+
+من خلال دالتك المخصّصة، يمكنك تقديم معرّف العميل الخاص بمتجرك، أو عنوان البريد الإلكتروني للمستخدم، أو أي شيء يحدّد هوية المستخدم بشكل فريد داخل تطبيقك. وبهذه الطريقة يمكنك تعقّب عمليات إعادة تشغيل جلساتهم عبر الزمن في حال واجهوا مشكلة معيّنة لا يبلّغ عنها الآخرون.
+
+<Aside type="tip">
+إذا كنت تستخدم نسخة OpenReplay المستضافة ذاتيًا (self-hosted)، فسيتعيّن عليك أيضًا تحديد خاصية الإعداد `ingestPoint` في الخطوة 2 (يجب أن تشير إلى نطاقك: `https://openreplay.mydomain.com/ingest`). تحدّد هذه الخاصية نقطة استقبال (endpoint) بيانات المتعقّب.
+</Aside>
+
+### التعامل مع "projectKey" في شيفرتك
+
+كملاحظة، فإن الـ `projectKey` الذي تقوم بإعداده هو الذي توفّره منصّة OpenReplay. ولأسباب أمنية، لا ينبغي تخزين هذه القيمة بشكل ثابت (hardcoded) داخل شيفرتك، بل في نوع من ملفات/أنظمة الإعداد.
+
+في هذا المثال، أستفيد من ملفات `.env` الخاصة بـ Next. ما يجب أن تفهمه هو أنك إذا لم تُضِف البادئة `NEXT_PUBLIC` إلى متغيّر البيئة، فلن تتمكّن شيفرة العميل لديك (المتعقّب) من الوصول إليه. 
+
+إذا لم يكن هذا مقبولًا، فيمكنك استخدام `getStaticProps` من داخل أول صفحة يزورها مستخدموك للحصول على تلك القيمة قبل إنشاء نسخة من المتعقّب. يمكنك الاطّلاع على كلا المثالين أدناه.
+
+## استخدام سياق المتعقّب
+
+قم باستيراد تطبيقك وتغليفه بالـ `TrackerProvider` الذي أنشأناه سابقًا، على النحو التالي:
+
+```jsx
+import '../styles/globals.css'
+import TrackerProvider from '../context/trackerContext'
+
+function MyApp({ Component, pageProps }) {
+
+  return <TrackerProvider>
+        <Component {...pageProps} />
+    </TrackerProvider>
+}
+
+export default MyApp
+```
+
+هذا هو ملف `_app.js`، الذي يعمل كنقطة دخول للتطبيق بأكمله.  
+
+وبعد ذلك، يمكنك تشغيل التعقّب من أي مكوّن تريده، على النحو التالي:
+
+```jsx
+import { useContext, useEffect } from 'react'
+import { TrackerContext } from '../context/trackerContext'
+import styles from '../styles/Home.module.css'
+
+export default function YourComponent({projectKey}) {
+    
+    const {initTracker, startTracking} = useContext(TrackerContext)
+    
+    useEffect( () => {
+       initTracker()
+       startTracking()
+    }, [])
+//.... rest of your code
+}
+```
+
+إذا لم تكن بحاجة إلى هذا القدر من التحكّم، فيمكنك دمج كليهما، "رسالة init" و"رسالة start tracking"، بحيث تحتاج فقط إلى استدعاء دالة واحدة لبدء التعقّب.
+
+## هل لديك أسئلة؟
+
+للاطّلاع على **الشيفرة الكاملة** لتطبيق عامل مبني على Next، يمكنك مراجعة [هذا المستودع](https://github.com/deleteman/openreplay-next-example).
+
+إذا واجهت أي مشكلات في إعداد المتعقّب في مشروعك المبني على Next، فيُرجى التواصل معنا عبر [مجتمعنا على Slack](https://slack.openreplay.com/) واطرح أسئلتك على مطوّرينا مباشرةً!

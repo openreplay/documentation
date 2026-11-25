@@ -1,0 +1,175 @@
+---
+title: "任务"
+metaTitle: "任务"
+metaDescription: "如何管理用户数据删除任务。"
+---
+
+任务状态值：`scheduled`、`running`、`completed`、`failed`、`cancelled`。
+
+## 列出所有任务
+
+检索某个项目的所有任务，包括已完成和已取消的任务。支持分页。
+
+### 方法
+`GET`
+
+### URL
+`/public/:projectKey/jobs`
+
+### 查询参数
+
+| Name  | Type    | Description                                                                 |
+|-------|---------|-----------------------------------------------------------------------------|
+| limit | integer | 每页大小，1-200（默认值：50）。超出范围的值将回退为 50。   |
+| page  | integer | 页码，从 1 开始（默认值：1）。小于 1 的值将回退为 1。           |
+
+### 请求头
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### 请求示例
+
+```shell
+curl -X GET \
+  '{BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs?limit=50&page=1' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### 响应示例
+
+```json
+{
+  "data": [
+    {
+      "jobId": 3451,
+      "description": "Delete user sessions of userId = shekar@example.com",
+      "status": "scheduled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "shekar@example.com",
+      "createdAt": 1623912955277,
+      "updatedAt": null,
+      "startAt": 1623954600000,
+      "errors": null
+    },
+    {
+      "jobId": 3452,
+      "description": "Delete user sessions of userId = mehdi@example.com",
+      "status": "cancelled",
+      "projectId": 1,
+      "action": "delete_user_data",
+      "referenceId": "mehdi@example.com",
+      "createdAt": 1623912962910,
+      "updatedAt": 1623913015276,
+      "startAt": 1623954600000,
+      "errors": null
+    }
+  ]
+}
+```
+
+## 获取任务详情
+
+返回任务的状态和元数据。
+
+### 方法
+`GET`
+
+### URL
+`/public/:projectKey/jobs/:jobId`
+
+### 参数
+
+| Name  | Type    | Description                    |
+|-------|---------|--------------------------------|
+| jobId | integer | 任务 ID（必填）          |
+
+### 请求头
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### 状态码
+
+`200`：响应以 JSON 形式在正文中返回  
+`400`：无效的 `jobId`（不是整数）  
+`404`：未找到任务
+
+### 请求示例
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs/3451 \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### 响应示例
+
+```json
+{
+  "data": {
+    "jobId": 3451,
+    "description": "Delete user sessions of userId = shekar@example.com",
+    "status": "scheduled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "shekar@example.com",
+    "createdAt": 1623912955277,
+    "updatedAt": null,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```
+
+## 取消任务
+
+取消尚未开始或仍在进行中的任务。
+
+### 方法
+`DELETE`
+
+### URL
+`/public/:projectKey/jobs/:jobId`
+
+### 参数
+
+| Name  | Type    | Description                    |
+|-------|---------|--------------------------------|
+| jobId | integer | 任务 ID（必填）          |
+
+### 请求头
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### 状态码
+
+`200`：任务已取消  
+`400`：任务在当前状态下无法取消，或 `jobId` 无效  
+`404`：未找到任务
+
+### 请求示例
+
+```shell
+curl -X DELETE \
+  {BASE_URL}/public/3sWXSsqHgSKnE87YkNJK/jobs/3452 \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### 响应示例
+
+```json
+{
+  "data": {
+    "jobId": 3452,
+    "description": "Delete user sessions of userId = mehdi@example.com",
+    "status": "cancelled",
+    "projectId": 1,
+    "action": "delete_user_data",
+    "referenceId": "mehdi@example.com",
+    "createdAt": 1623912962910,
+    "updatedAt": 1623913015276,
+    "startAt": 1623954600000,
+    "errors": null
+  }
+}
+```

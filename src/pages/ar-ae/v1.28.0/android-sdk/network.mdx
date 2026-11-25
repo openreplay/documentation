@@ -1,0 +1,73 @@
+---
+title: "Android SDK - اعتراض الشبكة"
+metaTitle: "Android SDK - اعتراض الشبكة"
+metaDescription: "تفاصيل حول اعتراض الشبكة لمتتبع Android"
+---
+
+## اعتراض الشبكة
+
+يقوم `OpenReplay` بتصدير `NetworkListener` الذي يقبل المهام والطلبات معًا، وإليك كيفية القيام بذلك:
+
+```swift
+import com.openreplay.tracker.OpenReplay
+
+fun makeSampleRequest() {
+    Thread {
+        try {
+            val url = URL("https://jsonplaceholder.typicode.com/posts/1")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+
+            // Optionally set request headers
+            connection.setRequestProperty("Content-Type", "application/json")
+
+            // Initialize the network listener for this connection
+            val networkListener = NetworkListener(connection)
+
+            val reader = BufferedReader(InputStreamReader(connection.inputStream))
+            val response = StringBuilder()
+            var line: String?
+            while (reader.readLine().also { line = it } != null) {
+                response.append(line)
+            }
+            reader.close()
+
+            // Using the network listener to log the finish event
+            networkListener.finish(connection, response.toString().toByteArray())
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }.start()
+}
+```
+
+## تطهير الطلب
+
+يتم تصدير مفتاحين لاقتطاع بيانات الطلب/الاستجابة تلقائيًا: `ignoredKeys` لجسم الرسالة و`ignoredHeaders` للترويسات. سيتم تطهير كل من الطلب والاستجابة، لكن جسم الرسالة لن يتأثر إلا إذا كان JSON صالحًا.
+
+ما عليك سوى تعيين قائمة من السلاسل النصية التي ترغب في تطهيرها:
+
+```swift
+let networkListener = NetworkListener()
+networkListener.ignoredHeaders = ["mySecretToken"]
+networkListener.ignoredKeys = ["password"]
+```
+
+ومن الممكن أيضًا تغيير بيانات الاستجابة قبل تمريرها إلى الـ listener:
+
+```swift
+// ... request
+
+var sanitizedData
+if let data = data {
+	do {
+		let json = try JSONSerialization.jsonObject(with: data, options: [])
+		sanitizedData = customSanitizeFunction(data)
+		print(json)
+	} catch {
+		print("Error deserializing JSON: \(error)")
+	}
+}
+
+networkListener.finish(response: response, data: sanitizedData)
+```

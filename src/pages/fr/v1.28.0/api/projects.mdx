@@ -1,0 +1,166 @@
+---
+title: "Projets"
+metaTitle: "Projets"
+metaDescription: "Comment créer et récupérer des projets."
+---
+
+Toutes les réponses sont au format JSON et encapsulées dans `{ "data": ... }`. Les erreurs renvoient `{ "error": "..." }` avec un code de statut HTTP approprié.
+
+## Créer un projet
+
+Créez un nouveau projet en spécifiant son `name` et, éventuellement, sa `platform`.
+
+### Méthode
+`POST`
+
+### URL
+`/public/projects`
+
+### Payload
+
+| Nom      | Type   | Description                                                  |
+|----------|--------|--------------------------------------------------------------|
+| name     | string | Le nom du projet (obligatoire, 200 caractères max.)          |
+| platform | string | Plateforme du projet : `web` (par défaut) ou `ios`           |
+
+### En-têtes de la requête
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Codes de statut
+
+`200` : Projet créé, renvoyé dans le corps  
+`400` : Corps invalide, nom manquant/trop long, plateforme inconnue ou nom déjà existant
+
+### Exemple de requête
+
+```shell
+curl -X POST \
+  {BASE_URL}/public/projects \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}' \
+  --data-raw '{
+    "name": "MyFirstProject",
+    "platform": "web"
+  }'
+```
+
+### Exemple de réponse
+
+```json
+{
+  "data": {
+    "projectId": 42,
+    "name": "MyFirstProject",
+    "projectKey": "QsLA07Oa5sqTfwnNaFwS",
+    "tenantId": 1,
+    "maxSessionDuration": 7200000,
+    "sampleRate": 100,
+    "saveRequestPayloads": false,
+    "beaconSize": 0,
+    "platform": "web",
+    "metadata1": null,
+    "metadata2": null,
+    "metadata3": null,
+    "metadata4": null,
+    "metadata5": null,
+    "metadata6": null,
+    "metadata7": null,
+    "metadata8": null,
+    "metadata9": null,
+    "metadata10": null
+  }
+}
+```
+
+## Lister les projets
+
+Renvoie tous les projets du tenant actuel.
+
+### Méthode
+`GET`
+
+### URL
+`/public/projects`
+
+### En-têtes de la requête
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Exemple de requête
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/projects \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Exemple de réponse
+
+```json
+{
+  "data": [
+    {
+      "projectId": 42,
+      "name": "MyFirstProject",
+      "projectKey": "QsLA07Oa5sqTfwnNaFwS",
+      "tenantId": 1,
+      "platform": "web"
+    },
+    {
+      "projectId": 43,
+      "name": "MobileApp",
+      "projectKey": "9cACFRuQVidq0sqS7Bny",
+      "tenantId": 1,
+      "platform": "ios"
+    }
+  ]
+}
+```
+
+## Obtenir un projet
+
+Renvoie les détails du projet spécifié.
+
+### Méthode
+`GET`
+
+### URL
+`/public/projects/:projectKey`
+
+### Paramètres
+
+| Nom        | Type   | Description                  |
+|------------|--------|------------------------------|
+| projectKey | string | La clé du projet (obligatoire) |
+
+### En-têtes de la requête
+
+`Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}`
+
+### Codes de statut
+
+`200` : Renvoyé dans le corps  
+`404` : Projet introuvable
+
+### Exemple de requête
+
+```shell
+curl -X GET \
+  {BASE_URL}/public/projects/7ePSXFuQVidq9pqS6Xyn \
+  -H 'Authorization: Bearer {YOUR_ORGANIZATION_API_KEY}'
+```
+
+### Exemple de réponse
+
+```json
+{
+  "data": {
+    "projectId": 42,
+    "name": "MyFirstProject",
+    "projectKey": "7ePSXFuQVidq9pqS6Xyn",
+    "tenantId": 1,
+    "platform": "web"
+  }
+}
+```
